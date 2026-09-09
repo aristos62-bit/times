@@ -32,11 +32,33 @@
 6. **Migration tests** — §8.1 πρόσθεσε MigrationHelper + BackupService tests.
 7. **l10n-readiness** — σημείωση στο §3.3 AppStrings (static const, εύκολη μετάβαση σε gen-l10n).
 
-## Αλλαγμένα αρχεία
-- `DESIGN.md` (από ~3672 → 3865 γραμμές)
-- `oldsessions.md` (index), `oldsessions/oldsessions_001.md`, `oldsessions/oldsessions_002.md` (νέο)
+## Part D — Επιπλέον reviewer findings (WAL-safe backup + enforced UTC)
+8. **WAL-proof BackupService (§4.5)** — σε WAL mode το raw copy του .db περιέχει ΠΑΛΙΑ
+   δεδομένα (πρόσφατες εγγραφές ζουν στο .db-wal). Fix:
+   - `BackupService` τώρα δέχεται `AppDatabase` και πριν το snapshot κάνει
+     `PRAGMA wal_checkpoint(TRUNCATE);` (αδειάζει το WAL μέσα στο κύριο .db).
+   - `restoreFromBackup`: `await _db.close()` ΠΡΙΝ την αντικατάσταση (Windows file lock
+     + ζωντανή σύνδεση βλέπει stale data), διαγραφή παλιών -wal/-shm, δε γίνεται
+     ξανά-άνοιγμα από τη μέθοδο.
+   - Πολιτική restore: "Η επαναφορά θα αντικαταστήσει όλα τα δεδομένα και η εφαρμογή
+     θα κλείσει" → μετά την επιτυχή restore κλείνει η εφαρμογή.
+9. **Enforced UTC (όχι policy, αλλά κώδικας)** — η timezone policy ήταν μόνο σχόλιο.
+   Fix:
+   - Νέο SPoT `core/database/tables/utc_date_time_converter.dart`:
+     `UtcDateTimeConverter extends TypeConverter<DateTime, String>` (write `.toUtc()` /
+     read `.toLocal()`) + helper `Column<DateTime> utcDateTime() => dateTime().map(...)`.
+   - Όλες οι στήλες ημερομηνιών σε όλους τους πίνακες: `dateTime()` → `utcDateTime()`.
+   - Οι δηλώσεις στήλης άλλαξαν σε `Column<DateTime> get` (το .map() δίνει generic,
+     όχι `DateTimeColumn`). 18 στήλες total.
+   - Queries με όρια (`watchAllReceipts` + `watchTotalByDateRange`/`watchTotalByCategory`)
+     κάνουν `start.toUtc()`/`end.toUtc()` πριν τη σύγκριση.
+   - Σχόλιο `_openConnection`: αναφέρεται στον converter (όχι πλέον "policy").
+
+## Αλλαγμένα αρχεία (Session 2 πλήρες)
+- `DESIGN.md` (3865 → 3928 γραμμές, fences 43 pairs, UTF-8 no BOM)
+- `oldsessions.md` (index), `oldsessions/oldsessions_001.md`, `oldsessions/oldsessions_002.md` (αυτό)
 - `.github/workflows/ci.yml` (checkout v5)
-- Backup DESIGN: `backups/DESIGN_20260909_142153.md`
+- Backups DESIGN: `backups/DESIGN_20260909_142153.md`, `backups/DESIGN_20260909_145921.md`
 
 ## Επόμενα
 - **Phase 1 — Project Setup** (pubspec deps, δομή φακέλων, SPOs core, theme system).
