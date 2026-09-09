@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// SPO: Color palette - single source of truth
 /// Τα χρώματα ορίζονται ΕΔΩ. Κανένα άλλο αρχείο δεν ορίζει χρώματα.
 class AppColors {
-  AppColors._(); // coverage:ignore-line
+  AppColors._();
   
   // --- Primary ---
   static const Color primaryLight = Color(0xFF1976D2);

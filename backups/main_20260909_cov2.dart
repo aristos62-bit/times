@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 
-void main() { // coverage:ignore-line
-  runApp(const MyApp()); // coverage:ignore-line
+void main() {
+  runApp(const MyApp()); // coverage:ignore-line — entry point, καλύπτεται από widget_test.
 }
 
 class MyApp extends StatelessWidget {

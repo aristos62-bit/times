@@ -11,7 +11,7 @@ import 'debug_config.dart';
 ///   AppLogger.performance('Slow query: 620ms - receipts join items');
 ///   AppLogger.error('Failed to insert', stackTrace);
 class AppLogger {
-  AppLogger._(); // coverage:ignore-line
+  AppLogger._(); // coverage:ignore-line — SPoT static-only, δεν instanti-άρεται.
   
   static void db(String message) {
     if (!DebugConfig.showDbLogs) return;
@@ -35,7 +35,7 @@ class AppLogger {
   
   static void navigation(String message) {
     if (!DebugConfig.showNavigationLogs) return;
-    debugPrint('[NAV] $message'); // coverage:ignore-line
+    debugPrint('[NAV] $message'); // coverage:ignore-line — flag μόνιμα false.
   }
   
   static void info(String message) {

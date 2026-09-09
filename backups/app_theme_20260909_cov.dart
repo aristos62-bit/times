@@ -6,7 +6,7 @@ import 'app_dimensions.dart';
 /// SPO: Theme definitions - single source of truth
 /// Τα χρώματα έρχονται από το AppColors — δεν ορίζονται ξανά εδώ.
 class AppTheme {
-  AppTheme._(); // coverage:ignore-line
+  AppTheme._();
   
   // Light Theme
   static ThemeData get lightTheme => ThemeData(

@@ -7,7 +7,7 @@ import 'extensions.dart';
 
 /// SPO: Helper functions - reusable utilities
 class Helpers {
-  Helpers._(); // coverage:ignore-line
+  Helpers._(); // coverage:ignore-line — SPoT static-only, δεν instanti-άρεται.
   
   /// Show a snackbar with a message
   static void showSnackBar(BuildContext context, String message, {bool isError = false}) {

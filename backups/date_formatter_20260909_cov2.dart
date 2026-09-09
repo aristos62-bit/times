@@ -4,7 +4,7 @@ import 'extensions.dart';
 
 /// SPO: Date formatting - single source of truth
 class DateFormatter {
-  DateFormatter._(); // coverage:ignore-line
+  DateFormatter._(); // coverage:ignore-line — SPoT static-only, δεν instanti-άρεται.
   
   /// Short format: 15/01/2026
   static String formatShort(DateTime date) {

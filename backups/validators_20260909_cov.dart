@@ -8,7 +8,7 @@ import 'extensions.dart';
 /// Μηνύματα: core/strings/app_strings.dart (AppStrings)
 
 class Validators {
-  Validators._(); // coverage:ignore-line
+  Validators._();
   
   // Receipt Validators
   static String? validateReceiptDate(DateTime? date) {

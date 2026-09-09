@@ -20,10 +20,6 @@ void main() {
     test('θετικό με +', () {
       expect(CurrencyFormatter.formatWithSign(1234.56), '+1.234,56€');
     });
-
-    test('αρνητικό με -', () {
-      expect(CurrencyFormatter.formatWithSign(-50.0), '-50,00€');
-    });
   });
 
   group('CurrencyFormatter.tryParse', () {

@@ -1,7 +1,7 @@
 // core/utils/currency_formatter.dart
 /// SPO: Currency formatting - single source of truth
 class CurrencyFormatter {
-  CurrencyFormatter._(); // coverage:ignore-line
+  CurrencyFormatter._();
   
   static const String _defaultCurrency = '€';
   static const int _decimalPlaces = 2;

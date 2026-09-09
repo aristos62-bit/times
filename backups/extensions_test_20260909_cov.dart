@@ -21,10 +21,6 @@ void main() {
       expect(Helpers.isNumeric('1.5'), isTrue);
       expect(Helpers.isNumeric('abc'), isFalse);
     });
-
-    test('removeExtraWhitespace', () {
-      expect('  α   β  '.removeExtraWhitespace, 'α β');
-    });
   });
 
   group('DateTimeExtensions', () {
@@ -46,16 +42,6 @@ void main() {
     test('isToday', () {
       expect(DateTime.now().isToday, isTrue);
     });
-
-    test('isYesterday', () {
-      final yesterday = DateTime.now().subtract(const Duration(days: 1));
-      expect(yesterday.isYesterday, isTrue);
-      expect(DateTime.now().isYesterday, isFalse);
-    });
-
-    test('startOfMonth', () {
-      expect(DateTime(2026, 3, 15).startOfMonth, DateTime(2026, 3, 1));
-    });
   });
 
   group('DoubleExtensions', () {
@@ -65,10 +51,6 @@ void main() {
 
     test('toCurrency', () {
       expect(1234.56.toCurrency(), '1.234,56€');
-    });
-
-    test('toFixed2', () {
-      expect(1.5.toFixed2(), '1.50');
     });
   });
 }

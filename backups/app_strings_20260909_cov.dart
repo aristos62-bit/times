@@ -4,7 +4,7 @@
 /// Κάθε widget κάνει import το AppStrings και διαβάζει το αντίστοιχο field.
 /// l10n: προαιρετικά, το SPoT παραμένει σωστό και χωρίς αυτό.
 class AppStrings {
-  AppStrings._(); // coverage:ignore-line
+  AppStrings._();
   
   // --- Screen Titles ---
   static const String homeTitle = 'Αρχική';

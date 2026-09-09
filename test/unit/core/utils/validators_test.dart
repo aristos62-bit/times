@@ -94,5 +94,127 @@ void main() {
       expect(result.isValid, isFalse);
       expect(result.errors, contains(AppStrings.receiptMustHaveItems));
     });
+
+    test('όλα άκυρα → 3+ σφάλματα', () {
+      final result = Validators.validateReceipt(
+        date: null,
+        supplierId: 0,
+        paymentMethod: '',
+        items: const [],
+      );
+      expect(result.isValid, isFalse);
+      expect(result.errors.length, greaterThanOrEqualTo(3));
+      expect(result.errorMessage.isNotEmpty, isTrue);
+    });
+
+    test('έγκυρη απόδειξη με είδη → valid', () {
+      const items = [
+        ReceiptItemInput(quantity: 2, unitPrice: 1.5),
+      ];
+      final result = Validators.validateReceipt(
+        date: DateTime.now(),
+        supplierId: 1,
+        paymentMethod: 'Μετρητά',
+        items: items,
+      );
+      expect(result.isValid, isTrue);
+      expect(result.errorMessage, isEmpty);
+    });
+
+    test('κακά είδη → per-item σφάλματα', () {
+      const items = [
+        ReceiptItemInput(quantity: 0, unitPrice: -5),
+      ];
+      final result = Validators.validateReceipt(
+        date: DateTime.now(),
+        supplierId: 1,
+        paymentMethod: 'Μετρητά',
+        items: items,
+      );
+      expect(result.isValid, isFalse);
+      expect(result.errors.length, 2);
+    });
+  });
+
+  group('Validators κατηγορία/προμηθευτής', () {
+    test('validateCategoryName', () {
+      expect(
+        Validators.validateCategoryName(null),
+        AppStrings.categoryNameRequired,
+      );
+      expect(
+        Validators.validateCategoryName('  a  '),
+        AppStrings.nameTooShort,
+      );
+      expect(
+        Validators.validateCategoryName('Τρόφιμα'),
+        isNull,
+      );
+      expect(
+        Validators.validateCategoryName('x' * 51),
+        AppStrings.categoryNameTooLong,
+      );
+    });
+
+    test('validateSupplierName', () {
+      expect(
+        Validators.validateSupplierName(''),
+        AppStrings.supplierNameRequired,
+      );
+      expect(Validators.validateSupplierName('AB'), isNull);
+    });
+
+    test('validateSupplierId invalid', () {
+      expect(
+        Validators.validateSupplierId(null),
+        AppStrings.supplierRequired,
+      );
+      expect(
+        Validators.validateSupplierId(-1),
+        AppStrings.supplierRequired,
+      );
+      expect(Validators.validateSupplierId(3), isNull);
+    });
+
+    test('validatePaymentMethod', () {
+      expect(
+        Validators.validatePaymentMethod(null),
+        AppStrings.paymentMethodRequired,
+      );
+      expect(Validators.validatePaymentMethod('Κάρτα'), isNull);
+    });
+  });
+
+  group('Validators ΑΦΜ/τηλέφωνο/email/budget', () {
+    test('έγκυρο ΑΦΜ → null', () {
+      expect(Validators.validateVatNumber('123456789'), isNull);
+      expect(Validators.validateVatNumber(null), isNull);
+    });
+
+    test('έγκυρο τηλέφωνο → null', () {
+      expect(Validators.validatePhone('6971234567'), isNull);
+      expect(Validators.validatePhone(null), isNull);
+    });
+
+    test('έγκυρο email/κενό → null', () {
+      expect(Validators.validateEmail('a@example.gr'), isNull);
+      expect(Validators.validateEmail(''), isNull);
+    });
+
+    test('validateBudgetAmount', () {
+      expect(
+        Validators.validateBudgetAmount(null),
+        AppStrings.budgetAmountRequired,
+      );
+      expect(
+        Validators.validateBudgetAmount('abc'),
+        AppStrings.invalidNumber,
+      );
+      expect(
+        Validators.validateBudgetAmount('0'),
+        AppStrings.budgetAmountMustBePositive,
+      );
+      expect(Validators.validateBudgetAmount('1,5'), isNull);
+    });
   });
 }

@@ -1,7 +1,7 @@
 // core/theme/app_dimensions.dart
 /// SPO: Spacing/sizing constants - single source of truth
 class AppDimensions {
-  AppDimensions._(); // coverage:ignore-line
+  AppDimensions._(); // coverage:ignore-line — SPoT static-only, δεν instanti-άρεται.
   
   // --- Padding/Margin ---
   static const double xs = 4.0;

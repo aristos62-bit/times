@@ -35,7 +35,7 @@ class ResponsiveLayout extends StatelessWidget {
 /// tablet:  ≥600   → tablet layout (600-1199)
 /// desktop: ≥1200  → desktop layout (1200+)
 class Breakpoints {
-  Breakpoints._(); // coverage:ignore-line
+  Breakpoints._();
 
   /// Mobile: width < 600
   static const double mobile = 600;

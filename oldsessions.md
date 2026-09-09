@@ -34,3 +34,10 @@
 - **Αρχείο:** `oldsessions/oldsessions_004.md`
 - **Περίληψη:** Review fixes 7 σημείων (dead code, overlay, dimensions,
   helpers test, DESIGN sync), ενοποίηση icons 64/80→80
+
+---
+
+## 005 — Session 5 (09/09/2026) · κλειστό
+- **Αρχείο:** `oldsessions/oldsessions_005.md`
+- **Περίληψη:** Όλα τα missing tests (14 νέα files, SPoT pumpApp),
+  debug accent-bug σε test data, coverage lib/ 100% (115 tests)

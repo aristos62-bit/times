@@ -3,8 +3,7 @@ import 'package:flutter/foundation.dart';
 
 /// SPO: Debug flags - Ρυθμίζονται ΜΟΝΟ εδώ
 class DebugConfig {
-  // SPoT static-only — δεν instanti-άρεται ποτέ.
-  DebugConfig._(); // coverage:ignore-line
+  DebugConfig._();
   
   // --- Master Switch ---
   static const bool isDebug = kDebugMode;

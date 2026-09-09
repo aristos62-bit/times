@@ -2,7 +2,7 @@ import '../strings/app_strings.dart';
 
 /// SPO: App-wide constants - NO magic numbers/strings
 class AppConstants {
-  AppConstants._(); // coverage:ignore-line
+  AppConstants._();
   
   // App Info
   static const String appName = 'Τιμές';
