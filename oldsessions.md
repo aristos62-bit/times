@@ -12,3 +12,10 @@
   reactivity fixes (round A), branding "Τιμές", git/GitHub + CI, επανέλεγχος
   DESIGN.md + fix round B (storeDateTimeAsText, input SPoTs, Drift-backed theme,
   AppTheme↔AppColors, TagDao/SettingDao)
+
+---
+
+## 002 — Session 2 (09/09/2026) · κλειστό
+- **Αρχείο:** `oldsessions/oldsessions_002.md`
+- **Περίληψη:** Αναδιάρθρωση δομής oldsessions (index + Φάκελο), fix warning
+  `actions/checkout` Node 20 (v4→v5), και forward-looking upgrades στο DESIGN.md
