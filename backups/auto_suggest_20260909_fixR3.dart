@@ -124,9 +124,7 @@ class _AutoSuggestFieldState<T> extends State<AutoSuggestField<T>> {
       elevation: AppDimensions.elevationLg,
       margin: const EdgeInsets.only(top: AppDimensions.xs),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxHeight: AppDimensions.suggestionListMaxHeight,
-        ),
+        constraints: const BoxConstraints(maxHeight: 200),
         child: ListView.builder(
           shrinkWrap: true,
           itemCount: _suggestions.length,

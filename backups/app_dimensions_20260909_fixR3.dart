@@ -23,16 +23,12 @@ class AppDimensions {
   static const double elevationSm = 1.0;
   static const double elevationMd = 2.0;
   static const double elevationLg = 4.0;
-
-  // --- Lists ---
-  static const double suggestionListMaxHeight = 200.0;
   
   // --- Icon Sizes ---
   static const double iconSm = 16.0;
   static const double iconMd = 24.0;
   static const double iconLg = 32.0;
   static const double iconXl = 48.0;
-  static const double iconXxl = 80.0;
   
   // --- Button Heights ---
   static const double buttonHeight = 48.0;

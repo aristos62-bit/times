@@ -41,9 +41,6 @@ class AppColors {
   // --- Divider ---
   static const Color dividerLight = Color(0xFFE0E0E0);
   static const Color dividerDark = Color(0xFF424242);
-
-  // --- Overlay (scrim για LoadingOverlay — = Colors.black54) ---
-  static const Color overlay = Color(0x8A000000);
   
   // --- Success ---
   static const Color success = Color(0xFF388E3C);

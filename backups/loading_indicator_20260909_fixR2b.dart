@@ -1,6 +1,5 @@
 // core/widgets/loading_indicator.dart
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_dimensions.dart';
 
 /// SPoT: Loading states - single source of truth
@@ -48,7 +47,7 @@ class LoadingOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.overlay,
+      color: Colors.black54,
       child: LoadingIndicator(message: message, size: AppDimensions.iconXl),
     );
   }

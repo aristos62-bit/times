@@ -778,11 +778,6 @@ class DateFormatter {
 
 > **ΣΗΜΕΙΩΣΗ:** Τα μηνύματα validation εμφανίζονται inline για ευκολία ανάγνωσης.
 > Στην πραγματική υλοποίηση, ΚΑΘΕ μήνυμα αντικαθίσταται με `AppStrings.xxx` (π.χ. `AppStrings.requiredField`).
->
-> **Υλοποίηση Phase 1 (έγινε):** `AppStrings` παντού · `CurrencyFormatter.tryParse`
-> για ποσότητα/τιμή/budget (ελληνικό κόμμα) · `approximates` για ΦΠΑ ·
-> `trim().length` · EL μόνο ως prefix · `0030` · email TLD `{2,}` ·
-> ανοχή +1 λεπτό στο μέλλον · `AppConstants.minReceiptDate`.
 
 ```dart
 /// SPO: Input validation - single source of truth
@@ -794,11 +789,9 @@ class Validators {
   
   // Receipt Validators
   static String? validateReceiptDate(DateTime? date) {
-    if (date == null) return AppStrings.receiptDateRequired;
-    if (date.isAfter(DateTime.now().add(const Duration(minutes: 1)))) {
-      return AppStrings.receiptDateInFuture;
-    }
-    if (date.isBefore(AppConstants.minReceiptDate)) return AppStrings.invalidDate;
+    if (date == null) return 'Επιλέξτε ημερομηνία';
+    if (date.isAfter(DateTime.now())) return 'Η ημερομηνία δεν μπορεί να είναι στο μέλλον';
+    if (date.isBefore(DateTime(2000))) return 'Μη έγκυρη ημερομηνία';
     return null;
   }
   
@@ -1311,10 +1304,6 @@ class ThemeProvider extends ChangeNotifier {
 **SPoT Theme settings:** Η αποθήκευση/ανάγνωση γίνεται μόνο μέσω του `SettingDao`
 (§4.3), στο table `user_settings`, key `'theme_mode'`, value = string με τον
 δείκτη του `ThemeMode` (`'0'`=system, `'1'`=light, `'2'`=dark), type `'int'`.
-
-> **Υλοποίηση Phase 1 (έγινε):** stub in-memory με WIP σημείωση (χωρίς dead
-> `_subscription`) — το πλήρες `SettingDao`-backed του παραπάνω snippet
-> υλοποιείται στη Phase 2 (Database Layer).
 
 ### 3.13 Extensions (`core/utils/extensions.dart`)
 
@@ -3477,12 +3466,6 @@ class ResponsiveGrid extends StatelessWidget {
 ---
 
 ## 7. Theme System (Dark/Light)
-
-> **ΣΗΜΕΙΩΣΗ:** Τα snippets του §7 είναι pre-implementation drafts (τιμές
-> χρωμάτων/διαστάσεων/τυπογραφίας διαφέρουν). Πηγή αλήθειας: §3.11–§3.13 +
-> `lib/core/theme/` (νέα πεδία: `AppColors.overlay/divider*`,
-> `AppDimensions.desktopLarge/suggestionListMaxHeight/iconXxl`,
-> `AppTheme` με `CardThemeData` + `AppDimensions`).
 
 ### 7.1 Color Palette
 

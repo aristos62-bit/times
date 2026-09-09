@@ -27,3 +27,10 @@
 - **Περίληψη:** Phase 1 Core SPOs (17 αρχεία), deps upgrade σε majors,
   επανέλεγχος reuse + 20 fixes με backups, 4 unit test files (47 pass),
   main wiring (theme/title)
+
+---
+
+## 004 — Session 4 (09/09/2026) · κλειστό
+- **Αρχείο:** `oldsessions/oldsessions_004.md`
+- **Περίληψη:** Review fixes 7 σημείων (dead code, overlay, dimensions,
+  helpers test, DESIGN sync), ενοποίηση icons 64/80→80

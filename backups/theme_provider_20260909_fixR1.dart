@@ -18,7 +18,8 @@ import 'package:flutter/material.dart';
 /// για persistence μέχρι την υλοποίηση του SettingDao.
 class ThemeProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
-
+  StreamSubscription<ThemeMode>? _subscription;
+  
   // Stream controller για το theme mode (placeholder χωρίς SettingDao)
   final _controller = StreamController<ThemeMode>.broadcast();
   
@@ -53,6 +54,7 @@ class ThemeProvider extends ChangeNotifier {
   
   @override
   void dispose() {
+    _subscription?.cancel();
     _controller.close();
     super.dispose();
   }
