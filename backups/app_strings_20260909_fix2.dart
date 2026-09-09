@@ -1,0 +1,86 @@
+// core/strings/app_strings.dart
+/// SPO: Κεντρικός φάκελος μηνυμάτων εφαρμογής (Ελληνικά)
+/// ΚΑΝΕΝΑ string δεν εμφανίζεται inline σε screens/widgets.
+/// Κάθε widget κάνει import το AppStrings και διαβάζει το αντίστοιχο field.
+/// l10n: προαιρετικά, το SPoT παραμένει σωστό και χωρίς αυτό.
+class AppStrings {
+  AppStrings._();
+  
+  // --- Screen Titles ---
+  static const String homeTitle = 'Αρχική';
+  static const String receiptsTitle = 'Αποδείξεις';
+  static const String addReceiptTitle = 'Νέα Απόδειξη';
+  static const String editReceiptTitle = 'Επεξεργασία Απόδειξης';
+  static const String categoriesTitle = 'Κατηγορίες';
+  static const String suppliersTitle = 'Προμηθευτές';
+  static const String itemsTitle = 'Είδη';
+  static const String budgetsTitle = 'Budgets';
+  static const String reportsTitle = 'Αναφορές';
+  static const String settingsTitle = 'Ρυθμίσεις';
+  
+  // --- Validation Messages ---
+  static const String requiredField = 'Υποχρεωτικό πεδίο';
+  static const String invalidNumber = 'Μη έγκυρος αριθμός';
+  static const String invalidVatNumber = 'Μη έγκυρος ΑΦΜ';
+  static const String invalidIban = 'Μη έγκυρος IBAN';
+  static const String invalidEmail = 'Μη έγκυρο email';
+  static const String invalidPhone = 'Μη έγκυρο τηλέφωνο';
+  static const String invalidDate = 'Μη έγκυρη ημερομηνία';
+  static const String invalidTime = 'Μη έγκυρη ώρα';
+  static const String priceMustBePositive = 'Η τιμή πρέπει να είναι θετική';
+  static const String quantityMustBePositive = 'Η ποσότητα πρέπει να είναι θετική';
+  static const String quantityExceedsStock = 'Η ποσότητα υπερβαίνει το απόθεμα';
+  static const String categoryRequired = 'Επιλέξτε κατηγορία';
+  static const String supplierRequired = 'Επιλέξτε προμηθευτή';
+  static const String receiptDateRequired = 'Επιλέξτε ημερομηνία';
+  
+  // --- Button Labels ---
+  static const String save = 'Αποθήκευση';
+  static const String cancel = 'Ακύρωση';
+  static const String delete = 'Διαγραφή';
+  static const String edit = 'Επεξεργασία';
+  static const String add = 'Προσθήκη';
+  static const String confirm = 'Επιβεβαίωση';
+  static const String back = 'Πίσω';
+  static const String next = 'Επόμενο';
+  static const String search = 'Αναζήτηση';
+  static const String filter = 'Φίλτρο';
+  static const String clear = 'Καθαρισμός';
+  
+  // --- Dialog Messages ---
+  static const String deleteConfirmTitle = 'Διαγραφή;';
+  static const String deleteConfirmMessage = 'Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το στοιχείο; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.';
+  static const String unsavedChangesTitle = 'Μη αποθηκευμένες αλλαγές';
+  static const String unsavedChangesMessage = 'Υπάρχουν μη αποθηκευμένες αλλαγές. Θέλετε να τις απορρίψετε;';
+  
+  // --- Success Messages ---
+  static const String savedSuccessfully = 'Αποθηκεύτηκε επιτυχώς';
+  static const String deletedSuccessfully = 'Διαγράφηκε επιτυχώς';
+  static const String receiptAdded = 'Η απόδειξη καταχωρήθηκε επιτυχώς';
+  static const String receiptUpdated = 'Η απόδειξη ενημερώθηκε επιτυχώς';
+  static const String receiptDeleted = 'Η απόδειξη διαγράφηκε επιτυχώς';
+  
+  // --- Error Messages ---
+  static const String genericError = 'Κάτι πήγε στραβά. Προσπαθήστε ξανά.';
+  static const String databaseError = 'Σφάλμα βάσης δεδομένων';
+  static const String notFound = 'Δεν βρέθηκε';
+  static const String noReceipts = 'Δεν υπάρχουν αποδείξεις';
+  static const String noItems = 'Δεν υπάρχουν είδη';
+  static const String noCategories = 'Δεν υπάρχουν κατηγορίες';
+  static const String noSuppliers = 'Δεν υπάρχουν προμηθευτές';
+  static const String noBudgets = 'Δεν υπάρχουν budgets';
+  static const String noDataForReport = 'Δεν υπάρχουν δεδομένα για αυτή την περίοδο';
+  
+  // --- Settings Labels ---
+  static const String darkMode = 'Σκοτενό θέμα';
+  static const String lightMode = 'Φωτεινό θέμα';
+  static const String systemDefault = 'Προεπιλογή συστήματος';
+  static const String currency = 'Νόμισμα';
+  static const String language = 'Γλώσσα';
+  
+  // --- Units ---
+  static const String piece = 'τεμ';
+  static const String kg = 'κιλά';
+  static const String liter = 'λίτρα';
+  static const String meter = 'μέτρα';
+}

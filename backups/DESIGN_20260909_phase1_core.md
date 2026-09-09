@@ -415,7 +415,7 @@ class AppConstants {
   AppConstants._();
   
   // App Info
-  static const String appName = 'Τιμές';
+  static const String appName = 'ExpenseTracker';
   static const String appVersion = '1.0.0';
   
   // Database
@@ -511,7 +511,7 @@ class AppStrings {
   static const String categoriesTitle = 'Κατηγορίες';
   static const String suppliersTitle = 'Προμηθευτές';
   static const String itemsTitle = 'Είδη';
-  static const String budgetsTitle = 'Προϋπολογισμοί';
+  static const String budgetsTitle = 'Budgets';
   static const String reportsTitle = 'Αναφορές';
   static const String settingsTitle = 'Ρυθμίσεις';
   
@@ -569,7 +569,7 @@ class AppStrings {
   static const String noDataForReport = 'Δεν υπάρχουν δεδομένα για αυτή την περίοδο';
   
   // --- Settings Labels ---
-  static const String darkMode = 'Σκοτεινό θέμα';
+  static const String darkMode = 'Σκοτενό θέμα';
   static const String lightMode = 'Φωτεινό θέμα';
   static const String systemDefault = 'Προεπιλογή συστήματος';
   static const String currency = 'Νόμισμα';
@@ -588,6 +588,7 @@ class AppStrings {
 ```dart
 // core/debug/debug_config.dart
 import 'package:flutter/foundation.dart';
+import 'app_logger.dart';
 
 /// SPO: Debug flags - Ρυθμίζονται ΜΟΝΟ εδώ
 class DebugConfig {
@@ -616,7 +617,7 @@ class DebugConfig {
 import 'package:flutter/foundation.dart';
 import 'debug_config.dart';
 
-/// SPoT: Κεντρικός logger — το DebugConfig ελέγχει αν τυπώνεται
+/// SPO: Κεντρικός logger - debug_config контролλεί αν τυπώνεται
 /// 
 /// Usage:
 ///   AppLogger.db('SELECT FROM receipts WHERE...');
@@ -1184,7 +1185,7 @@ class AppTheme {
       backgroundColor: AppColors.surfaceLight,
       foregroundColor: AppColors.textPrimaryLight,
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       elevation: 1,
       color: AppColors.cardLight,
       shape: RoundedRectangleBorder(
@@ -1222,7 +1223,7 @@ class AppTheme {
       backgroundColor: AppColors.surfaceDark,
       foregroundColor: AppColors.textPrimaryDark,
     ),
-    cardTheme: CardThemeData(
+    cardTheme: CardTheme(
       elevation: 1,
       color: AppColors.cardDark,
       shape: RoundedRectangleBorder(
@@ -1311,7 +1312,7 @@ class ThemeProvider extends ChangeNotifier {
 /// SPO: Dart extensions - reusable extensions
 extension StringExtensions on String {
   /// Capitalize first letter
-  String get capitalize => isEmpty ? this : '${this[0].toUpperCase()}${substring(1)}';
+  String get capitalize => '${this[0].toUpperCase()}${substring(1)}';
   
   /// Check if string is numeric
   bool get isNumeric => double.tryParse(this) != null;

@@ -2,7 +2,11 @@
 
 > Κλειστό session. Αναδιάρθρωση του oldsessions + διόρθωση CI warning +
 > προσθήκη μελλοντικών αναγκών στο DESIGN.md (UUID, seed-versioning,
-> backup/restore, timezone/SQLCipher policy, migration tests, l10n-readiness).
+> backup/restore, timezone/SQLCipher policy, migration tests, l10n-readiness)
+> + WAL-safe backup/restore + enforced UTC.
+>
+> **Status:** ΟΛΟΚΛΗΡΩΘΗΚΕ. Commit `918c139`, CI run #34349131109 = success.
+> DESIGN.md έτοιμο για Phase 1.
 
 ## Part A — Δομή oldsessions
 - `oldsessions.md` έγινε **ευρετήριο** (index) με ένα κεφάλαιο ανά session.
