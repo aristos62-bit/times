@@ -44,15 +44,9 @@
 
 ---
 
-## 006 — Phase 2 (10/09/2026, Sessions 6–7) · σε εξέλιξη
+## 006 — Session 6 (10/09/2026) · κλειστό
 - **Αρχείο:** `oldsessions/oldsessions_006.md`
-- **Περίληψη:** Phase 2 σε ΕΝΑ κεφάλαιο (κανόνας: νέο μόνο αν ξεπεραστούν οι 500
-  γραμμές). Step 1: 11 Drift tables + AppDatabase (seed V1, beforeOpen) + 3 test
-  files (137). Step 2: hardening C1–C6 (seed_version σε batch, insertOrReplace,
-  wasCreated guard, schemaVersion→AppConstants, perf logging), tests 141,
-  DESIGN sync D1–D3 (διαγραφή DatabaseConstants + νεκρού αρχείου), SPoT
-  `resolveDatabaseFile()` + test (145/145, analyze clean). Step 3 (Part E): 6 DAOs
-  + barrel (Setting/Category/Supplier/Item/Tag/Budget) + codegen (app_database.g.dart
-  αμετάβλητο) + ευρήματα drift 2.34.4 (DoUpdate target, isSmallerOrEqual, custom
-  update, CASE WHEN στο spent, .toLocal()) + ~55 DAO tests → 200/200, analyze clean,
-  DESIGN.md & oldsessions sync, ReceiptDao → Phase 3
+- **Περίληψη:** Phase 2 Step 1 — 11 Drift tables + AppDatabase (seed V1,
+  beforeOpen) + 3 test files (22 νέα, σύνολο 137), 4 αποκλίσεις Drift
+  codegen (inline converter, χωρίς withDefault, converter DateTime↔DateTime,
+  beforeOpen), πλήρης επανέλεγχος + DESIGN.md sync

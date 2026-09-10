@@ -1,0 +1,205 @@
+# 006 — Phase 2 (10/09/2026, Sessions 6–7) — Drift + AppDatabase + hardening
+
+> Κλειστό session. Υλοποίηση 11 Drift tables + `UtcDateTimeConverter` +
+> `AppDatabase` (seed V1, beforeOpen), 3 νέα test files (22 tests),
+> ανακάλυψη + διόρθωση 4 αποκλίσεων από τον Drift codegen, πλήρης
+> επανέλεγχος και συγχρονισμός DESIGN.md.
+>
+> **Status:** ΟΛΟΚΛΗΡΩΘΗΚΕ. `flutter analyze: No issues found`,
+> `flutter test: 137/137` (115 παλιά + 22 νέα).
+
+## Part A — Υλοποίηση (14 αρχεία lib + 3 test files)
+- Tables (11 + barrel + converter): `categories, suppliers, items, receipts,
+  receipt_items, payments, price_history, budgets, tags, receipt_tags,
+  user_settings`, `tables.dart`, `utc_date_time_converter.dart`.
+- `app_database.dart`: `@DriftDatabase` με `storeDateTimeAsText: true`,
+  `schemaVersion 1`, `AppDatabase.test()` in-memory ctor, `beforeOpen`
+  (PRAGMA foreign_keys ON + `_applyDataMigrations`), seed V1
+  (8 κατηγορίες + 4 settings + seed_version, ρητά timestamps).
+- Build runner: `app_database.g.dart` (13.344 γραμμές, 11/11 tables στο
+  `allSchemaEntities`). Non-critical warning: duplicate orderings/filters
+  για `itemsRefs` στο Suppliers (2 FKs από Items) — αποδεκτό, custom DAOs.
+- Tests (22): `utc_date_time_converter_test` (6 — UTC↔local, roundtrip, const),
+  `tables_test` (6 — schema μέσω AppDatabase, unique keys, composite PK),
+  `app_database_test` (10 — schemaVersion, seed, PRAGMA, local DateTime).
+
+## Part B — 4 αποκλίσεις Drift codegen (σημαντικό — καταγράφηκαν στο DESIGN.md)
+1. **Helper `utcDateTime()` ΑΠΟΡΡΙΦΘΗΚΕ** από τον codegen
+   ("type 'Null' is not a subtype of type 'MethodInvocation'") → όλες οι
+   στήλες ημερομηνιών INLINE: `dateTime().map(const UtcDateTimeConverter())()`.
+2. **`withDefault(currentDateAndTime)` ασύμβατο** με mapped DateTime columns
+   (warning "Parameter must accept DateTime") → αφαιρέθηκε παντού· τα
+   createdAt/updatedAt μπαίνουν ρητά από app/DAO/seed.
+3. **Converter `TypeConverter<DateTime, DateTime>`**, όχι `<DateTime, String>` —
+   το `storeDateTimeAsText: true` διαχειρίζεται ήδη το DateTime↔String· ο
+   converter κάνει ΜΟΝΟ UTC↔local.
+4. **`afterOpen` ΔΕΝ υπάρχει** σε drift 2.14 → `beforeOpen`.
+- Docs-only παρατήρηση (ΔΕΝ άλλαξε, θέλει έγκριση): `Categories.unique(name,
+  parentId)` με NULL parentId δεν μπλοκάρει διπλά root ονόματα (SQLite
+  NULL semantics)· `ReceiptItems` χωρίς unique `(receiptId, itemId)`.
+
+## Part C — Επανέλεγχος + DESIGN.md sync
+- Επανέλεγχος αρχείο-προς-αρχείο: όλα τα tables, converter, barrel, tests,
+  generated `.g.dart` σωστά· grep επιβεβαίωσε 0 υπολείμματα
+  (`utcDateTime`, `withDefault(currentDateAndTime)`, `afterOpen`) στο `lib/`.
+- DESIGN.md (§4.1–§4.4): beforeOpen+PRAGMA, seed με timestamps+`Value(...)`,
+  νέος converter, inline columns + imports σε όλα τα table blocks,
+  `_setSeedVersion` με updatedAt. Backup: `backups/DESIGN_20260910_123321.md`.
+- Encoding DESIGN.md: UTF-8 χωρίς BOM ✓.
+
+## Part D — Phase 2 Step 2: AppDatabase hardening (init / migrations / seed)
+
+> Το κεφάλαιο αυτό συγκεντρώνει ΟΛΗ τη Phase 2 (κανόνας: νέο κεφάλαιο μόνο αν
+> ξεπεραστούν οι 500 γραμμές). Βήματα που έτρεξαν (πάντα με έγκριση + backups):
+> **Α.** C1–C6 στο `app_database.dart` · **Β.** tests DB · **Γ.** DESIGN.md D1–D3 ·
+> **Δ.** SPoT micropath `resolveDatabaseFile()`.
+
+### Βήμα Α — app_database.dart (C1–C6)
+- **C5** `schemaVersion => AppConstants.dbVersion` (αντί hardcoded `1`).
+- **C4** `beforeOpen`: data migrations ΜΟΝΟ σε υπάρχουσα βάση
+  (`if (!details.wasCreated)`).
+- **C1** version-stamp `seed_version` ΜΕΣΑ στο seed batch (ένα implicit
+  transaction → πλήρης ατομικότητα). Αντικατέστησε το αρχικό σχέδιο `transaction()`.
+  `_setSeedVersion` διαγράφηκε.
+- **C2** settings batch `mode: InsertMode.insertOrReplace` (idempotent,
+  λόγω `unique(key)` στο user_settings).
+- **C3** `_applyDataMigrations` τρέχει με guard έναντι `currentSeedVersion`.
+- **C6** `_openConnection`: Stopwatch + `AppLogger.performance` (πάνω από
+  `slowQueryThreshold`) + try/catch `AppLogger.error` + rethrow.
+- Fix `await_only_futures`: `NativeDatabase.createInBackground` επιστρέφει
+  ΣΥΓΧΡΟΝΟ `QueryExecutor` (drift/native.dart) — όχι Future.
+- Αρχείο: **226 γραμμές** (<500). Backup `backups/app_database_20260910_130716.dart`.
+
+### Βήμα Β — tests (app_database_test)
+- Αντικατάσταση «schemaVersion είναι 1» → «ταυτίζεται με AppConstants.dbVersion».
+- Νέα: seed_version stamp = 1 · FK violation ρίχνει `SqliteException`
+  (μέσω `drift/native.dart`, χωρίς νέο dependency) · createdAt αποθηκεύεται
+  TEXT (`typeof`) · `close()` idempotent.
+  - Η ιδέα «query μετά close → StateError» ΚΑΤΑΡΡΙΦΘΗΚΕ εμπειρικά: το memory
+    close δεν μπλοκάρει επόμενα queries. drft warning «multiple AppDatabase
+    instances» στο test — καλοήθες.
+- Σύνολο: **141/141** pass. Backup `backups/app_database_test_20260910_131148.dart`.
+
+### Βήμα Γ — DESIGN.md sync (D1–D3)
+- **D1** διαγράφηκε §3.2 + νεκρό `core/constants/database_constants.dart`
+  (δεν είχε ποτέ `dbName` → δεν compile-αζε). Όλες οι αναφορές →
+  `AppConstants.dbName`. Οι 7 `updatedAt: Value(...)` που έμειναν είναι
+  ΣΩΣΤΑ update-write Companions (όχι inserts).
+- **D2** μόνο 1 broken snippet (SettingDao.setSetting) → `updatedAt: DateTime.now()`.
+- **D3** §4.1 snippet πλήρως συγχρονίστηκε με τον κώδικα.
+- Backups: `backups/DESIGN_20260910_131606.md`, `backups/database_constants_20260910_131606.dart`.
+
+### Βήμα Δ — SPoT micropath (επιλογή α)
+- Νέο `core/database/database_file.dart` — `resolveDatabaseFile()`: ΜΟΝΟ σημείο
+  άλφα για τη διαδρομή του DB. Χωρίς cyclic dependency (app_database &
+  BackupService εισάγουν μόνο αυτό).
+- `_openConnection` + §4.1/§4.5 DESIGN.md τη χρησιμοποιούν.
+- Test `database_file_test.dart` (4) με fake `PathProviderPlatform`
+  (ΧΡΕΙΑΖΕΤΑΙ `MockPlatformInterfaceMixin` — το plugin_platform_interface
+  απορρίπτει σκέτο `implements`).
+- dev_dependencies ΠροΣΤΕΘΗΚΑΝ: `path_provider_platform_interface ^2.1.3`,
+  `plugin_platform_interface ^2.1.8`.
+- Backups: `backups/app_database_20260910_135000.dart`, `backups/DESIGN_20260910_135000.md`,
+  `backups/pubspec_20260910_135030.yaml`.
+
+### Αποτέλεσμα Phase 2 Step 2
+- `flutter analyze`: 0 issues · `flutter test`: **145/145**.
+- DESIGN.md ↔ κώδικας πλήρως συγχρονισμένα.
+
+## Part E — Phase 2 Step 3: Drift DAOs (6 DAOs + barrel + tests + DESIGN sync)
+
+> Ο χρήστης ενέκρινε τις 5 εκκρεμείς αποφάσεις και ζήτησε ρητά: «όταν
+> τελειώσεις Βήμα 3, ενημέρωσε όλα τα εμπλεκόμενα .md — τι άλλαξε και τι
+> μεταφέρεται για αργότερα».
+
+### Βήμα Α — 6 DAOs + barrel (lib/core/database/daos/)
+- **SettingDao** (`setting_dao.dart`, 76 γρ.): `getSetting/setSetting/watchSetting`
+  (upsert insertOrReplace), theme helpers `getThemeMode/setThemeMode/watchThemeMode`,
+  `_parseThemeMode` ('0'=system,'1'=light,'2'=dark, άκυρο→null).
+- **CategoryDao** (`category_dao.dart`, 102 γρ.): `watchAllCategories`,
+  `getCategoryById`, `watchCategoryTree`, `watchCategoryWithChildrenRecursively`
+  (recursive CTE με explicit mapping + `.toLocal()`), `createCategory`,
+  `updateCategory`, `softDeleteCategory → Future<bool>` (false αν έχει ενεργά
+   παιδιά — εγκεκριμένη απόκλιση, όχι throw).
+- **SupplierDao** (`supplier_dao.dart`, 64 γρ.): `watchAllSuppliers`,
+  `searchSuppliersByName` (case-insensitive LIKE), `getSupplierById`,
+  `create/update/softDelete`, `getReceiptCount` (customSelect COUNT readsFrom receipts).
+- **ItemDao** (`item_dao.dart`, 96 γρ.): `watchAllItems/ByCategory/ByBarcode`,
+  `searchItemsByName`, `watchLowStock` (reorderLevel>0 AND currentStock<=reorderLevel,
+  column-to-column `isSmallerOrEqual`), `getItemById`, `create/update/softDelete`,
+  `increaseStock` — atomic `ItemsCompanion.custom(currentStock: items.currentStock +
+  Variable<double>(qty))` μέσω `update().write()`.
+- **TagDao** (`tag_dao.dart`, 88 γρ.): `watchAllTags`, `searchTagsByName`,
+  `getTagById`, **`createTag → Future<Tag?>`** (insertReturningOrNull +
+  insertOrIgnore + ρητό createdAt — εγκεκριμένη απόκλιση), `updateTag`,
+  `deleteTag` (transaction: junction→tag), `watchTagsByReceiptId` (join +
+  `readTable(tags)`), `addTagToReceipt/removeTagFromReceipt/removeAllTagsFromReceipt`
+  (idempotent insertOrIgnore).
+- **BudgetDao** (`budget_dao.dart`, 273 γρ.): `_monthBounds` (string 'YYYY-MM-01',
+  Δεκ→επόμενο έτος), shared `_mapBudgetRow` (`.toLocal()`), `watchBudget`
+  (customSelect + watchSingleOrNull, GROUP BY), `watchBudgetsForMonth`,
+  `upsertBudget`, `watchDashboardSpending` (TOP 8, LEFT JOINs). Models
+  `BudgetWithSpent` (hasBudget/percentage/isOverBudget/remaining) + `CategorySpending`.
+  Slow query logging: Stopwatch + `AppLogger.performance` > `DebugConfig.slowQueryThreshold`.
+- **daos.dart** barrel (`export 'x_dao.dart';` ×6).
+- Όλοι: `@DriftAccessor` + `part 'x.g.dart'` + `with _$XMixin` + `XDao(super.db);`
+  (<500 γραμμές το καθένα).
+
+### Βήμα Β — Codegen + κρίσιμα ευρήματα (drift 2.34.4)
+- `dart run build_runner build --delete-conflicting-outputs` (flag deprecated/
+  ignored → προειδοποίηση μόνο): 40 outputs, 6 νέα `*_dao.g.dart`.
+  **`app_database.g.dart` ΑΜΕΤΑΒΛΗΤΟ** (`git diff` κενό). Τα 6 warning δεν είναι δικά μας.
+- **`insertOnConflictUpdate` στοχεύει ΜΟΝΟ το PK** (drift insert.dart) — στο budgets
+  το UNIQUE είναι (category_id, month, year) → αντικαταστάθηκε με ρητό
+  `onConflict: DoUpdate(...(amount+notes+updatedAt, createdAt ΜΕΝΕΙ), target: [...])`.
+- **Column-to-column στο filter**: `isSmallerOrEqual(Expression)` (ΔΕΝ υπάρχει
+  `isSmallerOrEqualValue(column)` ούτε `...Exp`). Για τιμές: `...Value(T)`.
+- **`update().write()` δέχεται RawValuesInsertable** από `Companion.custom()`
+  (update.dart: write→toColumns(true)→writeInsertable) — επιτρέπει την atomic
+  `increaseStock`.
+- **ΔΕΝ υπάρχει `Variable.withDouble`** ούτε **`Expression.constant`** →
+  πάντα `Variable<T>(...)` / `null` για προαιρετικές custom τιμές.
+- **Σφάλμα στο DESIGN snippet (ας μην αντιγραφεί)**: στο watchBudget/watchBudgetsForMonth
+  το φίλτρο ημερομηνίας ήταν ΜΟΝΟ στο LEFT JOIN receipts → τα receipt_items εκτός
+  μήνα ΑΘΡΟΙΖΟΝΤΑΝ (σπιτική δοκιμή: 2 receipts εκτός μήνα έδιναν spent 2000).
+  Διορθώθηκε σε `SUM(CASE WHEN r.id IS NOT NULL THEN ri.total_with_vat ELSE 0 END)`.
+- Παντού `row.read<DateTime>() .toLocal()` (stored 'Z' → UTC).
+- `read<bool>` OK σε SQLite 0/1 · `read<double>` OK σε COALESCE(int).
+- Tests: `import 'package:drift/drift.dart' hide isNull, isNotNull;` (σύγκρουση
+  null/isNull με matcher του flutter_test) + `drift/native.dart` για SqliteException.
+- Budget tests: `receipts.receipt_number` UNIQUE → helper `receiptCounter`·
+  ρεαλιστικές ημερομηνίες (4/25, 5/10, 6/15) για να μην κόβουν τα UTC+3 της Αθήνας.
+- Analyzer: `use_super_parameters` → όλοι `super.db`.
+
+### Βήμα Γ — Tests (~55 DAO tests, 6 αρχεία)
+- `test/unit/core/database/daos/`: setting (8), category (9), supplier (9),
+  item (12), tag (9), budget (8). Όλα `AppDatabase.test()` + seed V1.
+- Δοκιμασμένα edge cases: upsert διατηρεί createdAt · Δεκέμβριος→όριο επόμενου
+  έτους · duplicate tag→null · softDelete με ενεργά παιδιά→false · duplicate item
+  (name, categoryId)→SqliteException · increaseStock atomic · getReceiptCount.
+- **Τελικό: `flutter test` = 200/200** (145 παλιά + 55 νέα), `flutter analyze` =
+  No issues found.
+
+### Βήμα Δ — Ενημέρωση .md (ζητήθηκε ρητά)
+- **DESIGN.md**: νέος πίνακας DAOs στην §4.3 + barrel + αποκλίσεις codegen·
+  snippets budget/item/category/supplier/tag/setting συγχρονίστηκαν με τον
+  verified κώδικα· §2 δέντρα (lib + test)·
+  §9 Phase 2 Step 3: 6 DAOs ✓ + **ReceiptDao → Phase 3** (με καταγραφή των 3
+  σφαλμάτων που θα διορθωθούν τότε).
+- **oldsessions_006.md**: αυτό το Part E.
+- **oldsessions.md**: index ενημερώθηκε.
+- Backups: `backups/DESIGN_20260910_142350.md`, `backups/oldsessions_006_20260910_142350.md`,
+  `backups/oldsessions_20260910_142359.md`.
+
+### Μεταφέρεται για αργότερα (Phase 3)
+- **ReceiptDao** (εξαρτάται από feature/receipt). Να διορθωθούν στο DESIGN §4.3 snippet:
+  (1) `Expression.constant()` → `Variable<T>(...)`, (2) `insertOnConflictUpdate`
+  → `DoUpdate(target:)` όπου χρειάζεται UNIQUE, (3) finish χωρίς timestamps →
+  `createdAt/updatedAt`.
+- `validators.dart` `ReceiptItemInput` placeholder έναντι §5.1.3.
+- Ελληνικό full-text search: `lower()` SQLite είναι ASCII-only.
+- Φάση 4: repositories, use cases, BLoC (SettingDao ready για ThemeProvider).
+
+## Επόμενα
+- Phase 3 — Receipt Feature (ReceiptDao + repository + use cases + UI).
+- Commit + push (εκκρεμεί έγκριση).
