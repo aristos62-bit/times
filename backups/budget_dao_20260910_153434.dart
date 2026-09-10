@@ -15,14 +15,13 @@ class BudgetDao extends DatabaseAccessor<AppDatabase> with _$BudgetDaoMixin {
   // ---------- Month boundaries (string-based, consistent with stored ISO) ----------
 
   ({String start, String end}) _monthBounds(int month, int year) {
-    // Τα όρια υπολογίζονται από το ΤΟΠΙΚΟ μεσονύχτι της 1ης του μήνα και
-    // μετατρέπονται σε UTC. Έτσι συγκρίνονται λεξικογραφικά ISO-string-προς-
-    // ISO-string με τα UTC strings που αποθηκεύει ο UtcDateTimeConverter.
-    // (Χωρίς αυτό, μια απόδειξη της 1ης το πρωί έπεφτε στον προηγούμενο μήνα.)
-    // Ο Dart DateTime constructor κάνει μόνος του roll-over για month=13
-    // (Δεκέμβριος → 1 Ιανουαρίου επόμενου έτους), άρα δεν χρειάζεται ειδικό case.
-    final start = DateTime(year, month, 1).toUtc().toIso8601String();
-    final end = DateTime(year, month + 1, 1).toUtc().toIso8601String();
+    final monthStr = month.toString().padLeft(2, '0');
+    final yearStr = year.toString();
+    final start = '$yearStr-$monthStr-01';
+    final endMonth = month == 12 ? 1 : month + 1;
+    final endYear = month == 12 ? year + 1 : year;
+    final end =
+        '$endYear-${endMonth.toString().padLeft(2, '0')}-01';
     return (start: start, end: end);
   }
 

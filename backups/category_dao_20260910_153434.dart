@@ -72,30 +72,9 @@ class CategoryDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
-  /// Δημιουργία κατηγορίας.
-  /// App-level έλεγχος duplicate: το SQLite UNIQUE (name, parentId) ΔΕΝ
-  /// μπλοκάρει δύο ρίζες (parentId=NULL) με ίδιο name, γιατί τα NULL
-  /// θεωρούνται διακεκριμένα. Ο έλεγχος καλύπτει και την περίπτωση parentId NULL.
-  /// Πετάει `CategoryDuplicateNameException` αν υπάρχει ήδη ίδιο name στο ίδιο επίπεδο.
-  Future<int> createCategory(CategoriesCompanion companion) async {
-    final name = companion.name.value;
-    final parentId =
-        companion.parentId.present ? companion.parentId.value : null;
-
-    final existing = await (select(categories)
-          ..where((c) =>
-              c.name.equals(name) &
-              (parentId == null
-                  ? c.parentId.isNull()
-                  : c.parentId.equals(parentId))))
-        .get();
-
-    if (existing.isNotEmpty) {
-      throw CategoryDuplicateNameException(name);
-    }
-
-    return into(categories).insert(companion);
-  }
+  /// Δημιουργία κατηγορίας
+  Future<int> createCategory(CategoriesCompanion companion) =>
+      into(categories).insert(companion);
 
   /// Ενημέρωση κατηγορίας
   Future<bool> updateCategory(CategoriesCompanion companion) =>
@@ -120,16 +99,4 @@ class CategoryDao extends DatabaseAccessor<AppDatabase>
     );
     return true;
   }
-}
-
-/// SPO: Exception όταν υπάρχει ήδη κατηγορία με το ίδιο όνομα στο ίδιο επίπεδο
-/// (ρίζα ή ίδιος parentId). Το SQLite UNIQUE (name, parentId) δεν μπλοκάρει τα
-/// NULL parentId — ο έλεγχος γίνεται app-level στο `createCategory`.
-class CategoryDuplicateNameException implements Exception {
-  final String name;
-
-  const CategoryDuplicateNameException(this.name);
-
-  @override
-  String toString() => 'CategoryDuplicateNameException: $name';
 }

@@ -25,28 +25,17 @@ class SettingDao extends DatabaseAccessor<AppDatabase>
     return row?.value;
   }
 
-  /// Εγγραφή ρύθμισης (upsert με βάση το UNIQUE key).
-  /// DoUpdate (όχι insertOrReplace): στη σύγκρουση κάνει UPDATE στο ίδιο id
-  /// (insertOrReplace θα έκανε DELETE+INSERT → νέο id κάθε φορά).
+  /// Εγγραφή ρύθμισης (insertOrReplace)
   Future<void> setSetting(String key, String value,
       {String type = 'string'}) async {
-    final now = DateTime.now();
     await into(userSettings).insert(
       UserSettingsCompanion.insert(
         key: key,
         value: Value(value),
         type: Value(type),
-        updatedAt: now,
+        updatedAt: DateTime.now(),
       ),
-      onConflict: DoUpdate(
-        (old) => UserSettingsCompanion(
-          value: Value(value),
-          type: Value(type),
-          // Το id μένει ίδιο, μόνο updatedAt αλλάζει.
-          updatedAt: Value(now),
-        ),
-        target: [userSettings.key],
-      ),
+      mode: InsertMode.insertOrReplace,
     );
   }
 

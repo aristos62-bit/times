@@ -77,8 +77,6 @@ class ItemDao extends DatabaseAccessor<AppDatabase> with _$ItemDaoMixin {
 
   /// Αύξηση stock (π.χ. κατά καταχώρηση απόδειξης).
   /// Atomic: `currentStock = currentStock + quantity`.
-  /// Σημ.: στο `ItemsCompanion.custom` τα `Variable<DateTime>` παρακάμπτουν τον
-  /// UtcDateTimeConverter → πρέπει ρητά `.toUtc()` για ομοιόμορφη αποθήκευση UTC.
   Future<void> increaseStock(
     int itemId,
     double quantity, {
@@ -91,7 +89,7 @@ class ItemDao extends DatabaseAccessor<AppDatabase> with _$ItemDaoMixin {
         lastPrice: unitPrice == null ? null : Variable<double>(unitPrice),
         lastSupplierId:
             supplierId == null ? null : Variable<int>(supplierId),
-        updatedAt: Variable<DateTime>(DateTime.now().toUtc()),
+        updatedAt: Variable<DateTime>(DateTime.now()),
       ),
     );
   }

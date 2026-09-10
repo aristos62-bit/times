@@ -155,5 +155,70 @@ void main() {
       expect(ids, contains(lvl1));
       expect(ids, contains(lvl2));
     });
+
+    test('createCategory: duplicate ρίζα (parentId NULL) με ίδιο name → exception',
+        () async {
+      final seeded = await db.select(db.categories).get();
+      final rootName = seeded.first.name;
+
+      expect(
+        () => dao.createCategory(CategoriesCompanion.insert(
+          name: rootName,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        )),
+        throwsA(isA<CategoryDuplicateNameException>()),
+      );
+    });
+
+    test('createCategory: duplicate υποκατηγορία ίδιου parent → exception',
+        () async {
+      final seeded = await db.select(db.categories).get();
+      final parent = seeded.first;
+
+      final id = await dao.createCategory(CategoriesCompanion.insert(
+        name: 'Διπλή Υποκατηγορία',
+        parentId: Value(parent.id),
+        level: Value(parent.level + 1),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ));
+      expect(id, greaterThan(0));
+
+      expect(
+        () => dao.createCategory(CategoriesCompanion.insert(
+          name: 'Διπλή Υποκατηγορία',
+          parentId: Value(parent.id),
+          level: Value(parent.level + 1),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        )),
+        throwsA(isA<CategoryDuplicateNameException>()),
+      );
+    });
+
+    test('createCategory: ίδιο name σε διαφορετικό parent → επιτρέπεται',
+        () async {
+      final seeded = await db.select(db.categories).get();
+      final parentA = seeded[0];
+      final parentB = seeded[1];
+
+      final idA = await dao.createCategory(CategoriesCompanion.insert(
+        name: 'Κοινό Όνομα',
+        parentId: Value(parentA.id),
+        level: Value(parentA.level + 1),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ));
+      final idB = await dao.createCategory(CategoriesCompanion.insert(
+        name: 'Κοινό Όνομα',
+        parentId: Value(parentB.id),
+        level: Value(parentB.level + 1),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ));
+
+      expect(idA, isNot(idB));
+    });
   });
 }
