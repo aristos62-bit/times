@@ -65,9 +65,4 @@
   datasources/DI — drift DataClasses = SPoT entities, ReceiptRepository → Phase 3)
   + 30 repo tests + **ThemeProvider fix** (SettingDao-backed persistence + reactive
   watchThemeMode, DI constructor, stale WIP αφαιρέθηκε) + DESIGN.md (§2/§5.2/§8.1/§9)
-   sync → **236/236 tests, analyze clean**
-   **Part I (Step 4.2, 10/09):** DI Container — `injection/dependency_injection.dart`
-   (manual service locator, ~103 γρ., χωρίς get_it, guard: double configure →
-   no-op, get πριν configure → StateError, reset() κλείνει DB) + 9 tests
-   (configure/get/identity/override/reset/guard/duplicate) → **245/245 tests,
-   analyze clean**
+  sync → **236/236 tests, analyze clean**
