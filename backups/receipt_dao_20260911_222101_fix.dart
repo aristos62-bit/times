@@ -2,7 +2,6 @@
 import 'package:drift/drift.dart';
 
 import '../../../features/receipt/domain/models/receipt_input.dart';
-import '../../constants/app_constants.dart';
 import '../../debug/app_logger.dart';
 import '../../debug/debug_config.dart';
 import '../../utils/extensions.dart';
@@ -26,8 +25,8 @@ part 'receipt_dao.g.dart';
 ///  - Totals + paymentStatus: ενιαίο write `_refreshFinancials` (αντί των
 ///    δύο βημάτων `_updateReceiptTotals` + `_updatePaymentStatus` του §4.3).
 ///  - Line math: Dart record αντί της κλάσης `ReceiptItemData` (§4.3).
-///  - Status literals: `AppConstants.paymentStatus*` (SPoT — συνεπή με το
-///    table default, χωρίς magic strings).
+///  - Status literals: 'pending'/'partial'/'paid' (συνεπή με το table default,
+///    χωρίς νέες constants).
 ///  - Paid-status: `DoubleExtensions.approximates` (ε=0.001) — ανοχή floating
 ///    errors αντί strict `remaining <= 0`.
 ///  - Κενά items: επιτρέπονται (block μόνο στο `Validators.validateReceipt`).
@@ -372,13 +371,10 @@ class ReceiptDao extends DatabaseAccessor<AppDatabase> with _$ReceiptDaoMixin {
 
   /// Κατάσταση πληρωμής από τρέχον υπόλοιπο + πληρωμένο ποσό.
   /// Δ4: approximates (ε=0.001) + ρητό <0 για overpaid → πάντα 'paid'.
-  /// Οι τιμές έρχονται από `AppConstants.paymentStatus*` (SPoT).
   String _paymentStatus(double remaining, double paid) {
-    if (remaining < 0 || remaining.approximates(0)) {
-      return AppConstants.paymentStatusPaid;
-    }
-    if (paid > 0) return AppConstants.paymentStatusPartial;
-    return AppConstants.paymentStatusPending;
+    if (remaining < 0 || remaining.approximates(0)) return 'paid';
+    if (paid > 0) return 'partial';
+    return 'pending';
   }
 }
 

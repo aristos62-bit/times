@@ -3163,7 +3163,7 @@ class $ReceiptsTable extends Receipts with TableInfo<$ReceiptsTable, Receipt> {
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: false,
-    defaultValue: const Constant('pending'),
+    defaultValue: const Constant(AppConstants.paymentStatusPending),
   );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override

@@ -461,6 +461,21 @@ extension ReceiptDaoAggregates on ReceiptDao {
 > `screens/` (list/entry/detail) + 3 edits (AppStrings +22 strings·
 > `ReceiptMessageShown` event· bloc fix `message: () => state.message` +
 > `_onMessageShown`) + 46 widget/bloc tests → σύνολο **388/388, analyze clean**.
+>
+> **✅ Phase 3 Fixes (11/09/2026) — Wiring + SPoT:**
+> - **Fix-A (SPoT «paymentStatus»):** τα magic strings `'pending'/'partial'/'paid'`
+>   αντικαταστάθηκαν παντού με `AppConstants.paymentStatusPending/Partial/Paid`
+>   (tables/receipts, daos/receipt_dao, widgets/receipt_card, bloc docstring).
+>   Εξαίρεση: τα integration tests ελέγχουν τις αποθηκευμένες DB τιμές.
+> - **Fix-B (Wiring — minimal):** το template `main.dart` αντικαταστάθηκε από
+>   `main.dart` → `lib/app.dart` (`ExpenseTrackerApp`, constructor injection) →
+>   `ReceiptsHomeScreen` + `ReceiptListScreen`. Ο `ReceiptsHomeScreen` κάνει το
+>   ΑΡΧΙΚΟ `ReceiptsLoadRequested` (το list-screen είναι Stateless) και είναι ο
+>   μόνος τόπος `Navigator.push`. Το `BlocProvider<ReceiptBloc>` τοποθετείται
+>   ΠΑΝΩ από το MaterialApp ώστε τα pushed routes να βλέπουν τον bloc.
+>   Πλήρης responsive navigation → Phase 9.
+> - **Διόρθωση ακούσιας απώλειας** του `uuid` column του `Receipts` table
+>   (επαναφορά + build_runner). Σύνολο **389/389 tests, analyze clean**.
 
 **Σύμβαση BLoC (γενικής ισχύος για όλα τα features):**
 - `Bloc({required Repository repository})` — **positional named required**, χωρίς

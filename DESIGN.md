@@ -24,6 +24,7 @@
 - Clean Architecture + BLoC/Cubit + Drift reactive streams
 - SPoT: AppStrings (EL) — κανένα inline string σε screens/widgets
 - Drift DataClasses = SPoT entities
+- Launcher Icons: SPoT = `assets/icons/Times.png` → `flutter_launcher_icons` (§10). Regenerate: `dart run flutter_launcher_icons`
 - Backup πριν κάθε edit · αρχεία ≤ 500 γρ. · UTF-8 no BOM
 - Reactivity: bridge pattern (emit μόνο εντός handler)
 
@@ -31,7 +32,7 @@
 
 - [ ] Phase 1: Project Setup
 - [x] Phase 2: Database Layer
-- [ ] Phase 3: Receipt Feature (Steps 1-7 ✅ — Input models + ReceiptDao + ReceiptRepository + DI + Validators + BLoC + Presentation, 11/09/2026)
+- [ ] Phase 3: Receipt Feature (Steps 1-7 ✅ — Input models + ReceiptDao + ReceiptRepository + DI + Validators + BLoC + Presentation + **Fixes**: wiring main/app/receipts_home + SPoT paymentStatus, 11/09/2026)
 - [ ] Phase 4: Item & Category Features
 - [ ] Phase 5: Supplier Feature
 - [ ] Phase 6: Budget Feature
@@ -42,4 +43,4 @@
 - [ ] Phase 11: Polish & Deployment
 
 ---
-*Τελευταία ενημέρωση: 2026-09-11 (DESIGN.md → index + φάκελος design/)*
+*Τελευταία ενημέρωση: 2026-09-11 (Phase 3 Fixes — wiring + SPoT paymentStatus)*

@@ -1,7 +1,6 @@
 // features/receipt/presentation/widgets/receipt_card.dart
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/strings/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -78,8 +77,8 @@ class ReceiptCard extends StatelessWidget {
 }
 
 /// Εσωτερικό chip κατάστασης πληρωμής — χρώμα από APPColors, label από
-/// AppStrings (SPoT). Το status-string έρχεται από `AppConstants.paymentStatus*`
-/// (SPoT — συνεπές με τον DAO: _paymentStatus).
+/// AppStrings (SPoT). Το status-string είναι literal συνεπές με τον DAO
+/// (_paymentStatus: 'paid'/'partial'/'pending').
 class _ReceiptStatusChip extends StatelessWidget {
   final String status;
 
@@ -108,10 +107,8 @@ class _ReceiptStatusChip extends StatelessWidget {
   }
 
   (String, Color) get _statusData => switch (status) {
-        AppConstants.paymentStatusPaid =>
-          (AppStrings.receiptStatusPaid, AppColors.success),
-        AppConstants.paymentStatusPartial =>
-          (AppStrings.receiptStatusPartial, AppColors.warning),
+        'paid' => (AppStrings.receiptStatusPaid, AppColors.success),
+        'partial' => (AppStrings.receiptStatusPartial, AppColors.warning),
         _ => (AppStrings.receiptStatusPending, AppColors.error),
       };
 }

@@ -65,7 +65,7 @@ final class ReceiptsLoadRequested extends ReceiptEvent {
   final DateTime? endDate;
   final int? supplierId;
 
-  /// `AppConstants.paymentStatus*` (SPoT — 'pending' | 'partial' | 'paid').
+  /// 'pending' | 'partial' | 'paid' (status literals του DAO).
   final String? paymentStatus;
 
   @override

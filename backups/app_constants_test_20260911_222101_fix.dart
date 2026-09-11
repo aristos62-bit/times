@@ -30,13 +30,5 @@ void main() {
       expect(AppConstants.minReceiptDate, DateTime(2000, 1, 1));
       expect(AppConstants.snackBarDuration, const Duration(seconds: 2));
     });
-
-    test('payment status constants (SPoT — αποθηκευμένες DB τιμές)', () {
-      expect(AppConstants.paymentStatusPending, 'pending');
-      expect(AppConstants.paymentStatusPartial, 'partial');
-      expect(AppConstants.paymentStatusPaid, 'paid');
-      expect(AppConstants.paymentStatusPending,
-          isNot(AppConstants.paymentStatusPaid));
-    });
   });
 }

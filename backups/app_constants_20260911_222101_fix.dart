@@ -34,14 +34,6 @@ class AppConstants {
   static const List<double> vatRates = [0.0, 6.0, 13.0, 24.0];
   static const double defaultVatRate = 24.0;
 
-  // Payment Status — SPoT (αποθηκευμένες τιμές DB + DAO + UI).
-  // ΜΟΝΟ αυτές οι 3 τιμές γράφονται στο `receipts.payment_status` — ποτέ
-  // magic strings. Χρησιμοποιούνται: table default (receipts.dart),
-  // ReceiptDao._paymentStatus, ReceiptCard._statusData.
-  static const String paymentStatusPending = 'pending';
-  static const String paymentStatusPartial = 'partial';
-  static const String paymentStatusPaid = 'paid';
-
   // Number boundaries (SPoT — αντί magic literals σε validators)
   static const double maxQuantity = 99999.0;
   static const double maxPrice = 999999.0;
