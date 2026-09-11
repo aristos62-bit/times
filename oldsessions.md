@@ -83,3 +83,13 @@
   (`receipt_input_test.dart`) → **257/257 tests, analyze clean**. DESIGN.md sync
   (§5.1.3/§2/§8.1/§9/checklist/date). Placeholder `validators.dart` μένει ως έχει
   μέχρι Βήμα 5.
+- **Step 2 (Part B): Input models — ReceiptDao** — `receipt_dao.dart` (478 γρ.,
+  counter via SettingDao Δ1α, stock μέσω ItemDao.increaseStock Δ2α, parity μέχρι
+  και 37 tests CRUD+aggregates με fixture split <500γρ) → **294/294 tests,
+  analyze clean**. DESIGN.md sync (§8.1/§9/checklist/date).
+- **Step 4 (Part C): ReceiptRepository + DI** — abstract `receipt_repository.dart`
+  (52 γρ., 10 μέθοδοι §5.1.4) + impl `receipt_repository_impl.dart`
+  (76 γρ., `const`) + 12 tests (`receipt_repository_impl_test.dart`) + DI
+  registration (ReceiptDao με settingDao/itemDao/tagDao + ReceiptRepository, docstring
+  7 DAOs → 5 repositories) + DI test asserts → **306/306 tests, analyze clean**.
+  DESIGN.md sync (§2 tree, §4.3 STALE blockquote, §5.1.4/§5.1.5, §5.2, §8.1, §9).

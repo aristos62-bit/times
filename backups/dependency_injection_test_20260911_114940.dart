@@ -11,8 +11,6 @@ import 'package:expense_tracker/core/database/daos/daos.dart';
 import 'package:expense_tracker/core/theme/theme_provider.dart';
 import 'package:expense_tracker/features/item/data/repositories/item_repository_impl.dart';
 import 'package:expense_tracker/features/item/domain/repositories/item_repository.dart';
-import 'package:expense_tracker/features/receipt/data/repositories/receipt_repository_impl.dart';
-import 'package:expense_tracker/features/receipt/domain/repositories/receipt_repository.dart';
 import 'package:expense_tracker/injection/dependency_injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,10 +40,6 @@ void main() {
       expect(
         DependencyInjection.get<ItemRepository>(),
         isA<ItemRepositoryImpl>(),
-      );
-      expect(
-        DependencyInjection.get<ReceiptRepository>(),
-        isA<ReceiptRepositoryImpl>(),
       );
       expect(DependencyInjection.get<ThemeProvider>(),
           isA<ThemeProvider>());
@@ -83,10 +77,6 @@ void main() {
       final repo1 = DependencyInjection.get<ItemRepository>();
       final repo2 = DependencyInjection.get<ItemRepository>();
       expect(identical(repo1, repo2), isTrue);
-
-      final receipt1 = DependencyInjection.get<ReceiptRepository>();
-      final receipt2 = DependencyInjection.get<ReceiptRepository>();
-      expect(identical(receipt1, receipt2), isTrue);
     });
 
     test('get πριν το configure → StateError', () {

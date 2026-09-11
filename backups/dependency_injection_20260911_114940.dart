@@ -9,15 +9,13 @@ import '../features/category/data/repositories/category_repository_impl.dart';
 import '../features/category/domain/repositories/category_repository.dart';
 import '../features/item/data/repositories/item_repository_impl.dart';
 import '../features/item/domain/repositories/item_repository.dart';
-import '../features/receipt/data/repositories/receipt_repository_impl.dart';
-import '../features/receipt/domain/repositories/receipt_repository.dart';
 import '../features/supplier/data/repositories/supplier_repository_impl.dart';
 import '../features/supplier/domain/repositories/supplier_repository.dart';
 
 /// SPO: Service locator — κεντρική εγγραφή/επίλυση του object graph.
 ///
 /// Εγγράφει ΜΟΝΟ intances που παράγονται από την υπάρχουσα constructor
-/// injection (Route A-Συνεπές): `AppDatabase` → 7 DAOs → 5 repositories →
+/// injection (Route A-Συνεπές): `AppDatabase` → 6 DAOs → 4 repositories →
 /// `ThemeProvider`. Κανένα widget δεν διαβάζει απευθείας από εδώ (χρησιμοποιεί
 /// constructor injection όπως τώρα) — η lookup γίνεται στο app startup (`main()`)
 /// και στα tests.
@@ -62,12 +60,6 @@ class DependencyInjection {
     _singletons[ItemDao] = ItemDao(db);
     _singletons[TagDao] = TagDao(db);
     _singletons[BudgetDao] = BudgetDao(db);
-    _singletons[ReceiptDao] = ReceiptDao(
-      db,
-      settingDao: _singletons[SettingDao] as SettingDao,
-      itemDao: _singletons[ItemDao] as ItemDao,
-      tagDao: _singletons[TagDao] as TagDao,
-    );
 
     // REPOSITORIES (pure delegates — Route A-Συνεπές)
     _singletons[ItemRepository] =
@@ -78,8 +70,6 @@ class DependencyInjection {
         SupplierRepositoryImpl(_singletons[SupplierDao] as SupplierDao);
     _singletons[BudgetRepository] =
         BudgetRepositoryImpl(_singletons[BudgetDao] as BudgetDao);
-    _singletons[ReceiptRepository] =
-        ReceiptRepositoryImpl(_singletons[ReceiptDao] as ReceiptDao);
 
     // PRESENTATION-SUPPORT (ThemeProvider — reuse υπάρχοντα constructor)
     _singletons[ThemeProvider] = ThemeProvider(
