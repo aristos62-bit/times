@@ -1,0 +1,533 @@
+## 5. Features Layer
+
+### 5.1 Receipt Feature
+
+#### 5.1.1 Entity (`features/receipt/domain/entities/receipt.dart`)
+
+```dart
+class Receipt {
+  final int? id;
+  final String uuid;
+  final int receiptNumber;
+  final DateTime receiptDate;
+  final int supplierId;
+  final String? invoiceNumber;
+  final String? invoiceSeries;
+  final String? paymentMethod;
+  final double totalAmount;
+  final double vatTotal;
+  final double discountTotal;
+  final double paidAmount;
+  final double remainingAmount;
+  final String paymentStatus;
+  final String? notes;
+  final String? attachmentPath;
+  final bool isSynced;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  
+  const Receipt({
+    this.id,
+    required this.uuid,
+    required this.receiptNumber,
+    required this.receiptDate,
+    required this.supplierId,
+    this.invoiceNumber,
+    this.invoiceSeries,
+    this.paymentMethod,
+    this.totalAmount = 0,
+    this.vatTotal = 0,
+    this.discountTotal = 0,
+    this.paidAmount = 0,
+    this.remainingAmount = 0,
+    this.paymentStatus = 'pending',
+    this.notes,
+    this.attachmentPath,
+    this.isSynced = false,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  
+  bool get isPaid => paymentStatus == 'paid';
+  bool get isPartial => paymentStatus == 'partial';
+  bool get isPending => paymentStatus == 'pending';
+  
+  Receipt copyWith({
+    int? id,
+    String? uuid,
+    int? receiptNumber,
+    DateTime? receiptDate,
+    int? supplierId,
+    String? invoiceNumber,
+    String? invoiceSeries,
+    String? paymentMethod,
+    double? totalAmount,
+    double? vatTotal,
+    double? discountTotal,
+    double? paidAmount,
+    double? remainingAmount,
+    String? paymentStatus,
+    String? notes,
+    String? attachmentPath,
+    bool? isSynced,
+  }) {
+    return Receipt(
+      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
+      receiptNumber: receiptNumber ?? this.receiptNumber,
+      receiptDate: receiptDate ?? this.receiptDate,
+      supplierId: supplierId ?? this.supplierId,
+      invoiceNumber: invoiceNumber ?? this.invoiceNumber,
+      invoiceSeries: invoiceSeries ?? this.invoiceSeries,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      totalAmount: totalAmount ?? this.totalAmount,
+      vatTotal: vatTotal ?? this.vatTotal,
+      discountTotal: discountTotal ?? this.discountTotal,
+      paidAmount: paidAmount ?? this.paidAmount,
+      remainingAmount: remainingAmount ?? this.remainingAmount,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      notes: notes ?? this.notes,
+      attachmentPath: attachmentPath ?? this.attachmentPath,
+      isSynced: isSynced ?? this.isSynced,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+}
+```
+
+#### 5.1.2 Receipt Item Entity
+
+```dart
+class ReceiptItem {
+  final int? id;
+  final int receiptId;
+  final int itemId;
+  final double quantity;
+  final double unitPrice;
+  final double vatRate;
+  final double vatAmount;
+  final double discount;
+  final double totalPrice;
+  final double totalWithVat;
+  final String? notes;
+  final DateTime createdAt;
+  
+  const ReceiptItem({
+    this.id,
+    required this.receiptId,
+    required this.itemId,
+    this.quantity = 1,
+    required this.unitPrice,
+    this.vatRate = 24.0,
+    this.vatAmount = 0,
+    this.discount = 0,
+    required this.totalPrice,
+    required this.totalWithVat,
+    this.notes,
+    required this.createdAt,
+  });
+  
+  double get effectiveVatRate => vatRate;
+  
+  factory ReceiptItem.calculate({
+    required int receiptId,
+    required int itemId,
+    required double quantity,
+    required double unitPrice,
+    double vatRate = 24.0,
+    double discount = 0,
+  }) {
+    final subtotal = quantity * unitPrice;
+    final discountAmount = subtotal * (discount / 100);
+    final taxableAmount = subtotal - discountAmount;
+    final vatAmount = taxableAmount * (vatRate / 100);
+    final totalWithVat = taxableAmount + vatAmount;
+    
+    return ReceiptItem(
+      receiptId: receiptId,
+      itemId: itemId,
+      quantity: quantity,
+      unitPrice: unitPrice,
+      vatRate: vatRate,
+      vatAmount: vatAmount,
+      discount: discount,
+      totalPrice: taxableAmount,
+      totalWithVat: totalWithVat,
+      createdAt: DateTime.now(),
+    );
+  }
+}
+```
+
+#### 5.1.3 Input Models (SPoT — `features/receipt/domain/models/receipt_input.dart`)
+
+> **SPoT:** Εδώ ορίζονται ΜΟΝΟ μια φορά τα `ReceiptInput`, `ReceiptItemInput`,
+> `PaymentInput` και `ReceiptItemUpdate`. Ta χρησιμοποιούν: ReceiptDao (§4.3),
+> abstract Repository (§5.1.4) και το impl (§5.1.5) — μέσω import. ΔΕΝ
+> επιτρέπεται δεύτερος ορισμός αλλού (αποφυγή name collision).
+
+```dart
+class ReceiptInput {
+  final DateTime date;
+  final int supplierId;
+  final String? invoiceNumber;
+  final String? invoiceSeries;
+  final String paymentMethod;
+  final List<ReceiptItemInput> items;
+  final List<PaymentInput> payments;
+  final String? notes;
+  
+  const ReceiptInput({
+    required this.date,
+    required this.supplierId,
+    this.invoiceNumber,
+    this.invoiceSeries,
+    required this.paymentMethod,
+    required this.items,
+    this.payments = const [],
+    this.notes,
+  });
+}
+
+class ReceiptItemInput {
+  final int itemId;
+  final double quantity;
+  final double unitPrice;
+  final double vatRate;
+  final double discount;
+  
+  const ReceiptItemInput({
+    required this.itemId,
+    required this.quantity,
+    required this.unitPrice,
+    this.vatRate = AppConstants.defaultVatRate, // SPoT: όχι literal 24.0
+    this.discount = 0,
+  });
+}
+
+class PaymentInput {
+  final double amount;
+  final DateTime date;
+  final String method;
+  final String? reference;
+  
+  const PaymentInput({
+    required this.amount,
+    required this.date,
+    required this.method,
+    this.reference,
+  });
+}
+
+class ReceiptItemUpdate {
+  final double quantity;
+  final double unitPrice;
+  final double vatRate;
+  final double discount;
+  
+  const ReceiptItemUpdate({
+    required this.quantity,
+    required this.unitPrice,
+    required this.vatRate,
+    required this.discount,
+  });
+}
+```
+
+> **✅ Υλοποίηθηκε — Phase 3 Step 1 (11/09/2026):** τα 4 classes SPoT δημιουργήθηκαν
+> στο `features/receipt/domain/models/receipt_input.dart` (~102 γρ., <500), με το
+> σχέδιο του §5.1.3 ως έχει. Αποφάσεις υλοποίησης: `vatRate` default =
+> `AppConstants.defaultVatRate` (SPoT, ΟΧΙ literal 24.0)· `items` required, `payments`
+> default `const []`· καθόλου `==`/`hashCode`/`copyWith`/validation (pure carriers).
+> Τα columns `receipt_items.notes` & `payments.notes` ΔΕΝ εκτίθενται στα input
+> models.
+>
+> **✅ Βήμα 5 (11/09/2026):** Ο placeholder `ReceiptItemInput` στο `validators.dart`
+> αντικαταστάθηκε με import του SPoT `ReceiptItemInput` από το §5.1.3.
+> Προστέθηκαν per-item checks (quantity/unitPrice/itemId/vatRate/discount) με
+> `AppConstants.maxQuantity`/`maxPrice`/`maxDiscountPercent` και `!isFinite`
+> (καταπιάνει NaN+Infinity). 3 νέα AppStrings (receiptItemRequired,
+> receiptItemInvalidVatRate, receiptItemInvalidDiscount) + 3 νέα AppConstants.
+> Tests: 43 (19 υπάρχοντα + 14 νέα edges) → **321/321, analyze clean**.
+
+#### 5.1.4 Repository (Abstract)
+
+```dart
+/// SPO: ReceiptRepository - reactive (Stream) για δεδομένα που αλλάζουν συχνά,
+/// Future για single-shot λειτουργίες (create/delete/update).
+abstract class ReceiptRepository {
+  Stream<List<Receipt>> watchAll({
+    DateTime? startDate,
+    DateTime? endDate,
+    int? supplierId,
+    String? paymentStatus,
+  });
+  
+  Future<Receipt?> getById(int id);
+  
+  Stream<List<ReceiptItem>> watchItemsByReceiptId(int receiptId);
+  
+  Future<int> create(ReceiptInput input);
+  
+  Future<void> updateItem(int receiptId, int itemId, ReceiptItemUpdate update);
+  
+  Future<void> deleteItem(int receiptId, int itemId);
+  
+  Future<void> delete(int id);
+  
+  Future<int> getNextReceiptNumber();
+  
+  Stream<double> watchTotalByDateRange(DateTime start, DateTime end);
+  
+  Stream<Map<String, double>> watchTotalByCategory(DateTime start, DateTime end);
+}
+```
+
+> **✅ Βήμα 4 (Phase 3, 11/09/2026):** Υλοποιήθηκε ως
+> `features/receipt/domain/repositories/receipt_repository.dart` — οι 10 μέθοδοι
+> του contract παραπάνω, χωρίς `watchReceiptCount`/`watchAverageAmount`
+> (υπάρχουν μόνο στον DAO §5.1.6 — θα εκτεθούν όταν τα ζητήσει το Dashboard,
+> Phase 8). Εκτός abstract: `ReceiptInput`/`ReceiptItemUpdate` πρέπει να έρχονται
+> από το §5.1.3 (SPoT). Γραμμές: 52 < 500 ✓.
+
+#### 5.1.5 Repository (Implementation)
+
+```dart
+class ReceiptRepositoryImpl implements ReceiptRepository {
+  final ReceiptDao _receiptDao;
+  
+  ReceiptRepositoryImpl(this._receiptDao);
+  
+  @override
+  Stream<List<Receipt>> watchAll({
+    DateTime? startDate,
+    DateTime? endDate,
+    int? supplierId,
+    String? paymentStatus,
+  }) {
+    return _receiptDao.watchAllReceipts(
+      startDate: startDate,
+      endDate: endDate,
+      supplierId: supplierId,
+      paymentStatus: paymentStatus,
+    );
+  }
+  
+  @override
+  Future<Receipt?> getById(int id) async {
+    return _receiptDao.getReceiptById(id);
+  }
+  
+  @override
+  Stream<List<ReceiptItem>> watchItemsByReceiptId(int receiptId) {
+    return _receiptDao.watchReceiptItems(receiptId);
+  }
+  
+  @override
+  Future<int> create(ReceiptInput input) async {
+    return _receiptDao.createReceipt(input);
+  }
+  
+  @override
+  Future<int> getNextReceiptNumber() async {
+    return _receiptDao.getNextReceiptNumber();
+  }
+  
+  @override
+  Future<void> updateItem(int receiptId, int itemId, ReceiptItemUpdate update) async {
+    await _receiptDao.updateReceiptItem(receiptId, itemId, update);
+  }
+  
+  @override
+  Future<void> deleteItem(int receiptId, int itemId) async {
+    await _receiptDao.deleteReceiptItem(receiptId, itemId);
+  }
+  
+  @override
+  Future<void> delete(int id) async {
+    await _receiptDao.deleteReceipt(id);
+  }
+  
+  @override
+  Stream<double> watchTotalByDateRange(DateTime start, DateTime end) {
+    // Live aggregate query - no stored column
+    return _receiptDao.watchTotalByDateRange(start, end);
+  }
+  
+  @override
+  Stream<Map<String, double>> watchTotalByCategory(DateTime start, DateTime end) {
+    // Live aggregate query - no stored column
+    return _receiptDao.watchTotalByCategory(start, end);
+  }
+}
+```
+
+> **✅ Βήμα 4 (Phase 3, 11/09/2026):** Υλοποιήθηκε ως
+> `features/receipt/data/repositories/receipt_repository_impl.dart` (76 γρ. < 500),
+> pure delegate 1:1, **`const ReceiptRepositoryImpl(this._receiptDao)`** (το
+> snippet πάνω δεν έχει `const` — όλα τα άλλα impls το χρησιμοποιούν,
+> §5.2). Η `updateItem` προωθεί το `update` του repo ως `itemUpdate` του DAO
+> (drop `?`/`setDefault` δεν χρησιμοποιούνται). Exceptions (SqliteException από
+> FK violation) δεν καταπνίγονται. Tests:
+> `test/unit/features/receipt/data/repositories/receipt_repository_impl_test.dart`
+> (12 tests) → **306/306, analyze clean**.
+
+#### 5.1.6 Live Aggregate Queries (No Stored Columns)
+
+```dart
+// SPO: Live aggregate queries - always fresh data
+// Αυτό λύνει το πρόβλημα των stored columns που μπορεί να μείνουν stale
+// Σημ.: τα όρια start/end μετατρέπονται σε UTC πριν φτάσουν στη βάση,
+// γιατί η βάση αποθηκεύει UTC (UtcDateTimeConverter) — αλλιώς το
+// customSelect συγκρίνει local με UTC κι επιστρέφει λάθος εύρος.
+
+extension ReceiptDaoAggregates on ReceiptDao {
+  /// Watch total amount for date range (reactive)
+  /// total_amount = Σ καθαρών (πριν ΦΠΑ), vat_total = ΦΠΑ.
+  /// Το σύνολο που βλέπει ο χρήστης = μεικτό (συμπεριλαμβανομένου ΦΠΑ),
+  /// συνεπές με το watchTotalByCategory (και τα δύο gross).
+  Stream<double> watchTotalByDateRange(DateTime start, DateTime end) {
+    final query = customSelect(
+      'SELECT COALESCE(SUM(total_amount + vat_total), 0) as total '
+      'FROM receipts '
+      'WHERE receipt_date >= ? AND receipt_date <= ?',
+      variables: [
+        Variable.withDateTime(start.toUtc()),
+        Variable.withDateTime(end.toUtc()),
+      ],
+      readsFrom: {receipts},
+    );
+    
+    return query.watch().map((rows) => rows.first.read<double>('total') ?? 0);
+  }
+  
+  /// Watch totals by category (reactive)
+  Stream<Map<String, double>> watchTotalByCategory(DateTime start, DateTime end) {
+    final query = customSelect(
+      'SELECT c.name as category_name, '
+      'COALESCE(SUM(ri.total_with_vat), 0) as total '
+      'FROM receipt_items ri '
+      'JOIN items i ON ri.item_id = i.id '
+      'JOIN categories c ON i.category_id = c.id '
+      'JOIN receipts r ON ri.receipt_id = r.id '
+      'WHERE r.receipt_date >= ? AND r.receipt_date <= ? '
+      'GROUP BY c.id '
+      'ORDER BY total DESC',
+      variables: [
+        Variable.withDateTime(start.toUtc()),
+        Variable.withDateTime(end.toUtc()),
+      ],
+      readsFrom: {receiptItems, items, categories, receipts},
+    );
+    
+    return query.watch().map((rows) {
+      return {
+        for (var row in rows)
+          row.read<String>('category_name'): row.read<double>('total') ?? 0,
+      };
+    });
+  }
+  
+  /// Watch receipt count (reactive)
+  Stream<int> watchReceiptCount() {
+    final query = customSelect(
+      'SELECT COUNT(*) as count FROM receipts',
+      readsFrom: {receipts},
+    );
+    
+    return query.watch().map((rows) => rows.first.read<int>('count') ?? 0);
+  }
+  
+  /// Watch average receipt amount (reactive)
+  Stream<double> watchAverageAmount() {
+    final query = customSelect(
+      'SELECT COALESCE(AVG(total_amount), 0) as average FROM receipts',
+    );
+    
+    return query.watch().map((rows) => rows.first.read<double>('average') ?? 0);
+  }
+}
+```
+
+#### 5.1.7 BLoC (Presentation — `features/receipt/presentation/bloc/`)
+
+> **✅ Υλοποιήθηκε — Phase 3 Step 6 (11/09/2026):** `receipt_bloc.dart` (~340 γρ.) +
+> `receipt_event.dart` (7 events) + `receipt_state.dart` (1 state) + 21 tests
+> (`receipt_bloc_test.dart` 495 γρ.) → σύνολο **342/342, analyze clean**.
+>
+> **✅ Υλοποιήθηκε — Phase 3 Step 7 (11/09/2026):** presentation layer —
+> `widgets/` (receipt_card, receipt_item_list, receipt_form_lines, receipt_form) +
+> `screens/` (list/entry/detail) + 3 edits (AppStrings +22 strings·
+> `ReceiptMessageShown` event· bloc fix `message: () => state.message` +
+> `_onMessageShown`) + 46 widget/bloc tests → σύνολο **388/388, analyze clean**.
+
+**Σύμβαση BLoC (γενικής ισχύος για όλα τα features):**
+- `Bloc({required Repository repository})` — **positional named required**, χωρίς
+  `??` fallback, χωρίς DI lookup μέσα στο constructor (`ThemeProvider` pattern). Το
+  wiring γίνεται στο presentation layer.
+- **Bridge pattern για reactive streams:** το `emit` επιτρέπεται ΜΟΝΟ εντός event
+  handler (bloc 9 assert). Οι DAO stream subscriptions (`watchAll`, `watchReceiptItems`)
+  ΔΕΝ καλούν απευθείας `emit` — καλούν `bloc.add(...)` με **εσωτερικά events**
+  (`ReceiptsStreamUpdated`, `ReceiptItemsStreamUpdated`, `ReceiptStreamError`) και οι
+  αντίστοιχοι handlers κάνουν `emit`. Έτσι κάθε state change γίνεται εντός handler.
+- Oι subscriptions ακυρώνονται στο `close()` με `isClosed` guards.
+- **F2 (reactive):** δεν γίνεται χειροκίνητο refetch μετά από mutations — το
+  `watchAll` refreshes το state μόνο του. Η delete ενός ανύπαρκτου id είναι κανονική
+  ροή (no-op, χωρίς error).
+- **F6 (ημερομηνίες LOCAL):** όλες οι ημερομηνίες στα events και στα states είναι
+  τοπικές (local). Το `toUtc()` γίνεται μόνο εντός του DAO.
+- **F8 (validation):** `validateReceipt` καλείται ΠΡΙΝ το create — αν αποτύχει,
+  καμία κλήση repository δεν γίνεται· μηδέν AppStrings νέα (reuse `genericError`,
+  `databaseError`, `receiptAdded`, `receiptUpdated`, `receiptDeleted`, `noReceipts`).
+- Error handling: try/catch με `AppLogger.error('...: $e', st)` (άρα χωρίς
+  `unused_catch_clause`). Debug logs gated από `DebugConfig.showBlocLogs`.
+- Δεν χρησιμοποιούνται `// ignore:` (μηδέν ignores στο project) — λύση για
+  `prefer_initializing_formals`: `late final` πεδίο + ανάθεση στο σώμα constructor.
+
+**State — `ReceiptsState`:** `ReceiptsStatus` (`initial/loading/loaded/error`) +
+`receipts` (+ προσθήκη `isSubmitting`), `message`, `validationErrors` (null sentinel),
+`lastCreatedId`, `selectedReceiptId` + παράγωγα `selectedReceipt`/`selectedItems`/
+`selectedTotals` (derive από `watchAll` + items stream — F3, χωρίς `getById`).
+
+### 5.2 Repositories (Phase 2 Step 4 — Route A-Συνεπές, 10/09/2026)
+
+**Απόκλιση:** Η πλήρης Clean-Architecture (entities/models/datasources/usecases/presentation
+ανά feature) δημιουργείται μαζί με κάθε feature (Phase 3–6). Τώρα δημιουργήθηκαν
+ΜΟΝΟ τα repositories (abstract + impl) για τα 4 features που έχουν DAO.
+Δεν δημιουργήθηκαν domain entities — τα drift DataClasses (`Item`, `Category`,
+`Supplier`, `Budget`) είναι τα current SPoT entities (immutable + `==`/`hashCode`).
+`injection/dependency_injection.dart` υλοποιήθηκε πρόωρα στο Phase 2 Step 4.2 (απόκλιση
+από §5.2 που προέβλεπε Phase 3). ReceiptRepository αναβάλλεται πλήρως στο Phase 3
+(μαζί με ReceiptDao + §5.1.4/§5.1.5). **✅ Phase 3 Step 4 (11/09/2026):**
+Έγινε το ReceiptRepository (abstract + impl + DI + 12 tests) → σύνολο
+**5 repositories** εγγεγραμμένα στο DI:
+`AppDatabase` → 7 DAOs → 5 repositories → `ThemeProvider`.
+
+**Abstract contracts** (`features/<f>/domain/repositories/<f>_repository.dart`):
+
+| Feature | Methods (reactive / single-shot) |
+|---|---|
+| ItemRepository | `watchAll`, `watchByCategory`, `watchByBarcode`, `searchByName`, `watchLowStock`, `getById`, `create`, `update`, `softDelete`, `increaseStock` (10) |
+| CategoryRepository | `watchAll`, `watchTree`, `watchWithChildrenRecursively`, `getById`, `create` ← throws `CategoryDuplicateNameException`, `update`, `softDelete` (7) |
+| SupplierRepository | `watchAll`, `searchByName`, `getById`, `create`, `update`, `softDelete`, `getReceiptCount` (7) |
+| BudgetRepository | `watchBudget`, `watchBudgetsForMonth`, `upsertBudget`, `watchDashboardSpending` (4) |
+| ReceiptRepository | `watchAll`, `getById`, `watchItemsByReceiptId`, `create`, `updateItem`, `deleteItem`, `delete`, `getNextReceiptNumber`, `watchTotalByDateRange`, `watchTotalByCategory` (10) |
+
+**Implementations** (`features/<f>/data/repositories/<f>_repository_impl.dart`):
+Pure delegates — `const XxxRepositoryImpl(this._dao)`, κάθε μέθοδος 1:1 προώθηση.
+`CategoryRepositoryImpl.create` προωθεί το `CategoryDuplicateNameException`
+(category_dao.dart:128) χωρίς να το καταπνίγει.
+
+**Special types** (ορίζονται στο `budget_dao.dart`, REUSE όχι αντίγραφα):
+- `BudgetWithSpent` — `budget`, `spent`, `amount`, `categoryId`, `month`, `year` + computed
+  `hasBudget`, `percentage`, `isOverBudget`, `remaining`
+- `CategorySpending` — `categoryId`, `categoryName`, `color`, `icon`, `spent`
+
+**Γιατί Route A-Συνεπές:** κανένας consumer (BLoC/screen/DI) δεν υπάρχει ακόμα,
+οπότε τα repositories είναι pure wiring. Πλήρη δομή (entities/mappers/datasources)
+έχει αξία μόνο μαζί με usecases/presentation — αποφυγή dead code + unnecessary
+boilerplate. Αν στο μέλλον χρειαστεί domain `Receipt` entity, θα ζει μόνο εντός
+`features/receipt/` με aliased imports (απόφαση Phase 3).
+---
+
