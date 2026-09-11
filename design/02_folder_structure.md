@@ -338,6 +338,13 @@ lib/
         ├── receipt_entry_flow_test.dart
         ├── budget_tracking_flow_test.dart
         └── report_generation_flow_test.dart
+
+assets/
+├── icons/
+│   └── Times.png              # SPoT: App logo source (1254×1254)
+│                                # All platform icons generated from this via
+│                                # flutter_launcher_icons (pubspec.yaml config)
+└── images/                     # (μελλοντικά: in-app images)
 ```
 ---
 

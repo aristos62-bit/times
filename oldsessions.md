@@ -77,3 +77,9 @@
 ## 007 — Session 9 (11/09/2026) · σε εξέλιξη
 - **Αρχείο:** `oldsessions/oldsessions_007.md`
 - **Περίληψη:** **Phase 3 — Steps 1–2, 4, 5 (Input models SPoT + ReceiptDao + ReceiptRepository + DI + Validators)** — `receipt_input.dart` + 12 tests (257/257) → ReceiptDao (478 γρ., 37 tests, 294/294) → ReceiptRepository (abstract+impl+DI, 12 tests, 306/306) → **Step 5: validators placeholder removal** (5 files edited, Infinity bug fix, `isFinite`, 3 AppConstants + 3 AppStrings, 14 edge tests) → **321/321, analyze clean**.
+
+---
+
+## 008 — Session 10 (11/09/2026) · σε εξέλιξη
+- **Αρχείο:** `oldsessions/oldsessions_008.md`
+- **Περίληψη:** **App Logo "παντού"** — SPoT `assets/icons/Times.png` (1254×1254) → `flutter_launcher_icons` 0.14.4 (dev dep + pubspec config): Android legacy mipmaps (5), Windows `.ico` 256px, Web icons + favicon (χειροκίνητο), iOS AppIcon (14), macOS (7). DESIGN/design docs + folder structure synced.

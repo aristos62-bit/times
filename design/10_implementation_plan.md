@@ -66,7 +66,18 @@
      build_runner: ^2.4.6
      bloc_test: ^9.1.0
      mocktail: ^1.0.0
+     flutter_launcher_icons: ^0.14.4   # ✅ 11/09/2026 app logo SPoT
    ```
+
+   **Launcher Icons (SPoT):** Όλα τα platform icons παράγονται από ΕΝΑ πηγαίο
+   αρχείο: `assets/icons/Times.png` (1254×1254). Config στο `pubspec.yaml` →
+   `flutter_launcher_icons:` (android legacy, windows .ico 256px, web + favicon,
+   ios, macos). Για αναγέννηση μετά από αλλαγή του logo:
+   ```bash
+   dart run flutter_launcher_icons
+   ```
+   Σημ.: το `flutter_launcher_icons` ΔΕΝ φτιάχνει το `web/favicon.png` — αν αλλάξει
+   το logo, αντικαθιστούμε το favicon χειροκίνητα (copy από `web/icons/Icon-192.png`).
 
 3. **Δημιουργία Δομής Φακέλων**
    - core/
