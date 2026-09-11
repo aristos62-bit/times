@@ -76,20 +76,4 @@
 
 ## 007 — Session 9 (11/09/2026) · σε εξέλιξη
 - **Αρχείο:** `oldsessions/oldsessions_007.md`
-- **Περίληψη:** **Phase 3 — Step 1: Input models SPoT** — `receipt_input.dart` με
-  τα 4 classes (ReceiptInput/ReceiptItemInput/PaymentInput/ReceiptItemUpdate) κατά
-  σχέδιο §5.1.3 (Route A-Συνεπές, pure carriers, `vatRate` default =
-  `AppConstants.defaultVatRate`, όχι literal 24.0) + 12 tests
-  (`receipt_input_test.dart`) → **257/257 tests, analyze clean**. DESIGN.md sync
-  (§5.1.3/§2/§8.1/§9/checklist/date). Placeholder `validators.dart` μένει ως έχει
-  μέχρι Βήμα 5.
-- **Step 2 (Part B): Input models — ReceiptDao** — `receipt_dao.dart` (478 γρ.,
-  counter via SettingDao Δ1α, stock μέσω ItemDao.increaseStock Δ2α, parity μέχρι
-  και 37 tests CRUD+aggregates με fixture split <500γρ) → **294/294 tests,
-  analyze clean**. DESIGN.md sync (§8.1/§9/checklist/date).
-- **Step 4 (Part C): ReceiptRepository + DI** — abstract `receipt_repository.dart`
-  (52 γρ., 10 μέθοδοι §5.1.4) + impl `receipt_repository_impl.dart`
-  (76 γρ., `const`) + 12 tests (`receipt_repository_impl_test.dart`) + DI
-  registration (ReceiptDao με settingDao/itemDao/tagDao + ReceiptRepository, docstring
-  7 DAOs → 5 repositories) + DI test asserts → **306/306 tests, analyze clean**.
-  DESIGN.md sync (§2 tree, §4.3 STALE blockquote, §5.1.4/§5.1.5, §5.2, §8.1, §9).
+- **Περίληψη:** **Phase 3 — Steps 1–2, 4, 5 (Input models SPoT + ReceiptDao + ReceiptRepository + DI + Validators)** — `receipt_input.dart` + 12 tests (257/257) → ReceiptDao (478 γρ., 37 tests, 294/294) → ReceiptRepository (abstract+impl+DI, 12 tests, 306/306) → **Step 5: validators placeholder removal** (5 files edited, Infinity bug fix, `isFinite`, 3 AppConstants + 3 AppStrings, 14 edge tests) → **321/321, analyze clean**.

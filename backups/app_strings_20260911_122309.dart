@@ -56,9 +56,6 @@ class AppStrings {
   static const String receiptItemInvalidQuantity = 'Μη έγκυρη ποσότητα';
   static const String receiptItemNegativePrice = 'Αρνητική τιμή';
   static const String receiptItemPrefix = 'Είδος';
-  static const String receiptItemRequired = 'Επιλέξτε είδος';
-  static const String receiptItemInvalidVatRate = 'Μη έγκυρος συντελεστής ΦΠΑ γραμμής';
-  static const String receiptItemInvalidDiscount = 'Μη έγκυρη έκπτωση';
   
   // --- Button Labels ---
   static const String save = 'Αποθήκευση';

@@ -776,6 +776,14 @@ class DateFormatter {
 
 ### 3.8 Validators (`core/utils/validators.dart`)
 
+> **⚠️ STALE (11/09/2026 — Βήμα 5):** Το παρακάτω snippet ήταν πριν το Βήμα 5
+> (αντικατάσταση placeholder + per-item checks). Η πραγματική υλοποίηση τώρα:
+> import `receipt_input.dart` (ReceiptItemInput SPoT), `AppConstants.maxQuantity`/
+> `maxPrice`/`maxDiscountPercent` αντί magic literals, `!item.quantity.isFinite`
+> (NaN+Infinity), per-item loop (5 checks) με prefix "Είδος N:", `AppStrings`
+> παντού. Η δομή παραμένει η ίδια (validators → ValidationResult) αλλά ο
+> κώδικας είναι πολύ διαφορετικός — αναφορά στο πραγματικό αρχείο.
+
 > **ΣΗΜΕΙΩΣΗ:** Τα μηνύματα validation εμφανίζονται inline για ευκολία ανάγνωσης.
 > Στην πραγματική υλοποίηση, ΚΑΘΕ μήνυμα αντικαθίσταται με `AppStrings.xxx` (π.χ. `AppStrings.requiredField`).
 >
@@ -3443,16 +3451,21 @@ class ReceiptItemUpdate {
 }
 ```
 
-> **✅ Υλοποιήθηκε — Phase 3 Step 1 (11/09/2026):** τα 4 classes SPoT δημιουργήθηκαν
+> **✅ Υλοποίηθηκε — Phase 3 Step 1 (11/09/2026):** τα 4 classes SPoT δημιουργήθηκαν
 > στο `features/receipt/domain/models/receipt_input.dart` (~102 γρ., <500), με το
 > σχέδιο του §5.1.3 ως έχει. Αποφάσεις υλοποίησης: `vatRate` default =
 > `AppConstants.defaultVatRate` (SPoT, ΟΧΙ literal 24.0)· `items` required, `payments`
 > default `const []`· καθόλου `==`/`hashCode`/`copyWith`/validation (pure carriers).
 > Τα columns `receipt_items.notes` & `payments.notes` ΔΕΝ εκτίθενται στα input
-> models. Το `ReceiptItemInput` placeholder του `validators.dart` παραμένει μέχρι το
-> Βήμα 5 (αντικατάσταση σε `validators.dart` + `validators_test.dart` = ξεχωριστή
-> έγκριση). Tests: `test/unit/features/receipt/domain/models/receipt_input_test.dart`
-> (12 tests) → **257/257, analyze clean**.
+> models.
+>
+> **✅ Βήμα 5 (11/09/2026):** Ο placeholder `ReceiptItemInput` στο `validators.dart`
+> αντικαταστάθηκε με import του SPoT `ReceiptItemInput` από το §5.1.3.
+> Προστέθηκαν per-item checks (quantity/unitPrice/itemId/vatRate/discount) με
+> `AppConstants.maxQuantity`/`maxPrice`/`maxDiscountPercent` και `!isFinite`
+> (καταπιάνει NaN+Infinity). 3 νέα AppStrings (receiptItemRequired,
+> receiptItemInvalidVatRate, receiptItemInvalidDiscount) + 3 νέα AppConstants.
+> Tests: 43 (19 υπάρχοντα + 14 νέα edges) → **321/321, analyze clean**.
 
 #### 5.1.4 Repository (Abstract)
 
@@ -4019,7 +4032,7 @@ class AppDimensions {
 |---|---|---|
 | CurrencyFormatter | `test/unit/core/utils/currency_formatter_test.dart` | 100% |
 | DateFormatter | `test/unit/core/utils/date_formatter_test.dart` | 100% |
-| Validators | `test/unit/core/utils/validators_test.dart` | 100% |
+| Validators | `test/unit/core/utils/validators_test.dart` | 43 tests ✅ 11/09/2026 |
 | ReceiptRepository | `test/unit/features/receipt/data/repositories/receipt_repository_impl_test.dart` | 12 tests ✅ 11/09/2026 |
 | Receipt UseCases | `test/unit/features/receipt/domain/usecases/` | 90% |
 | ReceiptInput models | `test/unit/features/receipt/domain/models/receipt_input_test.dart` | 12 tests ✅ 11/09/2026 |
@@ -4281,10 +4294,13 @@ void main() {
 > **Step 4 — ReceiptRepository (εκτελεσμένο):** abstract `receipt_repository.dart`
 > (52 γρ.) + impl `receipt_repository_impl.dart` (76 γρ., `const`) + 12 tests στο
 > `receipt_repository_impl_test.dart` + DI registration (ReceiptDao με
-> settingDao/itemDao/tagDao + ReceiptRepository) + DI test asserts → **306/306,
-> analyze clean**.
+> settingDao/itemDao/tagDao + ReceiptRepository) + DI test asserts → 306/306.
+> **Step 5 — Validators placeholder (εκτελεσμένο):** αντικατάσταση placeholder
+> `ReceiptItemInput` με SPoT import + per-item checks (quantity/unitPrice/itemId/
+> vatRate/discount) με `isFinite`/`maxQuantity`/`maxPrice`/`maxDiscountPercent` +
+> 3 νέα AppConstants + 3 νέα AppStrings + 14 edge tests → **321/321, analyze clean**.
 > Σειρά εκτέλεσης βημάτων: 3) codegen + DAO tests ✅, 4) ReceiptRepository
-> abstract+impl + DI ✅, 5) αντικατάσταση placeholder `validators.dart`, 6) BLoC,
+> abstract+impl + DI ✅, 5) αντικατάσταση placeholder `validators.dart` ✅, 6) BLoC,
 > 7) presentation, 8) sync .md.
 
 ### Phase 4: Item & Category Features (Ημέρα 11-15)
@@ -4379,7 +4395,7 @@ void main() {
 
 - [ ] Phase 1: Project Setup
 - [x] Phase 2: Database Layer
-- [ ] Phase 3: Receipt Feature (Steps 1-4 ✅ — Input models + ReceiptDao + ReceiptRepository + DI, 11/09/2026)
+- [ ] Phase 3: Receipt Feature (Steps 1-5 ✅ — Input models + ReceiptDao + ReceiptRepository + DI + Validators, 11/09/2026)
 - [ ] Phase 4: Item & Category Features
 - [ ] Phase 5: Supplier Feature
 - [ ] Phase 6: Budget Feature
@@ -4391,4 +4407,4 @@ void main() {
 
 ---
 
-*Τελευταία ενημέρωση: 2026-09-11 (Phase 3 Step 4 — ReceiptRepository) | Με Drift (αντί sqflite/floor)*
+*Τελευταία ενημέρωση: 2026-09-11 (Phase 3 Step 5 — Validators placeholder removal) | Με Drift (αντί sqflite/floor)*

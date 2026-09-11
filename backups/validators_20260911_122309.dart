@@ -1,6 +1,5 @@
 import '../constants/app_constants.dart';
 import '../strings/app_strings.dart';
-import '../../features/receipt/domain/models/receipt_input.dart';
 import 'currency_formatter.dart';
 import 'extensions.dart';
 
@@ -45,8 +44,8 @@ class Validators {
     // Reuse: ελληνικό κόμμα/κενά μέσω CurrencyFormatter.tryParse
     final parsed = CurrencyFormatter.tryParse(quantity);
     if (parsed == null) return AppStrings.invalidNumber;
-if (parsed <= 0) return AppStrings.quantityMustBePositive;
-    if (parsed > AppConstants.maxQuantity) return AppStrings.quantityTooLarge;
+    if (parsed <= 0) return AppStrings.quantityMustBePositive;
+    if (parsed > 99999) return AppStrings.quantityTooLarge;
     return null;
   }
   
@@ -55,8 +54,8 @@ if (parsed <= 0) return AppStrings.quantityMustBePositive;
     // Reuse: ελληνικό κόμμα/κενά μέσω CurrencyFormatter.tryParse
     final parsed = CurrencyFormatter.tryParse(price);
     if (parsed == null) return AppStrings.invalidNumber;
-if (parsed < 0) return AppStrings.priceNegative;
-    if (parsed > AppConstants.maxPrice) return AppStrings.priceTooLarge;
+    if (parsed < 0) return AppStrings.priceNegative;
+    if (parsed > 999999) return AppStrings.priceTooLarge;
     return null;
   }
   
@@ -145,26 +144,11 @@ if (parsed < 0) return AppStrings.priceNegative;
       errors.add(AppStrings.receiptMustHaveItems);
     }
     
-    // Edge Cases: per-item — NaN/Infinity, itemId, vatRate (approximates), discount, άνω όρια
+    // Edge Case: Αρνητικές τιμές
     for (var i = 0; i < items.length; i++) {
       final item = items[i];
-      if (!item.quantity.isFinite || item.quantity <= 0 || item.quantity > AppConstants.maxQuantity) {
-        errors.add('${AppStrings.receiptItemPrefix} ${i + 1}: ${AppStrings.receiptItemInvalidQuantity}');
-      }
-      if (!item.unitPrice.isFinite || item.unitPrice < 0 || item.unitPrice > AppConstants.maxPrice) {
-        errors.add('${AppStrings.receiptItemPrefix} ${i + 1}: ${AppStrings.receiptItemNegativePrice}');
-      }
-      if (item.itemId <= 0) {
-        errors.add('${AppStrings.receiptItemPrefix} ${i + 1}: ${AppStrings.receiptItemRequired}');
-      }
-      // Reuse: DoubleExtensions.approximates — ίδια λογική με validateVatRate (double precision)
-      if (!AppConstants.vatRates.any((v) => v.approximates(item.vatRate))) {
-        errors.add('${AppStrings.receiptItemPrefix} ${i + 1}: ${AppStrings.receiptItemInvalidVatRate}');
-      }
-      // Infinity πιάνεται από το upper bound· NaN από το isNaN
-      if (item.discount.isNaN || item.discount < 0 || item.discount > AppConstants.maxDiscountPercent) {
-        errors.add('${AppStrings.receiptItemPrefix} ${i + 1}: ${AppStrings.receiptItemInvalidDiscount}');
-      }
+      if (item.quantity <= 0) errors.add('${AppStrings.receiptItemPrefix} ${i + 1}: ${AppStrings.receiptItemInvalidQuantity}');
+      if (item.unitPrice < 0) errors.add('${AppStrings.receiptItemPrefix} ${i + 1}: ${AppStrings.receiptItemNegativePrice}');
     }
     
     return ValidationResult(
@@ -172,6 +156,20 @@ if (parsed < 0) return AppStrings.priceNegative;
       errors: errors,
     );
   }
+}
+
+/// SPoT: Receipt item input for batch validation
+///
+/// WIP Phase 3: θα ενοποιηθεί στο features/receipt/domain/models/receipt_input.dart
+/// (DESIGN §5.1.3) — μην δημιουργηθεί δεύτερο μοντέλο με ίδιο όνομα.
+class ReceiptItemInput {
+  final double quantity;
+  final double unitPrice;
+  
+  const ReceiptItemInput({
+    required this.quantity,
+    required this.unitPrice,
+  });
 }
 
 /// SPoT: Validation result model

@@ -33,12 +33,7 @@ class AppConstants {
   // VAT Rates (Greece)
   static const List<double> vatRates = [0.0, 6.0, 13.0, 24.0];
   static const double defaultVatRate = 24.0;
-
-  // Number boundaries (SPoT — αντί magic literals σε validators)
-  static const double maxQuantity = 99999.0;
-  static const double maxPrice = 999999.0;
-  static const double maxDiscountPercent = 100.0;
-
+  
   // Payment Methods
   static const List<String> paymentMethods = [
     'Μετρητά',

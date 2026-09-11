@@ -198,3 +198,74 @@
 - **Βήμα 7**: presentation widgets/screens.
 
 Commit (έγκριση χρήστη «κάνε commit + push»): `git add -A && git commit && git push`.
+
+---
+
+## Part D — Βήμα 5: Validators placeholder removal (11/09/2026)
+
+### Απόφαση (εγκεκριμένη — Scenario B+ / 5 αρχεία)
+- **Scenario B+**: edit 5 αρχείων (validators.dart, validators_test.dart,
+  app_constants.dart, app_strings.dart, receipt_input.dart doc comment).
+- Per-item limits 99999/999999 **ΝΑΙ** (στο per-item loop και στους string
+  validators, αντικαθιστώντας magic literals).
+- maxDiscountPercent=100 + 3 νέα AppStrings: **ΝΑΙ**.
+- Infinity fix: `!isFinite` αντί `isNaN || <= 0` (user-found bug).
+
+### Ευρήματα
+- **Infinity silent bug**: `quantity.isNaN || quantity <= 0` → NaN: `NaN <= 0`
+  επιστρέφει `false` → περνάει στο DAO. Σωστό: `!item.quantity.isFinite`
+  (καταπιάνει NaN + Infinity).
+- **Placeholder vs SPoT**: ο placeholder ήταν εντός `validators.dart` χωρίς
+  import — η αντικατάσταση απαιτούσε import `receipt_input.dart` + αφαίρεση
+  του placeholder block.
+- **`const` list literals**: `double.nan`/`double.infinity` δεν είναι compile-time
+  constants → αφαιρέθηκε `const` από τα assert lists στο test file.
+- **Duplicate definitions**: edits εφαρμόστηκαν 2x (σφάλμα) → επιδιορθώθηκαν
+  με τελικό file check.
+- **Test assert pattern**: `expect(errors, contains('msg'))` αποτυγχάνει με
+  prefix "Είδος N: " → σωστό: `expect(errors.any((e) => e.contains('msg')), isTrue)`.
+
+### Υλοποίηση (5 αρχεία)
+- **app_constants.dart**: +3 — `maxQuantity=99999.0`, `maxPrice=999999.0`,
+  `maxDiscountPercent=100.0` (αντικαθιστούν magic literals σε string+per-item).
+- **app_strings.dart**: +3 — `receiptItemRequired`, `receiptItemInvalidVatRate`,
+  `receiptItemInvalidDiscount`.
+- **validators.dart**: import `receipt_input.dart`, αφαίρεση placeholder (γρ. 161-173),
+  per-item loop: 5 checks (quantity `!isFinite`/≤0/>maxQuantity,
+  unitPrice `!isFinite`/<0/>maxPrice, itemId ≤0, vatRate `approximates`,
+  discount `isNaN`/</>maxDiscountPercent). String validators:
+  `AppConstants.maxQuantity`/`maxPrice` αντί 99999/999999.
+- **validators_test.dart**: 43 tests (19 υπάρχοντα + 14 νέα per-item edges
+  + 10 υπάρχοντα per-item). `receipt_input.dart` import + `itemId` σε
+  κάθε ReceiptItemInput construction.
+- **receipt_input.dart**: doc comment update (lines 9-11: swap note).
+
+### Tests
+- 43/43 validators_test.dart (πλήρης επιτυχία).
+- **321/321** ολόκληρο το suite (306 + 17 Step 5).
+
+### Επαλήθευση
+- `flutter analyze` → **0 issues**.
+- `flutter test` (πλήρες suite) → **321/321**.
+
+### Backups
+- `backups/validators_20260911_122309.dart`
+- `backups/validators_test_20260911_122309.dart`
+- `backups/app_constants_20260911_122309.dart`
+- `backups/app_strings_20260911_122309.dart`
+- `backups/receipt_input_20260911_122309.dart`
+
+### DESIGN.md sync
+- §3.8: blockquote «⚠️ STALE (11/09/2026 — Βήμα 5)» (snippet δεν αντιπροσωπεύει).
+- §5.1.3: ενημέρωση — placeholder αφαιρέθηκε (Step 5), 321/321.
+- §8.1: Validators row → 43 tests ✅ 11/09/2026.
+- §9 Phase 3: Step 5 ✅ + ανανέωση (321/321, analyze clean).
+- Checklist: Steps 1–5 ✅.
+- Footer date → 2026-09-11 (Phase 3 Step 5).
+
+### Backlog (εκτός εμβέλειας — ενημερωμένο)
+- `ItemDao.softDeleteItem` χωρίς `.toUtc()` (Part B).
+- `receipt_items.dart:16` hardcoded `Constant(24.0)` (Part B).
+- ~~**Βήμα 5**: αντικατάσταση placeholder `validators.dart`~~ **✅ DONE**.
+- **Βήμα 6**: ReceiptBloc/Event/State + bloc_test (get<ReceiptRepository>()).
+- **Βήμα 7**: presentation widgets/screens.

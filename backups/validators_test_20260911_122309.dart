@@ -1,6 +1,5 @@
 import 'package:expense_tracker/core/strings/app_strings.dart';
 import 'package:expense_tracker/core/utils/validators.dart';
-import 'package:expense_tracker/features/receipt/domain/models/receipt_input.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -110,7 +109,7 @@ void main() {
 
     test('έγκυρη απόδειξη με είδη → valid', () {
       const items = [
-        ReceiptItemInput(itemId: 1, quantity: 2, unitPrice: 1.5),
+        ReceiptItemInput(quantity: 2, unitPrice: 1.5),
       ];
       final result = Validators.validateReceipt(
         date: DateTime.now(),
@@ -124,7 +123,7 @@ void main() {
 
     test('κακά είδη → per-item σφάλματα', () {
       const items = [
-        ReceiptItemInput(itemId: 1, quantity: 0, unitPrice: -5),
+        ReceiptItemInput(quantity: 0, unitPrice: -5),
       ];
       final result = Validators.validateReceipt(
         date: DateTime.now(),
@@ -134,161 +133,6 @@ void main() {
       );
       expect(result.isValid, isFalse);
       expect(result.errors.length, 2);
-    });
-  });
-
-  group('Validators.validateReceipt per-item edges', () {
-    test('quantity NaN → σφάλμα', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: [ReceiptItemInput(itemId: 1, quantity: double.nan, unitPrice: 1.0)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemInvalidQuantity)), isTrue);
-    });
-
-    test('quantity +Infinity → σφάλμα', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: [ReceiptItemInput(itemId: 1, quantity: double.infinity, unitPrice: 1.0)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemInvalidQuantity)), isTrue);
-    });
-
-    test('unitPrice NaN → σφάλμα', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: [ReceiptItemInput(itemId: 1, quantity: 1.0, unitPrice: double.nan)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemNegativePrice)), isTrue);
-    });
-
-    test('unitPrice +Infinity → σφάλμα', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: [ReceiptItemInput(itemId: 1, quantity: 1.0, unitPrice: double.infinity)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemNegativePrice)), isTrue);
-    });
-
-    test('itemId 0 → σφάλμα', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: const [ReceiptItemInput(itemId: 0, quantity: 1.0, unitPrice: 1.0)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemRequired)), isTrue);
-    });
-
-    test('vatRate 99 → σφάλμα (invalidVatRate)', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: const [ReceiptItemInput(itemId: 1, quantity: 1.0, unitPrice: 1.0, vatRate: 99.0)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemInvalidVatRate)), isTrue);
-    });
-
-    test('vatRate 6 → έγκυρο', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: const [ReceiptItemInput(itemId: 1, quantity: 1.0, unitPrice: 1.0, vatRate: 6.0)],
-      );
-      expect(result.isValid, isTrue);
-    });
-
-    test('vatRate 24.0000000001 → έγκυρο (approximates)', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: const [ReceiptItemInput(itemId: 1, quantity: 1.0, unitPrice: 1.0, vatRate: 24.0000000001)],
-      );
-      expect(result.isValid, isTrue);
-    });
-
-    test('discount 101 → σφάλμα', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: const [ReceiptItemInput(itemId: 1, quantity: 1.0, unitPrice: 1.0, discount: 101.0)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemInvalidDiscount)), isTrue);
-    });
-
-    test('discount -1 → σφάλμα', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: const [ReceiptItemInput(itemId: 1, quantity: 1.0, unitPrice: 1.0, discount: -1.0)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemInvalidDiscount)), isTrue);
-    });
-
-    test('discount 100 → έγκυρο', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: const [ReceiptItemInput(itemId: 1, quantity: 1.0, unitPrice: 1.0, discount: 100.0)],
-      );
-      expect(result.isValid, isTrue);
-    });
-
-    test('discount NaN → σφάλμα', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: [ReceiptItemInput(itemId: 1, quantity: 1.0, unitPrice: 1.0, discount: double.nan)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemInvalidDiscount)), isTrue);
-    });
-
-    test('quantity 150000 → σφάλμα (maxQuantity)', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: const [ReceiptItemInput(itemId: 1, quantity: 150000.0, unitPrice: 1.0)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemInvalidQuantity)), isTrue);
-    });
-
-    test('unitPrice 1500000 → σφάλμα (maxPrice)', () {
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: const [ReceiptItemInput(itemId: 1, quantity: 1.0, unitPrice: 1500000.0)],
-      );
-      expect(result.errors.any((e) => e.contains(AppStrings.receiptItemNegativePrice)), isTrue);
-    });
-
-    test('πολλαπλά σφάλματα σε μία γραμμή → 5', () {
-      const items = [
-        ReceiptItemInput(itemId: 0, quantity: -1, unitPrice: -5, vatRate: 99, discount: 101),
-      ];
-      final result = Validators.validateReceipt(
-        date: DateTime.now(),
-        supplierId: 1,
-        paymentMethod: 'Μετρητά',
-        items: items,
-      );
-      expect(result.errors.length, 5);
     });
   });
 

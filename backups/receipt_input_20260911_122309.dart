@@ -6,8 +6,9 @@ import '../../../../core/constants/app_constants.dart';
 /// Ορίζονται ΜΟΝΟ εδώ τα `ReceiptInput`, `ReceiptItemInput`, `PaymentInput`,
 /// `ReceiptItemUpdate`. Τα εισάγουν: ReceiptDao (§4.3), abstract Repository
 /// (§5.1.4) και impl (§5.1.5). ΔΕΝ επιτρέπεται δεύτερος ορισμός αλλού — το
-/// placeholder `ReceiptItemInput` του validators.dart αφαιρέθηκε στο Βήμα 5
-/// (11/09/2026): τα Validators χρησιμοποιούν ΜΟΝΟ το SPoT μοντέλο εδώ.
+/// placeholder `ReceiptItemInput` (validators.dart:165) αντικαθίσταται στο
+/// Βήμα 5 (edit validators + test, με ξεχωριστή έγκριση). Ως τότε, κανένα
+/// αρχείο δεν πρέπει να importάρει και τα δύο μαζί.
 ///
 /// Route A-Συνεπές: immutable data carriers (BLoC → DAO → DB), χωρίς I/O,
 /// logging (DebugConfig/AppLogger ζουν σε DAOs/BLoC) ή επικύρωση (Validators).
