@@ -80,46 +80,6 @@ class AppStrings {
   static const String unsavedChangesTitle = 'Μη αποθηκευμένες αλλαγές';
   static const String unsavedChangesMessage = 'Υπάρχουν μη αποθηκευμένες αλλαγές. Θέλετε να τις απορρίψετε;';
   
-  // --- Receipt Field Labels (Βήμα 7 · Presentation) ---
-  // Labels πεδίων της φόρμας αποδείξεων — όλα από εδώ (SPoT), ΚΑΝΕΝΑ inline.
-  static const String receiptNumber = 'Αριθμός απόδειξης';
-  static const String supplier = 'Προμηθευτής';
-  static const String paymentMethod = 'Τρόπος πληρωμής';
-  static const String receiptDate = 'Ημερομηνία απόδειξης';
-  static const String receiptNotes = 'Σημειώσεις';
-  static const String item = 'Είδος';
-  static const String quantity = 'Ποσότητα';
-  static const String unitPrice = 'Τιμή μονάδας';
-  static const String vatRate = 'ΦΠΑ (%)';
-  static const String discount = 'Έκπτωση (%)';
-
-  // --- Receipt Totals (footer) ---
-  static const String total = 'Σύνολο';
-  static const String totalVat = 'ΦΠΑ';
-  static const String totalWithVat = 'Σύνολο με ΦΠΑ';
-
-  // --- Receipt Detail: ποσά πληρωμής ---
-  // paidAmount = ό,τι έχει πληρωθεί, remaining = υπόλοιπο προς πληρωμή.
-  static const String paidAmount = 'Πληρωμένο ποσό';
-  static const String remainingAmount = 'Υπόλοιπο';
-
-  // --- Receipt Entry: preview επόμενου αριθμού (ReceiptNextNumberRequested) ---
-  static const String receiptNextNumber = 'Επόμενος αριθμός';
-
-  // --- Receipt Payment Status (chips) ---
-  // Οι τιμές χρώματος έρχονται από AppColors (paid→success, partial→warning,
-  // pending→error) — μόνο τα κείμενα ορίζονται εδώ.
-  static const String receiptStatusPaid = 'Εξοφλημένη';
-  static const String receiptStatusPartial = 'Μερική πληρωμή';
-  static const String receiptStatusPending = 'Εκκρεμεί';
-
-  // --- Receipt List/Detail (Βήμα 7) ---
-  // Prefix πριν τον αριθμό απόδειξης (π.χ. "Απόδειξη #12") + κενή κατάσταση
-  // γραμμών/προσθήκη γραμμής φόρμας.
-  static const String receiptPreviewPrefix = 'Απόδειξη #';
-  static const String noItemsInReceipt = 'Δεν υπάρχουν είδη σε αυτή την απόδειξη';
-  static const String addLine = 'Προσθήκη γραμμής';
-
   // --- Success Messages ---
   static const String savedSuccessfully = 'Αποθηκεύτηκε επιτυχώς';
   static const String deletedSuccessfully = 'Διαγράφηκε επιτυχώς';

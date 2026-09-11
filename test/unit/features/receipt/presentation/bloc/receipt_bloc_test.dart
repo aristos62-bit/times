@@ -313,6 +313,75 @@ void main() {
         ],
       );
 
+      test('messageShown: clears message after create (snackbar consumed)',
+          () async {
+        final bloc = ReceiptBloc(repository: repo);
+        final states = <ReceiptsState>[];
+        final sub = bloc.stream.listen(states.add);
+        final created = bloc.stream
+            .firstWhere((s) => s.message == AppStrings.receiptAdded);
+        try {
+          bloc.add(ReceiptCreateRequested(input: validInput()));
+          await created;
+          // Attach μετά το create: το initial state (message null) αλλιώς το
+          // λύνει αμέσως και το await δεν περιμένει τον μηδενισμό.
+          final cleared = bloc.stream.firstWhere(
+              (s) => s.message == null && s.lastCreatedId != null);
+          bloc.add(const ReceiptMessageShown());
+          await cleared;
+          expect(states.last.message, isNull);
+        } finally {
+          await sub.cancel();
+          await bloc.close();
+        }
+      });
+
+      test('reactive stream PRESERVES success message (fix: state.message)',
+          () async {
+        final bloc = ReceiptBloc(repository: repo);
+        final states = <ReceiptsState>[];
+        final sub = bloc.stream.listen(states.add);
+        final loaded = bloc.stream.firstWhere(
+            (s) => s.status == ReceiptsStatus.loaded && s.receipts.isEmpty);
+        final created = bloc.stream
+            .firstWhere((s) => s.message == AppStrings.receiptAdded);
+        final refreshed =
+            bloc.stream.firstWhere((s) => s.receipts.length == 1);
+        try {
+          bloc.add(const ReceiptsLoadRequested());
+          await loaded;
+          bloc.add(ReceiptCreateRequested(input: validInput()));
+          await created;
+          // Reactive emission μετά το create — ΔΕΝ πρέπει να σβήνει το μήνυμα.
+          await refreshed;
+          expect(states.last.receipts, hasLength(1));
+          expect(states.last.message, AppStrings.receiptAdded);
+        } finally {
+          await sub.cancel();
+          await bloc.close();
+        }
+      });
+
+      test('messageShown: clears error after create failure', () async {
+        final bloc = ReceiptBloc(repository: repo);
+        final states = <ReceiptsState>[];
+        final sub = bloc.stream.listen(states.add);
+        final failed =
+            bloc.stream.firstWhere((s) => s.error == AppStrings.databaseError);
+        final cleared = bloc.stream
+            .firstWhere((s) => s.error == null && s.status == ReceiptsStatus.error);
+        try {
+          bloc.add(ReceiptCreateRequested(input: fkViolationInput()));
+          await failed;
+          bloc.add(const ReceiptMessageShown());
+          await cleared;
+          expect(states.last.error, isNull);
+        } finally {
+          await sub.cancel();
+          await bloc.close();
+        }
+      });
+
       test('detail: select + derive selectedReceipt + items stream', () async {
         final id = await fixture.createReceipt();
         final bloc = ReceiptBloc(repository: repo);

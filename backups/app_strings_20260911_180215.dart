@@ -98,14 +98,6 @@ class AppStrings {
   static const String totalVat = 'ΦΠΑ';
   static const String totalWithVat = 'Σύνολο με ΦΠΑ';
 
-  // --- Receipt Detail: ποσά πληρωμής ---
-  // paidAmount = ό,τι έχει πληρωθεί, remaining = υπόλοιπο προς πληρωμή.
-  static const String paidAmount = 'Πληρωμένο ποσό';
-  static const String remainingAmount = 'Υπόλοιπο';
-
-  // --- Receipt Entry: preview επόμενου αριθμού (ReceiptNextNumberRequested) ---
-  static const String receiptNextNumber = 'Επόμενος αριθμός';
-
   // --- Receipt Payment Status (chips) ---
   // Οι τιμές χρώματος έρχονται από AppColors (paid→success, partial→warning,
   // pending→error) — μόνο τα κείμενα ορίζονται εδώ.

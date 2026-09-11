@@ -144,14 +144,3 @@ final class ReceiptNextNumberRequested extends ReceiptEvent {
   @override
   List<Object?> get props => const [];
 }
-
-/// ΕΣΩΤΕΡΙΚΟ bridge — το UI κατανάλωσε το single-shot `message`/`error`
-/// (π.χ. snackbar) και ζητά να μηδενιστούν. Λύνει το race του
-/// `_onReceiptsStreamUpdated`: το reactive stream ΔΕΝ σβήνει το μήνυμα —
-/// ο καταναλωτής δηλώνει ρητά πότε τελείωσε (Βήμα 7).
-final class ReceiptMessageShown extends ReceiptEvent {
-  const ReceiptMessageShown();
-
-  @override
-  List<Object?> get props => const [];
-}

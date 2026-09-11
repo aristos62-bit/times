@@ -45,7 +45,6 @@ class ReceiptBloc extends Bloc<ReceiptEvent, ReceiptsState> {
     on<ReceiptLineDeleteRequested>(_onDeleteLine);
     on<ReceiptDeleteRequested>(_onDeleteReceipt);
     on<ReceiptNextNumberRequested>(_onNextNumber);
-    on<ReceiptMessageShown>(_onMessageShown);
     on<ReceiptsStreamUpdated>(_onReceiptsStreamUpdated);
     on<ReceiptItemsStreamUpdated>(_onReceiptItemsStreamUpdated);
     on<ReceiptStreamError>(_onStreamError);
@@ -257,18 +256,13 @@ class ReceiptBloc extends Bloc<ReceiptEvent, ReceiptsState> {
   // ---------------------------------------------------------------------
 
   /// Reactive λίστα → loaded + derive selectedReceipt + empty-state message.
-  /// ΔΙΟΡΘΩΣΗ Βήμα 7: `message: () => state.message` — το reactive stream ΔΕΝ
-  /// σβήνει το τρέχον single-shot μήνυμα (π.χ. receiptAdded/receiptDeleted).
-  /// Διατηρεί ό,τι υπάρχει· ο καθαρισμός γίνεται ρητά από `ReceiptMessageShown`
-  /// αφού το UI το καταναλώσει (snackbar). Χωρίς μήνυμα → noReceipts (άδεια).
   void _onReceiptsStreamUpdated(
       ReceiptsStreamUpdated event, Emitter<ReceiptsState> emit) {
     emit(state.copyWith(
       status: ReceiptsStatus.loaded,
       receipts: event.receipts,
       selectedReceipt: () => _deriveSelected(state.selectedReceiptId, event.receipts),
-      message:
-          () => event.receipts.isEmpty ? AppStrings.noReceipts : state.message,
+      message: () => event.receipts.isEmpty ? AppStrings.noReceipts : null,
     ));
   }
 
@@ -283,16 +277,6 @@ class ReceiptBloc extends Bloc<ReceiptEvent, ReceiptsState> {
     emit(state.copyWith(
       status: ReceiptsStatus.error,
       error: () => AppStrings.genericError,
-    ));
-  }
-
-  /// Το UI κατανάλωσε το single-shot μήνυμα/σφάλμα → μηδενισμός.
-  void _onMessageShown(
-      ReceiptMessageShown event, Emitter<ReceiptsState> emit) {
-    AppLogger.bloc('ReceiptBloc: event=${event.runtimeType}');
-    emit(state.copyWith(
-      message: () => null,
-      error: () => null,
     ));
   }
 
