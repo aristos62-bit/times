@@ -44,7 +44,7 @@
 
 ---
 
-## 006 — Phase 2 (10/09/2026, Sessions 6–7) · σε εξέλιξη
+## 006 — Phase 2 (10/09/2026, Sessions 6–7) · κλειστό
 - **Αρχείο:** `oldsessions/oldsessions_006.md`
 - **Περίληψη:** Phase 2 σε ΕΝΑ κεφάλαιο (κανόνας: νέο μόνο αν ξεπεραστούν οι 500
   γραμμές). Step 1: 11 Drift tables + AppDatabase (seed V1, beforeOpen) + 3 test
@@ -71,3 +71,15 @@
    no-op, get πριν configure → StateError, reset() κλείνει DB) + 9 tests
    (configure/get/identity/override/reset/guard/duplicate) → **245/245 tests,
    analyze clean**
+
+---
+
+## 007 — Session 9 (11/09/2026) · σε εξέλιξη
+- **Αρχείο:** `oldsessions/oldsessions_007.md`
+- **Περίληψη:** **Phase 3 — Step 1: Input models SPoT** — `receipt_input.dart` με
+  τα 4 classes (ReceiptInput/ReceiptItemInput/PaymentInput/ReceiptItemUpdate) κατά
+  σχέδιο §5.1.3 (Route A-Συνεπές, pure carriers, `vatRate` default =
+  `AppConstants.defaultVatRate`, όχι literal 24.0) + 12 tests
+  (`receipt_input_test.dart`) → **257/257 tests, analyze clean**. DESIGN.md sync
+  (§5.1.3/§2/§8.1/§9/checklist/date). Placeholder `validators.dart` μένει ως έχει
+  μέχρι Βήμα 5.

@@ -174,6 +174,8 @@ lib/
 │   │   ├── domain/
 │   │   │   ├── entities/
 │   │   │   │   └── receipt.dart
+│   │   │   ├── models/
+│   │   │   │   └── receipt_input.dart   # ✅ Phase 3 Step 1 (11/09/2026): SPoT input models (§5.1.3)
 │   │   │   ├── repositories/
 │   │   │   │   └── receipt_repository.dart (abstract)
 │   │   │   └── usecases/
@@ -3397,7 +3399,7 @@ class ReceiptItemInput {
     required this.itemId,
     required this.quantity,
     required this.unitPrice,
-    this.vatRate = 24.0,
+    this.vatRate = AppConstants.defaultVatRate, // SPoT: όχι literal 24.0
     this.discount = 0,
   });
 }
@@ -3430,6 +3432,17 @@ class ReceiptItemUpdate {
   });
 }
 ```
+
+> **✅ Υλοποιήθηκε — Phase 3 Step 1 (11/09/2026):** τα 4 classes SPoT δημιουργήθηκαν
+> στο `features/receipt/domain/models/receipt_input.dart` (~102 γρ., <500), με το
+> σχέδιο του §5.1.3 ως έχει. Αποφάσεις υλοποίησης: `vatRate` default =
+> `AppConstants.defaultVatRate` (SPoT, ΟΧΙ literal 24.0)· `items` required, `payments`
+> default `const []`· καθόλου `==`/`hashCode`/`copyWith`/validation (pure carriers).
+> Τα columns `receipt_items.notes` & `payments.notes` ΔΕΝ εκτίθενται στα input
+> models. Το `ReceiptItemInput` placeholder του `validators.dart` παραμένει μέχρι το
+> Βήμα 5 (αντικατάσταση σε `validators.dart` + `validators_test.dart` = ξεχωριστή
+> έγκριση). Tests: `test/unit/features/receipt/domain/models/receipt_input_test.dart`
+> (12 tests) → **257/257, analyze clean**.
 
 #### 5.1.4 Repository (Abstract)
 
@@ -3978,6 +3991,7 @@ class AppDimensions {
 | Validators | `test/unit/core/utils/validators_test.dart` | 100% |
 | ReceiptRepository | `test/unit/features/receipt/data/repositories/receipt_repository_test.dart` | 90% |
 | Receipt UseCases | `test/unit/features/receipt/domain/usecases/` | 90% |
+| ReceiptInput models | `test/unit/features/receipt/domain/models/receipt_input_test.dart` | 12 tests ✅ 11/09/2026 |
 | ItemRepository | `test/unit/features/item/data/repositories/item_repository_test.dart` | 90% |
 | BudgetService | `test/unit/features/budget/domain/usecases/` | 90% |
 | MigrationHelper | `test/unit/core/database/migrations/migration_test.dart` | 95% |
@@ -4222,6 +4236,12 @@ void main() {
    - ReceiptForm Widget
    - ReceiptCard Widget
 
+> **✅ Πρόοδος Phase 3 (11/09/2026):**
+> **Step 1 — Input models SPoT (εκτελεσμένο):** `receipt_input.dart` + 12 tests → 257/257.
+> Σειρά εκτέλεσης βημάτων: 2) ReceiptDao, 3) codegen + DAO tests, 4) ReceiptRepository
+> abstract+impl + DI, 5) αντικατάσταση placeholder `validators.dart`, 6) BLoC,
+> 7) presentation, 8) sync .md.
+
 ### Phase 4: Item & Category Features (Ημέρα 11-15)
 
 1. **Item Feature**
@@ -4314,7 +4334,7 @@ void main() {
 
 - [ ] Phase 1: Project Setup
 - [x] Phase 2: Database Layer
-- [ ] Phase 3: Receipt Feature
+- [ ] Phase 3: Receipt Feature (Step 1 ✅ — Input models SPoT, 11/09/2026)
 - [ ] Phase 4: Item & Category Features
 - [ ] Phase 5: Supplier Feature
 - [ ] Phase 6: Budget Feature
@@ -4326,4 +4346,4 @@ void main() {
 
 ---
 
-*Τελευταία ενημέρωση: 2026-09-10 | Με Drift (αντί sqflite/floor)*
+*Τελευταία ενημέρωση: 2026-09-11 | Με Drift (αντί sqflite/floor)*
