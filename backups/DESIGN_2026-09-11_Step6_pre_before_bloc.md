@@ -3666,40 +3666,6 @@ extension ReceiptDaoAggregates on ReceiptDao {
 }
 ```
 
-#### 5.1.7 BLoC (Presentation — `features/receipt/presentation/bloc/`)
-
-> **✅ Υλοποιήθηκε — Phase 3 Step 6 (11/09/2026):** `receipt_bloc.dart` (~340 γρ.) +
-> `receipt_event.dart` (7 events) + `receipt_state.dart` (1 state) + 21 tests
-> (`receipt_bloc_test.dart` 495 γρ.) → σύνολο **342/342, analyze clean**.
-
-**Σύμβαση BLoC (γενικής ισχύος για όλα τα features):**
-- `Bloc({required Repository repository})` — **positional named required**, χωρίς
-  `??` fallback, χωρίς DI lookup μέσα στο constructor (`ThemeProvider` pattern). Το
-  wiring γίνεται στο presentation layer.
-- **Bridge pattern για reactive streams:** το `emit` επιτρέπεται ΜΟΝΟ εντός event
-  handler (bloc 9 assert). Οι DAO stream subscriptions (`watchAll`, `watchReceiptItems`)
-  ΔΕΝ καλούν απευθείας `emit` — καλούν `bloc.add(...)` με **εσωτερικά events**
-  (`ReceiptsStreamUpdated`, `ReceiptItemsStreamUpdated`, `ReceiptStreamError`) και οι
-  αντίστοιχοι handlers κάνουν `emit`. Έτσι κάθε state change γίνεται εντός handler.
-- Oι subscriptions ακυρώνονται στο `close()` με `isClosed` guards.
-- **F2 (reactive):** δεν γίνεται χειροκίνητο refetch μετά από mutations — το
-  `watchAll` refreshes το state μόνο του. Η delete ενός ανύπαρκτου id είναι κανονική
-  ροή (no-op, χωρίς error).
-- **F6 (ημερομηνίες LOCAL):** όλες οι ημερομηνίες στα events και στα states είναι
-  τοπικές (local). Το `toUtc()` γίνεται μόνο εντός του DAO.
-- **F8 (validation):** `validateReceipt` καλείται ΠΡΙΝ το create — αν αποτύχει,
-  καμία κλήση repository δεν γίνεται· μηδέν AppStrings νέα (reuse `genericError`,
-  `databaseError`, `receiptAdded`, `receiptUpdated`, `receiptDeleted`, `noReceipts`).
-- Error handling: try/catch με `AppLogger.error('...: $e', st)` (άρα χωρίς
-  `unused_catch_clause`). Debug logs gated από `DebugConfig.showBlocLogs`.
-- Δεν χρησιμοποιούνται `// ignore:` (μηδέν ignores στο project) — λύση για
-  `prefer_initializing_formals`: `late final` πεδίο + ανάθεση στο σώμα constructor.
-
-**State — `ReceiptsState`:** `ReceiptsStatus` (`initial/loading/loaded/error`) +
-`receipts` (+ προσθήκη `isSubmitting`), `message`, `validationErrors` (null sentinel),
-`lastCreatedId`, `selectedReceiptId` + παράγωγα `selectedReceipt`/`selectedItems`/
-`selectedTotals` (derive από `watchAll` + items stream — F3, χωρίς `getById`).
-
 ### 5.2 Repositories (Phase 2 Step 4 — Route A-Συνεπές, 10/09/2026)
 
 **Απόκλιση:** Η πλήρης Clean-Architecture (entities/models/datasources/usecases/presentation
@@ -4334,14 +4300,8 @@ void main() {
 > vatRate/discount) με `isFinite`/`maxQuantity`/`maxPrice`/`maxDiscountPercent` +
 > 3 νέα AppConstants + 3 νέα AppStrings + 14 edge tests → **321/321, analyze clean**.
 > Σειρά εκτέλεσης βημάτων: 3) codegen + DAO tests ✅, 4) ReceiptRepository
-> abstract+impl + DI ✅, 5) αντικατάσταση placeholder `validators.dart` ✅, 6) BLoC ✅,
+> abstract+impl + DI ✅, 5) αντικατάσταση placeholder `validators.dart` ✅, 6) BLoC,
 > 7) presentation, 8) sync .md.
-> **Step 6 — ReceiptBloc (εκτελεσμένο, 11/09/2026):** `receipt_event.dart` (4 events
-> χρήστη + 3 εσωτερικά bridge events, §5.1.7), `receipt_state.dart`, `receipt_bloc.dart`
-> + 21 bloc tests (12 blocTest με πραγματικό DAO fixture + 8 plain reactive + 3 mocktail
-> edge) → **342/342, analyze clean**. Κρίσιμες αποφάσεις: bridge pattern για τα reactive
-> streams (emit μόνο εντός handler, bloc 9), `selectedReceipt` derive χωρίς getById (F3),
-> LOCAL dates (F6), validateReceipt πριν create (F8). Λεπτομέρειες στο §5.1.7.
 
 ### Phase 4: Item & Category Features (Ημέρα 11-15)
 
@@ -4435,7 +4395,7 @@ void main() {
 
 - [ ] Phase 1: Project Setup
 - [x] Phase 2: Database Layer
-- [ ] Phase 3: Receipt Feature (Steps 1-6 ✅ — Input models + ReceiptDao + ReceiptRepository + DI + Validators + BLoC, 11/09/2026)
+- [ ] Phase 3: Receipt Feature (Steps 1-5 ✅ — Input models + ReceiptDao + ReceiptRepository + DI + Validators, 11/09/2026)
 - [ ] Phase 4: Item & Category Features
 - [ ] Phase 5: Supplier Feature
 - [ ] Phase 6: Budget Feature
@@ -4447,4 +4407,4 @@ void main() {
 
 ---
 
-*Τελευταία ενημέρωση: 2026-09-11 (Phase 3 Step 6 — ReceiptBloc) | Με Drift (αντί sqflite/floor)*
+*Τελευταία ενημέρωση: 2026-09-11 (Phase 3 Step 5 — Validators placeholder removal) | Με Drift (αντί sqflite/floor)*
