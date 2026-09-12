@@ -26,9 +26,8 @@ import 'receipt_state.dart';
 /// - **selectedReceipt παράγωγο (F3):** δεν γίνεται `getById` για το detail
 ///   header — derive-εται από τη λίστα του `watchAll` + `selectedReceiptId`.
 /// - **Α-1 (constructor injection):** `repository` είναι required — κανένα
-///   lookup του service locator εδώ. Το wiring (ρητοί typed getters του
-///   `DependencyInjection`, π.χ. `DependencyInjection.receiptRepository`)
-///   γίνεται στο main() (σύμφωνα με το DI docstring).
+///   lookup του service locator εδώ. Το wiring (`DependencyInjection.get`)
+///   γίνεται στο main() / Βήμα 7 (σύμφωνα με το DI docstring).
 /// - **Α-2 (0 νέα AppStrings):** όλα τα μηνύματα reuse από το AppStrings.
 /// - **Validation (F8):** ΜΟΝΟ `Validators.validateReceipt` πριν το create.
 /// - **No-op delete (F2):** διαγραφή ανύπαρκτου id = κανονική ροή, όχι error.

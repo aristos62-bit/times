@@ -14,7 +14,7 @@ import 'features/receipt/presentation/screens/receipts_home_screen.dart';
 ///
 /// Καθαρό constructor injection: τόσο το [ThemeProvider] όσο και το
 /// [ReceiptRepository] περνιούνται από το main() (ή από τα widget tests).
-/// Κανένα lookup του service locator εδώ — το wiring γίνεται στο startup.
+/// Κανένα `DependencyInjection.get` εδώ — το wiring γίνεται στο startup.
 ///
 /// - [ListenableBuilder] πάνω στο themeProvider: το themeMode αλλάζει live
 ///   από το reactive stream του SettingDao (reuse ThemeProvider — Phase 2).

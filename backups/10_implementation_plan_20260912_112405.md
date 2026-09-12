@@ -153,18 +153,11 @@
    ανά feature έρχεται με τα Phase 3–6.
 
    **DI Container (2026-09-10, Step 4.2):** `injection/dependency_injection.dart` — manual
-   service locator (χωρίς get_it, δεν υπάρχει στο pubspec). Register→resolve→reset
-   pattern με ρητούς typed getters. Εγγράφει: AppDatabase → 7 DAOs → 5 repositories
-   → ThemeProvider. Guard: double configure → no-op. resolve πριν configure →
-   StateError. reset() κλείνει DB + καθαρίζει singletons. 9 tests (configure/getters/
-   identity/override/reset/guard/duplicate). Χωρίς production consumers (ετοιμότητα Phase 3).
-
-   **DI refactor (2026-09-12, Fix-C):** το αρχικό `Map<Type, dynamic>` + γενικό `get<T>()`
-   αντικαταστάθηκε από **14 ρητά nullable static πεδία + 14 typed getters** (`database`,
-   `itemDao`, `categoryRepository`, `themeProvider`, …). Ένα ξεχασμένο registration πιάνεται
-   τώρα από τον compiler (δεν υπάρχει καν getter να κληθεί) αντί runtime. Κοινό
-   `_require<T>()` helper έμεινε ως SPoT για το StateError. Coverage DI → 100%
-   (νέο test «πλήρες graph» διαβάζει ΟΛΑ τα getters). 389/389 tests, analyze clean.
+   service locator (χωρίς get_it, δεν υπάρχει στο pubspec). Register→get→reset
+   pattern. Εγγράφει: AppDatabase → 6 DAOs → 4 repositories → ThemeProvider.
+   Guard: double configure → no-op. get πριν configure → StateError.
+   reset() κλείνει DB + καθαρίζει singletons. 9 tests (configure/get/identity/
+   override/reset/guard/duplicate). Χωρίς production consumers (ετοιμότητα Phase 3).
 
    **Theme provider fix (2026-09-10):** `ThemeProvider` συνδέθηκε με `SettingDao`
    (persistence στο user_settings table). `getThemeMode()` στο startup + reactive

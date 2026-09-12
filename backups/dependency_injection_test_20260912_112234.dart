@@ -69,28 +69,6 @@ void main() {
       expect(fromRepo?.name, 'Δοκιμή DI');
     });
 
-    test('πλήρες graph: ΟΛΑ τα typed getters επιλύονται (coverage 100%)',
-            () async {
-          await DependencyInjection.configure(database: db);
-
-          // Κάθε getter πρέπει να επιστρέφει μη-null μετά το configure —
-          // αν κάποιο registration ξεχαστεί, εδώ σκάει το StateError.
-          expect(DependencyInjection.database, isNotNull);
-          expect(DependencyInjection.settingDao, isNotNull);
-          expect(DependencyInjection.categoryDao, isNotNull);
-          expect(DependencyInjection.supplierDao, isNotNull);
-          expect(DependencyInjection.itemDao, isNotNull);
-          expect(DependencyInjection.tagDao, isNotNull);
-          expect(DependencyInjection.budgetDao, isNotNull);
-          expect(DependencyInjection.receiptDao, isNotNull);
-          expect(DependencyInjection.itemRepository, isNotNull);
-          expect(DependencyInjection.categoryRepository, isNotNull);
-          expect(DependencyInjection.supplierRepository, isNotNull);
-          expect(DependencyInjection.budgetRepository, isNotNull);
-          expect(DependencyInjection.receiptRepository, isNotNull);
-          expect(DependencyInjection.themeProvider, isNotNull);
-        });
-
     test('singleton identity: ίδια instance σε επαναλαμβανόμενη πρόσβαση',
             () async {
           await DependencyInjection.configure(database: db);
