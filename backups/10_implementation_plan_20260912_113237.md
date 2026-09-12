@@ -176,9 +176,7 @@
 1. **Domain Layer**
    - Receipt Entity
    - ReceiptItem Entity
-   - UseCases (Create, Get, Update, Delete) — ⛔ ΔΕΝ υλοποιήθηκαν: Route A-Συνεπές,
-     το `ReceiptBloc` καλεί απευθείας το `ReceiptRepository` (απόφαση 12/09/2026,
-     §5.2). Θα ξανάρθουν όταν υπάρξει πραγματική domain λογική.
+   - UseCases (Create, Get, Update, Delete)
 
 2. **Data Layer**
    - ReceiptLocalDatasource
