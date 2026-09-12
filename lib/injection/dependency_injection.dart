@@ -22,15 +22,34 @@ import '../features/supplier/domain/repositories/supplier_repository.dart';
 /// constructor injection όπως τώρα) — η lookup γίνεται στο app startup (`main()`)
 /// και στα tests.
 ///
-/// Χωρίς εξωτερικό DI framework (δεν υπάρχει στο pubspec) — μικρό registry
-/// `<Type, instance>`. Guard flag έναντι duplicate `configure()`, `reset()` για
-/// test isolation (κλείνει και την DB — reuse `AppDatabase.close()`).
+/// Χωρίς εξωτερικό DI framework (δεν υπάρχει στο pubspec). Κάθε εξάρτηση έχει
+/// το δικό της nullable static πεδίο + ρητό typed getter (αντί για γενικό
+/// `Map<Type, dynamic>` + `get<T>()`) — έτσι ένα ξεχασμένο registration
+/// πιάνεται από τον compiler (non-nullable return type) αντί να σκάει runtime
+/// βαθιά μέσα σε ένα bloc. Guard flag έναντι duplicate `configure()`,
+/// `reset()` για test isolation (κλείνει και την DB — reuse
+/// `AppDatabase.close()`).
 class DependencyInjection {
   DependencyInjection._(); // coverage:ignore-line
 
   static core_db.AppDatabase? _db;
   static bool _configured = false;
-  static final _singletons = <Type, dynamic>{};
+
+  static SettingDao? _settingDao;
+  static CategoryDao? _categoryDao;
+  static SupplierDao? _supplierDao;
+  static ItemDao? _itemDao;
+  static TagDao? _tagDao;
+  static BudgetDao? _budgetDao;
+  static ReceiptDao? _receiptDao;
+
+  static ItemRepository? _itemRepository;
+  static CategoryRepository? _categoryRepository;
+  static SupplierRepository? _supplierRepository;
+  static BudgetRepository? _budgetRepository;
+  static ReceiptRepository? _receiptRepository;
+
+  static ThemeProvider? _themeProvider;
 
   /// App startup / test setup. Καλείται ΜΟΝΟ μια φορά ανά εφαρμογή.
   ///
@@ -50,60 +69,88 @@ class DependencyInjection {
     AppLogger.info('DI configured: ${db.runtimeType}');
   }
 
-  /// Εγγράφει όλους τους singletons (ένα graph, μία βάση).
+  /// Εγγράφει όλους τους singletons (ένα graph, μία βάση). Η σειρά είναι
+  /// η ίδια εξαρτησιακή σειρά με πριν: DAOs → repositories → ThemeProvider.
   static Future<void> _register(core_db.AppDatabase db) async {
-    // APP
-    _singletons[core_db.AppDatabase] = db;
-
     // DATA (DAOs — όλα από την ίδια db instance)
-    _singletons[SettingDao] = SettingDao(db);
-    _singletons[CategoryDao] = CategoryDao(db);
-    _singletons[SupplierDao] = SupplierDao(db);
-    _singletons[ItemDao] = ItemDao(db);
-    _singletons[TagDao] = TagDao(db);
-    _singletons[BudgetDao] = BudgetDao(db);
-    _singletons[ReceiptDao] = ReceiptDao(
+    _settingDao = SettingDao(db);
+    _categoryDao = CategoryDao(db);
+    _supplierDao = SupplierDao(db);
+    _itemDao = ItemDao(db);
+    _tagDao = TagDao(db);
+    _budgetDao = BudgetDao(db);
+    _receiptDao = ReceiptDao(
       db,
-      settingDao: _singletons[SettingDao] as SettingDao,
-      itemDao: _singletons[ItemDao] as ItemDao,
-      tagDao: _singletons[TagDao] as TagDao,
+      settingDao: _settingDao!,
+      itemDao: _itemDao!,
+      tagDao: _tagDao!,
     );
 
     // REPOSITORIES (pure delegates — Route A-Συνεπές)
-    _singletons[ItemRepository] =
-        ItemRepositoryImpl(_singletons[ItemDao] as ItemDao);
-    _singletons[CategoryRepository] =
-        CategoryRepositoryImpl(_singletons[CategoryDao] as CategoryDao);
-    _singletons[SupplierRepository] =
-        SupplierRepositoryImpl(_singletons[SupplierDao] as SupplierDao);
-    _singletons[BudgetRepository] =
-        BudgetRepositoryImpl(_singletons[BudgetDao] as BudgetDao);
-    _singletons[ReceiptRepository] =
-        ReceiptRepositoryImpl(_singletons[ReceiptDao] as ReceiptDao);
+    _itemRepository = ItemRepositoryImpl(_itemDao!);
+    _categoryRepository = CategoryRepositoryImpl(_categoryDao!);
+    _supplierRepository = SupplierRepositoryImpl(_supplierDao!);
+    _budgetRepository = BudgetRepositoryImpl(_budgetDao!);
+    _receiptRepository = ReceiptRepositoryImpl(_receiptDao!);
 
     // PRESENTATION-SUPPORT (ThemeProvider — reuse υπάρχοντα constructor)
-    _singletons[ThemeProvider] = ThemeProvider(
-      settingsDao: _singletons[SettingDao] as SettingDao,
-    );
+    _themeProvider = ThemeProvider(settingsDao: _settingDao!);
   }
 
-  /// Επίλυση εξάρτησης. Αποτυχία (μη εγγεγραμμένος ή πριν το configure):
-  /// `StateError` + log — fast-fail στα tests.
-  static T get<T>() {
-    final instance = _singletons[T];
-    if (instance == null) {
-      AppLogger.error('DependencyInjection.get<$T>: not registered');
-      throw StateError('Η εξάρτηση $T δεν έχει καταχωρηθεί (configure πρώτα).');
+  /// Κοινός βοηθός: throw `StateError` + log αν δεν έχει γίνει `configure()`.
+  /// Χρησιμοποιείται από όλα τα typed getters παρακάτω (SPoT για το error).
+  static T _require<T>(T? value, String name) {
+    if (value == null) {
+      AppLogger.error('DependencyInjection.$name: not registered');
+      throw StateError('Η εξάρτηση $name δεν έχει καταχωρηθεί (configure πρώτα).');
     }
-    return instance as T;
+    return value;
   }
+
+  // ---------- Typed getters (αντικαθιστούν το γενικό get<T>()) ----------
+
+  static core_db.AppDatabase get database => _require(_db, 'AppDatabase');
+
+  static SettingDao get settingDao => _require(_settingDao, 'SettingDao');
+  static CategoryDao get categoryDao => _require(_categoryDao, 'CategoryDao');
+  static SupplierDao get supplierDao => _require(_supplierDao, 'SupplierDao');
+  static ItemDao get itemDao => _require(_itemDao, 'ItemDao');
+  static TagDao get tagDao => _require(_tagDao, 'TagDao');
+  static BudgetDao get budgetDao => _require(_budgetDao, 'BudgetDao');
+  static ReceiptDao get receiptDao => _require(_receiptDao, 'ReceiptDao');
+
+  static ItemRepository get itemRepository =>
+      _require(_itemRepository, 'ItemRepository');
+  static CategoryRepository get categoryRepository =>
+      _require(_categoryRepository, 'CategoryRepository');
+  static SupplierRepository get supplierRepository =>
+      _require(_supplierRepository, 'SupplierRepository');
+  static BudgetRepository get budgetRepository =>
+      _require(_budgetRepository, 'BudgetRepository');
+  static ReceiptRepository get receiptRepository =>
+      _require(_receiptRepository, 'ReceiptRepository');
+
+  static ThemeProvider get themeProvider =>
+      _require(_themeProvider, 'ThemeProvider');
 
   /// Test isolation: κλείνει την DB (reuse `AppDatabase.close()`) και
   /// καθαρίζει όλα τα singletons. Επόμενο `configure()` ξεκινά καθαρό graph.
   static Future<void> reset() async {
     await _db?.close();
-    _singletons.clear();
     _db = null;
+    _settingDao = null;
+    _categoryDao = null;
+    _supplierDao = null;
+    _itemDao = null;
+    _tagDao = null;
+    _budgetDao = null;
+    _receiptDao = null;
+    _itemRepository = null;
+    _categoryRepository = null;
+    _supplierRepository = null;
+    _budgetRepository = null;
+    _receiptRepository = null;
+    _themeProvider = null;
     _configured = false;
     AppLogger.info('DI reset');
   }

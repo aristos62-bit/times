@@ -2,17 +2,14 @@
 //
 // Επαληθεύει το DependencyInjection (service locator):
 // - σωστή κατασκευή του object graph (AppDatabase → DAOs → repos → ThemeProvider)
-// - singleton identity (ίδιες instances σε επαναλαμβανόμενες get)
+// - singleton identity (ίδιες instances σε επαναλαμβανόμενες πρόσβαση)
 // - override database (AppDatabase.test()) που χρησιμοποιείται από ΟΛΑ
-// - guards: double configure (no-op), get πριν configure (StateError),
+// - guards: double configure (no-op), πρόσβαση πριν configure (StateError),
 //   reset (clean + db close + re-configure δουλεύει).
 import 'package:expense_tracker/core/database/app_database.dart';
-import 'package:expense_tracker/core/database/daos/daos.dart';
 import 'package:expense_tracker/core/theme/theme_provider.dart';
 import 'package:expense_tracker/features/item/data/repositories/item_repository_impl.dart';
-import 'package:expense_tracker/features/item/domain/repositories/item_repository.dart';
 import 'package:expense_tracker/features/receipt/data/repositories/receipt_repository_impl.dart';
-import 'package:expense_tracker/features/receipt/domain/repositories/receipt_repository.dart';
 import 'package:expense_tracker/injection/dependency_injection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,23 +35,22 @@ void main() {
       await DependencyInjection.configure();
 
       expect(DependencyInjection.isConfigured, isTrue);
-      expect(DependencyInjection.get<AppDatabase>(), isA<AppDatabase>());
+      expect(DependencyInjection.database, isA<AppDatabase>());
       expect(
-        DependencyInjection.get<ItemRepository>(),
+        DependencyInjection.itemRepository,
         isA<ItemRepositoryImpl>(),
       );
       expect(
-        DependencyInjection.get<ReceiptRepository>(),
+        DependencyInjection.receiptRepository,
         isA<ReceiptRepositoryImpl>(),
       );
-      expect(DependencyInjection.get<ThemeProvider>(),
-          isA<ThemeProvider>());
+      expect(DependencyInjection.themeProvider, isA<ThemeProvider>());
     });
 
     test('configure(test db): override χρησιμοποιείται από το repo', () async {
       await DependencyInjection.configure(database: db);
 
-      final repo = DependencyInjection.get<ItemRepository>();
+      final repo = DependencyInjection.itemRepository;
       final categories = await db.select(db.categories).get();
       expect(categories, isNotEmpty);
 
@@ -73,81 +69,74 @@ void main() {
       expect(fromRepo?.name, 'Δοκιμή DI');
     });
 
-    test('singleton identity: ίδια instance σε επαναλαμβανόμενες get', () async {
-      await DependencyInjection.configure(database: db);
+    test('singleton identity: ίδια instance σε επαναλαμβανόμενη πρόσβαση',
+            () async {
+          await DependencyInjection.configure(database: db);
 
-      final dao1 = DependencyInjection.get<ItemDao>();
-      final dao2 = DependencyInjection.get<ItemDao>();
-      expect(identical(dao1, dao2), isTrue);
+          final dao1 = DependencyInjection.itemDao;
+          final dao2 = DependencyInjection.itemDao;
+          expect(identical(dao1, dao2), isTrue);
 
-      final repo1 = DependencyInjection.get<ItemRepository>();
-      final repo2 = DependencyInjection.get<ItemRepository>();
-      expect(identical(repo1, repo2), isTrue);
+          final repo1 = DependencyInjection.itemRepository;
+          final repo2 = DependencyInjection.itemRepository;
+          expect(identical(repo1, repo2), isTrue);
 
-      final receipt1 = DependencyInjection.get<ReceiptRepository>();
-      final receipt2 = DependencyInjection.get<ReceiptRepository>();
-      expect(identical(receipt1, receipt2), isTrue);
-    });
+          final receipt1 = DependencyInjection.receiptRepository;
+          final receipt2 = DependencyInjection.receiptRepository;
+          expect(identical(receipt1, receipt2), isTrue);
+        });
 
-    test('get πριν το configure → StateError', () {
+    test('πρόσβαση πριν το configure → StateError', () {
       expect(
-        () => DependencyInjection.get<ItemRepository>(),
+            () => DependencyInjection.itemRepository,
         throwsA(isA<StateError>()),
       );
     });
 
     test('duplicate configure → no-op + isConfigured παραμένει true', () async {
       await DependencyInjection.configure(database: db);
-      final first = DependencyInjection.get<ItemRepository>();
+      final first = DependencyInjection.itemRepository;
 
       await DependencyInjection.configure(database: db); // 2η κλήση
 
       expect(DependencyInjection.isConfigured, isTrue);
       expect(
-        identical(DependencyInjection.get<ItemRepository>(), first),
+        identical(DependencyInjection.itemRepository, first),
         isTrue,
       );
     });
 
     test('reset: καθαρίζει graph + κλείνει db + επιτρέπει νέο configure',
-        () async {
-      await DependencyInjection.configure(database: db);
-      expect(DependencyInjection.isConfigured, isTrue);
+            () async {
+          await DependencyInjection.configure(database: db);
+          expect(DependencyInjection.isConfigured, isTrue);
 
-      await DependencyInjection.reset();
-      expect(DependencyInjection.isConfigured, isFalse);
-      expect(
-        () => DependencyInjection.get<ItemRepository>(),
-        throwsA(isA<StateError>()),
-      );
+          await DependencyInjection.reset();
+          expect(DependencyInjection.isConfigured, isFalse);
+          expect(
+                () => DependencyInjection.itemRepository,
+            throwsA(isA<StateError>()),
+          );
 
-      // Νέο configure με νέα test db δουλεύει κανονικά.
-      final db2 = AppDatabase.test();
-      await DependencyInjection.configure(database: db2);
-      expect(DependencyInjection.isConfigured, isTrue);
-    });
+          // Νέο configure με νέα test db δουλεύει κανονικά.
+          final db2 = AppDatabase.test();
+          await DependencyInjection.configure(database: db2);
+          expect(DependencyInjection.isConfigured, isTrue);
+        });
 
     test('ThemeProvider συνδεδεμένο με το SettingDao της εγγεγραμμένης db',
-        () async {
-      await DependencyInjection.configure(database: db);
+            () async {
+          await DependencyInjection.configure(database: db);
 
-      final provider = DependencyInjection.get<ThemeProvider>();
+          final provider = DependencyInjection.themeProvider;
 
-      // Ο provider πρέπει να διαβάζει/γράφει την TEST db (όχι το global).
-      await provider.initialize();
-      expect(provider.themeMode, ThemeMode.system);
+          // Ο provider πρέπει να διαβάζει/γράφει την TEST db (όχι το global).
+          await provider.initialize();
+          expect(provider.themeMode, ThemeMode.system);
 
-      await provider.setThemeMode(ThemeMode.dark);
-      final settingDao = DependencyInjection.get<SettingDao>();
-      expect(await settingDao.getThemeMode(), ThemeMode.dark);
-    });
-
-    test('get<T> μη εγγεγραμμένου τύπου → StateError', () async {
-      await DependencyInjection.configure(database: db);
-      expect(
-        () => DependencyInjection.get<int>(),
-        throwsA(isA<StateError>()),
-      );
-    });
+          await provider.setThemeMode(ThemeMode.dark);
+          final settingDao = DependencyInjection.settingDao;
+          expect(await settingDao.getThemeMode(), ThemeMode.dark);
+        });
   });
 }
