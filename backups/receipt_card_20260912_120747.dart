@@ -1,7 +1,7 @@
 // features/receipt/presentation/widgets/receipt_card.dart
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/receipt_payment_status.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/strings/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -66,11 +66,7 @@ class ReceiptCard extends StatelessWidget {
                     style: AppTextStyles.currency,
                   ),
                   const SizedBox(height: AppDimensions.xs),
-                  _ReceiptStatusChip(
-                    status: ReceiptPaymentStatus.fromDbValue(
-                      receipt.paymentStatus,
-                    ),
-                  ),
+                  _ReceiptStatusChip(status: receipt.paymentStatus),
                 ],
               ),
             ],
@@ -82,12 +78,10 @@ class ReceiptCard extends StatelessWidget {
 }
 
 /// Εσωτερικό chip κατάστασης πληρωμής — χρώμα από APPColors, label από
-/// AppStrings (SPoT). Δέχεται [ReceiptPaymentStatus] (SPoT Status Pattern)
-/// — η μετατροπή από τη String τιμή του drift DataClass γίνεται στο
-/// boundary (`fromDbValue`, συνεπές με τον DAO `_paymentStatus`) και το
-/// switch είναι exhaustive (χωρίς σιωπηλό fallback).
+/// AppStrings (SPoT). Το status-string έρχεται από `AppConstants.paymentStatus*`
+/// (SPoT — συνεπές με τον DAO: _paymentStatus).
 class _ReceiptStatusChip extends StatelessWidget {
-  final ReceiptPaymentStatus status;
+  final String status;
 
   const _ReceiptStatusChip({required this.status});
 
@@ -114,11 +108,10 @@ class _ReceiptStatusChip extends StatelessWidget {
   }
 
   (String, Color) get _statusData => switch (status) {
-        ReceiptPaymentStatus.paid =>
+        AppConstants.paymentStatusPaid =>
           (AppStrings.receiptStatusPaid, AppColors.success),
-        ReceiptPaymentStatus.partial =>
+        AppConstants.paymentStatusPartial =>
           (AppStrings.receiptStatusPartial, AppColors.warning),
-        ReceiptPaymentStatus.pending =>
-          (AppStrings.receiptStatusPending, AppColors.error),
+        _ => (AppStrings.receiptStatusPending, AppColors.error),
       };
 }

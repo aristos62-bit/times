@@ -1,6 +1,5 @@
 // test/unit/core/database/daos/receipt_dao_test.dart
 import 'package:drift/native.dart';
-import 'package:expense_tracker/core/constants/receipt_payment_status.dart';
 import 'package:expense_tracker/core/database/app_database.dart';
 import 'package:expense_tracker/features/receipt/domain/models/receipt_input.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -84,11 +83,11 @@ void main() {
 
         final partial = await fixture
             .dao
-            .watchAllReceipts(paymentStatus: ReceiptPaymentStatus.partial)
+            .watchAllReceipts(paymentStatus: 'partial')
             .first;
         final pending = await fixture
             .dao
-            .watchAllReceipts(paymentStatus: ReceiptPaymentStatus.pending)
+            .watchAllReceipts(paymentStatus: 'pending')
             .first;
         expect(partial.length, 1);
         expect(pending.length, 1);

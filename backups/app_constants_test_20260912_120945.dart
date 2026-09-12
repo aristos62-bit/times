@@ -1,5 +1,4 @@
 import 'package:expense_tracker/core/constants/app_constants.dart';
-import 'package:expense_tracker/core/constants/receipt_payment_status.dart';
 import 'package:expense_tracker/core/strings/app_strings.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -38,14 +37,6 @@ void main() {
       expect(AppConstants.paymentStatusPaid, 'paid');
       expect(AppConstants.paymentStatusPending,
           isNot(AppConstants.paymentStatusPaid));
-    });
-  });
-
-  group('ReceiptPaymentStatus ↔ AppConstants consistency (SPoT Status Pattern)', () {
-    test('dbValue ταυτίζονται με τα AppConstants', () {
-      expect(ReceiptPaymentStatus.pending.dbValue, AppConstants.paymentStatusPending);
-      expect(ReceiptPaymentStatus.partial.dbValue, AppConstants.paymentStatusPartial);
-      expect(ReceiptPaymentStatus.paid.dbValue, AppConstants.paymentStatusPaid);
     });
   });
 }

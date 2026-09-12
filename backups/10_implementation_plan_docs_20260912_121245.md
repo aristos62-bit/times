@@ -210,10 +210,6 @@
 > `ReceiptItemInput` με SPoT import + per-item checks (quantity/unitPrice/itemId/
 > vatRate/discount) με `isFinite`/`maxQuantity`/`maxPrice`/`maxDiscountPercent` +
 > 3 νέα AppConstants + 3 νέα AppStrings + 14 edge tests → **321/321, analyze clean**.
-> **SPoT Status Pattern (12/09/2026):** νέο `ReceiptPaymentStatus` enum
-> (core/constants/receipt_payment_status.dart ~40 γρ.) — καταναλώνει τα const
-> `AppConstants.paymentStatus*`, αυστηρό `fromDbValue` (fail-fast), DAO `_paymentStatus`
-> → enum, filter `.dbValue`, chip exhaustive. Σύνολο **394/394 tests, analyze clean**.
 > Σειρά εκτέλεσης βημάτων: 3) codegen + DAO tests ✅, 4) ReceiptRepository
 > abstract+impl + DI ✅, 5) αντικατάσταση placeholder `validators.dart` ✅, 6) BLoC ✅,
 > 7) presentation ✅, 8) sync .md.

@@ -6,7 +6,6 @@
 // receipt_dao_test.dart) — εδώ ελέγχεται η σύνδεση contract → impl → DAO
 // (σχέδιο: item_repository_impl_test.dart).
 import 'package:drift/native.dart';
-import 'package:expense_tracker/core/constants/receipt_payment_status.dart';
 import 'package:expense_tracker/features/receipt/data/repositories/receipt_repository_impl.dart';
 import 'package:expense_tracker/features/receipt/domain/models/receipt_input.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -119,11 +118,9 @@ void main() {
       expect(outOfRange, isEmpty);
       final wrongSupplier = await repo.watchAll(supplierId: 99999).first;
       expect(wrongSupplier, isEmpty);
-      final pending = await repo
-          .watchAll(paymentStatus: ReceiptPaymentStatus.pending)
-          .first;
+      final pending = await repo.watchAll(paymentStatus: 'pending').first;
       expect(pending.map((r) => r.id), [id]);
-      final paid = await repo.watchAll(paymentStatus: ReceiptPaymentStatus.paid).first;
+      final paid = await repo.watchAll(paymentStatus: 'paid').first;
       expect(paid, isEmpty);
     });
 

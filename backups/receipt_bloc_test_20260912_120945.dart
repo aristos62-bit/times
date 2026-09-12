@@ -11,7 +11,6 @@
 import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
-import 'package:expense_tracker/core/constants/receipt_payment_status.dart';
 import 'package:expense_tracker/core/database/app_database.dart';
 import 'package:expense_tracker/core/strings/app_strings.dart';
 import 'package:expense_tracker/features/receipt/data/repositories/receipt_repository_impl.dart';
@@ -139,9 +138,7 @@ void main() {
           await fixture.createReceipt();
           final loaded =
               bloc.stream.firstWhere((s) => s.status == ReceiptsStatus.loaded);
-          bloc.add(const ReceiptsLoadRequested(
-              paymentStatus: ReceiptPaymentStatus.paid,
-            ));
+          bloc.add(const ReceiptsLoadRequested(paymentStatus: 'paid'));
           await loaded;
         },
         expect: () => [

@@ -11,17 +11,11 @@
 |---|---|---|
 | 1 | `design/01_architecture.md` | Αρχιτεκτονική Εφαρμογής |
 | 2 | `design/02_folder_structure.md` | Δομή Φακέλων |
-| 3 | `design/03_core_layer.md` | Core Layer (SPOs & Utilities) — §3.1–3.7 |
-| 3 | `design/03_utilities_widgets.md` | Core Layer — §3.8–3.10 (validators, responsive, auto-suggest) |
-| 3 | `design/03_theme_extensions.md` | Core Layer — §3.11–3.13 (theme, theme provider, extensions) |
+| 3 | `design/03_core_layer.md` | Core Layer (SPOs & Utilities) |
 | 4 (4.1–4.2) | `design/04_database_layer.md` | Database Layer (AppDatabase, Tables) |
-| 4.3 | `design/05_daos.md` | Drift DAOs — εισαγωγή §4.3 + `ReceiptDao` |
-| 4.3b | `design/05_daos_budget_item.md` | DAOs — `BudgetDao`, `ItemDao`, `CategoryDao` |
-| 4.3c | `design/05_daos_supplier_tag_setting.md` | DAOs — `SupplierDao`, `TagDao`, `SettingDao` |
+| 4.3 | `design/05_daos.md` | Drift DAOs |
 | 4.4–4.5 | `design/06_migrations_backup.md` | Migrations, Backup & Restore |
-| 5 | `design/07_features_layer.md` | Features Layer — §5.1 (Receipt: Entity/Models/Repository/Aggregates) |
-| 5.1.7 | `design/07_features_layer_bloc.md` | Receipt Feature — BLoC |
-| 5.2 | `design/07_repositories.md` | Repositories (abstract contracts + impls) |
+| 5 | `design/07_features_layer.md` | Features Layer |
 | 6–7 | `design/08_design_system.md` | Responsive Design System + Theme |
 | 8 | `design/09_testing_strategy.md` | Testing Strategy |
 | 9 | `design/10_implementation_plan.md` | Βήματα Υλοποίησης (Phases) |
@@ -39,7 +33,7 @@
 
 - [ ] Phase 1: Project Setup
 - [x] Phase 2: Database Layer
-- [ ] Phase 3: Receipt Feature (Steps 1-7 ✅ — Input models + ReceiptDao + ReceiptRepository + DI + Validators + BLoC + Presentation + **Fixes**: wiring main/app/receipts_home + SPoT paymentStatus, 11/09/2026 + DI typed getters & stale comments, 12/09/2026 + **SPoT Status Pattern** `ReceiptPaymentStatus` enum 12/09/2026 → 394/394 tests, analyze clean)
+- [ ] Phase 3: Receipt Feature (Steps 1-7 ✅ — Input models + ReceiptDao + ReceiptRepository + DI + Validators + BLoC + Presentation + **Fixes**: wiring main/app/receipts_home + SPoT paymentStatus, 11/09/2026 + DI typed getters & stale comments, 12/09/2026)
 - [ ] Phase 4: Item & Category Features
 - [ ] Phase 5: Supplier Feature
 - [ ] Phase 6: Budget Feature
@@ -50,4 +44,4 @@
 - [ ] Phase 11: Polish & Deployment
 
 ---
-*Τελευταία ενημέρωση: 2026-09-12 (Phase 3 Fix-D — UseCases deferred, Route A-Συνεπές · SPLIT 05_daos & 07_features_layer σε ≤500 γρ.)*
+*Τελευταία ενημέρωση: 2026-09-12 (Phase 3 Fix-D — UseCases deferred, Route A-Συνεπές)*

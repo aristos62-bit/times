@@ -318,7 +318,7 @@ class Receipts extends Table {
   RealColumn get discountTotal => real().withDefault(const Constant(0))();
   RealColumn get paidAmount => real().withDefault(const Constant(0))();
   RealColumn get remainingAmount => real().withDefault(const Constant(0))();
-  TextColumn get paymentStatus => text().withDefault(const Constant(AppConstants.paymentStatusPending))();
+  TextColumn get paymentStatus => text().withDefault(const Constant('pending'))();
   TextColumn get notes => text().nullable()();
   TextColumn get attachmentPath => text().nullable()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();

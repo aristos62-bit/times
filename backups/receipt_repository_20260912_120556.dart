@@ -1,5 +1,4 @@
 // features/receipt/domain/repositories/receipt_repository.dart
-import '../../../../core/constants/receipt_payment_status.dart';
 import '../../../../core/database/app_database.dart';
 import '../models/receipt_input.dart';
 
@@ -19,7 +18,7 @@ abstract class ReceiptRepository {
     DateTime? startDate,
     DateTime? endDate,
     int? supplierId,
-    ReceiptPaymentStatus? paymentStatus,
+    String? paymentStatus,
   });
 
   /// Get receipt by id

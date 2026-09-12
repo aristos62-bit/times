@@ -9,7 +9,6 @@
 // από FK violation) — δεν καταπνίγονται.
 //
 // Instantiation: constructor injection μέσω dependency_injection.dart.
-import '../../../../core/constants/receipt_payment_status.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/database/daos/daos.dart';
 import '../../domain/models/receipt_input.dart';
@@ -25,7 +24,7 @@ class ReceiptRepositoryImpl implements ReceiptRepository {
     DateTime? startDate,
     DateTime? endDate,
     int? supplierId,
-    ReceiptPaymentStatus? paymentStatus,
+    String? paymentStatus,
   }) =>
       _receiptDao.watchAllReceipts(
         startDate: startDate,

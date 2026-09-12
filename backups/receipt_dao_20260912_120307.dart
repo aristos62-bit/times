@@ -2,7 +2,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../features/receipt/domain/models/receipt_input.dart';
-import '../../constants/receipt_payment_status.dart';
+import '../../constants/app_constants.dart';
 import '../../debug/app_logger.dart';
 import '../../debug/debug_config.dart';
 import '../../utils/extensions.dart';
@@ -26,8 +26,8 @@ part 'receipt_dao.g.dart';
 ///  - Totals + paymentStatus: ενιαίο write `_refreshFinancials` (αντί των
 ///    δύο βημάτων `_updateReceiptTotals` + `_updatePaymentStatus` του §4.3).
 ///  - Line math: Dart record αντί της κλάσης `ReceiptItemData` (§4.3).
-///  - Status literals: `ReceiptPaymentStatus` (SPoT Status Pattern — πάνω από
-///    `AppConstants.paymentStatus*`, χωρίς magic strings).
+///  - Status literals: `AppConstants.paymentStatus*` (SPoT — συνεπή με το
+///    table default, χωρίς magic strings).
 ///  - Paid-status: `DoubleExtensions.approximates` (ε=0.001) — ανοχή floating
 ///    errors αντί strict `remaining <= 0`.
 ///  - Κενά items: επιτρέπονται (block μόνο στο `Validators.validateReceipt`).
@@ -69,7 +69,7 @@ class ReceiptDao extends DatabaseAccessor<AppDatabase> with _$ReceiptDaoMixin {
     DateTime? startDate,
     DateTime? endDate,
     int? supplierId,
-    ReceiptPaymentStatus? paymentStatus,
+    String? paymentStatus,
   }) {
     return (select(receipts)
           ..where((r) {
@@ -85,7 +85,7 @@ class ReceiptDao extends DatabaseAccessor<AppDatabase> with _$ReceiptDaoMixin {
               filters.add(r.supplierId.equals(supplierId));
             }
             if (paymentStatus != null) {
-              filters.add(r.paymentStatus.equals(paymentStatus.dbValue));
+              filters.add(r.paymentStatus.equals(paymentStatus));
             }
             if (filters.isEmpty) return const Constant<bool>(true);
             return filters.reduce((a, b) => a & b);
@@ -318,7 +318,7 @@ class ReceiptDao extends DatabaseAccessor<AppDatabase> with _$ReceiptDaoMixin {
         discountTotal: Value(totals.discount),
         paidAmount: Value(paid),
         remainingAmount: Value(remaining),
-        paymentStatus: Value(status.dbValue),
+        paymentStatus: Value(status),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -372,13 +372,13 @@ class ReceiptDao extends DatabaseAccessor<AppDatabase> with _$ReceiptDaoMixin {
 
   /// Κατάσταση πληρωμής από τρέχον υπόλοιπο + πληρωμένο ποσό.
   /// Δ4: approximates (ε=0.001) + ρητό <0 για overpaid → πάντα 'paid'.
-  /// Επιστρέφει [ReceiptPaymentStatus] (SPoT Status Pattern).
-  ReceiptPaymentStatus _paymentStatus(double remaining, double paid) {
+  /// Οι τιμές έρχονται από `AppConstants.paymentStatus*` (SPoT).
+  String _paymentStatus(double remaining, double paid) {
     if (remaining < 0 || remaining.approximates(0)) {
-      return ReceiptPaymentStatus.paid;
+      return AppConstants.paymentStatusPaid;
     }
-    if (paid > 0) return ReceiptPaymentStatus.partial;
-    return ReceiptPaymentStatus.pending;
+    if (paid > 0) return AppConstants.paymentStatusPartial;
+    return AppConstants.paymentStatusPending;
   }
 }
 

@@ -1,7 +1,6 @@
 // features/receipt/presentation/bloc/receipt_event.dart
 import 'package:equatable/equatable.dart';
 
-import '../../../../core/constants/receipt_payment_status.dart';
 import '../../../../core/database/app_database.dart';
 import '../../domain/models/receipt_input.dart';
 
@@ -66,8 +65,8 @@ final class ReceiptsLoadRequested extends ReceiptEvent {
   final DateTime? endDate;
   final int? supplierId;
 
-  /// Φίλτρο κατάστασης πληρωμής ([ReceiptPaymentStatus] SPoT Status Pattern).
-  final ReceiptPaymentStatus? paymentStatus;
+  /// `AppConstants.paymentStatus*` (SPoT — 'pending' | 'partial' | 'paid').
+  final String? paymentStatus;
 
   @override
   List<Object?> get props => [startDate, endDate, supplierId, paymentStatus];

@@ -19,7 +19,7 @@ import '../widgets/receipt_item_list.dart';
 ///
 /// [BlocProvider] του [ReceiptBloc] πρέπει να υπάρχει πάνω. Το screen
 /// dispatch [ReceiptDetailLoadRequested] και δείχνει:
-/// - Header: "#N", ημερομηνία,
+/// - Header: "#N", ημερομηνία, payment status chip,
 /// - notes (αν υπάρχουν),
 /// - γραμμές ([ReceiptItemList]) από state.items,
 /// - totals footer: Καθαρό, ΦΠΑ, Σύνολο με ΦΠΑ, Πληρωμένο, Υπόλοιπο.
