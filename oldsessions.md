@@ -27,7 +27,8 @@
 - **Φάση που βρισκόμαστε:** Φάση 0 — Βήματα 3, 4, 6 ΟΛΟΚΛΗΡΩΘΗΚΑΝ.
   - Βήμα 3: δομή φακέλων `lib/` · `flutter analyze` καθαρό · `flutter build apk --debug` ✓.
   - Βήμα 4: DESIGN.md §2, §3, Phase 0 steps ενημερώθηκαν (κλειδωμένος σχεδιασμός units, branding, SPoT list, validators, utils).
-  - Βήμα 6 (Utils): `core/utils/debouncer.dart` υλοποιήθηκε (SPoT, ~45 γρ.) + `fake_async: ^1.3.3` προστέθηκε ως dev dependency · `test/core/utils/debouncer_test.dart` 6 tests περνούν.
+  - Βήμα 6 (Utils): `core/utils/debouncer.dart` υλοποιήθηκε (SPoT, ~45 γρ.) + `fake_async: ^1.3.3` · `test/core/utils/debouncer_test.dart` 6 tests περνούν. `core/utils/greek_text_normalizer.dart` υλοποιήθηκε (SPoT, ~42 γρ.) — `normalize()`: lowercase + τόνοι/διαλυτικά + ς→σ + combining U+0300-036F strip, idempotent, όχι trim · `test/core/utils/greek_text_normalizer_test.dart` 15 tests · σύνολο suite **23/23** · bug `StringBuffer(length)` διορθώθηκε. DESIGN.md §3 ενημερώθηκε: `normalizedName` σε Item/Supplier (insert-time, LIKE, exact-match duplicate-check §2.2) · index σε `normalizedName` · §2.0.4: σίγμα + κλείδωμα στήλης. DESIGN τώρα 375 γρ.
   - Επαναδομή lib/: `domain/validators` · `presentation/{home,price_entry,settings}/{controllers,state,widgets}` (.gitkeep).
-- **Επόμενα βήματα:** Φάση 0, Βήμα 6 (υπόλοιπα): `greek_text_normalizer.dart`, `app_feedback.dart` · Βήμα 5 (logger/debug_config) · Βήμα 4 (υπόλοιπα SPoT: `app_strings.dart` επόμενο).
-- **Σημείωση:** Το `DESIGN.md` βρίσκεται στο root του project (374 γρ.). Τα backups βρίσκονται στο `backups/`.
+  - GitHub Actions CI: `.github/workflows/flutter_ci.yml` (checkout@v5, flutter stable, analyze+test σε push/PR main).
+- **Επόμενα βήματα:** Φάση 0, Βήμα 6 υπόλοιπο: `app_feedback.dart` · Βήμα 5 (logger/debug_config) · Βήμα 4 υπόλοιπα SPoT (`app_strings.dart` επόμενο).
+- **Σημείωση:** Το `DESIGN.md` βρίσκεται στο root του project (375 γρ.). Τα backups βρίσκονται στο `backups/`.

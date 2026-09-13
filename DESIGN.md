@@ -120,9 +120,9 @@ presentation/<screen>/
    - `xxxControllerProvider` → φόρμες/actions (AsyncNotifierProvider)
    - `selectedXxxProvider` → απλή επιλογή UI state (StateProvider), π.χ. φίλτρο
 3. **Debounce σε ΚΑΘΕ text input που πυροδοτεί query** (όχι μόνο στην αναζήτηση ειδών) — χρήση κοινού `Debouncer` util στο `core/utils/debouncer.dart`, με τιμή από `AppConstants.searchDebounceMillis`. Κάθε νέο keystroke **ακυρώνει** το προηγούμενο pending query (αποφυγή race condition: παλιό αργό αποτέλεσμα να "προσπεράσει" νεότερο).
-4. **Ελληνικό normalization στην αναζήτηση**: η αναζήτηση ειδών/προμηθευτών/κατηγοριών πρέπει να δουλεύει ανεξαρτήτως τόνων/κεφαλαίων (π.χ. "γαλα" να βρίσκει "Γάλα"). SPoT utility `core/utils/greek_text_normalizer.dart` → εφαρμόζεται και στο SQL query (αποθηκευμένη normalized στήλη ή `LIKE` σε normalized μορφή) και στο UI input πριν το query φύγει.
+4. **Ελληνικό normalization στην αναζήτηση**: η αναζήτηση ειδών/προμηθευτών/κατηγοριών πρέπει να δουλεύει ανεξαρτήτως τόνων/κεφαλαίων (π.χ. "γαλα" να βρίσκει "Γάλα") και τελικού σίγμα (αδιάφορο σ/ς). SPoT utility `core/utils/greek_text_normalizer.dart` → εφαρμόζεται και στο SQL query (αποθηκευμένη normalized στήλη `normalizedName`, §3) και στο UI input πριν το query φύγει.
 5. **Καμία οθόνη δεν διαβάζει repository απευθείας** — πάντα μέσω controller/provider (ισχύει ήδη στο §1.2, το επαναλαμβάνω εδώ γιατί είναι το σημείο που παραβιάζεται πιο εύκολα μέσα σε popup/dialog widgets που "βολεύει" να πάρουν shortcut).
-6. **Snackbars/Toasts μόνο μέσω SPoT wrapper** `core/utils/app_feedback.dart` (`AppFeedback.showSuccess(context, msg)` / `showError(...)`) — χρησιμοποιεί `AppConstants.snackBarDuration`, ώστε να μην ξαναγραφτεί `ScaffoldMessenger.of(context).showSnackBar(...)` σκόρπιο σε 10 σημεία.
+6. **Snackbars/Toasts μόνο μέσω SPoT wrapper** `core/utils/app_feedback.dart` (`AppFeedback.showSuccess(context, msg)` / `showError(...)`) — χρησιμοποιεί `AppConstants.snackBarDurationSeconds`, ώστε να μην ξαναγραφτεί `ScaffoldMessenger.of(context).showSnackBar(...)` σκόρπιο σε 10 σημεία.
 
 ---
 
@@ -297,9 +297,9 @@ widgets/ (dumb components, παίρνουν έτοιμα δεδομένα ως �
 ```
 Category        (id, name, createdAt)
 SubCategory     (id, categoryId → Category, name)
-Item            (id, subCategoryId → SubCategory, name, defaultUnitId → Unit)
+Item            (id, subCategoryId → SubCategory, name, normalizedName, defaultUnitId → Unit)
 Unit            (id, name, abbreviation, allowsDecimal)  -- π.χ. Τεμάχιο/τεμ (allowsDecimal=false), Κιλό/κιλ (true), Λίτρο/λτ (true)
-Supplier        (id, name, createdAt)
+Supplier        (id, name, normalizedName, createdAt)
 Receipt         (id, receiptNumber [auto], date, supplierId → Supplier)
 ReceiptLine     (id, receiptId → Receipt, itemId → Item, unitId → Unit,
                  quantity [REAL], priceCents [INTEGER], lineTotalCents [INTEGER])
@@ -310,7 +310,8 @@ ReceiptLine     (id, receiptId → Receipt, itemId → Item, unitId → Unit,
 - **`lineTotalCents`**: INTEGER, υπολογισμένο **μία φορά** κατά το insert `(priceCents * quantity).round()` — **όχι** Drift generated column (παραμένει ελεγχόμενο, testable, ανεξάρτητο από SQLite float handling). Κάθε επόμενος υπολογισμός (Φάση 5: μέσος όρος, σύνολο μήνα, σύγκριση προμηθευτών) δουλεύει **μόνο** σε `SUM(lineTotalCents)`.
 - **`Unit.allowsDecimal`**: flag που ορίζει αν μια μονάδα δέχεται κλασματική ποσότητα (π.χ. Τεμάχιο=false, Κιλό=true). Χρησιμοποιείται από τη φόρμα εισαγωγής (Φάση 3) για απόρριψη τιμών όπως «2.5 τεμάχια».
 - Όλα τα foreign keys με `ON DELETE RESTRICT` για Category/SubCategory/Item (ώστε να μην διαγράφονται αν έχουν δεδομένα) — υλοποιεί απευθείας τον κανόνα της §2.3.
-- Indexes σε `Item.name` (για γρήγορη αναζήτηση) και `ReceiptLine.itemId` (για στατιστικά).
+- **`normalizedName`** (Item & Supplier): καθαρή `GreekTextNormalizer.normalize(name)` (lowercase + αφαίρεση τόνων + ς→σ) που υπολογίζεται στο Dart κατά insert/update — όχι DB-generated column, ελεγχόμενο/testable, ίδιο μοτίβο με το `lineTotalCents`. Η αναζήτηση γίνεται πάντα με `WHERE normalizedName LIKE '%' || :normalizedQuery || '%'`, όπου `:normalizedQuery` έχει ήδη περάσει από το `GreekTextNormalizer.normalize()` στο UI input (§2.0.4). Αυτό είναι υποχρεωτικό, όχι προαιρετικό: το SQLite `COLLATE NOCASE` είναι ASCII-only και ΔΕΝ ξέρει ότι «Α»=«α» — LIKE πάνω στο raw `name` θα έβρισκε ελληνικά μόνο σε συγκεκριμένη περίπτωση (σιωπηλό, δύσκολο bug). Κατηγορία/Υποκατηγορία/Unit δεν χρειάζονται στήλη: επιλέγονται από μικρές ήδη-φορτωμένες λίστες (SearchableDropdownField §2.4) — φιλτράρισμα in-memory πάνω στο stream, χωρίς DB query. Ο ίδιος `normalizedName` χρησιμοποιείται και στον case-insensitive duplicate-check του §2.2 (exact match, όχι LIKE) — μία μόνο υλοποίηση normalization, καμία διπλή λογική.
+- Indexes σε `Item.normalizedName` και `Supplier.normalizedName` (επιταχύνουν τον exact-match duplicate-check, §2.2· δεν επιταχύνουν το substring `LIKE '%...%'` — αυτό παραμένει πάντα full scan στο SQLite χωρίς FTS5, αμελητέο για τον όγκο δεδομένων προσωπικής χρήσης) και `ReceiptLine.itemId` (για στατιστικά).
 
 ---
 
