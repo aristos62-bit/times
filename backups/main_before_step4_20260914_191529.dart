@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'core/constants/app_strings.dart';
 import 'core/logging/app_logger.dart';
-import 'core/theme/app_theme.dart';
 
 void main() {
   // Dev-facing init log — εφαρμογή ξεκίνησε (tag UI, §1.7).
@@ -18,11 +17,24 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: AppStrings.appTitle,
-      // SPoT theme: light/dark from AppColors.brandSeed (§0/§1.5) · ThemeMode
-      // system default (§1.5) — override ανά χρήστη στη Φάση 4 (§2.3).
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: AppTheme.defaultMode,
+      theme: ThemeData(
+        // This is the theme of your application.
+        //
+        // TRY THIS: Try running your application with "flutter run". You'll see
+        // the application has a purple toolbar. Then, without quitting the app,
+        // try changing the seedColor in the colorScheme below to Colors.green
+        // and then invoke "hot reload" (save your changes or press the "hot
+        // reload" button in a Flutter-supported IDE, or press "r" if you used
+        // the command line to start the app).
+        //
+        // Notice that the counter didn't reset back to zero; the application
+        // state is not lost during the reload. To reset the state, use hot
+        // restart instead.
+        //
+        // This works for code too, not just values: Most code changes can be
+        // tested with just a hot reload.
+        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+      ),
       home: const MyHomePage(title: AppStrings.appTitle),
     );
   }

@@ -11,7 +11,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/logging/app_logger.dart';
-import 'package:times/core/theme/app_colors.dart';
 import 'package:times/core/utils/app_feedback.dart';
 
 /// Δημιουργεί MaterialApp με Scaffold και κουμπί «tap» που καλεί [onPressed]
@@ -68,7 +67,7 @@ void main() {
 
     testWidgets('showError εμφανίζεται με errorContainer/onErrorContainer',
         (tester) async {
-      final scheme = ColorScheme.fromSeed(seedColor: AppColors.brandSeed);
+      final scheme = ColorScheme.fromSeed(seedColor: const Color(0xFF00897B));
 
       await _pumpApp(
         tester,
