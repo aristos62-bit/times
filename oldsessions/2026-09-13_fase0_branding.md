@@ -277,3 +277,21 @@
 - **Σύνολο suite:** **92/92** ✓ (77 + 15 νέα) · `flutter analyze` **No issues** ✓.
 - **Δεν άλλαξε DESIGN.md** — καμία αρχιτεκτονική αλλαγή (κανόνας 8).
 - **Backups** (`backups/*_before_step4_20260914_191529.*`): `app_colors`, `app_theme`, `app_routes`, `app_enums`, `main`, `app_feedback_test`, `oldsessions.md`, `fase0_branding.md`.
+
+---
+
+## 13. Φάση 0 · Φινάλε ελέγχου — Fix τίτλου Windows + test `app_constants`
+
+> Ημερομηνία: 14-09-2026. Append στο κεφάλαιο. Διορθώσεις από τον τελικό έλεγχο φάσης 0 (Section Δ) — 2 από 4 θέματα ενεργά, τα υπόλοιπα (CI coverage Φάση 6 · web `<base>`/`user-scalable` · responsive tests Φάση 3+) έκλεισαν ως no-action.
+
+- **Δ5 — Windows window title encoding bug (`windows/runner/main.cpp`)**:
+  - Το «Τιμές» είχε γραφτεί ως **raw UTF-8 bytes** (`CE A4 CE B9 CE BC CE AD CF 82`) μέσα σε wide literal `L"..."`, σε αρχείο **χωρίς BOM** → ο MSVC (χωρίς `/utf-8`) θα διάβαζε τα bytes ως ANSI codepage → **τίτλος παραθύρου garbled**.
+  - **Fix:** `window.Create(L"\u03A4\u03B9\u03BC\u03AD\u03C2", ...)` — Unicode escapes, **ανεξάρτητα file encoding**. Έλεγχος: 0 non-ASCII bytes στο αρχείο (ASCII-clean).
+  - Το σχόλιο-επεξήγηση κρατήθηκε **ASCII** (το αρχείο είναι BOM-less C++ — ελληνικά bytes σε σχόλια θα ήταν πάλι non-ASCII).
+- **Δ1 — `test/core/constants/app_constants_test.dart` (νέο)**:
+  - Έκλεισε το μοναδικό κενό των constants σε test (το `app_constants` ήταν το μόνο SPoT χωρίς δικό του test· `snackBarDurationSeconds`/`maxFeedbackLines` ελέγχονταν ήδη έμμεσα στο app_feedback_test).
+  - Ίδιο quality-gate pattern με τα υπόλοιπα constants tests (`_allConstStrings` + μη-κενό/trim/no-`\n`).
+  - **27 tests**: exact values ×20 (§1.4, §2.0.3, §2.2, §2.3) + invariants pricing: `mobileMaxWidth<tabletMaxWidth`, spacing `S<M<L<XL`, radius `S<M<L`, `searchDebounceMillis>0`, `searchResultsLimit>searchMinChars`, `quantityDecimalDigits>priceDecimalDigits`, `maxReceiptLines>=maxItemNameLength`, limits `>0`, string quality gate.
+- **Σύνολο suite:** **119/119** ✓ (92 + 27 νέα) · `flutter analyze` **No issues** ✓.
+- **Δεν άλλαξε DESIGN.md** — καμία αρχιτεκτονική αλλαγή (κανόνας 8).
+- **Backup:** `backups/main_cpp_before_win_title_fix_20260914_194706.cpp` (μόνο λαμβάνει edit αρχείο → μόνο αυτό χρειαζόταν backup· το test είναι νέο αρχείο).

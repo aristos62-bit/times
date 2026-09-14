@@ -27,10 +27,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  // Window title ("Times", Greek: "Times") as Unicode escapes - stays correct
-  // regardless of file encoding (no BOM + no `/utf-8`: MSVC would read raw
-  // UTF-8 bytes as the system ANSI codepage, garbling the title).
-  if (!window.Create(L"\u03A4\u03B9\u03BC\u03AD\u03C2", origin, size)) {
+  if (!window.Create(L"Τιμές", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);
