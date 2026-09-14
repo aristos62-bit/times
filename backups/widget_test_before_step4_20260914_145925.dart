@@ -8,16 +8,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:times/core/constants/app_strings.dart';
 import 'package:times/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
-
-    // Verify the app title (SPoT branding) is shown in the AppBar.
-    expect(find.text(AppStrings.appTitle), findsOneWidget);
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

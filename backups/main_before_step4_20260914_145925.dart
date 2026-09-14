@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'core/constants/app_strings.dart';
-import 'core/logging/app_logger.dart';
-
 void main() {
-  // Dev-facing init log — εφαρμογή ξεκίνησε (tag UI, §1.7).
-  AppLogger.info(LogTag.ui, 'Εφαρμογή «Τιμές» ξεκίνησε');
   runApp(const MyApp());
 }
 
@@ -16,7 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: AppStrings.appTitle,
+      title: 'Flutter Demo',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -35,7 +30,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: AppStrings.appTitle),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
@@ -109,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: .center,
           children: [
-            const Text(AppStrings.counterInstruction),
+            const Text('You have pushed the button this many times:'),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
@@ -119,7 +114,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _incrementCounter,
-        tooltip: AppStrings.counterIncrementTooltip,
+        tooltip: 'Increment',
         child: const Icon(Icons.add),
       ),
     );

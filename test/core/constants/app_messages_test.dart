@@ -1,0 +1,84 @@
+/// Unit tests για το SPoT `AppMessages` (core/constants/app_messages.dart) — §1.1.
+///
+/// Μόνο απλές σταθερές/μέθοδοι → plain `test()`, χωρίς widget pump (ίδιο στυλ με
+/// app_strings_test). Τιμές επαληθευμένες λέξη-προς-λέξη με το DESIGN.md
+/// (§2.2, §2.3, §2.4) κατά την υλοποίηση.
+library;
+
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:times/core/constants/app_messages.dart';
+
+void main() {
+  group('AppMessages', () {
+    // ─── SnackBar success (§2.2, §2.3) ──────────────────────────────────────
+    test('savedReceipt = «Αποθήκευση επιτυχής» (§2.2)', () {
+      expect(AppMessages.savedReceipt, 'Αποθήκευση επιτυχής');
+    });
+
+    test('restoreSuccess = «Η επαναφορά ολοκληρώθηκε» (§2.3)', () {
+      expect(AppMessages.restoreSuccess, 'Η επαναφορά ολοκληρώθηκε');
+    });
+
+    // ─── Confirm dialog defaults (§2.4) ─────────────────────────────────────
+    test('confirmDialogTitle = «Επιβεβαίωση» (§2.4)', () {
+      expect(AppMessages.confirmDialogTitle, 'Επιβεβαίωση');
+    });
+
+    test('confirmDialogConfirm = «Ναι» (§2.4)', () {
+      expect(AppMessages.confirmDialogConfirm, 'Ναι');
+    });
+
+    test('confirmDialogCancel = «Ακύρωση» (§2.4)', () {
+      expect(AppMessages.confirmDialogCancel, 'Ακύρωση');
+    });
+
+    // ─── Confirm messages (§2.2.221) ────────────────────────────────────────
+    test('exitUnsavedConfirm — ακριβές κείμενο (§2.2.221)', () {
+      expect(
+        AppMessages.exitUnsavedConfirm,
+        'Έχετε μη αποθηκευμένες γραμμές. Έξοδος χωρίς αποθήκευση;',
+      );
+    });
+
+    // ─── Dynamic tooltips (§2.3.252) ────────────────────────────────────────
+    test('itemCountTooltip(0) — edge case (§2.3.252)', () {
+      expect(
+        AppMessages.itemCountTooltip(0),
+        'Δεν μπορεί να διαγραφεί: περιέχει 0 είδη',
+      );
+    });
+
+    test('itemCountTooltip(5) — typical (§2.3.252)', () {
+      expect(
+        AppMessages.itemCountTooltip(5),
+        'Δεν μπορεί να διαγραφεί: περιέχει 5 είδη',
+      );
+    });
+
+    // ─── Pattern check ──────────────────────────────────────────────────────
+    test('itemCountTooltip είναι static method, επιστρέφει String', () {
+      expect(AppMessages.itemCountTooltip(1), isA<String>());
+    });
+
+    // ─── Καθολικός έλεγχος ποιότητας (ίδιο pattern με app_strings_test) ─────
+    test('κανένα const string μη-κενό, χωρίς whitespace στα άκρα, χωρίς \\n', () {
+      for (final text in _allConstStrings) {
+        expect(text, isNotEmpty, reason: 'Βρέθηκε κενό string');
+        expect(text, text.trim(), reason: 'Whitespace στα άκρα: «$text»');
+        expect(text.contains('\n'), isFalse, reason: 'Αλλαγή γραμμής: «$text»');
+      }
+    });
+  });
+}
+
+/// Χειροκίνητα συντηρούμενη λίστα — προστίθεται κάθε νέο const member.
+/// Χρησιμοποιείται μόνο από τον καθολικό έλεγχο ποιότητας.
+const List<String> _allConstStrings = [
+  AppMessages.savedReceipt,
+  AppMessages.restoreSuccess,
+  AppMessages.confirmDialogTitle,
+  AppMessages.confirmDialogConfirm,
+  AppMessages.confirmDialogCancel,
+  AppMessages.exitUnsavedConfirm,
+];
