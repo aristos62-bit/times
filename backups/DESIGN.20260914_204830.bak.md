@@ -297,9 +297,9 @@ widgets/ (dumb components, παίρνουν έτοιμα δεδομένα ως �
 ```
 Category        (id, name, createdAt)
 SubCategory     (id, categoryId → Category, name)
-Item            (id, subCategoryId → SubCategory, name, normalizedName [UNIQUE], defaultUnitId → Unit)
+Item            (id, subCategoryId → SubCategory, name, normalizedName, defaultUnitId → Unit)
 Unit            (id, name, abbreviation, allowsDecimal)  -- π.χ. Τεμάχιο/τεμ (allowsDecimal=false), Κιλό/κιλ (true), Λίτρο/λτ (true)
-Supplier        (id, name, normalizedName [UNIQUE], createdAt)
+Supplier        (id, name, normalizedName, createdAt)
 Receipt         (id, receiptNumber [auto], date, supplierId → Supplier)
 ReceiptLine     (id, receiptId → Receipt, itemId → Item, unitId → Unit,
                  quantity [REAL], priceCents [INTEGER], lineTotalCents [INTEGER])
@@ -311,8 +311,7 @@ ReceiptLine     (id, receiptId → Receipt, itemId → Item, unitId → Unit,
 - **`Unit.allowsDecimal`**: flag που ορίζει αν μια μονάδα δέχεται κλασματική ποσότητα (π.χ. Τεμάχιο=false, Κιλό=true). Χρησιμοποιείται από τη φόρμα εισαγωγής (Φάση 3) για απόρριψη τιμών όπως «2.5 τεμάχια».
 - Όλα τα foreign keys με `ON DELETE RESTRICT` για Category/SubCategory/Item (ώστε να μην διαγράφονται αν έχουν δεδομένα) — υλοποιεί απευθείας τον κανόνα της §2.3.
 - **`normalizedName`** (Item & Supplier): καθαρή `GreekTextNormalizer.normalize(name)` (lowercase + αφαίρεση τόνων + ς→σ) που υπολογίζεται στο Dart κατά insert/update — όχι DB-generated column, ελεγχόμενο/testable, ίδιο μοτίβο με το `lineTotalCents`. Η αναζήτηση γίνεται πάντα με `WHERE normalizedName LIKE '%' || :normalizedQuery || '%'`, όπου `:normalizedQuery` έχει ήδη περάσει από το `GreekTextNormalizer.normalize()` στο UI input (§2.0.4). Αυτό είναι υποχρεωτικό, όχι προαιρετικό: το SQLite `COLLATE NOCASE` είναι ASCII-only και ΔΕΝ ξέρει ότι «Α»=«α» — LIKE πάνω στο raw `name` θα έβρισκε ελληνικά μόνο σε συγκεκριμένη περίπτωση (σιωπηλό, δύσκολο bug). Κατηγορία/Υποκατηγορία/Unit δεν χρειάζονται στήλη: επιλέγονται από μικρές ήδη-φορτωμένες λίστες (SearchableDropdownField §2.4) — φιλτράρισμα in-memory πάνω στο stream, χωρίς DB query. Ο ίδιος `normalizedName` χρησιμοποιείται και στον case-insensitive duplicate-check του §2.2 (exact match, όχι LIKE) — μία μόνο υλοποίηση normalization, καμία διπλή λογική.
-- **[Φάση 1] `UNIQUE` στο `Item.normalizedName`** (global constraint): η απαγόρευση διπλότυπων ονομάτων εγγυάται σε επίπεδο βάσης μέσω exact-match στο `normalizedName` (πεζά/άτονα/ς→σ, §2.2). Δεν επαρκεί `UNIQUE` στο raw `name`, γιατί το SQLite string match δεν είναι case/tone-insensitive («Γάλα»≠«γάλα» ως strings). Εγκρίθηκε το ίδιο `UNIQUE` και στον `Supplier.normalizedName` — και για τα δύο απαγορεύεται σε επίπεδο βάσης ο προμηθευτής/είδος με ίδιο κανονικοποιημένο όνομα (πεζά/άτονα/ς→σ).
-- Σημ.: τα `UNIQUE` σε `Item.normalizedName` και `Supplier.normalizedName` δημιουργούν αυτόματα δικό τους index — **δεν** προστίθενται ξεχωριστά indexes σ' αυτά τα columns. Το μοναδικό ρητό index βάσει σχήματος είναι στο `ReceiptLine.itemId` (επιτάχυνση στατιστικών). Ως εκ τούτου δεν χρησιμοποιείται `@TableIndex` σε Item/Supplier (μόνο `ReceiptLine.itemId`). Το substring `LIKE '%...%'` του §3 παραμένει full scan στο SQLite χωρίς FTS5 — αμελητέο για τον όγκο δεδομένων προσωπικής χρήσης.
+- Indexes σε `Item.normalizedName` και `Supplier.normalizedName` (επιταχύνουν τον exact-match duplicate-check, §2.2· δεν επιταχύνουν το substring `LIKE '%...%'` — αυτό παραμένει πάντα full scan στο SQLite χωρίς FTS5, αμελητέο για τον όγκο δεδομένων προσωπικής χρήσης) και `ReceiptLine.itemId` (για στατιστικά).
 
 ---
 
@@ -334,13 +333,13 @@ ReceiptLine     (id, receiptId → Receipt, itemId → Item, unitId → Unit,
 2. DAOs με βασικά CRUD + streams.
 3. **Seed δεδομένων** — bootstrap **μία φορά** στο Drift `onCreate` (νέο DB file), μέσα σε **ένα transaction**· όχι σε κάθε launch.
    - **Μονάδες μέτρησης** (Τεμάχιο/τεμ `allowsDecimal=false`, Κιλό/κιλ `true`, Λίτρο/λτ `true`, Γραμμάριο/γρ, Χιλιοστόλιτρο/χλτ κ.λπ.) ως Dart seed constants — κάθε μονάδα με `name`, `abbreviation`, `allowsDecimal` (§3). Όχι hardcoded στο UI.
-   - **Κατηγορίες / Υποκατηγορίες / Είδη**: πηγή-αναφορά το `supermarket_categories_v2.md` (root repo, 9 κατηγορίες / 53 υποκατηγορίες / 535 είδη). Τα δεδομένα μεταγράφονται σε Dart seed constants στο `lib/data/local/seed/` (**πολλά αρχεία**, rule 7 — ένα ανά κατηγορία)· καμία runtime ανάγνωση του .md.
+   - **Κατηγορίες / Υποκατηγορίες / Είδη**: πηγή-αναφορά το `supermarket_categories_v2.md` (root repo, 9 κατηγορίες / 53 υποκατηγορίες / 530 είδη). Τα δεδομένα μεταγράφονται σε Dart seed constants στο `lib/data/local/seed/` (**πολλά αρχεία**, rule 7 — ένα ανά κατηγορία)· καμία runtime ανάγνωση του .md.
      - Κάθε Item εγγράφεται με `normalizedName = GreekTextNormalizer.normalize(name)` (**υπάρχον** SPoT util, §3) + έλεγχο μήκους `≤ AppConstants.maxItemNameLength`· κάθε Category με `createdAt`.
      - Το .md δεν ορίζει μονάδα ανά είδος → στο seed ορίζεται **προτεινόμενη** `defaultUnitId` από τη φύση του προϊόντος με βάση το `Unit.allowsDecimal` (Τεμάχιο για μετρητά, Κιλό για ζυγιζόμενα, Λίτρο για υγρά) — είναι πρόταση, όχι δεσμευτική (§2.2 επιτρέπει αλλαγή ανά γραμμή).
-     - Διπλότυπα ονόματα σε **διαφορετικές** υποκατηγορίες: μετά τη διόρθωση του `supermarket_categories_v2.md` δεν υπάρχει κανένα στο seed, και το `UNIQUE` του `Item.normalizedName` (§3) απαγορεύει πλέον παγκοσμίως δύο Items με ίδιο `normalizedName` — ένα Item = πάντα μία υποκατηγορία.
+     - Διπλότυπα ονόματα σε **διαφορετικές** υποκατηγορίες (π.χ. «Γαλοπούλα σε φέτες» σε Κρέατα & Αλλαντικά) παραμένουν **ξεχωριστές εγγραφές** (ένα Item = μία υποκατηγορία) — δεν γίνεται merge.
      - Logging της διαδικασίας μέσω `AppLogger` (tag `DB`).
    - **Καμία seed για Suppliers** (δεν υπάρχει στο .md) — δημιουργούνται χειροκίνητα στην εισαγωγή.
-4. Unit tests στα DAOs — **συμπεριλαμβάνουν seed-import tests**: πλήθος εγγραφών (9/53/535), `normalizedName` = `GreekTextNormalizer.normalize(name)`, **κανένα διπλότυπο (global — εγγυημένο και από το UNIQUE του §3)**, σωστά `createdAt`/`abbreviation`, ατομικότητα σε σφάλμα, και ότι το `onCreate` τρέχει μία φορά (επανα-άνοιγμα DB χωρίς νέο seed).
+4. Unit tests στα DAOs — **συμπεριλαμβάνουν seed-import tests**: πλήθος εγγραφών (9/53/530), `normalizedName` = `GreekTextNormalizer.normalize(name)`, **κανένα διπλότυπο εντός ίδιας υποκατηγορίας**, σωστά `createdAt`/`abbreviation`, ατομικότητα σε σφάλμα, και ότι το `onCreate` τρέχει μία φορά (επανα-άνοιγμα DB χωρίς νέο seed).
 
 ### Φάση 2 — Repository Layer
 1. Abstract repositories (Category, SubCategory, Item, Unit, Supplier, Receipt).
