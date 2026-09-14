@@ -71,6 +71,10 @@ abstract final class AppConstants {
   // Διάρκεια εμφάνισης SnackBar μηνυμάτων επιβεβαίωσης.
   static const int snackBarDurationSeconds = 4;
 
+  // Μέγιστες γραμμές SnackBar μηνύματος — safety net αποφυγής overflow (§1.4
+  // DESIGN) σε στενές οθόνες / μεγάλα fonts / ασυνήθιστα μακρά μηνύματα.
+  static const int maxFeedbackLines = 3;
+
   // ─── Backup (§2.3 DESIGN) ──────────────────────────────────────────────────
   // Pattern ονομασίας αρχείων backup — βλ. DESIGN.md §2.3.
   // Χρησιμοποιεί το πρότυπο ημερομηνίας (yyyy=έτος, MM=μήνας, dd=ημέρα,

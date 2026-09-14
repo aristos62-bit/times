@@ -81,3 +81,44 @@
 - Το `DESIGN.md` είναι στο **root του project** (`C:\Users\Vaggelis\Flutter Projects\times\DESIGN.md`), όχι στο Desktop.
 - Ελέγξτε αν το `flutter build apk --debug` ολοκληρώνεται (η κρύα Gradle cache δεν υπάρχει ακόμα · θα φτιάξει μετά το πρώτο build).
 - Το `cli_util` υποβαθμίστηκε λόγω `flutter_native_splash` — δεν είναι πρόβλημα, σημειώνεται για ιστορικό.
+
+---
+
+## 6. Φάση 0 · Βήμα 6 (ολοκλήρωση) — `app_feedback.dart`
+
+> Ημερομηνία: 14-09-2026. Append στο κεφάλαιο (η φάση 0 παραμένει ένα κεφάλαιο).
+
+- Υλοποιήθηκε το SPoT wrapper `lib/core/utils/app_feedback.dart` (DESIGN §2.0.6 / §2.4) — μόνο `showSuccess(context, msg)` και `showError(context, msg)`, ό,τι ορίζει ρητά το DESIGN, με μοναδική private `_show`.
+- **Συμπεριφορά**: διάρκεια από `AppConstants.snackBarDurationSeconds` · `context.mounted` + `ScaffoldMessenger.maybeOf` guards (no-op χωρίς scaffold/unmounted — κανένα crash) · error → `colorScheme.errorContainer`/`onErrorContainer` + `clearSnackBars()` (άμεση εμφάνιση, όχι ουρά) · success → Material default χρώματα, χωρίς clear (μπαίνει στην ουρά) · `SnackBarBehavior.floating` (responsive, §1.4) · `maxLines` safety net (§1.4).
+- **Προστέθηκαν 1 SPoT σταθερά** στο `app_constants.dart`: `maxFeedbackLines = 3` (αριθμητική σταθερά μόνο — όχι αλλαγή αρχιτεκτονικής → DESIGN.md **δεν** άλλαξε, κανόνας 8).
+- **Debug — Επιλογή Α**: το util υλοποιήθηκε χωρίς logging (app_logger κενό, Βήμα 5 εκκρεμεί). Στο Βήμα 5 θα προστεθεί 1–2 γραμμές `AppLogger` (tag `UI`) στη `_show`.
+- **Tests**: `test/core/utils/app_feedback_test.dart` με **8 widget tests** — success/error εμφάνιση, error colors από ColorScheme, no-op χωρίς messenger, clear στο error, queue στο success, auto-dismiss μετά το SPoT duration, overflow-safe σε στενή οθόνη 320×480, κλήση μετά από unmount. Suite συνολικά **31/31** ✓ · `flutter analyze` **No issues** ✓.
+- **Τεχνικό**: τα timing-tests του SnackBar χρειάζονται 2 ξεχωριστά `pump` — το entry animation ολοκληρώνεται πριν ξεκινήσει ο auto-hide timer (helper `_elapseSnackBarLife`).
+- **Διόρθωση naming**: το backup `.dart` του app_constants μετονομάστηκε σε lower_case (`maxfeedbacklines`) για συμμόρφωση με τον `file_names` lint.
+
+---
+
+## 7. Φάση 0 · Βήμα 5 — `app_logger.dart` + `debug_config.dart`
+
+> Ημερομηνία: 14-09-2026. Append στο κεφάλαιο (η φάση 0 παραμένει ένα κεφάλαιο).
+
+- Υλοποιήθηκε το SPoT config `lib/core/debug/debug_config.dart` (DESIGN §1.7):
+  - `enum LogTag { db, ui, nav, stats, backup }` — ορίζεται στο **config**, όχι στον logger, ώστε η εξάρτηση να είναι μονοκατεύθυνση `logging → debug` (καμία circular dependency) και τα exceptions (Βήμα 4, TODO "logging tag") να παίρνουν το tag από εδώ χωρίς «import μόνο για ένα enum».
+  - `isEnabled = kDebugMode && !_forceDisabled` — release build: κανένα log, compile-time tree-shaking.
+  - `enabledTags` (const set με τα 5 tags) — ενεργοποίηση/απενεργοποίηση ανά κατηγορία μέσω edit της σταθεράς.
+  - `isTagEnabled(tag)` + `@visibleForTesting forceDisable()/reset()`.
+  - Tests: `test/core/debug/debug_config_test.dart` — 4 cases.
+- Υλοποιήθηκε ο SPoT logger `lib/core/logging/app_logger.dart`:
+  - `info(LogTag, String)` → `[TAG] μήνυμα` · `error(LogTag, String, [error, stack])` → `[TAG][ERROR] μήνυμα | error` + stack.
+  - `_shouldLog` = non-empty && `DebugConfig.isTagEnabled` → ποτέ exception, μόνο no-op.
+  - Έξοδος `(_testSink ?? debugPrint)(line)` · `testSink` `@visibleForTesting` (String sink) · `resetTestSink()`.
+  - `export .. show LogTag` — ένα import για logger+tag σε όλους τους καταναλωτές.
+  - `debugPrint` (όχι `print`· lint `avoid_print`), τεμαχίζει μεγάλα μηνύματα/stack.
+  - Tests: `test/core/logging/app_logger_test.dart` — 7 cases (info, error±error-object, κενό message, forceDisable, formatting 5 tags, ποτέ throw με 10k chars).
+- **Hook στο `app_feedback._show`** (απόφαση Επιλογή Α, §6): error→`AppLogger.error(LogTag.ui, ...)`, success→`AppLogger.info(LogTag.ui, ...)`, μετά τους guards (log μόνο όταν πραγματικά εμφανίζεται). Regression widget test: snackbar εμφανίζεται ΚΑΙ sink λαμβάνει `[UI][ERROR] Snackbar σφάλματος εμφανίστηκε`.
+- **Διορθώσεις κατά την υλοποίηση**:
+  - `analysis_options.yaml`: προστέθηκε `backups/**` στο `analyzer.exclude` — τα backup `.dart` αρχεία (με relative imports) προκαλούσαν errors στον analyzer.
+  - `AppLogger.testSink` δέχεται `String` (όχι `Object?`) — η έξοδος είναι πάντα String.
+- **DESIGN.md doc-fix** (εγκεκριμένο): γραμμή 80 `logging/debug_config.dart` → `debug/debug_config.dart` (η δομή §1.2 δείχνει `debug/`, το αρχείο υπήρχε ήδη εκεί). Καμία αρχιτεκτονική αλλαγή.
+- **Σύνολο suite**: **43/43** tests ✓ (31 + 4 debug_config + 7 app_logger + 1 regression) · `flutter analyze` **No issues** ✓.
+- **Backups** (`backups/`): `app_logger_before_step5_20260914_135833.dart`, `debug_config_before_step5_20260914_135833.dart`, `app_feedback_before_step5_20260914_135833.dart`, `app_feedback_test_before_step5_20260914_135833.dart`, `DESIGN_before_step5_20260914_135833.md`, `oldsessions_before_step5_20260914_135833.md`, `fase0_branding_before_step5_20260914_135833.md`.

@@ -77,7 +77,7 @@
 7. **Logging / Debug**
    - `lib/core/logging/app_logger.dart` — SPoT logger με ομαδοποιημένα tags: `DB`, `UI`, `NAV`, `STATS`, `BACKUP`.
    - Κάθε repository/service καταγράφει: create/update/delete operations, σφάλματα, query results (σε debug mode μόνο).
-   - Config αρχείο `lib/core/logging/debug_config.dart` για ενεργοποίηση/απενεργοποίηση ανά κατηγορία log.
+   - Config αρχείο `lib/core/debug/debug_config.dart` για ενεργοποίηση/απενεργοποίηση ανά κατηγορία log.
 
 8. **Testing**
    - `test/` mirror του `lib/` δέντρου.
@@ -331,8 +331,15 @@ ReceiptLine     (id, receiptId → Receipt, itemId → Item, unitId → Unit,
 ### Φάση 1 — Βάση Δεδομένων & Domain Models
 1. Ορισμός Drift tables (§3).
 2. DAOs με βασικά CRUD + streams.
-3. Seed δεδομένων για μονάδες μέτρησης (Τεμάχιο, Κιλό, Γραμμάριο, Λίτρο, Χιλιοστόλιτρο κ.λπ.) ως SPoT seed, όχι hardcoded στο UI — κάθε μονάδα με την τιμή `allowsDecimal` της (§3).
-4. Unit tests στα DAOs.
+3. **Seed δεδομένων** — bootstrap **μία φορά** στο Drift `onCreate` (νέο DB file), μέσα σε **ένα transaction**· όχι σε κάθε launch.
+   - **Μονάδες μέτρησης** (Τεμάχιο/τεμ `allowsDecimal=false`, Κιλό/κιλ `true`, Λίτρο/λτ `true`, Γραμμάριο/γρ, Χιλιοστόλιτρο/χλτ κ.λπ.) ως Dart seed constants — κάθε μονάδα με `name`, `abbreviation`, `allowsDecimal` (§3). Όχι hardcoded στο UI.
+   - **Κατηγορίες / Υποκατηγορίες / Είδη**: πηγή-αναφορά το `supermarket_categories_v2.md` (root repo, 9 κατηγορίες / 53 υποκατηγορίες / 530 είδη). Τα δεδομένα μεταγράφονται σε Dart seed constants στο `lib/data/local/seed/` (**πολλά αρχεία**, rule 7 — ένα ανά κατηγορία)· καμία runtime ανάγνωση του .md.
+     - Κάθε Item εγγράφεται με `normalizedName = GreekTextNormalizer.normalize(name)` (**υπάρχον** SPoT util, §3) + έλεγχο μήκους `≤ AppConstants.maxItemNameLength`· κάθε Category με `createdAt`.
+     - Το .md δεν ορίζει μονάδα ανά είδος → στο seed ορίζεται **προτεινόμενη** `defaultUnitId` από τη φύση του προϊόντος με βάση το `Unit.allowsDecimal` (Τεμάχιο για μετρητά, Κιλό για ζυγιζόμενα, Λίτρο για υγρά) — είναι πρόταση, όχι δεσμευτική (§2.2 επιτρέπει αλλαγή ανά γραμμή).
+     - Διπλότυπα ονόματα σε **διαφορετικές** υποκατηγορίες (π.χ. «Γαλοπούλα σε φέτες» σε Κρέατα & Αλλαντικά) παραμένουν **ξεχωριστές εγγραφές** (ένα Item = μία υποκατηγορία) — δεν γίνεται merge.
+     - Logging της διαδικασίας μέσω `AppLogger` (tag `DB`).
+   - **Καμία seed για Suppliers** (δεν υπάρχει στο .md) — δημιουργούνται χειροκίνητα στην εισαγωγή.
+4. Unit tests στα DAOs — **συμπεριλαμβάνουν seed-import tests**: πλήθος εγγραφών (9/53/530), `normalizedName` = `GreekTextNormalizer.normalize(name)`, **κανένα διπλότυπο εντός ίδιας υποκατηγορίας**, σωστά `createdAt`/`abbreviation`, ατομικότητα σε σφάλμα, και ότι το `onCreate` τρέχει μία φορά (επανα-άνοιγμα DB χωρίς νέο seed).
 
 ### Φάση 2 — Repository Layer
 1. Abstract repositories (Category, SubCategory, Item, Unit, Supplier, Receipt).
