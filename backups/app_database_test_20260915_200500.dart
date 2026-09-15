@@ -1,15 +1,17 @@
 /// Unit tests για το `AppDatabase` (Φάση 1, Βήμα 1) — §3 + §4.1 DESIGN.
 ///
-/// Τρέχουν σε in-memory SQLite (Βήμα 2+: κοινό helper `in_memory_db.dart`).
+/// Τρέχουν σε in-memory SQLite (`NativeDatabase.memory()`), όχι σε αρχείο.
+/// Το `closeStreamsSynchronously: true` αποτρέπει στάσιμους stream queries
+/// από το να κρατούν ανοιχτή τη βάση (drift teardown warning).
 library;
 
 import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/debug/debug_config.dart';
 import 'package:times/core/logging/app_logger.dart';
-
-import 'helpers/in_memory_db.dart';
+import 'package:times/data/local/app_database.dart';
 
 void main() {
   group('AppDatabase', () {
@@ -18,7 +20,15 @@ void main() {
       DebugConfig.reset();
     });
 
-    // Στιγμιότυπο σε μνήμη (κοινό helper)· το κλείσιμο ανατίθεται στο framework.
+    // Στιγμιότυπο σε μνήμη· το κλείσιμο ανατίθεται στο test framework.
+    AppDatabase inMemoryDb() {
+      return AppDatabase(
+        DatabaseConnection(
+          NativeDatabase.memory(),
+          closeStreamsSynchronously: true,
+        ),
+      );
+    }
 
     test('δημιουργούνται όλοι οι πίνακες (sqlite_master)', () async {
       final db = inMemoryDb();
