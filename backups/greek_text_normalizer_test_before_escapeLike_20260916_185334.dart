@@ -82,41 +82,4 @@ void main() {
       expect(twice, 'γαλα σσ ιιωαννησ');
     });
   });
-
-  group('GreekTextNormalizer.escapeLike', () {
-    test('κενό input επιστρέφεται ως έχει', () {
-      expect(GreekTextNormalizer.escapeLike(''), '');
-    });
-
-    test('% → \\% (literal πάντα)', () {
-      expect(GreekTextNormalizer.escapeLike('100%'), r'100\%');
-    });
-
-    test('_ → \\_ (literal πάντα)', () {
-      expect(GreekTextNormalizer.escapeLike('a_b'), r'a\_b');
-    });
-
-    test('\\ → \\\\ (literal escape)', () {
-      expect(GreekTextNormalizer.escapeLike(r'a\b'), r'a\\b');
-    });
-
-    test('mixed: 50% έκπτωση_π ∈ (1/2) → literal', () {
-      expect(
-        GreekTextNormalizer.escapeLike(r'50% έκπτωση_π ∈ (1/2)'),
-        r'50\% έκπτωση\_π ∈ (1/2)',
-      );
-    });
-
-    test('non-special pass-through (γράμματα/αριθμοί/τόνοι)', () {
-      expect(GreekTextNormalizer.escapeLike('Γάλα 3'), 'Γάλα 3');
-    });
-
-    test('\\ πριν από % → \\\\\\% (literal backslash + literal %', () {
-      expect(GreekTextNormalizer.escapeLike(r'\%'), r'\\\%');
-    });
-
-    test('όλα τα wildcards μαζί: %_\\ → \\%\\_\\\\', () {
-      expect(GreekTextNormalizer.escapeLike(r'%_\'), r'\%\_\\');
-    });
-  });
 }

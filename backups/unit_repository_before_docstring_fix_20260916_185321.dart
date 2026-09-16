@@ -31,8 +31,6 @@ abstract interface class UnitRepository {
     bool? allowsDecimal,
   });
 
-  /// Διαγραφή. RESTRICT (FK): αποτυγχάνει αν η μονάδα χρησιμοποιείται σε
-  /// γραμμή απόδειξης (ReceiptLines.unitId). Αν είναι μόνο προτεινόμενη
-  /// μονάδα είδους (Items.defaultUnitId) η βάση την καθαρίζει (SET NULL).
+  /// Διαγραφή — επιτρέπεται πάντα (χωρίς dependents).
   Future<bool> deleteById(int id);
 }

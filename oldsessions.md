@@ -25,14 +25,16 @@
 | 5 | [Φάση 1 — Βήμα 4: Seed-import tests](oldsessions/2026-09-16_fase1_b4_seed_tests.md) | 16-09-2026 | Κλειστό | seed_database_test: normalizedName exact-match (για όλα τα 535 είδη) · units όνομα+abbreviation · createdAt · ατομικότητα (rollback σε conflict) · onCreate μία φορά (reopen file DB) · λύθηκε isNull/isNotNull ambiguity (drift vs matcher) · verification 227/227 + analyze καθαρό |
 | 6 | [Φάση 1 — Review fixes μετά από έλεγχο χρήστη](oldsessions/2026-09-16_fase1_b4_review_fixes.md) | 16-09-2026 | Κλειστό | CASCADE σε receiptId (αδύνατη η διαγραφή απόδειξης με γραμμές) · runSeed σε ρητό transaction (atomicity test χωρίς wrapper) · updateById `Value<int?>` για καθάρισμα defaultUnitId · LIKE search δηλωμένο για Φάση 2 · fail-fast ομώνυμες υποκατηγορίες · batch 535 items · guardStream throwWithStackTrace · CI coverage · verification 229/229 |
 | 7 | [Φάση 2 — Βήμα 1: Abstract Repositories](oldsessions/2026-09-16_fase2_b1_repositories.md) | 16-09-2026 | Κλειστό | 6 abstract interfaces (Category/SubCategory/Unit/Item/Supplier/Receipt) · searchByNormalizedName σε Item+Supplier (κενό→κενό Stream, escaping %/_) · Value<int?>? defaultUnitId · ReceiptLineInput record + insertReceiptWithLines στο Receipt · NOTE στο app_errors (write-time map=DataLoadException προσωρινά) · imports από app_database (όχι DAO) · analyze καθαρό · 229/229 |
+| 8 | [Φάση 2 — Βήμα 2: Repository Implementations](oldsessions/2026-09-16_fase2_b2_repositories_impl.md) | 16-09-2026 | Κλειστό | 6 concrete repositories + escapeLike στην GreekTextNormalizer · transaction στο insertReceiptWithLines · stream error mapping · UnitRepository docstring fix (RESTRICT) · analyze καθαρό · 315/315 |
 
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
 
-- **Φάση που βρισκόμαστε:** Φάση 2 — Βήμα 1 (Abstract Repositories) ΟΛΟΚΛΗΡΩΘΗΚΕ.
+- **Φάση που βρισκόμαστε:** Φάση 2 — Βήμα 2 (Repository Implementations) ΟΛΟΚΛΗΡΩΘΗΚΕ.
   - Βήμα 1: 6 abstract interfaces στο `lib/data/repositories/` · NOTE στο `app_errors.dart` · analyze καθαρό · 229/229 tests ✓.
-  - Επόμενο: Φάση 2 Βήμα 2 (υλοποιήσεις repos + LIKE escaping + insertReceiptWithLines transaction).
+  - Βήμα 2: 6 concrete repositories + `escapeLike` στην GreekTextNormalizer · transaction στο `insertReceiptWithLines` · stream error mapping · UnitRepository docstring fix (RESTRICT) · analyze καθαρό · **315/315** ✓.
+  - Επόμενο: Φάση 2 Βήμα 3 (Riverpod StreamProviders + DI).
   - Βήμα 3: δομή φακέλων `lib/` · `flutter analyze` καθαρό · `flutter build apk --debug` ✓.
   - Βήμα 4: DESIGN.md §2, §3, Phase 0 steps ενημερώθηκαν (κλειδωμένος σχεδιασμός units, branding, SPoT list, validators, utils).
   - Βήμα 5 (Logger): `core/debug/debug_config.dart` υλοποιήθηκε — `enum LogTag {db,ui,nav,stats,backup}` (SPoT στο config, όχι στο logger: μονοκατεύθυνση `logging→debug`, έτοιμο για τα exceptions Βήμα 4) · gates `kDebugMode` (release = κανένα log, tree-shaking) + `enabledTags` (const, απενεργοποίηση ανά tag) + `forceDisable`/`reset` (@visibleForTesting) · `test/core/debug/debug_config_test.dart` 4 tests. `core/logging/app_logger.dart` υλοποιήθηκε — `info`/`error` (ακριβώς τα επίπεδα §1.7), έξοδος `(_testSink ?? debugPrint)`, `testSink`=String sink (@visibleForTesting, ποτέ production), κενό message → skip, ποτέ throw, re-export `LogTag` · `test/core/logging/app_logger_test.dart` 7 tests. Hook στο `app_feedback._show` (tag `UI`, Επιλογή Α): error→`AppLogger.error`, success→`AppLogger.info` + regression widget test (snackbar εμφανίζεται ΚΑΙ log `[UI][ERROR] ...`) · σύνολο suite **43/43** ✓ · `flutter analyze` **No issues** ✓ (λεπτομέρειες στο κεφάλαιο 1, ενότητα 7).

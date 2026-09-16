@@ -1,20 +1,19 @@
-/// SPoT: Ελληνικό normalization κειμένου για αναζήτηση (§2.0.4 DESIGN) και
-/// LIKE wildcard escaping (Φάση 2, Βήμα 2).
+/// SPoT: Ελληνικό normalization κειμένου για αναζήτηση (§2.0.4 DESIGN).
 ///
-/// [normalize]: μετατρέπει το κείμενο σε κανονική μορφή: αφαιρεί τόνους/
-/// διαλυτικά, κατεβάζει σε πεζά και εξομοιώνει το τελικό «ς» σε «σ». Έτσι
-/// το query «γαλα» βρίσκει «Γάλα», «ΓΑΛΑ», «γάλα», «ΓάλΑ» κ.λπ.
+/// Μετατρέπει το κείμενο σε κανονική μορφή: αφαιρεί τόνους/διαλυτικά,
+/// κατεβάζει σε πεζά και εξομοιώνει το τελικό «ς» σε «σ». Έτσι το query
+/// «γαλα» βρίσκει «Γάλα», «ΓΑΛΑ», «γάλα», «ΓάλΑ» κ.λπ.
+///
 /// Εφαρμόζεται ΟΜΟΙΟΜΟΡΦΑ (ίδια μορφή παντού, §2.0.4):
 ///   1. UI input πριν το query «φύγει» (item_search_controller, Φάση 3).
 ///   2. SQL: `normalizedName` στήλη σε Item/Supplier (Φάση 1/3).
 ///   3. Duplicate-check: `normalizedName == :normalizedQuery` (§2.2, exact).
 ///
-/// [escapeLike]: εξάγει `%`/`_`/`\` πριν το LIKE (§3 DESIGN) — η χρήση
-/// πάντα σε συνδυασμό με `escapeChar: r'\'` στο drift `like()`.
-///
-/// Clean χωρίς side effects: δεν διαβάζει UI/DB/theme, δεν κάνει log,
-/// δεν είναι async, δεν εμφανίζει μηνύματα, δεν κάνει trim (ευθύνη
-/// validator). Μηδέν external dependencies.
+/// Clean χωρίς side effects: δεν διαβάζει UI/DB/theme, δεν κάνει log
+/// (logger = Φάση 0 Βήμα 5, εκτός φάσης), δεν είναι async, δεν εμφανίζει
+/// μηνύματα. Δεν κάνει trim — ευθύνη του validator. Μηδέν external
+/// dependencies (zero-dependency: το transitive `characters` δεν
+/// χρησιμοποιείται — το χειροκίνητο combining-strip το υπερκαλύπτει).
 library;
 
 /// SPoT namespace — μόνο static, δεν instantiate (pattern AppConstants).
@@ -40,17 +39,6 @@ abstract final class GreekTextNormalizer {
     }
     return buffer.toString();
   }
-
-  /// Εξάγει τα wildcard χαρακτήρες SQL LIKE (`%`, `_`) και τον escape
-  /// χαρακτήρα (`\`) — για ασφαλή χρήση σε drift `like()`.
-  ///
-  /// Πάντα σε συνδυασμό με `escapeChar: r'\'` στο `like()`:
-  /// ```dart
-  /// column.like('%${GreekTextNormalizer.escapeLike(q)}%', escapeChar: r'\')
-  /// ```
-  /// Κενό input επιστρέφεται ως έχει.
-  static String escapeLike(String input) =>
-      input.replaceAll(r'\', r'\\').replaceAll('%', r'\%').replaceAll('_', r'\_');
 
   /// Αφαιρεί combining diacritical marks (U+0300–U+036F) — προφύλαξη για
   /// decomposed εισαγωγή τόνου (ελληνικά και άλλα scripts) χωρίς external
