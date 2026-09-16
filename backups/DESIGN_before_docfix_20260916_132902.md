@@ -301,7 +301,7 @@ Item            (id, subCategoryId → SubCategory, name, normalizedName [UNIQUE
 Unit            (id, name, abbreviation, allowsDecimal)  -- π.χ. Τεμάχιο/τεμ (allowsDecimal=false), Κιλό/κιλ (true), Λίτρο/λτ (true)
 Supplier        (id, name, normalizedName [UNIQUE], createdAt)
 Receipt         (id, receiptNumber [auto], date, supplierId → Supplier)
-ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId → Unit,
+ReceiptLine     (id, receiptId → Receipt, itemId → Item, unitId → Unit,
                  quantity [REAL], priceCents [INTEGER], lineTotalCents [INTEGER])
 ```
 - `receiptNumber`: χρησιμοποιείται το **internal `INTEGER PRIMARY KEY AUTOINCREMENT` id της απόδειξης**. Η εφαρμογή είναι προσωπική και όχι φορολογικό βιβλίο, άρα οι πιθανές "τρύπες" στην αρίθμηση μετά από διαγραφή δεν είναι πρόβλημα. Αυτή την απόφαση την ορίζουμε ρητά στη Φάση 1 (δεν χρειάζεται ξεχωριστό sequence table/counter).
@@ -309,10 +309,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 - **`quantity`**: REAL — φυσικό μέγεθος (κιλά/λίτρα/τεμάχια), δεν εμφανίζεται ποτέ μόνο του σε λογιστικό άθροισμα.
 - **`lineTotalCents`**: INTEGER, υπολογισμένο **μία φορά** κατά το insert `(priceCents * quantity).round()` — **όχι** Drift generated column (παραμένει ελεγχόμενο, testable, ανεξάρτητο από SQLite float handling). Κάθε επόμενος υπολογισμός (Φάση 5: μέσος όρος, σύνολο μήνα, σύγκριση προμηθευτών) δουλεύει **μόνο** σε `SUM(lineTotalCents)`.
 - **`Unit.allowsDecimal`**: flag που ορίζει αν μια μονάδα δέχεται κλασματική ποσότητα (π.χ. Τεμάχιο=false, Κιλό=true). Χρησιμοποιείται από τη φόρμα εισαγωγής (Φάση 3) για απόρριψη τιμών όπως «2.5 τεμάχια».
-- **Foreign key policy** (απόφαση, Φάση 1):
-  - `ON DELETE RESTRICT` για Category/SubCategory/Item/Supplier/Unit (ώστε να μην διαγράφονται αν έχουν δεδομένα — υλοποιεί απευθείας τον κανόνα της §2.3).
-  - `ReceiptLine.receiptId → ON DELETE CASCADE`: η γραμμή χωρίς κεφαλίδα είναι άχρηστη (σχέση κυριότητας) — η διαγραφή απόδειξης σβήνει και τις γραμμές της. Εξαιρείται ρητά από τον RESTRICT κανόνα της §2.3.
-  - `Item.defaultUnitId → ON DELETE SET NULL`: η προτεινόμενη μονάδα είναι προαιρετική — αν σβηστεί η μονάδα, το είδος απλώς μένει χωρίς πρόταση (null).
+- Όλα τα foreign keys με `ON DELETE RESTRICT` για Category/SubCategory/Item (ώστε να μην διαγράφονται αν έχουν δεδομένα) — υλοποιεί απευθείας τον κανόνα της §2.3.
 - **`normalizedName`** (Item & Supplier): καθαρή `GreekTextNormalizer.normalize(name)` (lowercase + αφαίρεση τόνων + ς→σ) που υπολογίζεται στο Dart κατά insert/update — όχι DB-generated column, ελεγχόμενο/testable, ίδιο μοτίβο με το `lineTotalCents`. Η αναζήτηση γίνεται πάντα με `WHERE normalizedName LIKE '%' || :normalizedQuery || '%'`, όπου `:normalizedQuery` έχει ήδη περάσει από το `GreekTextNormalizer.normalize()` στο UI input (§2.0.4). Αυτό είναι υποχρεωτικό, όχι προαιρετικό: το SQLite `COLLATE NOCASE` είναι ASCII-only και ΔΕΝ ξέρει ότι «Α»=«α» — LIKE πάνω στο raw `name` θα έβρισκε ελληνικά μόνο σε συγκεκριμένη περίπτωση (σιωπηλό, δύσκολο bug). Κατηγορία/Υποκατηγορία/Unit δεν χρειάζονται στήλη: επιλέγονται από μικρές ήδη-φορτωμένες λίστες (SearchableDropdownField §2.4) — φιλτράρισμα in-memory πάνω στο stream, χωρίς DB query. Ο ίδιος `normalizedName` χρησιμοποιείται και στον case-insensitive duplicate-check του §2.2 (exact match, όχι LIKE) — μία μόνο υλοποίηση normalization, καμία διπλή λογική.
 - **[Φάση 1] `UNIQUE` στο `Item.normalizedName`** (global constraint): η απαγόρευση διπλότυπων ονομάτων εγγυάται σε επίπεδο βάσης μέσω exact-match στο `normalizedName` (πεζά/άτονα/ς→σ, §2.2). Δεν επαρκεί `UNIQUE` στο raw `name`, γιατί το SQLite string match δεν είναι case/tone-insensitive («Γάλα»≠«γάλα» ως strings). Εγκρίθηκε το ίδιο `UNIQUE` και στον `Supplier.normalizedName` — και για τα δύο απαγορεύεται σε επίπεδο βάσης ο προμηθευτής/είδος με ίδιο κανονικοποιημένο όνομα (πεζά/άτονα/ς→σ).
 - Σημ.: τα `UNIQUE` σε `Item.normalizedName` και `Supplier.normalizedName` δημιουργούν αυτόματα δικό τους index — **δεν** προστίθενται ξεχωριστά indexes σ' αυτά τα columns. Το μοναδικό ρητό index βάσει σχήματος είναι στο `ReceiptLine.itemId` (επιτάχυνση στατιστικών). Ως εκ τούτου δεν χρησιμοποιείται `@TableIndex` σε Item/Supplier (μόνο `ReceiptLine.itemId`). Το substring `LIKE '%...%'` του §3 παραμένει full scan στο SQLite χωρίς FTS5 — αμελητέο για τον όγκο δεδομένων προσωπικής χρήσης.
@@ -350,7 +347,6 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 2. Υλοποιήσεις πάνω στα DAOs, με `Stream` methods για real-time.
 3. Riverpod providers (`StreamProvider`) πάνω στα repositories.
 4. Unit tests repositories (mocked DB ή in-memory Drift).
-   - **Αναζήτηση Item/Supplier**: ορίζεται στα **Repositories** (ΟΧΙ στα DAOs της Φάσης 1) η μέθοδος `searchByNormalizedName(String query, {int? limit})` — `WHERE normalizedName LIKE '%' || :normalizedQuery || '%'`, με το input ήδη κανονικοποιημένο (§2.0.4/§3). Προαιρετικό `limit` με default από `searchResultsLimit` (§2.0). Κατηγορία/Υποκατηγορία/Unit μένουν in-memory φιλτράρισμα πάνω στο stream (μικρές λίστες, §3).
 
 ### Φάση 3 — Σελίδα Εισαγωγής Τιμών (πυρήνας εφαρμογής)
 1. UI σκελετός οθόνης, responsive layout.

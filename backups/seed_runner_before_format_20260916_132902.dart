@@ -46,24 +46,22 @@ final List<ItemSeed> seedItems = <ItemSeed>[
 /// (Επιτρέπεται μέσα στο opens: ο `_BeforeOpeningExecutor` της drift
 /// έχει `ensureOpen` που επιστρέφει αμέσως — όχι block/deadlock.)
 Future<void> runSeed(AppDatabase db) => db.transaction(() async {
-  AppLogger.info(
-    LogTag.db,
-    'Seed: ξεκίνημα (5 μονάδες, 9 κατηγορίες, 53 υποκατηγορίες, '
-    '${seedItems.length} είδη)',
-  );
+      AppLogger.info(
+        LogTag.db,
+        'Seed: ξεκίνημα (5 μονάδες, 9 κατηγορίες, 53 υποκατηγορίες, '
+        '${seedItems.length} είδη)',
+      );
 
   // ── Μονάδες μέτρησης ────────────────────────────────────────────────────
   final unitIds = <String, int>{};
   for (final u in seedUnits) {
-    final id = await db
-        .into(db.units)
-        .insert(
-          UnitsCompanion.insert(
-            name: u.name,
-            abbreviation: u.abbreviation,
-            allowsDecimal: Value(u.allowsDecimal),
-          ),
-        );
+    final id = await db.into(db.units).insert(
+      UnitsCompanion.insert(
+        name: u.name,
+        abbreviation: u.abbreviation,
+        allowsDecimal: Value(u.allowsDecimal),
+      ),
+    );
     unitIds[u.name] = id;
   }
   AppLogger.info(LogTag.db, 'Seed: μονάδες → ${unitIds.length}');
@@ -71,9 +69,9 @@ Future<void> runSeed(AppDatabase db) => db.transaction(() async {
   // ── Κατηγορίες ─────────────────────────────────────────────────────────
   final categoryIds = <String, int>{};
   for (final c in seedCategories) {
-    final id = await db
-        .into(db.categories)
-        .insert(CategoriesCompanion.insert(name: c.name));
+    final id = await db.into(db.categories).insert(
+      CategoriesCompanion.insert(name: c.name),
+    );
     categoryIds[c.name] = id;
   }
   AppLogger.info(LogTag.db, 'Seed: κατηγορίες → ${categoryIds.length}');
@@ -96,9 +94,9 @@ Future<void> runSeed(AppDatabase db) => db.transaction(() async {
         'για υποκατηγορία "${s.name}"',
       );
     }
-    final id = await db
-        .into(db.subCategories)
-        .insert(SubCategoriesCompanion.insert(name: s.name, categoryId: catId));
+    final id = await db.into(db.subCategories).insert(
+      SubCategoriesCompanion.insert(name: s.name, categoryId: catId),
+    );
     subCategoryIds[s.name] = id;
   }
   AppLogger.info(LogTag.db, 'Seed: υποκατηγορίες → ${subCategoryIds.length}');
