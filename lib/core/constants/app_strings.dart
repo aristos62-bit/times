@@ -9,14 +9,29 @@ abstract final class AppStrings {
   /// Εμφανιζόμενο όνομα εφαρμογής (MaterialApp.title + AppBar).
   static const String appTitle = 'Τιμές';
 
+  // ─── Navigation / App shell (§2.0 · Φάση 3 Βήμα 1) ───────────────────────
+  /// Label destination "Αρχική" στο NavigationBar.
+  static const String navHome = 'Αρχική';
+  /// Label destination "Εισαγωγή Τιμών" στο NavigationBar.
+  static const String navPriceEntry = 'Εισαγωγή';
+  /// Label destination "Ρυθμίσεις" στο NavigationBar.
+  static const String navSettings = 'Ρυθμίσεις';
+
   // ─── Home / Stats (§2.1) ──────────────────────────────────────────────────
   /// Άδεια αποτελέσματα περιόδου — αντί για κενό γράφημα.
   static const String noPricesForPeriod =
       'Δεν υπάρχουν καταχωρημένες τιμές για αυτή την περίοδο';
   /// Κουμπί «Επανάληψη» στην κατάσταση error (ref.invalidate).
   static const String retryButton = 'Επανάληψη';
+  /// Placeholder text στη σελίδα στατιστικών (μέχρι Φάση 5).
+  static const String statsComingSoon = 'Τα στατιστικά θα εμφανιστούν σύντομα';
 
   // ─── Price entry (§2.2) ───────────────────────────────────────────────────
+  /// Τίτλος AppBar στη σελίδα εισαγωγής τιμών.
+  static const String titlePriceEntry = 'Εισαγωγή Τιμών';
+  /// Placeholder text στη σελίδα εισαγωγής (μέχρι Φάση 3 βήμα 2+).
+  static const String priceEntryComingSoon =
+      'Η εισαγωγή τιμών θα είναι διαθέσιμη σύντομα';
   /// Κουμπί αποθήκευσης ολόκληρης απόδειξης.
   static const String saveReceipt = 'Αποθήκευση Απόδειξης';
   /// Κουμπί προσθήκης γραμμής στο «καλάθι» της απόδειξης.
@@ -26,4 +41,11 @@ abstract final class AppStrings {
   static const String fieldSupplier = 'Προμηθευτής';
   static const String fieldQuantity = 'Ποσότητα';
   static const String fieldPrice = 'Τιμή';
+
+  // ─── Settings (§2.3) ──────────────────────────────────────────────────────
+  /// Τίτλος AppBar στη σελίδα ρυθμίσεων.
+  static const String titleSettings = 'Ρυθμίσεις';
+  /// Placeholder text στη σελίδα ρυθμίσεων (μέχρι Φάση 4).
+  static const String settingsComingSoon =
+      'Οι ρυθμίσεις θα είναι διαθέσιμες σύντομα';
 }

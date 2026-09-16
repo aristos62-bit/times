@@ -39,7 +39,7 @@
    ├── core/
    │   ├── constants/   (SPoT: app_constants, app_strings, app_messages, app_errors, app_enums)
    │   ├── theme/       (app_theme, app_colors)
-   │   ├── router/      (app_routes, route definitions)
+   │   ├── router/      (app_routes, app_router [route definitions + GoRouter], nav_log_observer)
    │   ├── utils/       (debouncer, greek_text_normalizer, app_feedback)
    │   ├── errors/      (app_exceptions)
    │   ├── logging/     (app_logger)
@@ -354,7 +354,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
    - **Αναζήτηση Item/Supplier**: ορίζεται στα **Repositories** (ΟΧΙ στα DAOs της Φάσης 1) η μέθοδος `searchByNormalizedName(String query, {int? limit})` — `WHERE normalizedName LIKE '%' || :normalizedQuery || '%'`, με το input ήδη κανονικοποιημένο (§2.0.4/§3). Προαιρετικό `limit` με default από `searchResultsLimit` (§2.0). Κατηγορία/Υποκατηγορία/Unit μένουν in-memory φιλτράρισμα πάνω στο stream (μικρές λίστες, §3).
 
 ### Φάση 3 — Σελίδα Εισαγωγής Τιμών (πυρήνας εφαρμογής)
-1. UI σκελετός οθόνης, responsive layout.
+1. **App UI σκελετός** (ξεκινά τη Φάση 3): `GoRouter` με `StatefulShellRoute.indexedStack` + `NavigationBar` (3 branches: Home/PriceEntry/Settings, paths από `AppRoutes`) + placeholder σελίδες ανά οθόνη (καθαρά `Scaffold`, ΚΑΝΕΝΑ provider watch → η βάση δεν ανοίγει στο launch) + `NavLogObserver` (σημείο καταγραφής `LogTag.nav`). Responsive layout από εδώ (§1.4).
 2. Auto αριθμός απόδειξης + date picker.
 3. Supplier search/autocomplete + inline "+" δημιουργία.
 4. Item search/autocomplete με incremental filtering (debounce) + "+" popup ροή (Κατηγορία→Υποκατηγορία→Είδος).

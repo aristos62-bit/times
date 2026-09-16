@@ -1,9 +1,9 @@
-/// Widget smoke test — Φάση 2, Βήμα 3.
+/// Widget smoke test — Φάση 3, Βήμα 1 (App Shell).
 ///
-/// Επαληθεύει το ριζικό δέντρο: `ProviderScope` + `TimesApp` χωρίς default
-/// Flutter template (DESIGN §0). Η placeholder σελίδα ΔΕΝ ανοίγει βάση
-/// (δεν «βλέπει» data providers) → δεν χρειάζεται override του
-/// `appDatabaseProvider` σε αυτό το widget test.
+/// Επαληθεύει το ριζικό δέντρο: `ProviderScope` + `TimesApp` με GoRouter
+/// (StatefulShellRoute) χωρίς default Flutter template (DESIGN §0).
+/// Οι placeholder σελίδες ΔΕΝ «βλέπουν» data providers → δεν χρειάζεται
+/// override του `appDatabaseProvider` σε αυτό το widget test.
 library;
 
 import 'package:flutter/material.dart';
@@ -15,14 +15,38 @@ import 'package:times/main.dart';
 
 void main() {
   testWidgets(
-      'TimesApp εμφανίζει το brand «Τιμές» — κανένα στοιχείο Flutter template',
-      (WidgetTester tester) async {
+      'TimesApp εμφανίζει Home (AppBar «Τιμές») + NavigationBar με 3 tabs — '
+      'κανένα στοιχείο Flutter template', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: TimesApp()));
+    await tester.pumpAndSettle();
 
-    // AppBar + σώμα placeholder με τον τίτλο της εφαρμογής.
-    expect(find.text(AppStrings.appTitle), findsNWidgets(2));
+    // Αρχική branch: Home placeholder — AppBar με τον τίτλο «Τιμές»
+    // (§2.1) + placeholder text στατιστικών. Ο τίτλος υπάρχει ΜΟΝΟ μια
+    // φορά (AppBar) — το σώμα πλέον δείχνει το statsComingSoon.
+    expect(find.text(AppStrings.appTitle), findsOneWidget);
+    expect(find.text(AppStrings.statsComingSoon), findsOneWidget);
+    // App Shell: NavigationBar (Material 3) με 3 destinations.
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(NavigationDestination), findsNWidgets(3));
     // Κανένα widget του default counter template.
     expect(find.text('0'), findsNothing);
     expect(find.byType(FloatingActionButton), findsNothing);
+  });
+
+  testWidgets('αλλαγή tab στο PriceEntry φέρνει «Εισαγωγή Τιμών»',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const ProviderScope(child: TimesApp()));
+    await tester.pumpAndSettle();
+
+    // Εύρεση του destination «Εισαγωγή» στο NavigationBar (SPoT label §1.1).
+    await tester.tap(find.descendant(
+      of: find.byType(NavigationBar),
+      matching: find.text(AppStrings.navPriceEntry),
+    ));
+    await tester.pumpAndSettle();
+
+    // Πλέον βλέπουμε τη PriceEntry placeholder (AppBar «Εισαγωγή Τιμών»).
+    expect(find.text(AppStrings.titlePriceEntry), findsOneWidget);
+    expect(find.text(AppStrings.priceEntryComingSoon), findsOneWidget);
   });
 }
