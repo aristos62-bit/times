@@ -7,7 +7,6 @@
 /// και RESTRICT (items σε γραμμές αποδείξεων).
 library;
 
-import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -154,34 +153,6 @@ void main() {
       final row = await dao.getById(id);
       expect(row!.subCategoryId, otherSubId);
       expect(row.normalizedName, 'γαλα');
-    });
-
-    test('defaultUnitId: Value(null) καθαρίζει, Value.absent() δεν το πειράζει',
-        () async {
-      final unitId = await UnitDao(db).insert(name: 'Λίτρο', abbreviation: 'λτ');
-      final id = await dao.insert(
-        subCategoryId: dairySubId,
-        name: 'Γάλα',
-        defaultUnitId: unitId,
-      );
-
-      // Value(null) → καθάρισμα: το defaultUnitId γίνεται null.
-      expect(await dao.updateById(id, defaultUnitId: const Value(null)), isTrue);
-      expect((await dao.getById(id))!.defaultUnitId, isNull);
-
-      // Value(unitId) → ξανα-θέτει μονάδα.
-      expect(
-        await dao.updateById(id, defaultUnitId: Value(unitId)),
-        isTrue,
-      );
-      expect((await dao.getById(id))!.defaultUnitId, unitId);
-
-      // Value.absent() → no-op: καμία αλλαγή (false), η τιμή μένει unitId.
-      expect(
-        await dao.updateById(id, defaultUnitId: const Value.absent()),
-        isFalse,
-      );
-      expect((await dao.getById(id))!.defaultUnitId, unitId);
     });
 
     test('ανύπαρκτο id → false', () async {

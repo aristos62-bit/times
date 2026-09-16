@@ -2,20 +2,15 @@
 ///
 /// Ελέγχει insert/getById (ο id είναι ο αριθμός απόδειξης AUTOINCREMENT),
 /// watchAll ordering (date desc, id desc), FK raw error (ανύπαρκτο supplier),
-/// CASCADE στη διαγραφή (σβήνει και γραμμές), updateById (date/supplierId).
+/// RESTRICT όταν υπάρχουν γραμμές, and updateById (date/supplierId).
 library;
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/errors/app_exceptions.dart';
-import 'package:times/data/local/daos/category_dao.dart';
-import 'package:times/data/local/daos/item_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
-import 'package:times/data/local/daos/receipt_line_dao.dart';
-import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/supplier_dao.dart';
-import 'package:times/data/local/daos/unit_dao.dart';
 
 import '../helpers/in_memory_db.dart';
 
@@ -95,42 +90,6 @@ void main() {
       final id = await dao.insert(date: DateTime(2026, 1, 1), supplierId: supplierId);
       expect(await dao.deleteById(id), isTrue);
       expect(await dao.getById(id), isNull);
-    });
-
-    test('CASCADE: διαγραφή απόδειξης σβήνει και τις γραμμές της (§3)', () async {
-      final unitDao = UnitDao(db);
-      final unitId = await unitDao.insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
-      final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId = await SubCategoryDao(db)
-          .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-      final itemId = await ItemDao(db).insert(
-        subCategoryId: subId,
-        name: 'Γάλα',
-        defaultUnitId: unitId,
-      );
-      final receiptId = await dao.insert(
-        date: DateTime(2026, 1, 1),
-        supplierId: supplierId,
-      );
-      final lineId = await ReceiptLineDao(db).insert(
-        receiptId: receiptId,
-        itemId: itemId,
-        unitId: unitId,
-        quantity: 2,
-        priceCents: 199,
-      );
-
-      await dao.deleteById(receiptId);
-
-      expect(await dao.getById(receiptId), isNull);
-      expect(
-        await db.select(db.receiptLines).get(),
-        isEmpty,
-        reason: 'CASCADE: οι γραμμές πρέπει να σβηστούν μαζί με την απόδειξη',
-      );
-      // Το item παραμένει (RESTRICT μόνο σε γραμμές → items §2.3).
-      expect(await ItemDao(db).getById(itemId), isNotNull);
-      expect(lineId, greaterThan(0));
     });
   });
 }

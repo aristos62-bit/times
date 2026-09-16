@@ -1,11 +1,8 @@
 /// Drift πίνακες της βάσης (§3 DESIGN.md) — Φάση 1, Βήμα 1.
 ///
 /// 7 πίνακες: Categories, SubCategories, Units, Items, Suppliers,
-/// Receipts, ReceiptLines. Foreign keys με `ON DELETE RESTRICT` μόνο για
-/// Category/SubCategory/Item/Supplier/Unit (προστασία καταλόγου §2.3).
-/// Η Receipt→ReceiptLine είναι σχέση κυριότητας: `ReceiptLines.receiptId`
-/// κάνει `CASCADE` (η διαγραφή απόδειξης σβήνει και τις γραμμές της — §3).
-/// Το προαιρετικό `Items.defaultUnitId` είναι `SET NULL` (null = χωρίς πρόταση).
+/// Receipts, ReceiptLines. Όλα τα foreign keys με `ON DELETE RESTRICT`
+/// εκτός του προαιρετικού `Items.defaultUnitId` (SET NULL).
 /// Το μοναδικό ρητό index είναι στο `ReceiptLine.itemId` (για στατιστικά)·
 /// τα `UNIQUE` σε Item/Supplier.normalizedName φέρνουν index αυτόματα.
 ///
@@ -74,7 +71,7 @@ class Receipts extends Table {
 class ReceiptLines extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get receiptId =>
-      integer().references(Receipts, #id, onDelete: KeyAction.cascade)();
+      integer().references(Receipts, #id, onDelete: KeyAction.restrict)();
   IntColumn get itemId =>
       integer().references(Items, #id, onDelete: KeyAction.restrict)();
   IntColumn get unitId =>

@@ -49,9 +49,7 @@ abstract class BaseDao {
     }
     return source.handleError((Object e, StackTrace s) {
       AppLogger.error(LogTag.db, action, e, s);
-      // throw e; θα δημιουργούσε ΝΈΟ stack από τον handler και θα έχανε το
-      // σημείο που πραγματικά έσπασε το query (κρίσιμο για debugs Φάση 3).
-      Error.throwWithStackTrace(e, s);
+      throw e;
     });
   }
 }

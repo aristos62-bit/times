@@ -71,15 +71,7 @@ class ItemDao extends BaseDao {
 
   /// Ενημερώνει subCategoryId/name/defaultUnitId (όσα δεν είναι null).
   /// Αν αλλάζει το [name], ξανα-υπολογίζεται και το normalizedName (SPoT §3).
-  /// Το [defaultUnitId] δέχεται `Value<int?>` ώστε `Value(null)` = καθάρισμα
-  /// (δηλ. χωρίς προτεινόμενη μονάδα), ενώ `const Value.absent()` = μην το
-  /// πειράξεις. Βλ. §2.3: η αλλαγή defaultUnitId γίνεται από Ρυθμίσεις (Φάση 4).
-  Future<bool> updateById(
-    int id, {
-    int? subCategoryId,
-    String? name,
-    Value<int?>? defaultUnitId,
-  }) =>
+  Future<bool> updateById(int id, {int? subCategoryId, String? name, int? defaultUnitId}) =>
       guard(
         'Ενημέρωση είδους',
         () async {
@@ -94,7 +86,7 @@ class ItemDao extends BaseDao {
             );
           }
           if (defaultUnitId != null) {
-            companion = companion.copyWith(defaultUnitId: defaultUnitId);
+            companion = companion.copyWith(defaultUnitId: Value(defaultUnitId));
           }
           final rows =
               await (db.update(db.items)..where((t) => t.id.equals(id))).write(companion);

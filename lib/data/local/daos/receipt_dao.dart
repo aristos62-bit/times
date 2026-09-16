@@ -56,7 +56,7 @@ class ReceiptDao extends BaseDao {
         },
       );
 
-  /// Διαγραφή. RESTRICT (FK): αποτυγχάνει αν υπάρχουν γραμμές απόδειξης.
+  /// Διαγραφή. CASCADE (FK §3): σβήνει και τις γραμμές της απόδειξης.
   Future<bool> deleteById(int id) => guard(
         'Διαγραφή απόδειξης',
         () async {

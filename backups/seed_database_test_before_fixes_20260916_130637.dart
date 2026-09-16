@@ -141,11 +141,9 @@ void main() {
           );
 
       // Ο seed προχωράει (units/categories/subcategories) και αποτυγχάνει στο
-      // 1ο item (UNIQUE violation). Το runSeed τυλίγει μόνο του το σώμα σε
-      // transaction (§4.1.3) — ΕΔΩ ΔΕΝ βάζουμε εξωτερικό wrapper: ελέγχουμε
-      // ακριβώς την production διαδρομή (ζήτημα §4.1.34).
+      // 1ο item (UNIQUE violation) — μέσα σε transaction, ζήτημα §4.1.34.
       await expectLater(
-        () => runSeed(db),
+        () => db.transaction(() => runSeed(db)),
         throwsA(isA<SqliteException>()),
       );
 

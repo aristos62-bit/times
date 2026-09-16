@@ -41,16 +41,14 @@ final List<ItemSeed> seedItems = <ItemSeed>[
 /// Τρέχει το seed μονά μία φορά στο `AppDatabase.onCreate`.
 ///
 /// Κλήση: `if (!skipSeed) await runSeed(db);` — αμέσως μετά το
-/// `m.createAll()`. Όλο το σώμα τυλίγεται σε **ένα transaction** (§4.1.3):
-/// αποτυχία σε οποιοδήποτε σημείο → πλήρες rollback, μηδέν seed εγγραφές.
-/// (Επιτρέπεται μέσα στο opens: ο `_BeforeOpeningExecutor` της drift
-/// έχει `ensureOpen` που επιστρέφει αμέσως — όχι block/deadlock.)
-Future<void> runSeed(AppDatabase db) => db.transaction(() async {
-      AppLogger.info(
-        LogTag.db,
-        'Seed: ξεκίνημα (5 μονάδες, 9 κατηγορίες, 53 υποκατηγορίες, '
-        '${seedItems.length} είδη)',
-      );
+/// `m.createAll()`. Αποτυχία → exception → ολόκληρο το DB αναστέλλεται
+/// ατομικά (Drift transaction στο onCreate).
+Future<void> runSeed(AppDatabase db) async {
+  AppLogger.info(
+    LogTag.db,
+    'Seed: ξεκίνημα (5 μονάδες, 9 κατηγορίες, 53 υποκατηγορίες, '
+    '${seedItems.length} είδη)',
+  );
 
   // ── Μονάδες μέτρησης ────────────────────────────────────────────────────
   final unitIds = <String, int>{};
@@ -79,14 +77,6 @@ Future<void> runSeed(AppDatabase db) => db.transaction(() async {
   // ── Υποκατηγορίες ───────────────────────────────────────────────────────
   final subCategoryIds = <String, int>{};
   for (final s in seedSubCategories) {
-    // Fail-fast: ομώνυμη υποκατηγορία σε 2 κατηγορίες θα έκανε σιωπηλό
-    // overwrite του key → είδη της 2ης στο λάθος κλάδο χωρίς exception.
-    if (subCategoryIds.containsKey(s.name)) {
-      throw StateError(
-        'Seed: διπλή υποκατηγορία "${s.name}" — χρησιμοποίησε '
-        'categoryName|name ως μοναδικό κλειδί στον χώρο κατηγορίας',
-      );
-    }
     final catId = categoryIds[s.categoryName];
     if (catId == null) {
       throw StateError(
@@ -102,10 +92,6 @@ Future<void> runSeed(AppDatabase db) => db.transaction(() async {
   AppLogger.info(LogTag.db, 'Seed: υποκατηγορίες → ${subCategoryIds.length}');
 
   // ── Είδη ────────────────────────────────────────────────────────────────
-  // Τα items ΔΕΝ χρειάζονται ids πίσω → όλα εισάγονται σε ΕΝΑ batch
-  // (§4.1.3: 535 εγγραφές χωρίς 535 σειριακά round-trips). Το batch τρέχει
-  // μέσα στο ίδιο transaction (μία ατομική μονάδα, πλήρες rollback αν σκάσει).
-  final itemCompanions = <ItemsCompanion>[];
   for (final item in seedItems) {
     final subCatId = subCategoryIds[item.subCategoryName];
     if (subCatId == null) {
@@ -115,8 +101,6 @@ Future<void> runSeed(AppDatabase db) => db.transaction(() async {
       );
     }
 
-    // Σήμερα ΟΛΑ τα items του seed έχουν defaultUnitName, αλλά το πεδίο είναι
-    // nullable (§3) → το branch κρατιέται ως πρόβλεψη, όχι dead code.
     Value<int> defaultUnitId;
     if (item.defaultUnitName != null) {
       final uid = unitIds[item.defaultUnitName];
@@ -131,7 +115,7 @@ Future<void> runSeed(AppDatabase db) => db.transaction(() async {
       defaultUnitId = const Value.absent();
     }
 
-    itemCompanions.add(
+    await db.into(db.items).insert(
       ItemsCompanion.insert(
         name: item.name,
         normalizedName: GreekTextNormalizer.normalize(item.name),
@@ -140,6 +124,5 @@ Future<void> runSeed(AppDatabase db) => db.transaction(() async {
       ),
     );
   }
-  await db.batch((b) => b.insertAll(db.items, itemCompanions));
   AppLogger.info(LogTag.db, 'Seed: είδη → ${seedItems.length} (ολοκληρώθηκε)');
-});
+}
