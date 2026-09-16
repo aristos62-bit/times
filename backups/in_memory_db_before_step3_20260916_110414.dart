@@ -15,14 +15,11 @@ import 'package:times/data/local/app_database.dart';
 ///
 /// `closeStreamsSynchronously: true` αποτρέπει στάσιμους stream queries από
 /// το να κρατούν ανοιχτή τη βάση (drift teardown warning).
-/// Το [skipSeed] είναι `true` by default ώστε τα tests να μην φορτώνουν
-/// seed δεδομένα (αποφεύγεται πολλαπλασιασμός ειδών ανά test run).
-AppDatabase inMemoryDb({bool skipSeed = true}) {
+AppDatabase inMemoryDb() {
   return AppDatabase(
-    executor: DatabaseConnection(
+    DatabaseConnection(
       NativeDatabase.memory(),
       closeStreamsSynchronously: true,
     ),
-    skipSeed: skipSeed,
   );
 }

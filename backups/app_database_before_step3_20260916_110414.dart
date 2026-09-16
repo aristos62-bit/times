@@ -1,9 +1,8 @@
 /// SPoT σύνδεσης με τη βάση SQLite μέσω Drift — Φάση 1, Βήμα 1.
 ///
 /// Οι πίνακες ορίζονται στο `tables.dart` (§3 DESIGN). Στο `onCreate`
-/// δημιουργείται όλο το σχήμα, εκτελείται το seed δεδομένων (Βήμα 3, §4.1)
-/// και στο `beforeOpen` ενεργοποιείται το `PRAGMA foreign_keys = ON`
-/// (τρέχει μετά από κάθε migration/reopen).
+/// δημιουργείται όλο το σχήμα και στο `beforeOpen` ενεργοποιείται το
+/// `PRAGMA foreign_keys = ON` (τρέχει μετά από κάθε migration/reopen).
 /// Logging μέσω `AppLogger` με tag `DB` (§1.7).
 library;
 
@@ -11,7 +10,6 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import '../../core/logging/app_logger.dart';
-import 'seed/seed_runner.dart';
 import 'tables.dart';
 
 part 'app_database.g.dart';
@@ -32,18 +30,10 @@ part 'app_database.g.dart';
   ReceiptLines,
 ])
 class AppDatabase extends _$AppDatabase {
-  /// Κατασκευή με δυνατότητα ορισμού custom [executor] για testing.
-  /// Αν δεν δοθεί, χρησιμοποιείται το default drift executor.
-  /// Αν [skipSeed] είναι `true`, δεν εκτελείται seed — απαραίτητο στα tests
-  /// ώστε να μην πολλαπλασιάζονται τα είδη σε κάθε test run.
-  AppDatabase({QueryExecutor? executor, this.skipSeed = false})
-      : super(executor ?? _openConnection());
+  AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   /// Όνομα του αρχείου βάσης στον χώρο της εφαρμογής.
   static const dbFileName = 'times';
-
-  /// Αν `true`, δεν εκτελείται seed στο `onCreate` (χρήσιμο στα tests).
-  final bool skipSeed;
 
   static DatabaseConnection _openConnection() =>
       driftDatabase(name: dbFileName);
@@ -56,9 +46,6 @@ class AppDatabase extends _$AppDatabase {
         onCreate: (m) async {
           await m.createAll();
           AppLogger.info(LogTag.db, 'Δημιουργία βάσης (times)');
-          if (!skipSeed) {
-            await runSeed(this);
-          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
