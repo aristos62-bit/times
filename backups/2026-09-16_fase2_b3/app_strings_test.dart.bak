@@ -56,6 +56,12 @@ void main() {
         expect(text.contains('\n'), isFalse, reason: 'String με αλλαγή γραμμής: «$text»');
       }
     });
+
+    // ─── ΠΡΟΣΩΡΙΝΑ template strings (default counter) ───────────────────────
+    test('template counter strings — ελληνικά, όχι default Flutter template', () {
+      expect(AppStrings.counterInstruction, 'Πατήσατε το κουμπί τόσες φορές:');
+      expect(AppStrings.counterIncrementTooltip, 'Αύξηση');
+    });
   });
 }
 
@@ -72,4 +78,6 @@ const List<String> _allStrings = [
   AppStrings.fieldSupplier,
   AppStrings.fieldQuantity,
   AppStrings.fieldPrice,
+  AppStrings.counterInstruction,
+  AppStrings.counterIncrementTooltip,
 ];

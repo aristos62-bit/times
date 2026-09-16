@@ -47,7 +47,8 @@
    ├── data/
    │   ├── local/       (Drift database, tables, DAOs)
    │   ├── models/      (Freezed data classes / entities)
-   │   └── repositories/(abstract + implementation, μοναδικό σημείο πρόσβασης στη βάση)
+   │   ├── repositories/(abstract + implementation, μοναδικό σημείο πρόσβασης στη βάση)
+   │   └── providers/   (Riverpod DI δέντρο + StreamProviders — η γέφυρα repos → UI)
    ├── domain/
    │   ├── services/    (business logic: στατιστικά, συγκρίσεις τιμών)
    │   └── validators/  (SPoT validators: receipt_validator, name_validator)

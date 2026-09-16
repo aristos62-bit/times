@@ -26,4 +26,9 @@ abstract final class AppStrings {
   static const String fieldSupplier = 'Προμηθευτής';
   static const String fieldQuantity = 'Ποσότητα';
   static const String fieldPrice = 'Τιμή';
+
+  // ─── Template counter (ΠΡΟΣΩΡΙΝΟ — αφαιρείται στη Φάση 3) ─────────────────
+  /// Κείμενο σώματος / tooltip του προσωρινού default counter.
+  static const String counterInstruction = 'Πατήσατε το κουμπί τόσες φορές:';
+  static const String counterIncrementTooltip = 'Αύξηση';
 }

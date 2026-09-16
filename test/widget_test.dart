@@ -1,34 +1,28 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+/// Widget smoke test — Φάση 2, Βήμα 3.
+///
+/// Επαληθεύει το ριζικό δέντρο: `ProviderScope` + `TimesApp` χωρίς default
+/// Flutter template (DESIGN §0). Η placeholder σελίδα ΔΕΝ ανοίγει βάση
+/// (δεν «βλέπει» data providers) → δεν χρειάζεται override του
+/// `appDatabaseProvider` σε αυτό το widget test.
+library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets(
+      'TimesApp εμφανίζει το brand «Τιμές» — κανένα στοιχείο Flutter template',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const ProviderScope(child: TimesApp()));
 
-    // Verify the app title (SPoT branding) is shown in the AppBar.
-    expect(find.text(AppStrings.appTitle), findsOneWidget);
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
+    // AppBar + σώμα placeholder με τον τίτλο της εφαρμογής.
+    expect(find.text(AppStrings.appTitle), findsNWidgets(2));
+    // Κανένα widget του default counter template.
     expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
   });
 }
