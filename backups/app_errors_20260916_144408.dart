@@ -19,11 +19,6 @@ abstract final class AppErrors {
 
   /// §2.1 + §2.4 (AsyncValueView): generic σφάλμα φόρτωσης δεδομένων.
   /// Εμφανίζεται σε 2+ σημεία → SPoT (§1.1).
-  ///
-  /// NOTE(Φάση2-Βήμα1): το `loadDataFailed` καλύπτεται προσωρινά και για
-  /// write-time FK/UNIQUE σφάλματα καταλόγου (χωρίς δικό τους μήνυμα ακόμα).
-  /// Θα αντικατασταθεί από ειδικό validation/conflict μήνυμα στη Φάση 3/4,
-  /// μαζί με τους validators — ίδιο μοτίβο με το NOTE στο app_exceptions.dart.
   static const String loadDataFailed = 'Σφάλμα κατά τη φόρτωση δεδομένων';
 
   // ─── Backup / Restore (§2.3) ────────────────────────────────────────────
