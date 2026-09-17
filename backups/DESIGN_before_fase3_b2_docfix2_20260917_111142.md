@@ -245,7 +245,7 @@ presentation/settings/
 ```
 
 **Providers / λογική**
-- `themeModeProvider` (Notifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` για `MaterialApp.themeMode`.
+- `themeModeProvider` (StateNotifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` για `MaterialApp.themeMode`.
 - `categoryTreeStreamProvider` (StreamProvider) → live λίστα Κατηγοριών με nested Υποκατηγορίες.
 - `canDeleteCategoryProvider` / `canDeleteSubCategoryProvider` (`FutureProvider.family<bool, int>`) → **προ-έλεγχος** (μετράει συνδεδεμένα Items/ReceiptLines) πριν καν εμφανιστεί ενεργό το εικονίδιο διαγραφής.
 
@@ -385,4 +385,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε στη **Φάση 3, Βήμα 3 — Supplier search/autocomplete + inline "+" δημιουργία** (DESIGN §4 Φάση 3 Βήμα 3, §2.2:182). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.
+Ξεκινάμε από τη **Φάση 0, Βήμα 1** μόνο όταν μου δώσεις ρητή εντολή. Μέχρι τότε δεν δημιουργώ κανένα αρχείο κώδικα.

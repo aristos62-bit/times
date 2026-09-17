@@ -107,3 +107,29 @@ DESIGN §4 Φάση 3 Βήμα 2 («Auto αριθμός απόδειξης + dat
   (DESIGN §4 Φάση 3 Βήμα 3) — slot στο `ReceiptHeaderSection` (§2.2:182).
   Debug: ο Supplier `searchByNormalizedName` + `getByNormalizedName` υπάρχουν
   ήδη στο Repository (Φάση 2) — χρήση, όχι νέα υλοποίηση.
+
+### 5.1 Σημείωση DESIGN.md (post-βήμα doc-fix, 17-09-2026)
+
+Αν και το Βήμα 2 αυτό καθ' αυτό δεν άλλαξε αρχιτεκτονική, το `DESIGN.md`
+ενημερώθηκε **αμέσως μετά** ώστε να αποφεύγεται διφορούμενη συμπεριφορά
+παλαιού κειμένου (κανόνες 3/8/9 AGENTS) — σημεία:
+
+- **§0 πίνακας (State management)**: ρητό κριτήριο — `StreamProvider`/
+  `AsyncNotifier` όταν το state εξαρτάται από async πηγή (DB/stream) ·
+  **plain `Notifier`** όταν το state είναι καθαρά τοπικό/σύγχρονο (async
+  actions σημειωμένα μέσα στο state, π.χ. `isSaving`).
+- **§2.0 δέντρο**: `<screen>_controller.dart` → `Notifier/AsyncNotifier`
+  (επιλογή βάσει κανόνα), αντί του παλιού `AsyncNotifier/StateNotifier`.
+- **§2.0.2 naming**: `xxxControllerProvider` → AsyncNotifierProvider ή plain
+  NotifierProvider με το ίδιο κριτήριο (+ παράδειγμα `receipt_form_controller`).
+- **§2.2 δέντρο**: `receipt_form_controller` = plain Notifier (τοπικό state
+  `ReceiptFormState{date, supplier, draftLines[], isSaving}`) ·
+  `item_search_controller` = AsyncNotifier (DB/stream) — προδιαγραφή για το Βήμα 3.
+- **§2.3**: `themeModeProvider` `StateNotifier` → `Notifier` (το StateNotifier
+  είναι legacy στο Riverpod 3).
+- **§5 «Επόμενο Βήμα»**: αντικατάσταση της παλιάς «Φάση 0, Βήμα 1» →
+  «Φάση 3, Βήμα 3 — Supplier search».
+
+Backups πριν τα edits: `backups/DESIGN_before_fase3_b2_20260917_110857.md`
+(πριν το αρχικό κείμενο) + `backups/DESIGN_before_fase3_b2_docfix2_20260917_111142.md`
+(πριν τα 3 annex edits).

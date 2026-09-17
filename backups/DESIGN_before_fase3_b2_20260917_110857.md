@@ -13,7 +13,7 @@
 | Πλατφόρμα | Flutter/Dart — Android, iOS, Windows (desktop), Web (προαιρετικά αργότερα) |
 | Γλώσσα UI | Ελληνικά (μοναδική γλώσσα, μέσω SPoT strings — όχι hardcoded) |
 | Βάση δεδομένων | SQLite μέσω **Drift** (type-safe ORM, ενεργά συντηρούμενο, αντικαθιστά το εγκαταλελειμμένο Isar) |
-| State management | Riverpod · **StreamProvider / AsyncNotifier όταν το state εξαρτάται από async πηγή (DB/stream)** — ό,τι χρειάζεται real-time · **plain Notifier όταν το state είναι καθαρά τοπικό/σύγχρονο**, με τα async actions σημειωμένα μέσα στο state (π.χ. `isSaving` flag) |
+| State management | Riverpod (StreamProvider / AsyncNotifier για real-time reactive UI) |
 | Πλοήγηση | GoRouter |
 | Θέμα | Light / Dark / Auto (system) |
 | Λειτουργία | 100% offline-first, τοπική βάση· "online" = προαιρετικός μελλοντικός συγχρονισμός (δεν είναι στο MVP, σχεδιάζεται ως επέκταση) |
@@ -105,7 +105,7 @@
 presentation/<screen>/
 ├── <screen>_page.dart          -- ConsumerWidget, ΜΟΝΟ layout/σύνθεση, καθόλου business logic
 ├── controllers/
-│   └── <screen>_controller.dart -- Notifier/AsyncNotifier, όλη η λογική & state (επιλογή βάσει κανόνα, §2.0)
+│   └── <screen>_controller.dart -- AsyncNotifier/StateNotifier, όλη η λογική & state
 ├── state/
 │   └── <screen>_state.dart      -- Freezed immutable state class
 └── widgets/
@@ -118,7 +118,7 @@ presentation/<screen>/
 2. **Naming convention providers** (SPoT και στα ονόματα, όχι μόνο στις τιμές):
    - `xxxRepositoryProvider` → το repository (Provider, singleton)
    - `xxxStreamProvider` → ζωντανή λίστα από repository (StreamProvider)
-   - `xxxControllerProvider` → φόρμες/actions · **AsyncNotifierProvider** όταν το state προέρχεται από async πηγή (DB/stream), **plain NotifierProvider** όταν το state είναι καθαρά τοπικό/σύγχρονο με async actions σημειωμένα μέσα στο state (π.χ. `isSaving` flag) — βλ. παράδειγμα `receipt_form_controller` (§2.2)
+   - `xxxControllerProvider` → φόρμες/actions (AsyncNotifierProvider)
    - `selectedXxxProvider` → απλή επιλογή UI state (StateProvider), π.χ. φίλτρο
 3. **Debounce σε ΚΑΘΕ text input που πυροδοτεί query** (όχι μόνο στην αναζήτηση ειδών) — χρήση κοινού `Debouncer` util στο `core/utils/debouncer.dart`, με τιμή από `AppConstants.searchDebounceMillis`. Κάθε νέο keystroke **ακυρώνει** το προηγούμενο pending query (αποφυγή race condition: παλιό αργό αποτέλεσμα να "προσπεράσει" νεότερο).
 4. **Ελληνικό normalization στην αναζήτηση**: η αναζήτηση ειδών/προμηθευτών/κατηγοριών πρέπει να δουλεύει ανεξαρτήτως τόνων/κεφαλαίων (π.χ. "γαλα" να βρίσκει "Γάλα") και τελικού σίγμα (αδιάφορο σ/ς). SPoT utility `core/utils/greek_text_normalizer.dart` → εφαρμόζεται και στο SQL query (αποθηκευμένη normalized στήλη `normalizedName`, §3) και στο UI input πριν το query φύγει.
@@ -173,8 +173,8 @@ presentation/home/
 presentation/price_entry/
 ├── price_entry_page.dart
 ├── controllers/
-│   ├── receipt_form_controller.dart   -- header (ημερομηνία, προμηθευτής) + λίστα draft γραμμών + save · **plain Notifier** (τοπικό/σύγχρονο state `ReceiptFormState{date, supplier, draftLines[], isSaving}`, async save σημειωμένο με `isSaving`)
-│   └── item_search_controller.dart    -- αναζήτηση/επιλογή είδους, ξεχωριστό γιατί έχει δικό του lifecycle (debounce, cancel) · **AsyncNotifier** (αποτελέσματα από DB/stream)
+│   ├── receipt_form_controller.dart   -- header (ημερομηνία, προμηθευτής) + λίστα draft γραμμών + save
+│   └── item_search_controller.dart    -- αναζήτηση/επιλογή είδους, ξεχωριστό γιατί έχει δικό του lifecycle (debounce, cancel)
 ├── state/
 │   ├── receipt_form_state.dart        -- Freezed: date, supplier, draftLines[], isSaving
 │   └── item_search_state.dart         -- Freezed: query, results[], status(idle/searching/found/notFound)
@@ -245,7 +245,7 @@ presentation/settings/
 ```
 
 **Providers / λογική**
-- `themeModeProvider` (Notifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` για `MaterialApp.themeMode`.
+- `themeModeProvider` (StateNotifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` για `MaterialApp.themeMode`.
 - `categoryTreeStreamProvider` (StreamProvider) → live λίστα Κατηγοριών με nested Υποκατηγορίες.
 - `canDeleteCategoryProvider` / `canDeleteSubCategoryProvider` (`FutureProvider.family<bool, int>`) → **προ-έλεγχος** (μετράει συνδεδεμένα Items/ReceiptLines) πριν καν εμφανιστεί ενεργό το εικονίδιο διαγραφής.
 
@@ -385,4 +385,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε στη **Φάση 3, Βήμα 3 — Supplier search/autocomplete + inline "+" δημιουργία** (DESIGN §4 Φάση 3 Βήμα 3, §2.2:182). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.
+Ξεκινάμε από τη **Φάση 0, Βήμα 1** μόνο όταν μου δώσεις ρητή εντολή. Μέχρι τότε δεν δημιουργώ κανένα αρχείο κώδικα.
