@@ -29,10 +29,9 @@ abstract final class AppStrings {
   // ─── Price entry (§2.2) ───────────────────────────────────────────────────
   /// Τίτλος AppBar στη σελίδα εισαγωγής τιμών.
   static const String titlePriceEntry = 'Εισαγωγή Τιμών';
-  /// Placeholder text στη σελίδα εισαγωγής για το τμήμα γραμμών/αποθήκευσης
-  /// (μέχρι Φάση 3 βήματα 4-5). Το header (ημερομηνία) υπάρχει από το Βήμα 2.
-  static const String priceEntryLinesComingSoon =
-      'Οι γραμμές απόδειξης θα είναι διαθέσιμες σύντομα';
+  /// Placeholder text στη σελίδα εισαγωγής (μέχρι Φάση 3 βήμα 2+).
+  static const String priceEntryComingSoon =
+      'Η εισαγωγή τιμών θα είναι διαθέσιμη σύντομα';
   /// Κουμπί αποθήκευσης ολόκληρης απόδειξης.
   static const String saveReceipt = 'Αποθήκευση Απόδειξης';
   /// Κουμπί προσθήκης γραμμής στο «καλάθι» της απόδειξης.

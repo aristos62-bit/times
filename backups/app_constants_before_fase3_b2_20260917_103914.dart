@@ -60,15 +60,6 @@ abstract final class AppConstants {
   // Default ποσότητα όταν ανοίγει νέα γραμμή απόδειξης.
   static const double defaultReceiptQuantity = 1.0;
 
-  // ─── Date picker (§2.2 / Φάση 3 Βήμα 2) ───────────────────────────────────
-  // Ελάχιστο έτος που επιτρέπει ο showDatePicker (firstDate) — όρια φόρμας
-  // απόδειξης, τίποτα hardcoded (§1.1).
-  static const int datePickerFirstYear = 2000;
-
-  // Μέγιστο έτος (lastDate) — ο χρήστης δεν εισάγει ημερομηνία εκτός
-  // λογικού εύρους αποδείξεων (read-only field, μόνο picker).
-  static const int datePickerLastYear = 2100;
-
   // ─── Lists / Limits ────────────────────────────────────────────────────────
   // Πλήθος τελευταίων αποδείξεων στη placeholder λίστα (Φάση 3).
   static const int recentReceiptsLimit = 20;

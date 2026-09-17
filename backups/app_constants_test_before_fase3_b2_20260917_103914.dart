@@ -150,23 +150,6 @@ void main() {
       expect(AppConstants.maxFeedbackLines, greaterThan(0));
     });
 
-    // ─── Date picker (Φάση 3 Βήμα 2) ────────────────────────────────────────
-    test('datePickerFirstYear = 2000 (firstDate showDatePicker)', () {
-      expect(AppConstants.datePickerFirstYear, 2000);
-    });
-
-    test('datePickerLastYear = 2100 (lastDate showDatePicker)', () {
-      expect(AppConstants.datePickerLastYear, 2100);
-    });
-
-    test('date picker bounds invariant: firstYear < lastYear', () {
-      expect(
-        AppConstants.datePickerFirstYear,
-        lessThan(AppConstants.datePickerLastYear),
-        reason: 'Αλλιώς το εύρος ημερομηνιών του picker είναι κενό',
-      );
-    });
-
     // ─── Backup (§2.3) ───────────────────────────────────────────────────────
     test('backupFileNamePattern — template ονομασίας (§2.3)', () {
       expect(AppConstants.backupFileNamePattern, 'times_backup_yyyyMMdd_HHmmss');

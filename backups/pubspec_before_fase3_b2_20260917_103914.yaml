@@ -30,13 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # Ελληνικό UI (§0 DESIGN "Γλώσσα UI: Ελληνικά, μοναδική γλώσσα") —
-  # localizations delegates για showDatePicker/formatMediumDate (Φάση 3 Βήμα 2).
-  # Ήδη transitive στο pubspec.lock (flutter_localizations + intl 0.20.3) →
-  # η δήλωση δεν αλλάζει το dependency tree.
-  flutter_localizations:
-    sdk: flutter
-  intl: ^0.20.3
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

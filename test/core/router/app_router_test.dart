@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_strings.dart';
@@ -29,9 +30,13 @@ void main() {
   tearDown(AppLogger.resetTestSink);
 
   /// Pump με φρέσκο router (αποφεύγει shared GoRouter state μεταξύ tests).
+  /// ProviderScope απαραίτητο από το Βήμα 2: η PriceEntryPage είναι πλέον
+  /// ConsumerWidget (watch-άρει τον τοπικό receiptFormControllerProvider).
   Future<void> pumpApp(WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp.router(routerConfig: buildAppRouter()),
+      ProviderScope(
+        child: MaterialApp.router(routerConfig: buildAppRouter()),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -50,7 +55,9 @@ void main() {
         (tester) async {
       final router = buildAppRouter();
       await tester.pumpWidget(
-        MaterialApp.router(routerConfig: router),
+        ProviderScope(
+          child: MaterialApp.router(routerConfig: router),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -101,7 +108,9 @@ void main() {
       addTearDown(AppLogger.resetTestSink);
 
       await tester.pumpWidget(
-        MaterialApp.router(routerConfig: buildAppRouter()),
+        ProviderScope(
+          child: MaterialApp.router(routerConfig: buildAppRouter()),
+        ),
       );
       await tester.pumpAndSettle();
       expect(logs, isNotEmpty);

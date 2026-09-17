@@ -16,13 +16,6 @@ void main() {
       expect(AppStrings.appTitle, 'Τιμές');
     });
 
-    // ─── Navigation / App shell (Φάση 3 Βήμα 1) ─────────────────────────────
-    test('nav labels — αρχική/εισαγωγή/ρυθμίσεις (Φάση 3 Βήμα 1)', () {
-      expect(AppStrings.navHome, 'Αρχική');
-      expect(AppStrings.navPriceEntry, 'Εισαγωγή');
-      expect(AppStrings.navSettings, 'Ρυθμίσεις');
-    });
-
     // ─── Home / Stats (§2.1) ─────────────────────────────────────────────────
     test('noPricesForPeriod — ακριβές κείμενο (§2.1)', () {
       expect(
@@ -35,22 +28,7 @@ void main() {
       expect(AppStrings.retryButton, 'Επανάληψη');
     });
 
-    test('statsComingSoon — placeholder στατιστικών (§2.1 · Φάση 5)', () {
-      expect(AppStrings.statsComingSoon, 'Τα στατιστικά θα εμφανιστούν σύντομα');
-    });
-
     // ─── Price entry (§2.2) ──────────────────────────────────────────────────
-    test('titlePriceEntry = «Εισαγωγή Τιμών» (§2.2)', () {
-      expect(AppStrings.titlePriceEntry, 'Εισαγωγή Τιμών');
-    });
-
-    test('priceEntryLinesComingSoon — placeholder γραμμών εισαγωγής (§2.2)', () {
-      expect(
-        AppStrings.priceEntryLinesComingSoon,
-        'Οι γραμμές απόδειξης θα είναι διαθέσιμες σύντομα',
-      );
-    });
-
     test('saveReceipt = «Αποθήκευση Απόδειξης» (§2.2)', () {
       expect(AppStrings.saveReceipt, 'Αποθήκευση Απόδειξης');
     });
@@ -64,15 +42,6 @@ void main() {
       expect(AppStrings.fieldSupplier, 'Προμηθευτής');
       expect(AppStrings.fieldQuantity, 'Ποσότητα');
       expect(AppStrings.fieldPrice, 'Τιμή');
-    });
-
-    // ─── Settings (§2.3) ─────────────────────────────────────────────────────
-    test('titleSettings = «Ρυθμίσεις» + placeholder (§2.3)', () {
-      expect(AppStrings.titleSettings, 'Ρυθμίσεις');
-      expect(
-        AppStrings.settingsComingSoon,
-        'Οι ρυθμίσεις θα είναι διαθέσιμες σύντομα',
-      );
     });
 
     // ─── Καθολικές εγγυήσεις (όλα τα strings) ────────────────────────────────
@@ -95,20 +64,12 @@ void main() {
 /// κενό / με whitespace / με νέα γραμμή).
 const List<String> _allStrings = [
   AppStrings.appTitle,
-  AppStrings.navHome,
-  AppStrings.navPriceEntry,
-  AppStrings.navSettings,
   AppStrings.noPricesForPeriod,
   AppStrings.retryButton,
-  AppStrings.statsComingSoon,
-  AppStrings.titlePriceEntry,
-  AppStrings.priceEntryLinesComingSoon,
   AppStrings.saveReceipt,
   AppStrings.addReceiptLine,
   AppStrings.fieldDate,
   AppStrings.fieldSupplier,
   AppStrings.fieldQuantity,
   AppStrings.fieldPrice,
-  AppStrings.titleSettings,
-  AppStrings.settingsComingSoon,
 ];

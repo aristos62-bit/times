@@ -47,6 +47,6 @@ void main() {
 
     // Πλέον βλέπουμε τη PriceEntry placeholder (AppBar «Εισαγωγή Τιμών»).
     expect(find.text(AppStrings.titlePriceEntry), findsOneWidget);
-    expect(find.text(AppStrings.priceEntryLinesComingSoon), findsOneWidget);
+    expect(find.text(AppStrings.priceEntryComingSoon), findsOneWidget);
   });
 }

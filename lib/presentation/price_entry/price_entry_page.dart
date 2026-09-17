@@ -1,25 +1,38 @@
-/// Φάση 3, Βήμα 1 — Price Entry placeholder (σελίδα εισαγωγής §2.2).
+/// Φάση 3, Βήμα 2 — Price Entry (σελίδα εισαγωγής §2.2).
 ///
 /// Στοιχείο του App Shell: ο `AppShell` δίνει το Scaffold με NavigationBar
-/// και κάθε σελίδα προσθέτει δικό της nested Scaffold (AppBar + σώμα).
-/// ΔΕΝ watch-άρει providers — η βάση δεν ανοίγει όσο είναι placeholder
-/// (το πραγματικό UI εισαγωγής χτίζεται από το Βήμα 2 της Φάσης 3).
+/// και η σελίδα προσθέτει δικό της nested Scaffold (AppBar + σώμα).
+/// Watch-άρει ΜΟΝΟ τον τοπικό `receiptFormControllerProvider` (header
+/// ημερομηνίας, Βήμα 2) — καμία εξάρτηση από repository → η βάση παραμένει
+/// κλειστή όσο η σελίδα δείχνει μόνο τον σκελετό (ίδια αρχή με §3 Βήμα 1).
+/// Οι γραμμές απόδειξης (draftLines) εμφανίζονται από τα Βήματα 4-5.
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
+import 'widgets/receipt_header_section.dart';
 
-/// Σελίδα εισαγωγής τιμών (§2.2) — placeholder μέχρι το Βήμα 2 της Φάσης 3.
-class PriceEntryPage extends StatelessWidget {
+/// Σελίδα εισαγωγής τιμών (§2.2) — σκελετός φόρμας από το Βήμα 2.
+class PriceEntryPage extends ConsumerWidget {
   const PriceEntryPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.titlePriceEntry)),
-      body: const Center(
-        child: Text(AppStrings.priceEntryComingSoon),
+      body: SafeArea(
+        child: ListView(
+          // Responsive §1.4: ListView + padding από SPoT, κανένα σταθερό ύψος.
+          padding: const EdgeInsets.symmetric(vertical: AppConstants.spacingL),
+          children: const [
+            ReceiptHeaderSection(),
+            SizedBox(height: AppConstants.spacingXL),
+            Center(child: Text(AppStrings.priceEntryLinesComingSoon)),
+          ],
+        ),
       ),
     );
   }

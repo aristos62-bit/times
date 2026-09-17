@@ -44,10 +44,10 @@ void main() {
       expect(AppStrings.titlePriceEntry, 'Εισαγωγή Τιμών');
     });
 
-    test('priceEntryLinesComingSoon — placeholder γραμμών εισαγωγής (§2.2)', () {
+    test('priceEntryComingSoon — placeholder εισαγωγής (§2.2)', () {
       expect(
-        AppStrings.priceEntryLinesComingSoon,
-        'Οι γραμμές απόδειξης θα είναι διαθέσιμες σύντομα',
+        AppStrings.priceEntryComingSoon,
+        'Η εισαγωγή τιμών θα είναι διαθέσιμη σύντομα',
       );
     });
 
@@ -102,7 +102,7 @@ const List<String> _allStrings = [
   AppStrings.retryButton,
   AppStrings.statsComingSoon,
   AppStrings.titlePriceEntry,
-  AppStrings.priceEntryLinesComingSoon,
+  AppStrings.priceEntryComingSoon,
   AppStrings.saveReceipt,
   AppStrings.addReceiptLine,
   AppStrings.fieldDate,

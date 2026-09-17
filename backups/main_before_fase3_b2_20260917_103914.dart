@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/constants/app_strings.dart';
@@ -23,12 +22,6 @@ class TimesApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: AppStrings.appTitle,
-      // Ελληνικό UI — μοναδική γλώσσα (§0 DESIGN): localizations delegates +
-      // locale el, ώστε Material components (showDatePicker, formatMediumDate)
-      // να εμφανίζονται ελληνικά (§1.0 / Φάση 3 Βήμα 2).
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      supportedLocales: const [Locale('el')],
-      locale: const Locale('el'),
       // SPoT theme: light/dark από AppColors.brandSeed (§0/§1.5) · ThemeMode
       // system default (§1.5) — override ανά χρήστη στη Φάση 4 (§2.3).
       theme: AppTheme.light,
