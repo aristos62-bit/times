@@ -198,12 +198,10 @@ void main() {
       AppLogger.testSink = logged.write;
       final notifier = container.read(receiptFormControllerProvider.notifier);
 
-      final result = await notifier.createSupplier('  Lidl  ');
-      expect(result.supplier, isNotNull);
-      expect(result.supplier!.name, 'Lidl'); // trim
-      expect(result.created, isTrue, reason: 'Νέα γραμμή στη βάση');
-      expect(container.read(receiptFormControllerProvider).supplier,
-          result.supplier);
+      final created = await notifier.createSupplier('  Lidl  ');
+      expect(created, isNotNull);
+      expect(created!.name, 'Lidl'); // trim
+      expect(container.read(receiptFormControllerProvider).supplier, created);
       expect(logged.toString(), contains('[UI]'));
       expect(logged.toString(), contains('Επιλογή προμηθευτή'));
     });
@@ -219,8 +217,7 @@ void main() {
 
       // «Μάρκος» (τόνος) κανονικοποιείται σε «μαρκοσ» — exact-match.
       final result = await notifier.createSupplier('ΜΑΡΚΟΣ');
-      expect(result.supplier?.id, existingId);
-      expect(result.created, isFalse, reason: 'Δεν μπήκε νέα γραμμή');
+      expect(result?.id, existingId);
       expect(container.read(receiptFormControllerProvider).supplier?.id,
           existingId);
       expect(logged.toString(), contains('Επιλογή προμηθευτή'));
@@ -230,13 +227,11 @@ void main() {
       expect(all.length, 1, reason: 'Καμία δεύτερη εγγραφή (soft dup-check)');
     });
 
-    test('κενό/whitespace → (null, false), χωρίς αλλαγή state', () async {
+    test('κενό/whitespace → null, χωρίς αλλαγή state', () async {
       final container = containerWithDb();
       final notifier = container.read(receiptFormControllerProvider.notifier);
 
-      final result = await notifier.createSupplier('   ');
-      expect(result.supplier, isNull);
-      expect(result.created, isFalse);
+      expect(await notifier.createSupplier('   '), isNull);
       expect(container.read(receiptFormControllerProvider).supplier, isNull);
     });
 

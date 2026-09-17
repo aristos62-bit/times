@@ -42,11 +42,6 @@ abstract final class AppStrings {
   static const String fieldSupplier = 'Προμηθευτής';
   static const String fieldQuantity = 'Ποσότητα';
   static const String fieldPrice = 'Τιμή';
-  /// Hint στο πεδίο αναζήτησης προμηθευτή (SearchableDropdownField, §2.4).
-  static const String supplierSearchHint = 'Αναζήτηση προμηθευτή';
-  /// Label της inline επιλογής «+» για δημιουργία νέου προμηθευτή — το
-  /// πληκτρολογημένο query αποδίδεται δυναμικά δίπλα («Νέος προμηθευτής "x"»).
-  static const String addNewSupplier = 'Νέος προμηθευτής';
 
   // ─── Settings (§2.3) ──────────────────────────────────────────────────────
   /// Τίτλος AppBar στη σελίδα ρυθμίσεων.

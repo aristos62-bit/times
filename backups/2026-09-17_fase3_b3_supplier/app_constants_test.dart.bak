@@ -81,10 +81,6 @@ void main() {
       expect(AppConstants.searchResultsLimit, 15);
     });
 
-    test('searchDropdownMaxHeight = 320 (max height overlay, §2.4)', () {
-      expect(AppConstants.searchDropdownMaxHeight, 320.0);
-    });
-
     test('search invariants: debounce > 0, minChars ≥ 1, limit > minChars', () {
       expect(AppConstants.searchDebounceMillis, greaterThan(0));
       expect(AppConstants.searchMinChars, greaterThanOrEqualTo(1));

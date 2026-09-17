@@ -20,15 +20,6 @@ void main() {
       expect(AppMessages.restoreSuccess, 'Η επαναφορά ολοκληρώθηκε');
     });
 
-    // ─── Supplier create / dup (§2.4 · Φάση 3 Βήμα 3) ────────────────────────
-    test('supplierAdded = «Ο προμηθευτής προστέθηκε» (§2.4)', () {
-      expect(AppMessages.supplierAdded, 'Ο προμηθευτής προστέθηκε');
-    });
-
-    test('supplierExists = «Ο προμηθευτής υπάρχει ήδη» (§2.4)', () {
-      expect(AppMessages.supplierExists, 'Ο προμηθευτής υπάρχει ήδη');
-    });
-
     // ─── Confirm dialog defaults (§2.4) ─────────────────────────────────────
     test('confirmDialogTitle = «Επιβεβαίωση» (§2.4)', () {
       expect(AppMessages.confirmDialogTitle, 'Επιβεβαίωση');
@@ -86,8 +77,6 @@ void main() {
 const List<String> _allConstStrings = [
   AppMessages.savedReceipt,
   AppMessages.restoreSuccess,
-  AppMessages.supplierAdded,
-  AppMessages.supplierExists,
   AppMessages.confirmDialogTitle,
   AppMessages.confirmDialogConfirm,
   AppMessages.confirmDialogCancel,

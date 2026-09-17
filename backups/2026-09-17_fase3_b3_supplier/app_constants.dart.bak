@@ -37,12 +37,6 @@ abstract final class AppConstants {
   // όταν το searchMinChars=1 επιστρέφει πολλά αποτελέσματα (§1.4).
   static const int searchResultsLimit = 15;
 
-  // Μέγιστο ύψος του overlay λίστας στο SearchableDropdownField (§2.4).
-  // Κάτω από αυτό η λίστα γίνεται scrollable — αποτρέπει overflow σε
-  // μικρές οθόνες με πολλά αποτελέσματα (§1.4, κανόνας «όχι fixed heights
-  // σε λίστες/φόρμες»: εδώ είναι όριο MAX, όχι σταθερό ύψος).
-  static const double searchDropdownMaxHeight = 320.0;
-
   // ─── Validation όρια ───────────────────────────────────────────────────────
   // ΑΠΟΚΛΕΙΣΤΙΚΟ όριο — όχι αποδεκτή τιμή. Δεκτό μόνο price > validationMinPrice.
   static const double validationMinPrice = 0.0;

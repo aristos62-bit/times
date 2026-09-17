@@ -66,14 +66,6 @@ void main() {
       expect(AppStrings.fieldPrice, 'Τιμή');
     });
 
-    test('supplierSearchHint = «Αναζήτηση προμηθευτή» (§2.4)', () {
-      expect(AppStrings.supplierSearchHint, 'Αναζήτηση προμηθευτή');
-    });
-
-    test('addNewSupplier = «Νέος προμηθευτής» (§2.4)', () {
-      expect(AppStrings.addNewSupplier, 'Νέος προμηθευτής');
-    });
-
     // ─── Settings (§2.3) ─────────────────────────────────────────────────────
     test('titleSettings = «Ρυθμίσεις» + placeholder (§2.3)', () {
       expect(AppStrings.titleSettings, 'Ρυθμίσεις');
@@ -117,8 +109,6 @@ const List<String> _allStrings = [
   AppStrings.fieldSupplier,
   AppStrings.fieldQuantity,
   AppStrings.fieldPrice,
-  AppStrings.supplierSearchHint,
-  AppStrings.addNewSupplier,
   AppStrings.titleSettings,
   AppStrings.settingsComingSoon,
 ];

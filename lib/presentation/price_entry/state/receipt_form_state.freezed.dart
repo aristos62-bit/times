@@ -15,7 +15,10 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ReceiptFormState {
 
- DateTime get date;
+ DateTime get date;/// `supplier` — ο επιλεγμένος προμηθευτής (Βήμα 3), «null» = κανένας.
+/// Drift data-class (app_database.dart): immutable με value equality —
+/// συμβατό με το Freezed equality/copyWith χωρίς επιπλέον annotations.
+ Supplier? get supplier;
 /// Create a copy of ReceiptFormState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +30,20 @@ $ReceiptFormStateCopyWith<ReceiptFormState> get copyWith => _$ReceiptFormStateCo
 @override
 bool operator ==(Object other) {
   final _this = this as ReceiptFormState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReceiptFormState&&(identical(other.date, _this.date) || other.date == _this.date));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReceiptFormState&&(identical(other.date, _this.date) || other.date == _this.date)&&const DeepCollectionEquality().equals(other.supplier, _this.supplier));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ReceiptFormState;
-  return Object.hash(runtimeType,_this.date);
+  return Object.hash(runtimeType,_this.date,const DeepCollectionEquality().hash(_this.supplier));
 }
 
 @override
 String toString() {
   final _this = this as ReceiptFormState;
-  return 'ReceiptFormState(date: ${_this.date})';
+  return 'ReceiptFormState(date: ${_this.date}, supplier: ${_this.supplier})';
 }
 
 
@@ -51,7 +54,7 @@ abstract mixin class $ReceiptFormStateCopyWith<$Res>  {
   factory $ReceiptFormStateCopyWith(ReceiptFormState value, $Res Function(ReceiptFormState) _then) = _$ReceiptFormStateCopyWithImpl;
 @useResult
 $Res call({
- DateTime date
+ DateTime date, Supplier? supplier
 });
 
 
@@ -68,10 +71,11 @@ class _$ReceiptFormStateCopyWithImpl<$Res>
 
 /// Create a copy of ReceiptFormState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? date = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? date = null,Object? supplier = freezed,}) {
   return _then(ReceiptFormState(
 date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,supplier: freezed == supplier ? _self.supplier : supplier // ignore: cast_nullable_to_non_nullable
+as Supplier?,
   ));
 }
 
@@ -156,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DateTime date)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DateTime date,  Supplier? supplier)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ReceiptFormState() when $default != null:
-return $default(_that.date);case _:
+return $default(_that.date,_that.supplier);case _:
   return orElse();
 
 }
@@ -177,10 +181,10 @@ return $default(_that.date);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DateTime date)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DateTime date,  Supplier? supplier)  $default,) {final _that = this;
 switch (_that) {
 case _ReceiptFormState():
-return $default(_that.date);case _:
+return $default(_that.date,_that.supplier);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -197,10 +201,10 @@ return $default(_that.date);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DateTime date)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DateTime date,  Supplier? supplier)?  $default,) {final _that = this;
 switch (_that) {
 case _ReceiptFormState() when $default != null:
-return $default(_that.date);case _:
+return $default(_that.date,_that.supplier);case _:
   return null;
 
 }
@@ -212,10 +216,14 @@ return $default(_that.date);case _:
 
 
 class _ReceiptFormState implements ReceiptFormState {
-  const _ReceiptFormState({required this.date});
+  const _ReceiptFormState({required this.date, this.supplier});
   
 
 @override final  DateTime date;
+/// `supplier` — ο επιλεγμένος προμηθευτής (Βήμα 3), «null» = κανένας.
+/// Drift data-class (app_database.dart): immutable με value equality —
+/// συμβατό με το Freezed equality/copyWith χωρίς επιπλέον annotations.
+@override final  Supplier? supplier;
 
 /// Create a copy of ReceiptFormState
 /// with the given fields replaced by the non-null parameter values.
@@ -227,18 +235,18 @@ _$ReceiptFormStateCopyWith<_ReceiptFormState> get copyWith => __$ReceiptFormStat
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReceiptFormState&&(identical(other.date, date) || other.date == date));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReceiptFormState&&(identical(other.date, date) || other.date == date)&&const DeepCollectionEquality().equals(other.supplier, supplier));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,date);
+    return Object.hash(runtimeType,date,const DeepCollectionEquality().hash(supplier));
 }
 
 @override
 String toString() {
-    return 'ReceiptFormState(date: $date)';
+    return 'ReceiptFormState(date: $date, supplier: $supplier)';
 }
 
 
@@ -249,7 +257,7 @@ abstract mixin class _$ReceiptFormStateCopyWith<$Res> implements $ReceiptFormSta
   factory _$ReceiptFormStateCopyWith(_ReceiptFormState value, $Res Function(_ReceiptFormState) _then) = __$ReceiptFormStateCopyWithImpl;
 @override @useResult
 $Res call({
- DateTime date
+ DateTime date, Supplier? supplier
 });
 
 
@@ -266,10 +274,11 @@ class __$ReceiptFormStateCopyWithImpl<$Res>
 
 /// Create a copy of ReceiptFormState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? date = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? date = null,Object? supplier = freezed,}) {
   return _then(_ReceiptFormState(
 date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,supplier: freezed == supplier ? _self.supplier : supplier // ignore: cast_nullable_to_non_nullable
+as Supplier?,
   ));
 }
 

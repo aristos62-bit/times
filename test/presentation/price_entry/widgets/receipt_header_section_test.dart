@@ -1,11 +1,12 @@
-/// Widget tests — `ReceiptHeaderSection` (§2.2 / Φάση 3 Βήμα 2).
+/// Widget tests — `ReceiptHeaderSection` (§2.2 / Φάση 3 Βήμα 3).
 ///
 /// Ελληνικά medium-format (formatMediumDate με el locale, §0). Το picker
 /// ελέγχεται σε μεγάλη θύρα (grid mode) — στα responsive tests ΔΕΝ ανοίγει.
 /// Αποφυγή DateTime.now() σε asserts: η "σήμερα" παράγεται από το controller
-/// (μέσω `MaterialLocalizations.formatMediumDate`), άρα ο expected προκύπτει
-/// την ίδια στιγμή της δοκιμής — προσθήκη 1 ημέρας ως "επόμενη" είναι
-/// πάντα εντός bounds κι εκτός "σήμερα".
+/// (μέσω `MaterialLocalizations.formatMediumDate`). Στο Βήμα 3 προστέθηκε το
+/// πεδίο προμηθευτή (SearchableDropdownField, §2.4): τα interactive tests
+/// χρειάζονται in-memory DB (override appDatabaseProvider) για live search
+/// και inline δημιουργία — ΓΙ' ΑΥΤΟ το wrap δέχεται optional overrides.
 library;
 
 import 'package:flutter/material.dart';
@@ -13,19 +14,33 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:times/core/constants/app_messages.dart';
 import 'package:times/core/constants/app_strings.dart';
+import 'package:times/data/local/app_database.dart';
+import 'package:times/data/local/daos/supplier_dao.dart';
+import 'package:times/data/providers/database_providers.dart';
+import 'package:times/presentation/price_entry/controllers/receipt_form_controller.dart';
+import 'package:times/presentation/price_entry/state/receipt_form_state.dart';
 import 'package:times/presentation/price_entry/widgets/receipt_header_section.dart';
 
-/// Shared wrap: ProviderScope + MaterialApp με ελληνικά locale (όπως στο main).
-Widget wrap(Size size, {Widget? child}) {
+import '../../../data/local/helpers/in_memory_db.dart';
+
+/// Shared wrap: ProviderScope (με προαιρετικό in-memory DB override) +
+/// MaterialApp με ελληνικά locale (όπως στο main) + Scaffold (SnackBar).
+Widget wrap(Size size, {Widget? child, AppDatabase? db}) {
   return ProviderScope(
+    overrides: [
+      if (db != null) appDatabaseProvider.overrideWithValue(db),
+    ],
     child: MaterialApp(
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [Locale('el')],
       locale: const Locale('el'),
       home: MediaQuery(
         data: MediaQueryData(size: size),
-        child: child ?? const ReceiptHeaderSection(),
+        child: Scaffold(
+          body: child ?? const ReceiptHeaderSection(),
+        ),
       ),
     ),
   );
@@ -33,12 +48,12 @@ Widget wrap(Size size, {Widget? child}) {
 
 void main() {
   /// Θέτει τη θύρα (logical, dpr=1) και περιμένει το δέντρο.
-  Future<void> pumpAt(WidgetTester tester, Size size) async {
+  Future<void> pumpAt(WidgetTester tester, Size size, {AppDatabase? db}) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(wrap(size));
+    await tester.pumpWidget(wrap(size, db: db));
     await tester.pumpAndSettle();
   }
 
@@ -48,6 +63,19 @@ void main() {
     return MaterialLocalizations.of(ctx).formatMediumDate(today);
   }
 
+  /// Περνά πέρα από τον debounce (250ms) + το stream του provider.
+  Future<void> settleSearch(WidgetTester tester) async {
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+  }
+
+  /// Διαβάζει το state της φόρμας μέσα από το δέντρο του ProviderScope.
+  ReceiptFormState formState(WidgetTester tester) {
+    final container =
+        ProviderScope.containerOf(tester.element(find.byType(ReceiptHeaderSection)));
+    return container.read(receiptFormControllerProvider);
+  }
+
   group('ReceiptHeaderSection', () {
     testWidgets('εμφανίζει label «Ημερομηνία» + formatMediumDate(σήμερα)',
         (tester) async {
@@ -55,6 +83,16 @@ void main() {
 
       expect(find.text(AppStrings.fieldDate), findsOneWidget);
       expect(find.text(mediumNow(tester)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('εμφανίζει το πεδίο προμηθευτή (label + hint, §2.4)',
+        (tester) async {
+      await pumpAt(tester, const Size(800, 600));
+
+      expect(find.text(AppStrings.fieldSupplier), findsOneWidget);
+      expect(find.text(AppStrings.supplierSearchHint), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -109,6 +147,67 @@ void main() {
       final expected = MaterialLocalizations.of(ctx)
           .formatMediumDate(DateTime(now.year, now.month, altDay));
       expect(find.text(expected), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('επιλογή υπάρχοντος προμηθευτή → state.supplier ενημερώνεται',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await SupplierDao(db).insert(name: 'Μάρκος');
+      await pumpAt(tester, const Size(800, 600), db: db);
+
+      await tester.enterText(find.byType(TextField), 'μάρκος');
+      await settleSearch(tester);
+
+      expect(find.text('Μάρκος'), findsOneWidget);
+      await tester.tap(find.text('Μάρκος'));
+      await tester.pumpAndSettle();
+
+      expect(formState(tester).supplier?.name, 'Μάρκος');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('«+» νέος προμηθευτής → supplierAdded + πεδίο ενημερώνεται',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await pumpAt(tester, const Size(800, 600), db: db);
+
+      const name = 'Καθαριστήρια Αστραπή';
+      await tester.enterText(find.byType(TextField), name);
+      await settleSearch(tester);
+
+      final createRow = find.text('${AppStrings.addNewSupplier} "$name"');
+      expect(createRow, findsOneWidget);
+      await tester.tap(createRow);
+      await tester.pumpAndSettle();
+
+      expect(find.text(AppMessages.supplierAdded), findsOneWidget);
+      expect(find.text(name), findsOneWidget);
+      expect(formState(tester).supplier?.name, name);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('«+» με υπάρχοντα → supplierExists (soft dup-check)',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await SupplierDao(db).insert(name: 'Μάρκος');
+      await pumpAt(tester, const Size(800, 600), db: db);
+
+      // Το «Μάρκος» δίνει BOTH result row ΚΑΙ «+» — tap στη «+» σκόπιμα.
+      await tester.enterText(find.byType(TextField), 'Μάρκος');
+      await settleSearch(tester);
+
+      final createRow = find.text('${AppStrings.addNewSupplier} "Μάρκος"');
+      expect(find.text('Μάρκος'), findsWidgets,
+          reason: 'Result row + «+» row μαζί στο overlay');
+      await tester.tap(createRow);
+      await tester.pumpAndSettle();
+
+      expect(find.text(AppMessages.supplierExists), findsOneWidget);
+      expect(formState(tester).supplier?.name, 'Μάρκος');
       expect(tester.takeException(), isNull);
     });
 

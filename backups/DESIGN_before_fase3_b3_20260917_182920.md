@@ -219,17 +219,6 @@ ITEM_SELECTED ──▶ εμφάνιση Unit dropdown (προεπιλογή: It
 - Όνομα νέας Κατηγορίας/Υποκατηγορίας/Είδους: όχι κενό, ≤ `maxItemNameLength`, **case-insensitive έλεγχος διπλότυπου** πριν την εισαγωγή (αποφυγή "Γάλα" και "γαλα" ως δύο διαφορετικές εγγραφές).
 
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
-- **Double-tap στο "+" προμηθευτή/είδους**: τοπικός busy-flag στο widget
-  (`_isCreating`) + guard στον controller — μια μόνο δημιουργία ανά tap
-  (§2.4.1).
-- **Διπλότυπος προμηθευτής από το «+»**: ο `createSupplier` του
-  `receipt_form_controller` τρέχει exact-match έλεγχο στο `normalizedName`
-  (getByNormalizedName §2.0.4) ΠΡΙΝ το insert και — αντί για exception —
-  επιστρέφει **record `({Supplier? supplier, bool created})`**: `created=false`
-  σημαίνει «υπάρχει ήδη» → ο καλών εμφανίζει το σωστό snackbar
-  (`supplierAdded` ή `supplierExists` via `AppFeedback`), χωρίς soft-fail στο
-  UNIQUE constraint της βάσης. Το UNIQUE παραμένει το safety-net (αν περάσει,
-  `DataLoadException`).
 - **Ημιτελής καταχώρηση κατά την έξοδο**: αν ο χρήστης φύγει από τη σελίδα με μη αποθηκευμένες `draftLines`, ο router (GoRouter `onExit`/`PopScope`) εμφανίζει επιβεβαίωση *"Έχετε μη αποθηκευμένες γραμμές. Έξοδος χωρίς αποθήκευση;"*. Το state του controller έχει `autoDispose: false` όσο υπάρχουν draft δεδομένα, ώστε προσωρινή αλλαγή tab να μην τα σβήσει.
 - **Race condition αναζήτησης**: κάθε νέο keystroke ακυρώνει το προηγούμενο pending search (§2.0.3) — αλλιώς ένα αργό query για "γ" μπορεί να εμφανιστεί *μετά* το γρήγορο query για "γάλα" και να δείξει λάθος αποτελέσματα.
 - **Διπλή δημιουργία είδους σε γρήγορο double-tap** στο "+": το κουμπί απενεργοποιείται (`isSaving` flag) μέχρι να ολοκληρωθεί το insert.
@@ -282,43 +271,6 @@ presentation/settings/
 | `CurrencyTextField` | Input formatter με `priceDecimalDigits`, εμφανίζει €, μετατρέπει σε cents στο submit | Τιμή στη Φάση 3 |
 | `QuantityTextField` | Input formatter με `quantityDecimalDigits` + δέχεται flag `allowsDecimal` | Ποσότητα στη Φάση 3 |
 | `AppFeedback` | SPoT snackbar/toast wrapper (§2.0.6) | Παντού |
-
-### 2.4.1 `SearchableDropdownField` — υλοποίηση (Φάση 3, Βήμα 3)
-
-Υλοποιήθηκε ως `ConsumerStatefulWidget` πάνω στο native `RawAutocomplete`
-(keyboard/accessibility δωρεάν) + `Debouncer` + **gated watch**. Ρητές
-αποφάσεις υλοποίησης (δεσμευτικές για το ίδιο widget και στα Βήματα 4/6):
-
-- **Τα αποτελέσματα έρχονται ΜΟΝΟ μέσω `ref.watch(searchProvider(query))`
-  `.when(data:, loading:, error:)`** — ο `optionsBuilder` του RawAutocomplete
-  είναι **σύγχρονος** (επιστρέφει τις γραμμές μιας ήδη-υπολογισμένης λίστας,
-  ΚΑΝΕΝΑ read provider μέσα του). Εκδόσεις με async builder + `provider.future`
-  απορρίφθηκαν επί τόπου: το `.future` δεν ολοκληρώνεται σε tests και ο
-  RawAutocomplete ξανατρέχει τον builder μόνο σε αλλαγή κειμένου/focus.
-- **TO SPECIFIC (RawAutocomplete)**: ο builder ΔΕΝ ξανακαλείται όταν αλλάζει
-  μόνο το state του parent widget. Λύση = **controlled refresh**: μετά από
-  debounce που «κλειδώνει» το query και μετά από άφιξη δεδομένων
-  (loading→data) γίνεται transient αλλαγή του controller value (append/restore
-  κενού, αμφότερα σύγχρονα) → ο RawAutocomplete ξανατρέχει τον builder και το
-  overlay δείχνει τις φρέσκες γραμμές. Στο build συγκρίνεται η τελευταία λίστα
-  αποτελεσμάτων (`_lastResults`) για το refresh-on-data-arrival.
-- **Gated watch (§2.0.1)**: `ref.watch` γίνεται ΜΟΝΟ όταν `query.length >=
-  minChars`· κάτω από το όριο (και στο κενό πεδίο) καμία εξάρτηση → η βάση
-  δεν ανοίγει στο launch. Κανένα χειροκίνητο `isLoading` bool.
-- **«+» πάντα στο τέλος** της λίστας όταν `createLabel != null` και υπάρχει
-  query — ορατό ΑΚΟΜΑ και με 0 αποτελέσματα (η λίστα wrapper `_Entry<T>`
-  κρατιέται μη-κενή). Error path (`.when(error:)`) → «+» μόνο (σιωπηλό).
-- **Double-tap guard**: τοπικό busy-flag `_isCreating` στο widget (guard πριν
-  το callback + γκριζάρισμα της γραμμής). Το widget ΔΕΝ εμφανίζει feedback —
-  ο καλών διαχειρίζεται snackbar μέσω SPoT `AppFeedback`.
-- **`_selectedLabel` guard**: το πεδίο δείχνει το label μετά από
-  επιλογή/prefill και το overlay μένει κλειστό όσο το κείμενο ταυτίζεται με
-  αυτό· νέα επεξεργασία ενεργοποιεί ξανά την αναζήτηση.
-- Ο καλών δίνει μόνο: `labelText`/`hintText` (SPoT strings), `searchProvider`
-  (callable family), `labelOf`, προαιρετικά `createLabel`+`onCreate`
-  (INVARIANT: αν δίνεται το ένα ΟΦΕΙΛΕΤΑΙ και το άλλο), `onSelected`.
-- Στο `ReceiptHeaderSection` (Βήμα 3) το `<T>` = `Supplier` μέσω του υπάρχοντος
-  `supplierSearchProvider` (Φάση 2) — χρήση, όχι νέα υλοποίηση (§2.0.5).
 
 ---
 
@@ -433,4 +385,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε στη **Φάση 3, Βήμα 4 — Item search/autocomplete με incremental filtering (debounce) + "+" popup ροή (Κατηγορία→Υποκατηγορία→Είδος)** (DESIGN §4 Φάση 3 Βήμα 4, state machine §2.2). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης. Το `SearchableDropdownField` (§2.4.1) επαναχρησιμοποιείται για Κατηγορία/Υποκατηγορία (in-memory φιλτράρισμα, §3) και Unit (Βήμα 6) — το Βήμα 4 χτίζει το `item_search_controller` (AsyncNotifier) + τη «+» popup ροή.
+Είμαστε στη **Φάση 3, Βήμα 3 — Supplier search/autocomplete + inline "+" δημιουργία** (DESIGN §4 Φάση 3 Βήμα 3, §2.2:182). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.

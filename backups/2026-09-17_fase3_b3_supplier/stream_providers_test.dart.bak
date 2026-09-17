@@ -24,7 +24,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:times/core/constants/app_constants.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/providers/stream_providers.dart';
@@ -177,77 +176,6 @@ void main() {
         (v) => v.any((r) => r.name == 'Μάρκος'),
       );
       expect(rows.map((r) => r.name), contains('Μάρκος'));
-    });
-  });
-
-  group('supplierSearchProvider (family · Φάση 3 Βήμα 3)', () {
-    test('κενό query → άμεσα [] (χωρίς DB access)', () async {
-      final container = containerWithDb();
-
-      final rows = await waitForValue<List<Supplier>>(
-        (listen) => container.listen(supplierSearchProvider(''), listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('LIKE match από RAW query — κανονικοποίηση εσωτερικά', () async {
-      final container = containerWithDb();
-      await container.read(supplierRepositoryProvider).insert(name: 'Μάρκος');
-      await container
-          .read(supplierRepositoryProvider)
-          .insert(name: 'Μαρκοπούλου');
-      await container.read(supplierRepositoryProvider).insert(name: 'Καφενείο');
-
-      // Το key είναι RAW: κεφαλαία + τόνος κανονικοποιούνται εδώ. Το
-      // «ΜΆΡΚΟ» → «μαρκο» ταιριάζει σε «Μάρκος» (μαρκοσ) ΚΑΙ «Μαρκοπούλου».
-      final rows = await waitForValue<List<Supplier>>(
-        (listen) => container.listen(supplierSearchProvider('ΜΆΡΚΟ'), listen),
-        (v) => v.length == 2,
-      );
-      expect(
-        rows.map((s) => s.name),
-        containsAll(['Μάρκος', 'Μαρκοπούλου']),
-      );
-    });
-
-    test('καμία αντιστοιχία → [] (όχι error)', () async {
-      final container = containerWithDb();
-      await container.read(supplierRepositoryProvider).insert(name: 'Μάρκος');
-
-      final rows = await waitForValue<List<Supplier>>(
-        (listen) => container.listen(supplierSearchProvider('ζζζ'), listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('όριο AppConstants.searchResultsLimit (15)', () async {
-      final container = containerWithDb();
-      for (var i = 1; i <= 20; i++) {
-        await container.read(supplierRepositoryProvider).insert(name: 'Μ αρ $i');
-      }
-
-      final rows = await waitForValue<List<Supplier>>(
-        (listen) => container.listen(supplierSearchProvider('μ αρ'), listen),
-        (v) => v.length == AppConstants.searchResultsLimit,
-      );
-      expect(rows.length, AppConstants.searchResultsLimit);
-    });
-
-    test('live: insert προμηθευτή εμφανίζεται στα αποτελέσματα (real-time)',
-        () async {
-      final container = containerWithDb();
-      // Ξεκινά η ακρόαση· το insert επαν-εκπέμπει το ζωντανό stream.
-      final resultsFuture = waitForValue<List<Supplier>>(
-        (listen) => container.listen(supplierSearchProvider('lidl'), listen),
-        (v) => v.any((s) => s.name == 'Lidl'),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      await container.read(supplierRepositoryProvider).insert(name: 'Lidl');
-
-      final rows = await resultsFuture;
-      expect(rows.map((s) => s.name), contains('Lidl'));
     });
   });
 
