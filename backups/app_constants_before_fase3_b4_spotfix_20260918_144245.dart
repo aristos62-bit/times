@@ -25,23 +25,6 @@ abstract final class AppConstants {
   static const double radiusM = 12.0;
   static const double radiusL = 16.0;
 
-  // ─── Dialog (§1.4) ─────────────────────────────────────────────────────────
-  // Μέγιστο πλάτος popup dialogs (π.χ. NewItemFlowDialog) — responsive:
-  // max-width + scroll (SingleChildScrollView), όχι fixed ύψος (§1.4).
-  static const double dialogMaxWidth = 440.0;
-
-  // ─── Preloader indicators ──────────────────────────────────────────────────
-  // Μέγεθος spinner στο «+» του SearchableDropdownField (overlay).
-  static const double smallSpinnerSize = 16.0;
-  // Μέγεθος spinner στο κουμπί «Προσθήκη» του NewItemFlowDialog.
-  static const double dialogSpinnerSize = 18.0;
-  // Κοινό πάχος γραμμής CircularProgressIndicator (2+ σημεία, §1.1).
-  static const double spinnerStrokeWidth = 2.0;
-
-  // ─── Lists (§1.4) ──────────────────────────────────────────────────────────
-  // Ύψος διαχωριστικών γραμμών σε λίστες αποτελεσμάτων.
-  static const double listDividerHeight = 1.0;
-
   // ─── Search / Autocomplete (§2.2 DESIGN) ──────────────────────────────────
   // Debounce πριν την αναζήτηση στη βάση.
   static const int searchDebounceMillis = 250;

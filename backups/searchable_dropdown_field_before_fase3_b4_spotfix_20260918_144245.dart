@@ -369,11 +369,11 @@ class _SearchableDropdownFieldState<T>
           leading: const Icon(Icons.add_circle_outline),
           title: Text(widget.createLabel!(query)),
           trailing: _isCreating
-              ? SizedBox(
-                  width: AppConstants.smallSpinnerSize,
-                  height: AppConstants.smallSpinnerSize,
-                  child: const CircularProgressIndicator(
-                    strokeWidth: AppConstants.spinnerStrokeWidth,
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
                   ),
                 )
               : null,

@@ -129,9 +129,7 @@ class _ItemSearchFieldState extends ConsumerState<ItemSearchField> {
           child: ListView.separated(
             shrinkWrap: true,
             itemCount: state.results.length,
-            separatorBuilder: (_, _) => const Divider(
-              height: AppConstants.listDividerHeight,
-            ),
+            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final item = state.results[index];
               return ListTile(

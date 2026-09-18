@@ -208,7 +208,7 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
       title: Text(AppStrings.newItemDialogTitle),
       // Responsive §1.4: max-width + scroll — κανένα fixed ύψος.
       content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: AppConstants.dialogMaxWidth),
+        constraints: const BoxConstraints(maxWidth: 440),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -238,12 +238,10 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
           onPressed:
               (_isSaving || _subCategory == null || !_nameIsValid ? null : _save),
           child: _isSaving
-              ? SizedBox(
-                  width: AppConstants.dialogSpinnerSize,
-                  height: AppConstants.dialogSpinnerSize,
-                  child: const CircularProgressIndicator(
-                    strokeWidth: AppConstants.spinnerStrokeWidth,
-                  ),
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Text(AppStrings.newItemSave),
         ),

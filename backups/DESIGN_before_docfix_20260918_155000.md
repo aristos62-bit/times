@@ -46,7 +46,7 @@
    │   └── debug/       (debug_config)
    ├── data/
    │   ├── local/       (Drift database, tables, DAOs)
-   │   ├── models/      (κενό placeholder — ο ανοιχτός φάκελος για οντότητες · καμία Freezed: τα repos επιστρέφουν Drift data classes απευθείας, απόφαση Φάση 2 Βήμα 1)
+   │   ├── models/      (Freezed data classes / entities)
    │   ├── repositories/(abstract + implementation, μοναδικό σημείο πρόσβασης στη βάση)
    │   └── providers/   (Riverpod DI δέντρο + StreamProviders — η γέφυρα repos → UI)
    ├── domain/
@@ -177,7 +177,7 @@ presentation/price_entry/
 │   └── item_search_controller.dart    -- αναζήτηση/επιλογή είδους, ξεχωριστό γιατί έχει δικό του lifecycle (debounce, cancel) · **AsyncNotifier** (αποτελέσματα από DB/stream)
 ├── state/
 │   ├── receipt_form_state.dart        -- Freezed: date, supplier, draftLines[], isSaving
-│   └── item_search_state.dart         -- Freezed: query, results[], selectedItem, status(idle/searching/found/notFound)
+│   └── item_search_state.dart         -- Freezed: query, results[], status(idle/searching/found/notFound)
 └── widgets/
     ├── receipt_header_section.dart    -- ημερομηνία + προμηθευτής (με inline "+" νέου προμηθευτή)
     ├── item_search_field.dart         -- το search box με live αποτελέσματα από κάτω
@@ -316,9 +316,7 @@ presentation/settings/
   αυτό· νέα επεξεργασία ενεργοποιεί ξανά την αναζήτηση.
 - Ο καλών δίνει μόνο: `labelText`/`hintText` (SPoT strings), `searchProvider`
   (callable family), `labelOf`, προαιρετικά `createLabel`+`onCreate`
-  (INVARIANT: αν δίνεται το ένα ΟΦΕΙΛΕΤΑΙ και το άλλο), `onSelected`,
-  καθώς και προαιρετικά `prefixIcon`/`resultLeadingIcon` (SPoT icons,
-  προστέθηκαν στο Βήμα 4 — χρησιμοποιούνται στο `new_item_flow_dialog`).
+  (INVARIANT: αν δίνεται το ένα ΟΦΕΙΛΕΤΑΙ και το άλλο), `onSelected`.
 - Στο `ReceiptHeaderSection` (Βήμα 3) το `<T>` = `Supplier` μέσω του υπάρχοντος
   `supplierSearchProvider` (Φάση 2) — χρήση, όχι νέα υλοποίηση (§2.0.5).
 
@@ -435,4 +433,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε στη **Φάση 3, Βήμα 5 — Εισαγωγή γραμμών απόδειξης**: Unit dropdown (`SearchableDropdownField` §2.4), ποσότητα, τιμή, save flow ("καλάθι" απόδειξης — βλ. state machine §2.2) (DESIGN §4 Φάση 3 Βήμα 5). Το Βήμα 4 (Item search/autocomplete + "«+»" popup ροή Κατηγορία→Υποκατηγορία→Είδος) ολοκληρώθηκε: `item_search_controller` (AsyncNotifier) + `searchable_dropdown_field` icons + `new_item_flow_dialog` με sealed result · tests 485/485, analyze clean. Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης. Το `SearchableDropdownField` (§2.4.1) επαναχρησιμοποιείται για Κατηγορία/Υποκατηγορία (in-memory φιλτράρισμα, §3) και Unit (Βήμα 5).
+Είμαστε στη **Φάση 3, Βήμα 4 — Item search/autocomplete με incremental filtering (debounce) + "+" popup ροή (Κατηγορία→Υποκατηγορία→Είδος)** (DESIGN §4 Φάση 3 Βήμα 4, state machine §2.2). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης. Το `SearchableDropdownField` (§2.4.1) επαναχρησιμοποιείται για Κατηγορία/Υποκατηγορία (in-memory φιλτράρισμα, §3) και Unit (Βήμα 6) — το Βήμα 4 χτίζει το `item_search_controller` (AsyncNotifier) + τη «+» popup ροή.
