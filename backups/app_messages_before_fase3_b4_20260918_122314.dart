@@ -18,18 +18,6 @@ abstract final class AppMessages {
   /// Ο προμηθευτής υπάρχει ήδη — ο υπάρχων επιλέχθηκε (§2.4 soft dup-check).
   static const String supplierExists = 'Ο προμηθευτής υπάρχει ήδη';
 
-  // ─── Item create / dup (§2.4 · Φάση 3 Βήμα 4) ─────────────────────────────
-  /// Νέο είδος δημιουργήθηκε inline από το «+» (§2.4 · Φάση 3 Βήμα 4).
-  static const String itemAdded = 'Το είδος προστέθηκε';
-
-  /// Το είδος υπάρχει ήδη — ο υπάρχων επιλέχθηκε (§2.4 soft dup-check).
-  static const String itemExists = 'Το είδος υπάρχει ήδη';
-
-  // ─── Dynamic item search (§2.4 · Φάση 3 Βήμα 4) ────────────────────────────
-  /// Η μόνη method (μη-const) για δυναμικό περιεχόμενο — ίδιο pattern με
-  /// `itemCountTooltip`: μήνυμα «δεν βρέθηκε» με το πληκτρολογημένο query.
-  static String itemNotFound(String query) => 'Δεν βρέθηκε είδος "$query"';
-
   // ─── Confirm dialog defaults (§2.4 ConfirmDialog) ─────────────────────────
   /// §2.4: "ConfirmDialog — τίτλος/μήνυμα/actions από παραμέτρους, SPoT strings".
   /// Default τίτλος επιβεβαιωτικού dialog.

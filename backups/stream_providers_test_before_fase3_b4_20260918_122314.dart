@@ -199,6 +199,8 @@ void main() {
           .insert(name: 'Μαρκοπούλου');
       await container.read(supplierRepositoryProvider).insert(name: 'Καφενείο');
 
+      // Το key είναι RAW: κεφαλαία + τόνος κανονικοποιούνται εδώ. Το
+      // «ΜΆΡΚΟ» → «μαρκο» ταιριάζει σε «Μάρκος» (μαρκοσ) ΚΑΙ «Μαρκοπούλου».
       final rows = await waitForValue<List<Supplier>>(
         (listen) => container.listen(supplierSearchProvider('ΜΆΡΚΟ'), listen),
         (v) => v.length == 2,
@@ -236,6 +238,7 @@ void main() {
     test('live: insert προμηθευτή εμφανίζεται στα αποτελέσματα (real-time)',
         () async {
       final container = containerWithDb();
+      // Ξεκινά η ακρόαση· το insert επαν-εκπέμπει το ζωντανό stream.
       final resultsFuture = waitForValue<List<Supplier>>(
         (listen) => container.listen(supplierSearchProvider('lidl'), listen),
         (v) => v.any((s) => s.name == 'Lidl'),
@@ -245,95 +248,6 @@ void main() {
 
       final rows = await resultsFuture;
       expect(rows.map((s) => s.name), contains('Lidl'));
-    });
-  });
-
-  // ─── Item search families (Φάση 3 Βήμα 4) ──────────────────────────────
-
-  group('categorySearchProvider (family · Φάση 3 Βήμα 4)', () {
-    test('κενό query → άμεσα [] (χωρίς DB access)', () async {
-      final container = containerWithDb();
-
-      final rows = await waitForValue<List<Category>>(
-        (listen) => container.listen(categorySearchProvider(''), listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('in-memory filter: ταιριάζει μόνο τις κατηγορίες με match',
-        () async {
-      final container = containerWithDb();
-      await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΤΡΟΦΙΜΑ');
-      await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΡΟΥΧΑ');
-
-      final rows = await waitForValue<List<Category>>(
-        (listen) =>
-            container.listen(categorySearchProvider('ροφ'), listen),
-        (v) => v.length == 1,
-      );
-      expect(rows.map((c) => c.name), contains('ΤΡΟΦΙΜΑ'));
-    });
-
-    test('case/tone-insensitive: ΓΑΛΑ ταιριάζει Γαλακτοκομικά', () async {
-      final container = containerWithDb();
-      await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'Γαλακτοκομικά');
-
-      final rows = await waitForValue<List<Category>>(
-        (listen) =>
-            container.listen(categorySearchProvider('ΓΑΛΑ'), listen),
-        (v) => v.isNotEmpty,
-      );
-      expect(rows.map((c) => c.name), contains('Γαλακτοκομικά'));
-    });
-  });
-
-  group('subCategorySearchProvider (family · Φάση 3 Βήμα 4)', () {
-    test('κενό query → άμεσα [] (χωρίς DB access)', () async {
-      final container = containerWithDb();
-
-      final rows = await waitForValue<List<SubCategory>>(
-        (listen) => container.listen(
-          subCategorySearchProvider((categoryId: 1, query: '')),
-          listen,
-        ),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('in-memory filter ανά categoryId + query', () async {
-      final container = containerWithDb();
-      final catA = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΤΡΟΦΙΜΑ');
-      final catB = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΡΟΥΧΑ');
-      await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: catA, name: 'Γαλακτοκομικά');
-      await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: catA, name: 'Κρέας');
-      await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: catB, name: 'Παντελόνια');
-
-      final rows = await waitForValue<List<SubCategory>>(
-        (listen) => container.listen(
-          subCategorySearchProvider((categoryId: catA, query: 'κρε')),
-          listen,
-        ),
-        (v) => v.length == 1,
-      );
-      expect(rows.map((s) => s.name), contains('Κρέας'));
     });
   });
 

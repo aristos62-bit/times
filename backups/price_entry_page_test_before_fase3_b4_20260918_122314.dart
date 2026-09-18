@@ -11,7 +11,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/presentation/price_entry/price_entry_page.dart';
-import 'package:times/presentation/price_entry/widgets/item_search_field.dart';
 import 'package:times/presentation/price_entry/widgets/receipt_header_section.dart';
 
 void main() {
@@ -38,14 +37,12 @@ void main() {
 
   group('PriceEntryPage', () {
     // ─── Περιεχόμενο ─────────────────────────────────────────────────────────
-    testWidgets('περιέχει AppBar, header ημερομηνίας + item search (Βήμα 4) + '
-        'placeholder γραμμών', (tester) async {
+    testWidgets('περιέχει AppBar, header ημερομηνίας + placeholder γραμμών',
+        (tester) async {
       await pumpAt(tester, const Size(800, 600));
       expect(find.byType(AppBar), findsOneWidget);
       expect(find.text(AppStrings.titlePriceEntry), findsOneWidget);
       expect(find.byType(ReceiptHeaderSection), findsOneWidget);
-      // Βήμα 4: inline panel αναζήτησης είναι παρόν (idle — καμία DB access).
-      expect(find.byType(ItemSearchField), findsOneWidget);
       expect(find.text(AppStrings.priceEntryLinesComingSoon), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

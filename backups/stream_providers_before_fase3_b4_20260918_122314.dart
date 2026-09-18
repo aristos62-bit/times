@@ -22,27 +22,6 @@ final categoryStreamProvider = StreamProvider<List<Category>>(
   (ref) => ref.watch(categoryRepositoryProvider).watchAll(),
 );
 
-/// LIVE αναζήτηση κατηγοριών για το new-item dialog (§2.4 · Φάση 3 Βήμα 4).
-/// `.family` παραμετροποιημένο ανά [query]. In-memory filter πάνω στο
-/// `watchAll()` του repository — ΚΑΝΕΝΑ νέο DB query (το upstream stream
-/// είναι ήδη φορτωμένο). Κενό query → `[]` (Stream.value: εκπέμπει άμεσα
-/// το empty χωρίς DB access — όχι Stream.empty, θα έμενε loading για πάντα).
-/// Non-autoDispose.
-final categorySearchProvider = StreamProvider.family<List<Category>, String>(
-  (ref, query) {
-    final normalized = GreekTextNormalizer.normalize(query.trim());
-    if (normalized.isEmpty) return Stream.value(const []);
-    return ref.watch(categoryRepositoryProvider).watchAll().map(
-          (categories) => categories
-              .where(
-                (c) =>
-                    GreekTextNormalizer.normalize(c.name).contains(normalized),
-              )
-              .toList(),
-        );
-  },
-);
-
 /// Όλες οι υποκατηγορίες, αλφαβητικά.
 final subCategoriesStreamProvider = StreamProvider<List<SubCategory>>(
   (ref) => ref.watch(subCategoryRepositoryProvider).watchAll(),
@@ -53,30 +32,6 @@ final subCategoriesByCategoryProvider =
     StreamProvider.family<List<SubCategory>, int>(
   (ref, categoryId) =>
       ref.watch(subCategoryRepositoryProvider).watchByCategoryId(categoryId),
-);
-
-/// LIVE αναζήτηση υποκατηγοριών για το new-item dialog (§2.4 · Φάση 3 Βήμα 4).
-/// `.family` παραμετροποιημένο ανά `({int categoryId, String query})`.
-/// In-memory filter πάνω σε `watchByCategoryId` — χωρίς νέα DB query.
-/// Κενό query → `[]` (Stream.value: εκπέμπει άμεσα — όχι Stream.empty).
-/// Non-autoDispose.
-final subCategorySearchProvider =
-    StreamProvider.family<List<SubCategory>, ({int categoryId, String query})>(
-  (ref, params) {
-    final normalized = GreekTextNormalizer.normalize(params.query.trim());
-    if (normalized.isEmpty) return Stream.value(const []);
-    return ref
-        .watch(subCategoryRepositoryProvider)
-        .watchByCategoryId(params.categoryId)
-        .map(
-          (subs) => subs
-              .where(
-                (s) =>
-                    GreekTextNormalizer.normalize(s.name).contains(normalized),
-              )
-              .toList(),
-        );
-  },
 );
 
 /// Όλες οι μονάδες μέτρησης, αλφαβητικά.

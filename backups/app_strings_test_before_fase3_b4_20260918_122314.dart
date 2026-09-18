@@ -74,44 +74,6 @@ void main() {
       expect(AppStrings.addNewSupplier, 'Νέος προμηθευτής');
     });
 
-    // ─── Item search / new-item dialog (§2.4 · Φάση 3 Βήμα 4) ──────────────
-    test('itemSearchHint = «Αναζήτηση είδους» (§2.4)', () {
-      expect(AppStrings.itemSearchHint, 'Αναζήτηση είδους');
-    });
-
-    test('itemSearchIdle — μήνυμα idle panel (§2.4)', () {
-      expect(
-        AppStrings.itemSearchIdle,
-        'Πληκτρολογήστε για αναζήτηση είδους',
-      );
-    });
-
-    test('labels inline «+» — κατηγορία/υποκατηγορία/είδος (§2.4)', () {
-      expect(AppStrings.addNewCategory, 'Νέα κατηγορία');
-      expect(AppStrings.addNewSubCategory, 'Νέα υποκατηγορία');
-      expect(AppStrings.addNewItem, 'Νέο είδος');
-    });
-
-    test('changeItem = «Αλλαγή» + itemSearchRetry = «Δοκιμή ξανά» (§2.4)', () {
-      expect(AppStrings.changeItem, 'Αλλαγή');
-      expect(AppStrings.itemSearchRetry, 'Δοκιμή ξανά');
-    });
-
-    test('labels νέου είδους dialog — κατηγορία/υποκατηγορία/όνομα (§2.4)', () {
-      expect(AppStrings.fieldCategory, 'Κατηγορία');
-      expect(AppStrings.fieldSubCategory, 'Υποκατηγορία');
-      expect(AppStrings.fieldItemName, 'Όνομα είδους');
-    });
-
-    test('newItemDialogTitle = «Νέο είδος» + newItemSave = «Προσθήκη» (§2.4)', () {
-      expect(AppStrings.newItemDialogTitle, 'Νέο είδος');
-      expect(AppStrings.newItemSave, 'Προσθήκη');
-    });
-
-    test('newItemNextStep = «Επόμενο» (§2.4)', () {
-      expect(AppStrings.newItemNextStep, 'Επόμενο');
-    });
-
     // ─── Settings (§2.3) ─────────────────────────────────────────────────────
     test('titleSettings = «Ρυθμίσεις» + placeholder (§2.3)', () {
       expect(AppStrings.titleSettings, 'Ρυθμίσεις');
@@ -157,19 +119,6 @@ const List<String> _allStrings = [
   AppStrings.fieldPrice,
   AppStrings.supplierSearchHint,
   AppStrings.addNewSupplier,
-  AppStrings.itemSearchHint,
-  AppStrings.itemSearchIdle,
-  AppStrings.addNewCategory,
-  AppStrings.addNewSubCategory,
-  AppStrings.addNewItem,
-  AppStrings.changeItem,
-  AppStrings.itemSearchRetry,
-  AppStrings.fieldCategory,
-  AppStrings.fieldSubCategory,
-  AppStrings.fieldItemName,
-  AppStrings.newItemDialogTitle,
-  AppStrings.newItemNextStep,
-  AppStrings.newItemSave,
   AppStrings.titleSettings,
   AppStrings.settingsComingSoon,
 ];

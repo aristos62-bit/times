@@ -13,7 +13,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
-import 'widgets/item_search_field.dart';
 import 'widgets/receipt_header_section.dart';
 
 /// Σελίδα εισαγωγής τιμών (§2.2) — σκελετός φόρμας από το Βήμα 2.
@@ -30,14 +29,7 @@ class PriceEntryPage extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(vertical: AppConstants.spacingL),
           children: const [
             ReceiptHeaderSection(),
-            SizedBox(height: AppConstants.spacingL),
-            // Βήμα 4: inline panel αναζήτησης είδους (§2.4).
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppConstants.spacingM),
-              child: ItemSearchField(),
-            ),
             SizedBox(height: AppConstants.spacingXL),
-            // Γραμμές απόδειξης από τα Βήματα 4-5 → placeholder για τώρα.
             Center(child: Text(AppStrings.priceEntryLinesComingSoon)),
           ],
         ),

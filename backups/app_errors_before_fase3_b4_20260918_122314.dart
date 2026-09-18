@@ -6,8 +6,8 @@
 /// στα UI. Το logging των σφαλμάτων γίνεται στο σημείο αποτυχίας
 /// (tag DB/backup/UI, debug_config), όχι εδώ — καθαρά δεδομένα.
 ///
-/// NOTE(Φάση0-Βήμα4): τα validation messages (§2.2:214-218) προστέθηκαν στη
-/// Φάση 3 Βήμα 4 μαζί με τον NameValidator — μοναδικός καταναλωτής τους.
+/// NOTE(Φάση0-Βήμα4): τα validation messages (§2.2:214-218) προστίθενται
+/// μαζί με τους validators (Φάση 3) — μοναδικοί καταναλωτές τους.
 library;
 
 /// Abstract SPoT class — μόνο σταθερές, δεν instantiate (pattern AppConstants).
@@ -38,11 +38,4 @@ abstract final class AppErrors {
 
   /// §2.3 (Βήμα 4): αποτυχία αντικατάστασης/επαναφοράς μετά την επιβεβαίωση.
   static const String restoreFailed = 'Σφάλμα κατά την επαναφορά αντιγράφου';
-
-  // ─── Validation (§2.2:214-218 · Φάση 3 Βήμα 4) ────────────────────────────
-  /// §2.2: άδειο όνομα σε Κατηγορία/Υποκατηγορία/Είδος/Προμηθευτή.
-  static const String nameRequired = 'Το όνομα είναι υποχρεωτικό';
-
-  /// §2.2: όνομα πάνω από `AppConstants.maxItemNameLength` χαρακτήρες.
-  static const String nameTooLong = 'Το όνομα είναι πολύ μεγάλο';
 }

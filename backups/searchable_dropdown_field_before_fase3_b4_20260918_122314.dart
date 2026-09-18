@@ -4,9 +4,7 @@
 ///
 /// ΓΕΝΙΚΟΤΗΤΑ: `SearchableDropdownField<T>` είναι αγνωστικό του τύπου του
 /// αποτελέσματος — κάθε καλούν δίνει `labelOf`, `onSelected` και τη family
-/// του `StreamProvider<List<T>, String>` (`searchProvider`). Για οπτική
-/// διάκριση ανά τύπο δίνει προαιρετικά [prefixIcon] (χρώμα/εικόνα του πεδίου)
-/// και [resultLeadingIcon] (εικόνα κάθε αποτελέσματος στη λίστα).
+/// του `StreamProvider<List<T>, String>` (`searchProvider`).
 ///
 /// ΡΟΗ (σύμφωνα με DESIGN §2.4):
 ///   * Πληκτρολόγηση → `Debouncer` (searchDebounceMillis) → gated watch:
@@ -67,8 +65,6 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
     this.onCreate,
     this.onSelected,
     this.minChars = AppConstants.searchMinChars,
-    this.prefixIcon = const Icon(Icons.store_outlined),
-    this.resultLeadingIcon = const Icon(Icons.business_outlined),
   });
 
   /// Label του πεδίου (SPoT app_strings, π.χ. `AppStrings.fieldSupplier`).
@@ -96,12 +92,6 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
 
   /// Ελάχιστοι χαρακτήρες για ενεργοποίηση αναζήτησης (default 1).
   final int minChars;
-
-  /// Εικόνα αριστερά στο πεδίο (label/hint) — default store icon (§2.4).
-  final Icon prefixIcon;
-
-  /// Εικόνα αριστερά σε κάθε αποτέλεσμα της λίστας — default business icon (§2.4).
-  final Icon resultLeadingIcon;
 
   @override
   ConsumerState<SearchableDropdownField<T>> createState() =>
@@ -316,7 +306,7 @@ class _SearchableDropdownFieldState<T>
           decoration: InputDecoration(
             labelText: widget.labelText,
             hintText: widget.hintText,
-            prefixIcon: widget.prefixIcon,
+            prefixIcon: const Icon(Icons.store_outlined),
             border: const OutlineInputBorder(),
             isDense: true,
           ),
@@ -360,7 +350,7 @@ class _SearchableDropdownFieldState<T>
     return switch (entry) {
       _ResultEntry<T>(value: final value) => ListTile(
           dense: true,
-          leading: widget.resultLeadingIcon,
+          leading: const Icon(Icons.business_outlined),
           title: Text(widget.labelOf(value)),
           onTap: () => onSelected(entry),
         ),

@@ -47,34 +47,6 @@ abstract final class AppStrings {
   /// Label της inline επιλογής «+» για δημιουργία νέου προμηθευτή — το
   /// πληκτρολογημένο query αποδίδεται δυναμικά δίπλα («Νέος προμηθευτής "x"»).
   static const String addNewSupplier = 'Νέος προμηθευτής';
-  /// Hint στο πεδίο αναζήτησης είδους (ItemSearchField, §2.4 · Βήμα 4).
-  static const String itemSearchHint = 'Αναζήτηση είδους';
-  /// Μήνυμα κατάστασης idle στο ItemSearchField — πριν πληκτρολογήσει ο
-  /// χρήστης (§2.4 · Βήμα 4, inline panel).
-  static const String itemSearchIdle = 'Πληκτρολογήστε για αναζήτηση είδους';
-  /// Label της inline επιλογής «+» για δημιουργία νέας κατηγορίας — το query
-  /// αποδίδεται δυναμικά δίπλα («Νέα κατηγορία "x"», Βήμα 4).
-  static const String addNewCategory = 'Νέα κατηγορία';
-  /// Label της inline επιλογής «+» για δημιουργία νέας υποκατηγορίας — το
-  /// query αποδίδεται δυναμικά δίπλα («Νέα υποκατηγορία "x"», Βήμα 4).
-  static const String addNewSubCategory = 'Νέα υποκατηγορία';
-  /// Label της inline επιλογής «+» για δημιουργία νέου είδους — το query
-  /// αποδίδεται δυναμικά δίπλα («Νέο είδος "x"», Βήμα 4).
-  static const String addNewItem = 'Νέο είδος';
-  /// Label της γραμμής «Αλλαγή» στο banner επιλεγμένου είδους (Βήμα 4).
-  static const String changeItem = 'Αλλαγή';
-  /// Label κουμπιού επανάληψης αναζήτησης σε σφάλμα (ItemSearchField, Βήμα 4).
-  static const String itemSearchRetry = 'Δοκιμή ξανά';
-  /// Labels πεδίων στο popup δημιουργίας νέου είδους (dialog, Βήμα 4).
-  static const String fieldCategory = 'Κατηγορία';
-  static const String fieldSubCategory = 'Υποκατηγορία';
-  static const String fieldItemName = 'Όνομα είδους';
-  /// Τίτλος του popup δημιουργίας νέου είδους (Βήμα 4).
-  static const String newItemDialogTitle = 'Νέο είδος';
-  /// Κουμπί μετάβασης στο επόμενο βήμα του wizard dialog (Βήμα 4).
-  static const String newItemNextStep = 'Επόμενο';
-  /// Κουμπί αποθήκευσης στο popup νέου είδους (Βήμα 4).
-  static const String newItemSave = 'Προσθήκη';
 
   // ─── Settings (§2.3) ──────────────────────────────────────────────────────
   /// Τίτλος AppBar στη σελίδα ρυθμίσεων.

@@ -36,15 +36,6 @@ void main() {
       expect(AppErrors.restoreFailed, 'Σφάλμα κατά την επαναφορά αντιγράφου');
     });
 
-    // ─── Validation (§2.2:214-218 · Φάση 3 Βήμα 4) ───────────────────────────
-    test('nameRequired = «Το όνομα είναι υποχρεωτικό» (§2.2)', () {
-      expect(AppErrors.nameRequired, 'Το όνομα είναι υποχρεωτικό');
-    });
-
-    test('nameTooLong = «Το όνομα είναι πολύ μεγάλο» (§2.2)', () {
-      expect(AppErrors.nameTooLong, 'Το όνομα είναι πολύ μεγάλο');
-    });
-
     // ─── Καθολικός έλεγχος ποιότητας (ίδιο pattern με app_messages_test) ─────
     test('κανένα string μη-κενό, χωρίς whitespace στα άκρα, χωρίς \\n', () {
       for (final text in _allConstStrings) {
@@ -64,6 +55,4 @@ const List<String> _allConstStrings = [
   AppErrors.backupFailed,
   AppErrors.invalidBackupFile,
   AppErrors.restoreFailed,
-  AppErrors.nameRequired,
-  AppErrors.nameTooLong,
 ];

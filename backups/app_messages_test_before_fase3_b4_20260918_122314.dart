@@ -29,19 +29,6 @@ void main() {
       expect(AppMessages.supplierExists, 'Ο προμηθευτής υπάρχει ήδη');
     });
 
-    // ─── Item create / dup (§2.4 · Φάση 3 Βήμα 4) ───────────────────────────
-    test('itemAdded = «Το είδος προστέθηκε» (§2.4)', () {
-      expect(AppMessages.itemAdded, 'Το είδος προστέθηκε');
-    });
-
-    test('itemExists = «Το είδος υπάρχει ήδη» (§2.4)', () {
-      expect(AppMessages.itemExists, 'Το είδος υπάρχει ήδη');
-    });
-
-    test("itemNotFound('γαλα') — δυναμικό μήνυμα (§2.4)", () {
-      expect(AppMessages.itemNotFound('γαλα'), 'Δεν βρέθηκε είδος "γαλα"');
-    });
-
     // ─── Confirm dialog defaults (§2.4) ─────────────────────────────────────
     test('confirmDialogTitle = «Επιβεβαίωση» (§2.4)', () {
       expect(AppMessages.confirmDialogTitle, 'Επιβεβαίωση');
@@ -101,8 +88,6 @@ const List<String> _allConstStrings = [
   AppMessages.restoreSuccess,
   AppMessages.supplierAdded,
   AppMessages.supplierExists,
-  AppMessages.itemAdded,
-  AppMessages.itemExists,
   AppMessages.confirmDialogTitle,
   AppMessages.confirmDialogConfirm,
   AppMessages.confirmDialogCancel,

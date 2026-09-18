@@ -427,7 +427,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 1. Πλήρης έλεγχος responsive/overflow σε real συσκευές/μεγέθη.
 2. Accessibility pass (Semantics σε όλη την εφαρμογή).
 3. Έλεγχος συνολικού test coverage (>80%) και συμπλήρωση κενών.
-4. Προαιρετικά (μόνο αν το ζητήσεις): διαχείριση προμηθευτών/μονάδων από Ρυθμίσεις, cloud sync ως μελλοντική επέκταση, **αυτόματο περιστασιακό backup (weekly)** — σημειωμένο ως επέκταση που απαιτεί background scheduling (WorkManager/permissions), όχι απαίτηση MVP.
+4. Προαιρετικά (μόνο αν το ζητήσεις): διαχείριση κατηγοριών/υποκατηγοριών/προμηθευτών/μονάδων από Ρυθμίσεις, cloud sync ως μελλοντική επέκταση, **αυτόματο περιστασιακό backup (weekly)** — σημειωμένο ως επέκταση που απαιτεί background scheduling (WorkManager/permissions), όχι απαίτηση MVP.
 
 ---
 
