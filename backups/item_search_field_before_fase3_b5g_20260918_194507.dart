@@ -72,9 +72,6 @@ class _ItemSearchFieldState extends ConsumerState<ItemSearchField> {
       return;
     }
     if (result is! NewItemDialogCreated) return;
-    // Clear-on-drop (Βήμα 5γ): το πεδίο αδειάζει με την επιλογή — το όνομα
-    // του είδους φαίνεται ΜΟΝΟ στο banner (χωρίς διπλή εμφάνιση query).
-    _textController.clear();
     ref.read(itemSearchControllerProvider.notifier).selectItem(result.item);
     if (result.created) {
       AppFeedback.showSuccess(context, AppMessages.itemAdded);
@@ -145,13 +142,9 @@ class _ItemSearchFieldState extends ConsumerState<ItemSearchField> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                onTap: () {
-                  // Clear-on-drop (Βήμα 5γ) — βλ. `_openNewItemDialog`.
-                  _textController.clear();
-                  ref
-                      .read(itemSearchControllerProvider.notifier)
-                      .selectItem(item);
-                },
+                onTap: () => ref
+                    .read(itemSearchControllerProvider.notifier)
+                    .selectItem(item),
               );
             },
           ),

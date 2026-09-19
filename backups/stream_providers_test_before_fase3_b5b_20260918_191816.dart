@@ -337,55 +337,6 @@ void main() {
     });
   });
 
-  group('unitSearchProvider (family · Φάση 3 Βήμα 5)', () {
-    test('κενό query → άμεσα [] (χωρίς DB access)', () async {
-      final container = containerWithDb();
-
-      final rows = await waitForValue<List<Unit>>(
-        (listen) => container.listen(unitSearchProvider(''), listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('in-memory filter: case/tone-insensitive match', () async {
-      final container = containerWithDb();
-      await container
-          .read(unitRepositoryProvider)
-          .insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
-      await container
-          .read(unitRepositoryProvider)
-          .insert(name: 'Κιλό', abbreviation: 'κιλ');
-
-      final rows = await waitForValue<List<Unit>>(
-        (listen) => container.listen(unitSearchProvider('κιλ'), listen),
-        (v) => v.length == 1,
-      );
-      expect(rows.map((u) => u.name), contains('Κιλό'));
-
-      final toneRows = await waitForValue<List<Unit>>(
-        (listen) => container.listen(unitSearchProvider('ΚΙΛ'), listen),
-        (v) => v.length == 1,
-      );
-      expect(toneRows.map((u) => u.name), contains('Κιλό'));
-    });
-
-    test('live: νέα μονάδα εμφανίζεται στα αποτελέσματα (real-time)', () async {
-      final container = containerWithDb();
-      final resultsFuture = waitForValue<List<Unit>>(
-        (listen) => container.listen(unitSearchProvider('δωδ'), listen),
-        (v) => v.any((u) => u.name == 'Δωδεκάδα'),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      await container
-          .read(unitRepositoryProvider)
-          .insert(name: 'Δωδεκάδα', abbreviation: 'δωδ');
-
-      final rows = await resultsFuture;
-      expect(rows.map((u) => u.name), contains('Δωδεκάδα'));
-    });
-  });
-
   group('receiptsStreamProvider', () {
     test('εκπέμπει τις αποδείξεις νεότερες πρώτα', () async {
       final container = containerWithDb();

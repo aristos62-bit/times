@@ -30,11 +30,6 @@
 ///   * Μετά από επιλογή/prefill το πεδίο δείχνει το label και το overlay
 ///     μένει κλειστό (`_selectedLabel` guard): οποιαδήποτε νέα επεξεργασία
 ///     του κειμένου ενεργοποιεί και πάλι την αναζήτηση.
-///   * Show-all-on-focus (Β5β · Δ1, π.χ. Unit dropdown): όταν [showAllWhenEmpty]
-///     = true και το πεδίο ΕΣΤΙΑΣΤΕΙ με κενό κείμενο, εμφανίζονται ΟΛΕΣ οι
-///     επιλογές από το [allOptionsProvider] χωρίς πληκτρολόγηση· η πληκτρολόγηση
-///     φιλτράρει κανονικά, το άδειασμα επιστρέφει στα «όλα». Gated (§2.0.1):
-///     το all-options provider στιγμιογράφεται ΜΟΝΟ κατόπιν εστίασης.
 ///
 /// IMPORTANT: τη στιγμή της εκκίνησης (κενό πεδίο) ΔΕΝ γίνεται watch του
 /// `searchProvider` → η βάση ΔΕΝ ανοίγει ούτε το provider στιγμιογράφεται
@@ -74,13 +69,7 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
     this.minChars = AppConstants.searchMinChars,
     this.prefixIcon = const Icon(Icons.store_outlined),
     this.resultLeadingIcon = const Icon(Icons.business_outlined),
-    this.showAllWhenEmpty = false,
-    this.allOptionsProvider,
-    this.initialValue,
-  }) : assert(
-          !showAllWhenEmpty || allOptionsProvider != null,
-          'showAllWhenEmpty == true απαιτεί allOptionsProvider',
-        );
+  });
 
   /// Label του πεδίου (SPoT app_strings, π.χ. `AppStrings.fieldSupplier`).
   final String labelText;
@@ -113,27 +102,6 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
 
   /// Εικόνα αριστερά σε κάθε αποτέλεσμα της λίστας — default business icon (§2.4).
   final Icon resultLeadingIcon;
-
-  /// Αν `true`: εστίαση σε ΚΕΝΟ πεδίο → εμφανίζονται ΟΛΕΣ οι επιλογές από το
-  /// [allOptionsProvider] (show-all-on-focus, Β5β · Δ1). Πληκτρολόγηση →
-  /// φιλτράρισμα κανονικά. Default `false` = κλασική συμπεριφορά (overlay
-  /// μόνο με query ≥ minChars).
-  final bool showAllWhenEmpty;
-
-  /// Πηγή «όλων των επιλογών» για το show-all — callable χωρίς όρισμα που
-  /// επιστρέφει `StreamProvider<List<T>>` (π.χ. `() => unitsStreamProvider`).
-  /// Gated watch (§2.0.1): καλείται/στιγμιογράφεται ΜΟΝΟ όταν
-  /// [showAllWhenEmpty] && field-focused && κενό query. INVARIANT: αν
-  /// [showAllWhenEmpty]=true ΟΦΕΙΛΕΤΑΙ (assert στον constructor).
-  final StreamProvider<List<T>> Function()? allOptionsProvider;
-
-  /// Προαιρετική αρχική τιμή — ΜΟΝΟ εμφάνιση (π.χ. προεπιλογή
-  /// `Item.defaultUnitId` στο Unit dropdown, §2.2 · Βήμα 5γ). Εφαρμόζεται μία
-  /// φορά (initState ή πρώτη μετάβαση null → τιμή) και ΜΟΝΟ όσο ο χρήστης δεν
-  /// έχει διαλέξει ο ίδιος (`_selectedLabel == null`). ΔΕΝ καλεί το
-  /// [onSelected] — ο καλών συγχρονίζει το δικό του state μόνος του (π.χ. το
-  /// section διαβάζει την ίδια λίστα units).
-  final T? initialValue;
 
   @override
   ConsumerState<SearchableDropdownField<T>> createState() =>
@@ -187,49 +155,6 @@ class _SearchableDropdownFieldState<T>
     _debouncer = Debouncer(
       delay: Duration(milliseconds: AppConstants.searchDebounceMillis),
     );
-    _focusNode.addListener(_onFocusChanged);
-    _applyInitialValue(widget.initialValue);
-  }
-
-  @override
-  void didUpdateWidget(covariant SearchableDropdownField<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Καθυστερημένη άφιξη της αρχικής τιμής (π.χ. default unit μόλις ήρθαν
-    // τα units) — εφαρμόζεται ΜΟΝΟ αν ο χρήστης δεν έχει διαλέξει ο ίδιος.
-    if (oldWidget.initialValue == null &&
-        widget.initialValue != null &&
-        _selectedLabel == null) {
-      _applyInitialValue(widget.initialValue);
-    }
-  }
-
-  /// Εμφανίζει την αρχική τιμή στο πεδίο (label + κλειστό overlay μέσω
-  /// `_selectedLabel` guard) — χωρίς `onSelected` (βλ. doc του [initialValue]).
-  void _applyInitialValue(T? value) {
-    if (value == null) return;
-    final label = widget.labelOf(value);
-    _selectedLabel = label;
-    _controller.value = TextEditingValue(
-      text: label,
-      selection: TextSelection.collapsed(offset: label.length),
-    );
-  }
-
-  /// Focus listener — ΜΟΝΟ για show-all (Β5β): σε εστίαση ξανατρέχει η build
-  /// (gated watch του `allOptionsProvider`, §2.0.1) και το post-frame refresh
-  /// «σπρώχνει» το RawAutocomplete (append/restore κενού) να δείξει όλες τις
-  /// επιλογές — το internal `_options` του γεμίζει ΜΟΝΟ μέσω αλλαγής controller
-  /// (SDK autocomplete.dart `_onChangedField`). Σε blur: μόνο rebuild ώστε τα
-  /// entries να αδειάσουν (χωρίς focus κανένα overlay). Για τα υπόλοιπα fields
-  /// (`showAllWhenEmpty=false`) δεν γίνεται τίποτα — μηδενικό κόστος.
-  void _onFocusChanged() {
-    if (!widget.showAllWhenEmpty || !mounted) return;
-    setState(() {});
-    if (_focusNode.hasFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _focusNode.hasFocus) _refreshOptions();
-      });
-    }
   }
 
   @override
@@ -244,29 +169,14 @@ class _SearchableDropdownFieldState<T>
   /// πληροί το minChars. Κάτω από το όριο δεν υπάρχει εξάρτηση → η βάση
   /// δεν ανοίγει χωρίς user action. Τα αποτελέσματα διαβάζονται μόνο μέσω
   /// `.when(data:, loading:, error:)` — όχι χειροκίνητο bool (§2.0.1).
-  ///
-  /// Show-all-on-focus (Β5β): κενό query + εστιασμένο πεδίο → όλες οι επιλογές
-  /// από το `allOptionsProvider`. Gated ΑΚΟΜΑ: η εστίαση είναι user action,
-  /// άρα στο launch δεν ανοίγει τίποτα.
   List<T> _results() {
-    if (_query.length >= widget.minChars) {
-      final async = ref.watch(widget.searchProvider(_query));
-      return async.when(
-        data: (data) => data,
-        loading: () => const [],
-        error: (error, stackTrace) => const [],
-      );
-    }
-    if (widget.showAllWhenEmpty && _focusNode.hasFocus && _query.isEmpty) {
-      final allProvider = widget.allOptionsProvider!();
-      final async = ref.watch(allProvider);
-      return async.when(
-        data: (data) => data,
-        loading: () => const [],
-        error: (error, stackTrace) => const [],
-      );
-    }
-    return const [];
+    if (_query.length < widget.minChars) return const [];
+    final async = ref.watch(widget.searchProvider(_query));
+    return async.when(
+      data: (data) => data,
+      loading: () => const [],
+      error: (error, stackTrace) => const [],
+    );
   }
 
   /// Ελάχιστη γραμμή «+» (χωρίς read του provider) — όταν δεν οριστεί
@@ -293,12 +203,7 @@ class _SearchableDropdownFieldState<T>
     final String text = value.text;
     final String query = text.trim();
     if (text == _selectedLabel) return const [];
-    // Show-all-on-focus (Β5β): κενό query + focus → οι «όλες» επιλογές της
-    // τελευταίας build. Διαφορετικά κενό κείμενο = κανένα overlay.
-    if (query.isEmpty) {
-      if (widget.showAllWhenEmpty && _focusNode.hasFocus) return _entries;
-      return const [];
-    }
+    if (query.isEmpty) return const [];
     if (query.length < widget.minChars) return _createOnly(query);
     if (query != _query) return const [];
     return _entries;
@@ -309,9 +214,7 @@ class _SearchableDropdownFieldState<T>
   /// τελευταίος builder-run χρησιμοποιεί το αρχικό κείμενο (§2.4 TO SPECIFIC).
   void _refreshOptions() {
     final String text = _controller.text;
-    // Κλασική ροή (search): κενό κείμενο δε χρειάζεται refresh. Show-all
-    // (Β5β): το «σπρώξιμο» με κενό θέλει να εμφανιστούν ΟΛΕΣ οι επιλογές.
-    if (text.isEmpty && !widget.showAllWhenEmpty) return;
+    if (text.isEmpty) return;
     final base = _controller.value;
     _controller.value = TextEditingValue(
       text: '$text ',
@@ -391,16 +294,9 @@ class _SearchableDropdownFieldState<T>
     if (results != _lastResults) {
       _lastResults = results;
       // Άφιξη δεδομένων (loading → data) χωρίς νέα πληκτρολόγηση → refresh.
-      // Ισχύει και για το show-all με κενό query (Β5β): το want-the-overlay
-      // ορίζει είτε query ≥ minChars είτε show-all με focus.
-      final bool wantsOverlay = _query.isNotEmpty ||
-          (widget.showAllWhenEmpty && _focusNode.hasFocus);
-      if (wantsOverlay) {
+      if (_query.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          final bool stillWantsOverlay = _query.isNotEmpty ||
-              (widget.showAllWhenEmpty && _focusNode.hasFocus);
-          if (stillWantsOverlay) _refreshOptions();
+          if (mounted && _query.isNotEmpty) _refreshOptions();
         });
       }
     }

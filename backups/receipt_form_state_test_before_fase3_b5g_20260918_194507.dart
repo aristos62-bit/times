@@ -35,12 +35,6 @@ void main() {
       expect(state.supplier, isNull);
     });
 
-    test('draftLines default = κενή λίστα + isSaving default = false', () {
-      final state = ReceiptFormState(date: fixed);
-      expect(state.draftLines, isEmpty);
-      expect(state.isSaving, isFalse);
-    });
-
     test('μεταφέρει τον επιλεγμένο προμηθευτή', () {
       final s = supplier();
       final state = ReceiptFormState(date: fixed, supplier: s);
@@ -94,81 +88,6 @@ void main() {
       final b = a.copyWith(supplier: null);
       expect(b.supplier, isNull);
       expect(a.supplier, isNotNull);
-    });
-  });
-
-  group('DraftReceiptLine', () {
-    /// Δεδομένη γραμμή «καλαθιού».
-    DraftReceiptLine line({
-      int itemId = 1,
-      int unitId = 2,
-      double quantity = 1.5,
-      int priceCents = 250,
-    }) =>
-        DraftReceiptLine(
-          itemId: itemId,
-          unitId: unitId,
-          quantity: quantity,
-          priceCents: priceCents,
-          itemName: 'Γάλα',
-          unitAbbreviation: 'κιλ',
-        );
-
-    test('equality: ίδιες τιμές → equal (+ hashCode consistency)', () {
-      expect(line(), line());
-      expect(line().hashCode, line().hashCode);
-    });
-
-    test('equality: διαφορετικό πεδίο → όχι equal', () {
-      expect(line(), isNot(line(itemId: 9)));
-      expect(line(), isNot(line(unitId: 9)));
-      expect(line(), isNot(line(quantity: 9.0)));
-      expect(line(), isNot(line(priceCents: 999)));
-    });
-  });
-
-  group('ReceiptFormState.draftLines (Βήμα 5γ)', () {
-    DraftReceiptLine line(int itemId) => DraftReceiptLine(
-          itemId: itemId,
-          unitId: 2,
-          quantity: 1.0,
-          priceCents: 250,
-          itemName: 'Γάλα',
-          unitAbbreviation: 'κιλ',
-        );
-
-    test('draftLines default = κενή λίστα (κανένα «καλάθι»)', () {
-      final state = ReceiptFormState(date: fixed);
-      expect(state.draftLines, isEmpty);
-    });
-
-    test('equality: ίδιες γραμμές → equal', () {
-      final a = ReceiptFormState(date: fixed, draftLines: [line(1)]);
-      final b = ReceiptFormState(date: fixed, draftLines: [line(1)]);
-      expect(a, b);
-      expect(a.hashCode, b.hashCode);
-    });
-
-    test('equality: διαφορετικές γραμμές → όχι equal', () {
-      final a = ReceiptFormState(date: fixed, draftLines: [line(1)]);
-      final b = ReceiptFormState(date: fixed, draftLines: [line(2)]);
-      expect(a, isNot(b));
-    });
-
-    test('copyWith αλλάζει μόνο τις γραμμές (αμετάβλητο το original)', () {
-      final a = ReceiptFormState(date: fixed);
-      final b = a.copyWith(draftLines: [line(1), line(2)]);
-      expect(b.draftLines.length, 2);
-      expect(a.draftLines, isEmpty);
-      expect(b.date, fixed);
-    });
-
-    test('copyWith isSaving true/false (αμετάβλητο το original)', () {
-      final a = ReceiptFormState(date: fixed);
-      final b = a.copyWith(isSaving: true);
-      expect(b.isSaving, isTrue);
-      expect(a.isSaving, isFalse);
-      expect(b.copyWith(isSaving: false), a);
     });
   });
 }

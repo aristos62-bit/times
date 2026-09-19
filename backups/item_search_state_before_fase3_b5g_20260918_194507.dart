@@ -9,9 +9,8 @@
 ///   * error     — σφάλμα DataLoadException (μήνυμα + retry).
 ///
 /// `selectedItem != null` δηλώνει ITEM_SELECTED (§2.4): το field δείχνει το
-/// banner «Αλλαγή»· η σελίδα διαβάζει το επιλεγμένο είδος και εμφανίζει την
-/// ενότητα μονάδας/ποσότητας/τιμής (Βήμα 5γ) — καμία μεταφορά στο
-/// `ReceiptFormState` (οι draft γραμμές μπαίνουν με `addDraftLine`, όχι εδώ).
+/// banner «Αλλαγή»· η μεταβίβαση στο state της φόρμας γίνεται από τη σελίδα
+/// (Βήμα 5) μέσω `setItem` στον ReceiptFormState — όχι εδώ.
 library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';

@@ -125,42 +125,6 @@ void main() {
       );
     });
 
-    // ─── Numeric / Limits (Φάση 3 Βήμα 5) ────────────────────────────────────
-    test('priceMaxLength = 10 (input limit πεδίου τιμής, Β5)', () {
-      expect(AppConstants.priceMaxLength, 10);
-    });
-
-    test('quantityMaxLength = 11 (input limit πεδίου ποσότητας, Β5)', () {
-      expect(AppConstants.quantityMaxLength, 11);
-    });
-
-    test('maxPriceCents = 9999999 (€99.999,99, Β5)', () {
-      expect(AppConstants.maxPriceCents, 9999999);
-    });
-
-    test('maxQuantity = 1000000.0 (άνω όριο ποσότητας, Β5)', () {
-      expect(AppConstants.maxQuantity, 1000000.0);
-    });
-
-    test('Β5 limits invariants: όλα > 0 και length ≥ μέγιστο έγκυρο κείμενο', () {
-      expect(AppConstants.priceMaxLength, greaterThan(0));
-      expect(AppConstants.quantityMaxLength, greaterThan(0));
-      expect(AppConstants.maxPriceCents, greaterThan(0));
-      expect(AppConstants.maxQuantity, greaterThan(0));
-      // Μέγιστο έγκυρο κείμενο τιμής = €99.999,99 → «99999,99» (8 χαρακτήρες).
-      expect('99999,99'.length, 8);
-      expect(
-        AppConstants.priceMaxLength,
-        greaterThanOrEqualTo('99999,99'.length),
-      );
-      // Μέγιστο έγκυρο κείμενο ποσότητας = «1000000,000» (11 χαρακτήρες).
-      expect('1000000,000'.length, 11);
-      expect(
-        AppConstants.quantityMaxLength,
-        greaterThanOrEqualTo('1000000,000'.length),
-      );
-    });
-
     // ─── Lists / Limits ──────────────────────────────────────────────────────
     test('recentReceiptsLimit = 20 (placeholder λίστα, Φάση 3)', () {
       expect(AppConstants.recentReceiptsLimit, 20);

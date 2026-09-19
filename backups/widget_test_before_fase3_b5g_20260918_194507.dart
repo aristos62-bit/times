@@ -45,10 +45,8 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    // Πλέον βλέπουμε τη PriceEntry (AppBar «Εισαγωγή Τιμών» + κενό «καλάθι»
-    // + κουμπί αποθήκευσης).
+    // Πλέον βλέπουμε τη PriceEntry placeholder (AppBar «Εισαγωγή Τιμών»).
     expect(find.text(AppStrings.titlePriceEntry), findsOneWidget);
-    expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
-    expect(find.text(AppStrings.saveReceipt), findsOneWidget);
+    expect(find.text(AppStrings.priceEntryLinesComingSoon), findsOneWidget);
   });
 }

@@ -49,16 +49,6 @@ void main() {
       // Βήμα 5γ: το placeholder αντικαταστάθηκε από το «καλάθι» (κενό).
       expect(find.text(AppStrings.draftLinesTitle), findsOneWidget);
       expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
-      // Βήμα 5δ: κουμπί αποθήκευσης παρόν αλλά ανενεργό (κενό + no supplier).
-      expect(find.text(AppStrings.saveReceipt), findsOneWidget);
-      expect(
-        tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, AppStrings.saveReceipt),
-            )
-            .enabled,
-        isFalse,
-      );
       expect(tester.takeException(), isNull);
     });
 

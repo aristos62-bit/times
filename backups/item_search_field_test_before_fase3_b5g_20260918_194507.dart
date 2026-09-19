@@ -153,28 +153,6 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('select → clear-on-drop: το πεδίο καθαρίζει (Βήμα 5γ)',
-        (tester) async {
-      final db = inMemoryDb();
-      addTearDown(db.close);
-      await seedChain(db, itemName: 'Γάλα');
-      await pumpAt(tester, const Size(800, 600), db: db);
-
-      await tester.enterText(find.byType(TextField), 'γάλα');
-      await settleSearch(tester);
-      await tester.tap(find.text('Γάλα'));
-      await tester.pumpAndSettle();
-
-      // Το όνομα φαίνεται ΜΟΝΟ στο banner — το πεδίο άδειασε.
-      expect(stateOf(tester).selectedItem?.name, 'Γάλα');
-      expect(
-        tester.widget<TextField>(find.byType(TextField)).controller!.text,
-        isEmpty,
-      );
-      expect(find.text(AppStrings.changeItem), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
     testWidgets('«Αλλαγή» → clearSelection: πίσω σε idle, πεδίο καθαρό',
         (tester) async {
       final db = inMemoryDb();

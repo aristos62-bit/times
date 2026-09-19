@@ -10,7 +10,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/errors/app_exceptions.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/utils/greek_text_normalizer.dart';
 import '../../../data/local/app_database.dart';
@@ -23,7 +22,7 @@ final receiptFormControllerProvider = NotifierProvider<ReceiptFormController,
     ReceiptFormState>(ReceiptFormController.new);
 
 /// Controller της απόδειξης — header (ημερομηνία + προμηθευτής, Βήμα 3) +
-/// draft γραμμές «καλαθιού» (Βήμα 5γ) + αποθήκευση (Βήμα 5δ).
+/// draft γραμμές «καλαθιού» (Βήμα 5γ). Το save (Βήμα 5δ) θα προστεθεί εδώ.
 class ReceiptFormController extends Notifier<ReceiptFormState> {
   /// Αρχική κατάσταση: σημερινή ημερομηνία (dateOnly), χωρίς προμηθευτή.
   @override
@@ -75,66 +74,6 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
       ],
     );
     AppLogger.info(LogTag.ui, 'Αφαίρεση γραμμής: ${removed.itemName}');
-  }
-
-  /// Αποθηκεύει ολόκληρη την απόδειξη (§2.2 · Βήμα 5δ): insert `Receipt` +
-  /// όλες οι `ReceiptLine` σε ΜΙΑ transaction μέσω `insertReceiptWithLines`
-  /// (atomicity — είτε όλα είτε τίποτα, §2.2:211).
-  ///   * Επιτυχία → καθαρισμός φόρμας (`resetForm`, §2.2:212)· το
-  ///     `recent_receipts_list` ανανεώνεται αυτόματα μέσω stream (§2.2:212).
-  ///   * Αποτυχία (`SaveReceiptException` από το repository) → το flag
-  ///     σβήνει, τα draft δεδομένα ΠΑΡΑΜΕΝΟΥΝ (§2.2:213) και η εξαίρεση
-  ///     ανεβαίνει ΑΝΕΓΓΙΧΤΗ στο widget — υπεύθυνο για το feedback
-  ///     (`e.userMessage` μέσω AppFeedback, pattern `createSupplier`).
-  ///
-  /// Defensive guards (χωρίς DB touch): προμηθευτής null Ή κενό «καλάθι» →
-  /// `SaveReceiptException` (το UI τα αποκλείει με disabled-OR, §2.2 — εδώ
-  /// safety-net για programmatic κλήσεις). Επανεισδοχή ενώ `isSaving` →
-  /// no-op (double-tap guard, §2.2:235 — το κουμπί είναι ανενεργό όσο σώζει).
-  /// `ref.mounted` μετά το await (pattern `_search` Βήματος 4): disposed →
-  /// παράλειψη ενημέρωσης state.
-  Future<void> saveReceipt() async {
-    if (state.isSaving) return;
-    final supplier = state.supplier;
-    final lines = state.draftLines;
-    final date = state.date;
-    if (supplier == null || lines.isEmpty) {
-      throw const SaveReceiptException();
-    }
-
-    state = state.copyWith(isSaving: true);
-    try {
-      final id = await ref.read(receiptRepositoryProvider).insertReceiptWithLines(
-            date: date,
-            supplierId: supplier.id,
-            lines: [
-              for (final line in lines)
-                (
-                  itemId: line.itemId,
-                  unitId: line.unitId,
-                  quantity: line.quantity,
-                  priceCents: line.priceCents,
-                ),
-            ],
-          );
-      if (!ref.mounted) return; // disposed ενώ έτρεχε το save → παράλειψη
-      resetForm();
-      AppLogger.info(
-        LogTag.db,
-        'Αποθήκευση απόδειξης #$id (${lines.length} γραμμές)',
-      );
-    } on SaveReceiptException {
-      if (!ref.mounted) rethrow;
-      state = state.copyWith(isSaving: false);
-      rethrow; // drafts ΜΕΝΟΥΝ (§2.2:213) — το widget δείχνει e.userMessage
-    }
-  }
-
-  /// Καθαρισμός φόρμας μετά από επιτυχημένο save (§2.2:212): σημερινή
-  /// ημερομηνία, κανένας προμηθευτής, κενό «καλάθι».
-  void resetForm() {
-    state = ReceiptFormState(date: DateUtils.dateOnly(DateTime.now()));
-    AppLogger.info(LogTag.ui, 'Καθαρισμός φόρμας απόδειξης');
   }
 
   /// Δημιουργεί προμηθευτή από την inline επιλογή «+» (§2.4). Επιστρέφει

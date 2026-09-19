@@ -76,7 +76,6 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
     this.resultLeadingIcon = const Icon(Icons.business_outlined),
     this.showAllWhenEmpty = false,
     this.allOptionsProvider,
-    this.initialValue,
   }) : assert(
           !showAllWhenEmpty || allOptionsProvider != null,
           'showAllWhenEmpty == true απαιτεί allOptionsProvider',
@@ -126,14 +125,6 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
   /// [showAllWhenEmpty] && field-focused && κενό query. INVARIANT: αν
   /// [showAllWhenEmpty]=true ΟΦΕΙΛΕΤΑΙ (assert στον constructor).
   final StreamProvider<List<T>> Function()? allOptionsProvider;
-
-  /// Προαιρετική αρχική τιμή — ΜΟΝΟ εμφάνιση (π.χ. προεπιλογή
-  /// `Item.defaultUnitId` στο Unit dropdown, §2.2 · Βήμα 5γ). Εφαρμόζεται μία
-  /// φορά (initState ή πρώτη μετάβαση null → τιμή) και ΜΟΝΟ όσο ο χρήστης δεν
-  /// έχει διαλέξει ο ίδιος (`_selectedLabel == null`). ΔΕΝ καλεί το
-  /// [onSelected] — ο καλών συγχρονίζει το δικό του state μόνος του (π.χ. το
-  /// section διαβάζει την ίδια λίστα units).
-  final T? initialValue;
 
   @override
   ConsumerState<SearchableDropdownField<T>> createState() =>
@@ -188,31 +179,6 @@ class _SearchableDropdownFieldState<T>
       delay: Duration(milliseconds: AppConstants.searchDebounceMillis),
     );
     _focusNode.addListener(_onFocusChanged);
-    _applyInitialValue(widget.initialValue);
-  }
-
-  @override
-  void didUpdateWidget(covariant SearchableDropdownField<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Καθυστερημένη άφιξη της αρχικής τιμής (π.χ. default unit μόλις ήρθαν
-    // τα units) — εφαρμόζεται ΜΟΝΟ αν ο χρήστης δεν έχει διαλέξει ο ίδιος.
-    if (oldWidget.initialValue == null &&
-        widget.initialValue != null &&
-        _selectedLabel == null) {
-      _applyInitialValue(widget.initialValue);
-    }
-  }
-
-  /// Εμφανίζει την αρχική τιμή στο πεδίο (label + κλειστό overlay μέσω
-  /// `_selectedLabel` guard) — χωρίς `onSelected` (βλ. doc του [initialValue]).
-  void _applyInitialValue(T? value) {
-    if (value == null) return;
-    final label = widget.labelOf(value);
-    _selectedLabel = label;
-    _controller.value = TextEditingValue(
-      text: label,
-      selection: TextSelection.collapsed(offset: label.length),
-    );
   }
 
   /// Focus listener — ΜΟΝΟ για show-all (Β5β): σε εστίαση ξανατρέχει η build

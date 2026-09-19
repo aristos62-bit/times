@@ -1,8 +1,9 @@
 /// SPoT state — Φόρμα εισαγωγής απόδειξης (§2.2 DESIGN / Φάση 3 Βήματα 3-5).
 ///
-/// Freezed immutable state — επεκτάθηκε στα Βήματα 3-5 (supplier, draftLines[],
-/// isSaving) με το ίδιο pattern. Ο αριθμός απόδειξης ΔΕΝ ανήκει εδώ — είναι
-/// το internal AUTOINCREMENT id της Receipt (§3: εμφάνιση στη λίστα Βήμα 7).
+/// Freezed immutable state — επεκτάθηκε στα Βήματα 3-5 (supplier, draftLines[])
+/// με το ίδιο pattern (`isSaving` έρχεται στο Βήμα 5δ, save flow). Ο αριθμός
+/// απόδειξης ΔΕΝ ανήκει εδώ — είναι το internal AUTOINCREMENT id της Receipt
+/// (§3: εμφάνιση στη λίστα Βήμα 7).
 library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -85,9 +86,5 @@ abstract class ReceiptFormState with _$ReceiptFormState {
     /// `draftLines` — το «καλάθι» (§2.2 · Βήμα 5γ): γραμμές ΧΩΡΙΣ εγγραφή
     /// στη βάση (το insert γίνεται ατομικά στο save, Βήμα 5δ). Default κενή.
     @Default(<DraftReceiptLine>[]) List<DraftReceiptLine> draftLines,
-    /// `isSaving` — async save σε εξέλιξη (§2.2 · Βήμα 5δ): το state ΠΑΡΑΜΕΝΕΙ
-    /// σύγχρονο (plain Notifier) και το flag σημειώνει το async save — ίδιο
-    /// pattern με το `_isCreating` των «+» (§2.2:235, double-tap guard).
-    @Default(false) bool isSaving,
   }) = _ReceiptFormState;
 }

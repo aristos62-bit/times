@@ -44,6 +44,13 @@ void main() {
       expect(AppStrings.titlePriceEntry, 'Εισαγωγή Τιμών');
     });
 
+    test('priceEntryLinesComingSoon — placeholder γραμμών εισαγωγής (§2.2)', () {
+      expect(
+        AppStrings.priceEntryLinesComingSoon,
+        'Οι γραμμές απόδειξης θα είναι διαθέσιμες σύντομα',
+      );
+    });
+
     test('saveReceipt = «Αποθήκευση Απόδειξης» (§2.2)', () {
       expect(AppStrings.saveReceipt, 'Αποθήκευση Απόδειξης');
     });
@@ -52,30 +59,11 @@ void main() {
       expect(AppStrings.addReceiptLine, 'Προσθήκη γραμμής');
     });
 
-    test('field labels — ημερομηνία/προμηθευτής/ποσότητα/τιμή/μονάδα (§2.2)', () {
+    test('field labels — ημερομηνία/προμηθευτής/ποσότητα/τιμή (§2.2)', () {
       expect(AppStrings.fieldDate, 'Ημερομηνία');
       expect(AppStrings.fieldSupplier, 'Προμηθευτής');
       expect(AppStrings.fieldQuantity, 'Ποσότητα');
       expect(AppStrings.fieldPrice, 'Τιμή');
-      expect(AppStrings.fieldUnit, 'Μονάδα');
-    });
-
-    test('unit/price section — hint μονάδας + σύμβολο € (§2.2 · Βήμα 5γ)', () {
-      expect(AppStrings.unitSearchHint, 'Αναζήτηση μονάδας');
-      expect(AppStrings.currencySymbol, '€');
-    });
-
-    test('draft lines — τίτλος + κενή κατάσταση + αφαίρεση (§2.2)', () {
-      expect(AppStrings.draftLinesTitle, 'Γραμμές απόδειξης');
-      expect(AppStrings.draftLinesEmpty, 'Δεν υπάρχουν γραμμές ακόμα');
-      expect(AppStrings.removeDraftLine, 'Αφαίρεση γραμμής');
-    });
-
-    test('quantityTruncatedForUnit — ειδοποίηση περικοπής (§2.2:218)', () {
-      expect(
-        AppStrings.quantityTruncatedForUnit,
-        'Η ποσότητα κόπηκε σε ακέραια (η μονάδα δεν δέχεται δεκαδικά)',
-      );
     });
 
     test('supplierSearchHint = «Αναζήτηση προμηθευτή» (§2.4)', () {
@@ -160,19 +148,13 @@ const List<String> _allStrings = [
   AppStrings.retryButton,
   AppStrings.statsComingSoon,
   AppStrings.titlePriceEntry,
+  AppStrings.priceEntryLinesComingSoon,
   AppStrings.saveReceipt,
   AppStrings.addReceiptLine,
   AppStrings.fieldDate,
   AppStrings.fieldSupplier,
   AppStrings.fieldQuantity,
   AppStrings.fieldPrice,
-  AppStrings.fieldUnit,
-  AppStrings.unitSearchHint,
-  AppStrings.currencySymbol,
-  AppStrings.draftLinesTitle,
-  AppStrings.draftLinesEmpty,
-  AppStrings.removeDraftLine,
-  AppStrings.quantityTruncatedForUnit,
   AppStrings.supplierSearchHint,
   AppStrings.addNewSupplier,
   AppStrings.itemSearchHint,

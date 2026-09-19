@@ -29,6 +29,10 @@ abstract final class AppStrings {
   // ─── Price entry (§2.2) ───────────────────────────────────────────────────
   /// Τίτλος AppBar στη σελίδα εισαγωγής τιμών.
   static const String titlePriceEntry = 'Εισαγωγή Τιμών';
+  /// Placeholder text στη σελίδα εισαγωγής για το τμήμα γραμμών/αποθήκευσης
+  /// (μέχρι Φάση 3 βήματα 4-5). Το header (ημερομηνία) υπάρχει από το Βήμα 2.
+  static const String priceEntryLinesComingSoon =
+      'Οι γραμμές απόδειξης θα είναι διαθέσιμες σύντομα';
   /// Κουμπί αποθήκευσης ολόκληρης απόδειξης.
   static const String saveReceipt = 'Αποθήκευση Απόδειξης';
   /// Κουμπί προσθήκης γραμμής στο «καλάθι» της απόδειξης.
@@ -38,24 +42,6 @@ abstract final class AppStrings {
   static const String fieldSupplier = 'Προμηθευτής';
   static const String fieldQuantity = 'Ποσότητα';
   static const String fieldPrice = 'Τιμή';
-  /// Label του πεδίου μονάδας (Unit dropdown, §2.2 · Βήμα 5γ). Το DESIGN δεν
-  /// ορίζει ρητό label (απόφαση Φάσης 0) — «Μονάδα», συνεπές με τα υπόλοιπα
-  /// field labels.
-  static const String fieldUnit = 'Μονάδα';
-  /// Hint στο πεδίο αναζήτησης μονάδας (Unit dropdown, §2.4 · Βήμα 5γ).
-  static const String unitSearchHint = 'Αναζήτηση μονάδας';
-  /// Σύμβολο νομίσματος ως suffix στο πεδίο τιμής (§2.2 · Βήμα 5γ).
-  static const String currencySymbol = '€';
-  /// Τίτλος της λίστας γραμμών («καλάθι») της τρέχουσας απόδειξης (§2.2).
-  static const String draftLinesTitle = 'Γραμμές απόδειξης';
-  /// Κενή κατάσταση της λίστας γραμμών — καμία γραμμή ακόμα (§2.2).
-  static const String draftLinesEmpty = 'Δεν υπάρχουν γραμμές ακόμα';
-  /// Tooltip/semantics του κουμπιού διαγραφής γραμμής από το «καλάθι» (§2.2).
-  static const String removeDraftLine = 'Αφαίρεση γραμμής';
-  /// Inline ειδοποίηση περικοπής: δεκαδική ποσότητα σε μονάδα χωρίς κλάσματα
-  /// (π.χ. «2,5 τεμ» → «2») κόβεται αυτόματα στο ακέραιο μέρος (§2.2:218).
-  static const String quantityTruncatedForUnit =
-      'Η ποσότητα κόπηκε σε ακέραια (η μονάδα δεν δέχεται δεκαδικά)';
   /// Hint στο πεδίο αναζήτησης προμηθευτή (SearchableDropdownField, §2.4).
   static const String supplierSearchHint = 'Αναζήτηση προμηθευτή';
   /// Label της inline επιλογής «+» για δημιουργία νέου προμηθευτή — το

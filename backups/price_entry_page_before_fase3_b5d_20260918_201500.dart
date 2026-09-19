@@ -1,4 +1,4 @@
-/// Φάση 3, Βήμα 5δ — Price Entry (σελίδα εισαγωγής §2.2).
+/// Φάση 3, Βήμα 5γ — Price Entry (σελίδα εισαγωγής §2.2).
 ///
 /// Στοιχείο του App Shell: ο `AppShell` δίνει το Scaffold με NavigationBar
 /// και η σελίδα προσθέτει δικό της nested Scaffold (AppBar + σώμα).
@@ -8,8 +8,7 @@
 /// user action (ίδια αρχή με §3 Βήμα 1, κανόνας §2.0.1).
 ///
 /// ΔΟΜΗ (§2.2 state machine): header → item search → (όταν ITEM_SELECTED)
-/// ενότητα μονάδας/ποσότητας/τιμής → λίστα draft γραμμών («καλάθι») →
-/// κουμπί αποθήκευσης (Βήμα 5δ, disabled-OR).
+/// ενότητα μονάδας/ποσότητας/τιμής → λίστα draft γραμμών («καλάθι»).
 /// Responsive §1.4: `LayoutBuilder` — σε φαρδιά οθόνη (≥ `tabletMaxWidth`)
 /// search + section δίπλα-δίπλα, αλλιώς στοίβα κατακόρυφα. Κανένα σταθερό
 /// ύψος (ListView + padding από SPoT).
@@ -24,10 +23,9 @@ import 'controllers/item_search_controller.dart';
 import 'widgets/draft_lines_list.dart';
 import 'widgets/item_search_field.dart';
 import 'widgets/receipt_header_section.dart';
-import 'widgets/save_receipt_button.dart';
 import 'widgets/unit_quantity_price_section.dart';
 
-/// Σελίδα εισαγωγής τιμών (§2.2) — header + search + section + draft + save.
+/// Σελίδα εισαγωγής τιμών (§2.2) — header + item search + section + draft list.
 class PriceEntryPage extends ConsumerWidget {
   const PriceEntryPage({super.key});
 
@@ -58,11 +56,6 @@ class PriceEntryPage extends ConsumerWidget {
     const draftBlock = Padding(
       padding: EdgeInsets.symmetric(horizontal: AppConstants.spacingM),
       child: DraftLinesList(),
-    );
-    // Κουμπί αποθήκευσης (Βήμα 5δ) — πάντα ορατό, disabled-OR όταν άκυρο.
-    const saveBlock = Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppConstants.spacingM),
-      child: SaveReceiptButton(),
     );
 
     return Scaffold(
@@ -97,8 +90,6 @@ class PriceEntryPage extends ConsumerWidget {
                 ],
                 const SizedBox(height: AppConstants.spacingXL),
                 draftBlock,
-                const SizedBox(height: AppConstants.spacingL),
-                saveBlock,
               ],
             );
           },

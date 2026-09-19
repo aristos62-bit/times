@@ -39,45 +39,33 @@ void main() {
   group('PriceEntryPage', () {
     // ─── Περιεχόμενο ─────────────────────────────────────────────────────────
     testWidgets('περιέχει AppBar, header ημερομηνίας + item search (Βήμα 4) + '
-        'draft list (Βήμα 5γ)', (tester) async {
+        'placeholder γραμμών', (tester) async {
       await pumpAt(tester, const Size(800, 600));
       expect(find.byType(AppBar), findsOneWidget);
       expect(find.text(AppStrings.titlePriceEntry), findsOneWidget);
       expect(find.byType(ReceiptHeaderSection), findsOneWidget);
       // Βήμα 4: inline panel αναζήτησης είναι παρόν (idle — καμία DB access).
       expect(find.byType(ItemSearchField), findsOneWidget);
-      // Βήμα 5γ: το placeholder αντικαταστάθηκε από το «καλάθι» (κενό).
-      expect(find.text(AppStrings.draftLinesTitle), findsOneWidget);
-      expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
-      // Βήμα 5δ: κουμπί αποθήκευσης παρόν αλλά ανενεργό (κενό + no supplier).
-      expect(find.text(AppStrings.saveReceipt), findsOneWidget);
-      expect(
-        tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, AppStrings.saveReceipt),
-            )
-            .enabled,
-        isFalse,
-      );
+      expect(find.text(AppStrings.priceEntryLinesComingSoon), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     // ─── Responsive (§1.4) ───────────────────────────────────────────────────
     testWidgets('mobile (320×568) — κανένα overflow', (tester) async {
       await pumpAt(tester, const Size(320, 568));
-      expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
+      expect(find.text(AppStrings.priceEntryLinesComingSoon), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('tablet (800×600) — κανένα overflow', (tester) async {
       await pumpAt(tester, const Size(800, 600));
-      expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
+      expect(find.text(AppStrings.priceEntryLinesComingSoon), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('desktop (1200×800) — κανένα overflow', (tester) async {
       await pumpAt(tester, const Size(1200, 800));
-      expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
+      expect(find.text(AppStrings.priceEntryLinesComingSoon), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

@@ -35,12 +35,6 @@ void main() {
       expect(state.supplier, isNull);
     });
 
-    test('draftLines default = κενή λίστα + isSaving default = false', () {
-      final state = ReceiptFormState(date: fixed);
-      expect(state.draftLines, isEmpty);
-      expect(state.isSaving, isFalse);
-    });
-
     test('μεταφέρει τον επιλεγμένο προμηθευτή', () {
       final s = supplier();
       final state = ReceiptFormState(date: fixed, supplier: s);
@@ -161,14 +155,6 @@ void main() {
       expect(b.draftLines.length, 2);
       expect(a.draftLines, isEmpty);
       expect(b.date, fixed);
-    });
-
-    test('copyWith isSaving true/false (αμετάβλητο το original)', () {
-      final a = ReceiptFormState(date: fixed);
-      final b = a.copyWith(isSaving: true);
-      expect(b.isSaving, isTrue);
-      expect(a.isSaving, isFalse);
-      expect(b.copyWith(isSaving: false), a);
     });
   });
 }
