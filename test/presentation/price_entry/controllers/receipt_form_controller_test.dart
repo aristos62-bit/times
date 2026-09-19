@@ -265,6 +265,7 @@ void main() {
       );
       expect(container.read(receiptFormControllerProvider).supplier, isNull);
     });
+
   });
 
   group('draftLines (Βήμα 5γ)', () {
@@ -488,7 +489,34 @@ void main() {
       expect(form.supplier, isNotNull);
       expect(form.isSaving, isFalse);
     });
+    test('απρόβλεπτο σφάλμα (όχι SaveReceiptException) → flag σβήνει + drafts '
+        'ΜΕΝΟΥΝ + καταγραφή [DB][ERROR]', () async {
+      final container = ProviderContainer.test(
+        overrides: [
+          receiptRepositoryProvider.overrideWithValue(
+            _FailingReceiptRepo(StateError('boom')),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      final logged = StringBuffer();
+      AppLogger.testSink = logged.write;
+      final notifier = container.read(receiptFormControllerProvider.notifier);
+      notifier.setSupplier(supplier());
+      notifier.addDraftLine(line(itemId: 1, unitId: 2));
 
+      await expectLater(notifier.saveReceipt(), throwsA(isA<StateError>()));
+
+      final form = container.read(receiptFormControllerProvider);
+      expect(
+        form.isSaving,
+        isFalse,
+        reason: 'Αλλιώς το κουμπί μένει ανενεργό για πάντα',
+      );
+      expect(form.draftLines.length, 1, reason: 'Drafts ΠΑΡΑΜΕΝΟΥΝ (§2.2:213)');
+      expect(form.supplier, isNotNull);
+      expect(logged.toString(), contains('[DB][ERROR]'));
+    });
     test('isSaving true κατά τη διάρκεια + double-save → ένα insert',
         () async {
       final container = containerWithDb();
@@ -548,7 +576,11 @@ void main() {
 /// Σκόπιμα αποτυγχάνων receipt repository — το `insertReceiptWithLines`
 /// ρίχνει `SaveReceiptException` (προσομοίωση σφάλματος βάσης στο save).
 class _FailingReceiptRepo implements ReceiptRepository {
-  const _FailingReceiptRepo();
+  /// [error] = τι ρίχνει το `insertReceiptWithLines` (default: το mapped
+  /// `SaveReceiptException`· π.χ. `StateError` προσομοιώνει μη-mapped σφάλμα).
+  const _FailingReceiptRepo([this.error = const SaveReceiptException()]);
+
+  final Object error;
 
   @override
   Stream<List<Receipt>> watchAll() => throw const DataLoadException();
@@ -571,7 +603,7 @@ class _FailingReceiptRepo implements ReceiptRepository {
     required int supplierId,
     required List<ReceiptLineInput> lines,
   }) =>
-      throw const SaveReceiptException();
+      throw error;
 }
 
 /// Receipt repository με πύλη (Completer) πριν το πραγματικό insert —

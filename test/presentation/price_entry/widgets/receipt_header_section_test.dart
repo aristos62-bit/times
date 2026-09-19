@@ -189,6 +189,30 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('resetForm (μετά από save) → το πεδίο προμηθευτή αδειάζει',
+            (tester) async {
+          final db = inMemoryDb();
+          addTearDown(db.close);
+          await SupplierDao(db).insert(name: 'Μάρκος');
+          await pumpAt(tester, const Size(800, 600), db: db);
+
+          await tester.enterText(find.byType(TextField), 'μάρκος');
+          await settleSearch(tester);
+          await tester.tap(find.text('Μάρκος'));
+          await tester.pumpAndSettle();
+          expect(formState(tester).supplier?.name, 'Μάρκος');
+          expect(find.text('Μάρκος'), findsOneWidget);
+
+          ProviderScope.containerOf(tester.element(find.byType(ReceiptHeaderSection)))
+              .read(receiptFormControllerProvider.notifier)
+              .resetForm();
+          await tester.pumpAndSettle();
+
+          expect(formState(tester).supplier, isNull);
+          expect(find.text('Μάρκος'), findsNothing);
+          expect(find.text(AppStrings.supplierSearchHint), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        });
     testWidgets('«+» με υπάρχοντα → supplierExists (soft dup-check)',
         (tester) async {
       final db = inMemoryDb();

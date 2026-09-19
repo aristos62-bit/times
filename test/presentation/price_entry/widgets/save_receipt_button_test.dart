@@ -147,9 +147,12 @@ void main() {
         isNull,
       );
       // Βάση: η απόδειξη γράφτηκε (refresh λίστας μέσω stream, §2.2:212).
-      final receipts =
-          await container.read(receiptRepositoryProvider).watchAll().first;
-      expect(receipts.length, 1);
+      // Το drift stream χρειάζεται πραγματικό χρόνο → `runAsync` (όπως στο
+      // settleSearch του item_search_field_test).
+      final receipts = await tester.runAsync(
+            () => container.read(receiptRepositoryProvider).watchAll().first,
+      );
+      expect(receipts?.length, 1);
       expect(tester.takeException(), isNull);
     });
 
@@ -200,6 +203,54 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     });
+    testWidgets('απρόβλεπτο σφάλμα → γενικό error snackbar + κουμπί ξανά ενεργό',
+            (tester) async {
+          await pumpIt(
+            tester,
+            extra: [
+              receiptRepositoryProvider.overrideWithValue(
+                _FailingReceiptRepo(StateError('boom')),
+              ),
+            ],
+          );
+          final container = containerOf(tester);
+          final form = container.read(receiptFormControllerProvider.notifier);
+          form
+            ..setSupplier(
+              Supplier(
+                id: 1,
+                name: 'Μάρκος',
+                normalizedName: 'μαρκοσ',
+                createdAt: DateTime(2026, 9, 17),
+              ),
+            )
+            ..addDraftLine(
+              const DraftReceiptLine(
+                itemId: 1,
+                unitId: 2,
+                quantity: 1.0,
+                priceCents: 100,
+                itemName: 'Γάλα',
+                unitAbbreviation: 'κιλ',
+              ),
+            );
+          await tester.pumpAndSettle();
+
+          await tester.tap(
+            find.widgetWithText(FilledButton, AppStrings.saveReceipt),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.text(AppErrors.saveFailed), findsOneWidget);
+          expect(container.read(receiptFormControllerProvider).isSaving, isFalse);
+          expect(
+            container.read(receiptFormControllerProvider).draftLines.length,
+            1,
+          );
+          expect(buttonEnabled(tester), isTrue,
+              reason: 'Το κουμπί δεν κολλάει μετά από απρόβλεπτο σφάλμα');
+          expect(tester.takeException(), isNull);
+        });
 
     testWidgets('isSaving → spinner + ανενεργό (double-tap guard)',
         (tester) async {
@@ -247,7 +298,11 @@ void main() {
 /// Σκόπιμα αποτυγχάνων receipt repository — `insertReceiptWithLines` ρίχνει
 /// `SaveReceiptException` (μοτίβο `_FailingItemRepo` Βήματος 4).
 class _FailingReceiptRepo implements ReceiptRepository {
-  const _FailingReceiptRepo();
+  /// [error] = τι ρίχνει το `insertReceiptWithLines` (default: το mapped
+  /// `SaveReceiptException`· π.χ. `StateError` προσομοιώνει μη-mapped σφάλμα).
+  const _FailingReceiptRepo([this.error = const SaveReceiptException()]);
+
+  final Object error;
 
   @override
   Stream<List<Receipt>> watchAll() => throw const DataLoadException();
@@ -270,7 +325,7 @@ class _FailingReceiptRepo implements ReceiptRepository {
     required int supplierId,
     required List<ReceiptLineInput> lines,
   }) =>
-      throw const SaveReceiptException();
+      throw error;
 }
 
 /// Receipt repository με πύλη (Completer) πριν το πραγματικό insert.

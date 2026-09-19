@@ -22,10 +22,22 @@ import '../../../data/providers/stream_providers.dart';
 import '../../shared/searchable_dropdown_field.dart';
 import '../controllers/receipt_form_controller.dart';
 
-/// Ενότητα header της φόρμας: field ημερομηνίας (inline date picker) +
+//// Ενότητα header της φόρμας: field ημερομηνίας (inline date picker) +
 /// field προμηθευτή (live search + «+» δημιουργία).
-class ReceiptHeaderSection extends ConsumerWidget {
+class ReceiptHeaderSection extends ConsumerStatefulWidget {
   const ReceiptHeaderSection({super.key});
+
+  @override
+  ConsumerState<ReceiptHeaderSection> createState() =>
+      _ReceiptHeaderSectionState();
+}
+
+class _ReceiptHeaderSectionState extends ConsumerState<ReceiptHeaderSection> {
+  /// «Γενιά» του πεδίου προμηθευτή. Αυξάνεται όταν ο προμηθευτής της φόρμας
+  /// γίνει null μετά από τιμή (resetForm μετά από save, §2.2:212), ώστε το
+  /// πεδίο να αναδημιουργηθεί άδειο — το SearchableDropdownField δεν
+  /// υποστηρίζει εξωτερικό καθάρισμα.
+  int _supplierFieldEpoch = 0;
 
   Future<void> _pickDate(BuildContext context, WidgetRef ref) async {
     final current = ref.read(receiptFormControllerProvider).date;
@@ -72,7 +84,16 @@ class ReceiptHeaderSection extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    // Καθάρισμα πεδίου προμηθευτή όταν η φόρμα μηδενίζεται (§2.2:212).
+    ref.listen<Supplier?>(
+      receiptFormControllerProvider.select((s) => s.supplier),
+          (previous, next) {
+        if (previous != null && next == null) {
+          setState(() => _supplierFieldEpoch++);
+        }
+      },
+    );
     final date = ref.watch(receiptFormControllerProvider).date;
     final formatted = MaterialLocalizations.of(context).formatMediumDate(date);
 
@@ -98,6 +119,7 @@ class ReceiptHeaderSection extends ConsumerWidget {
               AppConstants.spacingL,
             ),
             child: SearchableDropdownField<Supplier>(
+              key: ValueKey(_supplierFieldEpoch),
               labelText: AppStrings.fieldSupplier,
               hintText: AppStrings.supplierSearchHint,
               searchProvider: supplierSearchProvider.call,

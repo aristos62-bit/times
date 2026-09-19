@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_errors.dart';
 import '../../../core/constants/app_messages.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/errors/app_exceptions.dart';
@@ -25,6 +26,9 @@ class SaveReceiptButton extends ConsumerWidget {
   const SaveReceiptButton({super.key});
 
   /// Πάτημα: save → success (snackbar + καθάρισμα επιλογής) / error (snackbar).
+  /// Απρόβλεπτο σφάλμα (όχι `SaveReceiptException`) → γενικό
+  /// `AppErrors.saveFailed`· ο controller έχει ήδη σβήσει το `isSaving` και
+  /// έχει καταγράψει το σφάλμα.
   Future<void> _save(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(receiptFormControllerProvider.notifier).saveReceipt();
@@ -36,6 +40,9 @@ class SaveReceiptButton extends ConsumerWidget {
     } on SaveReceiptException catch (e) {
       if (!context.mounted) return;
       AppFeedback.showError(context, e.userMessage);
+    } catch (_) {
+      if (!context.mounted) return;
+      AppFeedback.showError(context, AppErrors.saveFailed);
     }
   }
 

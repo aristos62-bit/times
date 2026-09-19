@@ -82,10 +82,13 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
   /// (atomicity — είτε όλα είτε τίποτα, §2.2:211).
   ///   * Επιτυχία → καθαρισμός φόρμας (`resetForm`, §2.2:212)· το
   ///     `recent_receipts_list` ανανεώνεται αυτόματα μέσω stream (§2.2:212).
-  ///   * Αποτυχία (`SaveReceiptException` από το repository) → το flag
-  ///     σβήνει, τα draft δεδομένα ΠΑΡΑΜΕΝΟΥΝ (§2.2:213) και η εξαίρεση
-  ///     ανεβαίνει ΑΝΕΓΓΙΧΤΗ στο widget — υπεύθυνο για το feedback
-  ///     (`e.userMessage` μέσω AppFeedback, pattern `createSupplier`).
+  ///   * Αποτυχία (`SaveReceiptException` από το repository Ή απρόβλεπτο
+  ///     σφάλμα, π.χ. μη-mapped εξαίρεση) → το flag σβήνει ΠΑΝΤΑ (αλλιώς το
+  ///     κουμπί μένει ανενεργό για πάντα — ο provider δεν είναι autoDispose),
+  ///     τα draft δεδομένα ΠΑΡΑΜΕΝΟΥΝ (§2.2:213) και η εξαίρεση ανεβαίνει
+  ///     ΑΝΕΓΓΙΧΤΗ στο widget — υπεύθυνο για το feedback (`e.userMessage`
+  ///     μέσω AppFeedback, pattern `createSupplier`· απρόβλεπτο → γενικό
+  ///     `AppErrors.saveFailed`). Τα απρόβλεπτα καταγράφονται εδώ (tag DB).
   ///
   /// Defensive guards (χωρίς DB touch): προμηθευτής null Ή κενό «καλάθι» →
   /// `SaveReceiptException` (το UI τα αποκλείει με disabled-OR, §2.2 — εδώ
@@ -105,28 +108,35 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
     state = state.copyWith(isSaving: true);
     try {
       final id = await ref.read(receiptRepositoryProvider).insertReceiptWithLines(
-            date: date,
-            supplierId: supplier.id,
-            lines: [
-              for (final line in lines)
-                (
-                  itemId: line.itemId,
-                  unitId: line.unitId,
-                  quantity: line.quantity,
-                  priceCents: line.priceCents,
-                ),
-            ],
-          );
+        date: date,
+        supplierId: supplier.id,
+        lines: [
+          for (final line in lines)
+            (
+            itemId: line.itemId,
+            unitId: line.unitId,
+            quantity: line.quantity,
+            priceCents: line.priceCents,
+            ),
+        ],
+      );
       if (!ref.mounted) return; // disposed ενώ έτρεχε το save → παράλειψη
       resetForm();
       AppLogger.info(
         LogTag.db,
         'Αποθήκευση απόδειξης #$id (${lines.length} γραμμές)',
       );
-    } on SaveReceiptException {
-      if (!ref.mounted) rethrow;
-      state = state.copyWith(isSaving: false);
-      rethrow; // drafts ΜΕΝΟΥΝ (§2.2:213) — το widget δείχνει e.userMessage
+    } catch (e, s) {
+      if (ref.mounted) state = state.copyWith(isSaving: false);
+      if (e is! SaveReceiptException) {
+        AppLogger.error(
+          LogTag.db,
+          'Απρόβλεπτο σφάλμα αποθήκευσης απόδειξης',
+          e,
+          s,
+        );
+      }
+      rethrow; // drafts ΜΕΝΟΥΝ (§2.2:213) — το widget δείχνει το feedback
     }
   }
 
