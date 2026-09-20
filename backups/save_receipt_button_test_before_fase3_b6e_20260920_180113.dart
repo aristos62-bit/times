@@ -291,77 +291,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(AppMessages.savedReceipt), findsOneWidget);
       expect(tester.takeException(), isNull);
-        });
-  });
-
-  group('SaveReceiptButton — hint προμηθευτή (Βήμα 6ε)', () {
-    const line = DraftReceiptLine(
-      itemId: 1,
-      unitId: 2,
-      quantity: 1.0,
-      priceCents: 100,
-      itemName: 'Γάλα',
-      unitAbbreviation: 'κιλ',
-    );
-
-    testWidgets('H1: κενό «καλάθι» χωρίς προμηθευτή → κανένα hint',
-            (tester) async {
-          await pumpIt(tester);
-
-          expect(find.text(AppErrors.supplierRequired), findsNothing);
-          expect(buttonEnabled(tester), isFalse);
-          expect(tester.takeException(), isNull);
-        });
-
-    testWidgets('H2: γραμμές χωρίς προμηθευτή → hint + ανενεργό',
-            (tester) async {
-          await pumpIt(tester);
-          containerOf(tester)
-              .read(receiptFormControllerProvider.notifier)
-              .addDraftLine(line);
-          await tester.pumpAndSettle();
-
-          expect(find.text(AppErrors.supplierRequired), findsOneWidget);
-          expect(buttonEnabled(tester), isFalse);
-          expect(tester.takeException(), isNull);
-        });
-
-    testWidgets('H3: επιλογή προμηθευτή → το hint φεύγει, κουμπί ενεργό',
-            (tester) async {
-          await pumpIt(tester);
-          final form =
-          containerOf(tester).read(receiptFormControllerProvider.notifier);
-          form.addDraftLine(line);
-          await tester.pumpAndSettle();
-          expect(find.text(AppErrors.supplierRequired), findsOneWidget);
-
-          form.setSupplier(
-            Supplier(
-              id: 1,
-              name: 'Μάρκος',
-              normalizedName: 'μαρκοσ',
-              createdAt: DateTime(2026, 9, 17),
-            ),
-          );
-          await tester.pumpAndSettle();
-
-          expect(find.text(AppErrors.supplierRequired), findsNothing);
-          expect(buttonEnabled(tester), isTrue);
-          expect(tester.takeException(), isNull);
-        });
-
-    testWidgets('H4: hint ορατό σε στενή οθόνη (320×568) χωρίς overflow',
-            (tester) async {
-          await pumpIt(tester);
-          tester.view.physicalSize = const Size(320, 568);
-          containerOf(tester)
-              .read(receiptFormControllerProvider.notifier)
-              .addDraftLine(line);
-          await tester.pumpAndSettle();
-
-          expect(find.text(AppErrors.supplierRequired), findsOneWidget);
-          expect(tester.takeException(), isNull);
-        });
+    });
   });
 }
 

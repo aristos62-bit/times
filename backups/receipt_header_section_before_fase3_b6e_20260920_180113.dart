@@ -19,7 +19,6 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/utils/app_feedback.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/providers/stream_providers.dart';
-import '../../../domain/validators/name_validator.dart';
 import '../../shared/searchable_dropdown_field.dart';
 import '../controllers/receipt_form_controller.dart';
 
@@ -57,19 +56,12 @@ class _ReceiptHeaderSectionState extends ConsumerState<ReceiptHeaderSection> {
   /// Δημιουργία προμηθευτή από το «+» του dropdown (§2.4). Επιστρέφει τον
   /// προμηθευτή (νέο ή υπάρχον) για εμφάνιση στο πεδίο· εμφανίζει το σωστό
   /// SnackBar (supplierAdded vs supplierExists) μέσω AppFeedback. Σφάλμα DB
-  /// (DataLoadException) → AppErrors.loadDataFailed. Βήμα 6ε: το όνομα
-  /// επικυρώνεται ΠΡΙΝ το DB (`NameValidator`, §2.2) — κενό ή πάνω από
-  /// `maxItemNameLength` → snackbar σφάλματος, καμία εγγραφή.
+  /// (DataLoadException) → AppErrors.loadDataFailed.
   Future<Supplier?> _createSupplier(
-      BuildContext context,
-      WidgetRef ref,
-      String name,
-      ) async {
-    final nameError = NameValidator.validate(name);
-    if (nameError != null) {
-      AppFeedback.showError(context, nameError);
-      return null;
-    }
+    BuildContext context,
+    WidgetRef ref,
+    String name,
+  ) async {
     try {
       final result =
           await ref.read(receiptFormControllerProvider.notifier).createSupplier(
