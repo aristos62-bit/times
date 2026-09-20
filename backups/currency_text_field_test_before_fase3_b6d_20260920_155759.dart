@@ -7,7 +7,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:times/presentation/shared/currency_text_field.dart';
-import 'package:times/core/constants/app_constants.dart';
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
@@ -109,37 +108,6 @@ void main() {
 
       expect(lastChanged, '2,5');
       controller.dispose();
-        });
-
-    testWidgets('CSF10: errorText εμφανίζεται + errorMaxLines από SPoT (6δ)',
-            (tester) async {
-          final controller = TextEditingController();
-          await tester.pumpWidget(_wrap(CurrencyTextField(
-            controller: controller,
-            labelText: 'Τιμή (*)',
-            errorText: 'Η τιμή πρέπει να είναι μεγαλύτερη από 0',
-          )));
-
-          expect(find.text('Η τιμή πρέπει να είναι μεγαλύτερη από 0'),
-              findsOneWidget);
-          final decoration =
-          tester.widget<TextField>(find.byType(TextField)).decoration!;
-          expect(decoration.errorMaxLines, AppConstants.fieldErrorMaxLines);
-          controller.dispose();
-        });
-
-    testWidgets('CSF11: errorText null → κανένα μήνυμα σφάλματος (6δ)',
-            (tester) async {
-          final controller = TextEditingController();
-          await tester.pumpWidget(_wrap(CurrencyTextField(
-            controller: controller,
-            labelText: 'Τιμή (*)',
-          )));
-
-          expect(
-              tester.widget<TextField>(find.byType(TextField)).decoration!.errorText,
-              isNull);
-          controller.dispose();
-        });
+    });
   });
 }

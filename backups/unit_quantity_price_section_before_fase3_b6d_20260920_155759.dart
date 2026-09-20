@@ -21,25 +21,16 @@
 /// Δεκαδική ποσότητα + integer-only μονάδα (§2.2:218): η αλλαγή μονάδας
 /// περικόπτει ΑΥΤΟΜΑΤΑ στο ακέραιο μέρος + inline ειδοποίηση
 /// (`quantityTruncatedForUnit`) — απόρριψη «2.5 τεμάχια» (απόφαση Δ).
-///
-/// VALIDATION (Βήμα 6δ): όλοι οι κανόνες (τιμή/ποσότητα/μονάδα) προέρχονται
-/// από τον SPoT `ReceiptValidator` — το section δεν έχει δικά του όρια.
-/// Inline σφάλμα (`errorText` των fields) ΜΟΝΟ σε μη-κενή, ολοκληρωμένη
-/// είσοδο: το κενό πεδίο και ο αριθμός «υπό πληκτρολόγηση» («5,») δεν
-/// δείχνουν σφάλμα (το Add μένει απλώς ανενεργό). Hint μονάδας όταν έχει
-/// ήδη γραφτεί τιμή χωρίς μονάδα.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/constants/app_errors.dart';
 import '../../../core/constants/app_messages.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/providers/stream_providers.dart';
-import '../../../domain/validators/receipt_validator.dart';
 import '../../shared/currency_text_field.dart';
 import '../../shared/quantity_text_field.dart';
 import '../../shared/searchable_dropdown_field.dart';
@@ -137,66 +128,46 @@ class _UnitQuantityPriceSectionState
     });
   }
 
-  /// Ποσότητα του πεδίου (Βήμα 6δ): `value` = η τιμή ΜΟΝΟ όταν είναι έγκυρη
-  /// (`ReceiptValidator.validateQuantity`, §2.2:217-218), `error` = inline
-  /// μήνυμα (AppErrors) ή `null`. Κενό πεδίο και αριθμός «υπό πληκτρολόγηση»
-  /// («2,») δεν δείχνουν σφάλμα. Το parse γίνεται πάντα με δεκαδικά — ο
-  /// κανόνας ακεραιότητας ανήκει στον validator. `null` από το parse σε
-  /// μη-κενό, ολοκληρωμένο κείμενο σημαίνει πάνω από το όριο.
-  ({double? value, String? error}) _quantityCheck() {
-    final text = _quantityController.text;
-    if (text.trim().isEmpty) return (value: null, error: null);
-    final parsed = QuantityTextField.parseQuantity(text, allowsDecimal: true);
-    if (parsed == null) {
-      return (
-      value: null,
-      error: ReceiptValidator.isIncompleteNumber(text)
-          ? null
-          : AppErrors.quantityTooLarge,
-      );
-    }
-    final error = ReceiptValidator.validateQuantity(
-      parsed,
-      allowsDecimal: _unit?.allowsDecimal ?? true,
+  /// Έγκυρη ποσότητα (> 0, εντός ορίων — αποκλειστικά όρια §2.2:217).
+  double? get _quantity {
+    final unit = _unit;
+    if (unit == null) return null;
+    final value = QuantityTextField.parseQuantity(
+      _quantityController.text,
+      allowsDecimal: unit.allowsDecimal,
     );
-    return (value: error == null ? parsed : null, error: error);
+    if (value == null || value <= AppConstants.validationMinQuantity) {
+      return null;
+    }
+    return value;
   }
 
-  /// Τιμή του πεδίου σε cents (Βήμα 6δ) — ίδιο contract με το
-  /// `_quantityCheck` (`ReceiptValidator.validatePriceCents`, §2.2:217).
-  ({int? value, String? error}) _priceCheck() {
-    final text = _priceController.text;
-    if (text.trim().isEmpty) return (value: null, error: null);
-    final cents = CurrencyTextField.parseCents(text);
-    if (cents == null) {
-      return (
-      value: null,
-      error: ReceiptValidator.isIncompleteNumber(text)
-          ? null
-          : AppErrors.priceTooLarge,
-      );
-    }
-    final error = ReceiptValidator.validatePriceCents(cents);
-    return (value: error == null ? cents : null, error: error);
+  /// Έγκυρη τιμή σε cents (> 0 — αποκλειστικό όριο §2.2:217).
+  int? get _priceCents {
+    final cents = CurrencyTextField.parseCents(_priceController.text);
+    if (cents == null || cents <= AppConstants.validationMinPrice) return null;
+    return cents;
   }
+
+  /// Κουμπί ενεργό ΜΟΝΟ με μονάδα + έγκυρη ποσότητα + έγκυρη τιμή (OR).
+  bool get _canAdd => _unit != null && _quantity != null && _priceCents != null;
 
   /// «Προσθήκη γραμμής» → draft + επιστροφή search σε IDLE (§2.2:206).
   void _addLine() {
     final unit = _unit;
-    final quantity = _quantityCheck().value;
-    final priceCents = _priceCheck().value;
+    final quantity = _quantity;
+    final priceCents = _priceCents;
     if (unit == null || quantity == null || priceCents == null) return;
     ref.read(receiptFormControllerProvider.notifier).addDraftLine(
-      DraftReceiptLine(
-        itemId: widget.item.id,
-        unitId: unit.id,
-        quantity: quantity,
-        priceCents: priceCents,
-        itemName: widget.item.name,
-        unitAbbreviation: unit.abbreviation,
-        unitAllowsDecimal: unit.allowsDecimal,
-      ),
-    );
+          DraftReceiptLine(
+            itemId: widget.item.id,
+            unitId: unit.id,
+            quantity: quantity,
+            priceCents: priceCents,
+            itemName: widget.item.name,
+            unitAbbreviation: unit.abbreviation,
+          ),
+        );
     // Το search field καθαρίζει (clear-on-drop fix) και επιστρέφει σε IDLE —
     // έτοιμο για το επόμενο είδος. Η ενότητα αποσυναρμολογείται (selected null)
     // οπότε η κατάστασή της μηδενίζεται αυτόματα.
@@ -224,15 +195,6 @@ class _UnitQuantityPriceSectionState
             (s) => s.draftLines.length >= AppConstants.maxReceiptLines,
       ),
     );
-    // Βήμα 6δ: validation μέσω ReceiptValidator (SPoT) — value + inline error.
-    final quantity = _quantityCheck();
-    final price = _priceCheck();
-    final canAdd =
-        _unit != null && quantity.value != null && price.value != null;
-    // Hint μονάδας: μόνο όταν ο χρήστης έχει ήδη αρχίσει να γράφει τιμή.
-    final unitHint = _priceController.text.isNotEmpty
-        ? ReceiptValidator.validateUnit(_unit != null)
-        : null;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -257,26 +219,12 @@ class _UnitQuantityPriceSectionState
               prefixIcon: const Icon(Icons.straighten_outlined),
               resultLeadingIcon: const Icon(Icons.straighten_outlined),
             ),
-            if (unitHint != null)
-              Padding(
-                padding: const EdgeInsets.only(top: AppConstants.spacingS),
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    unitHint,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                ),
-              ),
             const SizedBox(height: AppConstants.spacingM),
             QuantityTextField(
               controller: _quantityController,
               labelText: AppStrings.fieldQuantity,
               suffixText: _unit?.abbreviation,
               allowsDecimal: allowsDecimal,
-              errorText: quantity.error,
               onChanged: (_) => setState(() {}),
               prefixIcon: const Icon(Icons.scale_outlined),
             ),
@@ -295,14 +243,13 @@ class _UnitQuantityPriceSectionState
               controller: _priceController,
               labelText: AppStrings.fieldPrice,
               suffixText: AppStrings.currencySymbol,
-              errorText: price.error,
               onChanged: (_) => setState(() {}),
               prefixIcon: const Icon(Icons.euro_outlined),
               textInputAction: TextInputAction.done,
             ),
             const SizedBox(height: AppConstants.spacingM),
             FilledButton.icon(
-              onPressed: canAdd && !atLimit ? _addLine : null,
+              onPressed: _canAdd && !atLimit ? _addLine : null,
               icon: const Icon(Icons.add),
               label: const Text(AppStrings.addReceiptLine),
             ),

@@ -25,7 +25,6 @@ class QuantityTextField extends StatelessWidget {
     this.hintText,
     this.suffixText,
     this.prefixIcon,
-    this.errorText,
     this.allowsDecimal = true,
     this.onChanged,
     this.autofocus = false,
@@ -46,11 +45,6 @@ class QuantityTextField extends StatelessWidget {
 
   /// Προαιρετικό εικονίδιο αριστερά.
   final Widget? prefixIcon;
-
-  /// Προαιρετικό inline μήνυμα σφάλματος (Βήμα 6δ) — SPoT κείμενο
-  /// (AppErrors) από τον καλούντα. `null` = κανένα σφάλμα. Εμφανίζεται έως
-  /// `AppConstants.fieldErrorMaxLines` γραμμές (§1.4).
-  final String? errorText;
 
   /// `true` = δέχεται δεκαδικά (`quantityDecimalDigits`) · `false` = μόνο
   /// ψηφία (μονάδες χωρίς κλάσματα, DESIGN §2.4 / §2.2:218).
@@ -119,8 +113,6 @@ class QuantityTextField extends StatelessWidget {
         hintText: hintText,
         suffixText: suffixText,
         prefixIcon: prefixIcon,
-        errorText: errorText,
-        errorMaxLines: AppConstants.fieldErrorMaxLines,
         border: const OutlineInputBorder(),
         isDense: true,
       ),

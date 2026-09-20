@@ -27,7 +27,6 @@ class CurrencyTextField extends StatelessWidget {
     this.hintText,
     this.suffixText,
     this.prefixIcon,
-    this.errorText,
     this.onChanged,
     this.autofocus = false,
     this.textInputAction = TextInputAction.next,
@@ -47,12 +46,6 @@ class CurrencyTextField extends StatelessWidget {
 
   /// Προαιρετικό εικονίδιο αριστερά (π.χ. Icons.euro).
   final Widget? prefixIcon;
-
-  /// Προαιρετικό inline μήνυμα σφάλματος (Βήμα 6δ) — SPoT κείμενο
-  /// (AppErrors) από τον καλούντα, το πεδίο δεν ορίζει δικό του. `null` =
-  /// κανένα σφάλμα. Εμφανίζεται έως `AppConstants.fieldErrorMaxLines`
-  /// γραμμές (§1.4 — χωρίς κοπή σε στενές οθόνες).
-  final String? errorText;
 
   /// Κλήση σε κάθε αλλαγή κειμένου (για live validation του Add button).
   final ValueChanged<String>? onChanged;
@@ -107,8 +100,6 @@ class CurrencyTextField extends StatelessWidget {
         hintText: hintText,
         suffixText: suffixText,
         prefixIcon: prefixIcon,
-        errorText: errorText,
-        errorMaxLines: AppConstants.fieldErrorMaxLines,
         border: const OutlineInputBorder(),
         isDense: true,
       ),
