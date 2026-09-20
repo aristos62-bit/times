@@ -105,13 +105,6 @@ void main() {
       expect(AppConstants.maxItemNameLength, greaterThan(0));
     });
 
-    test('fieldErrorMaxLines = 3 (inline errorText, §1.4 · 6α)', () {
-      expect(AppConstants.fieldErrorMaxLines, 3);
-      expect(AppConstants.fieldErrorMaxLines, greaterThanOrEqualTo(2));
-    });
-
-    // ─── Numeric / Precision ─────────────────────────────────────────────────
-
     // ─── Numeric / Precision ─────────────────────────────────────────────────
     test('priceDecimalDigits = 2 (εμφάνιση €)', () {
       expect(AppConstants.priceDecimalDigits, 2);

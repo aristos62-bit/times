@@ -45,38 +45,4 @@ abstract final class AppErrors {
 
   /// §2.2: όνομα πάνω από `AppConstants.maxItemNameLength` χαρακτήρες.
   static const String nameTooLong = 'Το όνομα είναι πολύ μεγάλο';
-
-  /// §2.2 (Φάση 3 Βήμα 6α): το όνομα υπάρχει ήδη (case/tone-insensitive) —
-  /// inline μήνυμα στο dialog νέου είδους για Κατηγορία/Υποκατηγορία (6ζ).
-  static const String nameExists = 'Το όνομα υπάρχει ήδη';
-
-  // ─── Validation γραμμής / απόδειξης (§2.2 · Φάση 3 Βήμα 6α) ──────────────
-  /// §2.2: τιμή ≤ `AppConstants.validationMinPrice` (π.χ. «0»).
-  static const String priceMustBePositive =
-      'Η τιμή πρέπει να είναι μεγαλύτερη από 0';
-
-  /// §2.2: τιμή πάνω από `AppConstants.maxPriceCents`.
-  static const String priceTooLarge = 'Η τιμή είναι πολύ μεγάλη';
-
-  /// §2.2: ποσότητα ≤ `AppConstants.validationMinQuantity` (π.χ. «0»).
-  static const String quantityMustBePositive =
-      'Η ποσότητα πρέπει να είναι μεγαλύτερη από 0';
-
-  /// §2.2: ποσότητα πάνω από `AppConstants.maxQuantity`.
-  static const String quantityTooLarge = 'Η ποσότητα είναι πολύ μεγάλη';
-
-  /// §2.2:218: δεκαδική ποσότητα σε μονάδα με `Unit.allowsDecimal == false`.
-  static const String quantityMustBeInteger =
-      'Η ποσότητα πρέπει να είναι ακέραιος αριθμός';
-
-  /// §2.2: δεν έχει επιλεγεί μονάδα μέτρησης για τη γραμμή.
-  static const String unitRequired = 'Επιλέξτε μονάδα μέτρησης';
-
-  /// §2.2: δεν έχει επιλεγεί προμηθευτής για την απόδειξη.
-  static const String supplierRequired = 'Επιλέξτε προμηθευτή';
-
-  /// §2.2: κενό «καλάθι» — τουλάχιστον 1 γραμμή. Το πάνω όριο
-  /// (`maxReceiptLines`) καλύπτεται από το `AppMessages.receiptLinesLimitReached`.
-  static const String receiptLinesRequired =
-      'Προσθέστε τουλάχιστον μία γραμμή';
 }

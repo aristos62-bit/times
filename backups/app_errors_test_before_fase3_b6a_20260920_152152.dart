@@ -45,47 +45,6 @@ void main() {
       expect(AppErrors.nameTooLong, 'Το όνομα είναι πολύ μεγάλο');
     });
 
-    test('nameExists = «Το όνομα υπάρχει ήδη» (§2.2 · 6α)', () {
-      expect(AppErrors.nameExists, 'Το όνομα υπάρχει ήδη');
-    });
-
-    // ─── Validation γραμμής / απόδειξης (§2.2 · Φάση 3 Βήμα 6α) ──────────────
-    test('priceMustBePositive (§2.2)', () {
-      expect(AppErrors.priceMustBePositive,
-          'Η τιμή πρέπει να είναι μεγαλύτερη από 0');
-    });
-
-    test('priceTooLarge (§2.2)', () {
-      expect(AppErrors.priceTooLarge, 'Η τιμή είναι πολύ μεγάλη');
-    });
-
-    test('quantityMustBePositive (§2.2)', () {
-      expect(AppErrors.quantityMustBePositive,
-          'Η ποσότητα πρέπει να είναι μεγαλύτερη από 0');
-    });
-
-    test('quantityTooLarge (§2.2)', () {
-      expect(AppErrors.quantityTooLarge, 'Η ποσότητα είναι πολύ μεγάλη');
-    });
-
-    test('quantityMustBeInteger (§2.2:218)', () {
-      expect(AppErrors.quantityMustBeInteger,
-          'Η ποσότητα πρέπει να είναι ακέραιος αριθμός');
-    });
-
-    test('unitRequired (§2.2)', () {
-      expect(AppErrors.unitRequired, 'Επιλέξτε μονάδα μέτρησης');
-    });
-
-    test('supplierRequired (§2.2)', () {
-      expect(AppErrors.supplierRequired, 'Επιλέξτε προμηθευτή');
-    });
-
-    test('receiptLinesRequired (§2.2)', () {
-      expect(AppErrors.receiptLinesRequired,
-          'Προσθέστε τουλάχιστον μία γραμμή');
-    });
-
     // ─── Καθολικός έλεγχος ποιότητας (ίδιο pattern με app_messages_test) ─────
     test('κανένα string μη-κενό, χωρίς whitespace στα άκρα, χωρίς \\n', () {
       for (final text in _allConstStrings) {
@@ -107,13 +66,4 @@ const List<String> _allConstStrings = [
   AppErrors.restoreFailed,
   AppErrors.nameRequired,
   AppErrors.nameTooLong,
-  AppErrors.nameExists,
-  AppErrors.priceMustBePositive,
-  AppErrors.priceTooLarge,
-  AppErrors.quantityMustBePositive,
-  AppErrors.quantityTooLarge,
-  AppErrors.quantityMustBeInteger,
-  AppErrors.unitRequired,
-  AppErrors.supplierRequired,
-  AppErrors.receiptLinesRequired,
 ];

@@ -62,8 +62,6 @@ abstract final class AppConstants {
 
   // ─── Validation όρια ───────────────────────────────────────────────────────
   // ΑΠΟΚΛΕΙΣΤΙΚΟ όριο — όχι αποδεκτή τιμή. Δεκτό μόνο price > validationMinPrice.
-  // Η σύγκριση γίνεται σε ΛΕΠΤΑ (priceCents, §3) — ίδια μονάδα με την
-  // αποθήκευση της τιμής, όχι σε ευρώ.
   static const double validationMinPrice = 0.0;
 
   // ΑΠΟΚΛΕΙΣΤΙΚΟ όριο — όχι αποδεκτή τιμή. Δεκτό μόνο quantity > validationMinQuantity.
@@ -71,13 +69,6 @@ abstract final class AppConstants {
 
   // Μέγιστο μήκος ονόματος για Είδος/Κατηγορία/Υποκατηγορία/Προμηθευτή.
   static const int maxItemNameLength = 100;
-
-  // Μέγιστες γραμμές του inline μηνύματος σφάλματος πεδίου (errorText) —
-  // safety net αποφυγής κοπής/overflow σε στενές οθόνες ή μεγάλα fonts
-  // (§1.4 DESIGN). Ίδιο σκεπτικό με το maxFeedbackLines των SnackBar.
-  static const int fieldErrorMaxLines = 3;
-
-  // ─── Numeric / Precision ───────────────────────────────────────────────────
 
   // ─── Numeric / Precision ───────────────────────────────────────────────────
   // Πόσα δεκαδικά δείχνει το UI όταν εμφανίζει τιμή (priceCents / 100).
