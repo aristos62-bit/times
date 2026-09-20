@@ -30,6 +30,12 @@ abstract final class AppMessages {
   /// `itemCountTooltip`: μήνυμα «δεν βρέθηκε» με το πληκτρολογημένο query.
   static String itemNotFound(String query) => 'Δεν βρέθηκε είδος "$query"';
 
+  // ─── Όριο καλαθιού (§2.2 · Φάση 3 Βήμα 5ε-2) ──────────────────────────────
+  /// Inline ενημέρωση όταν το «καλάθι» φτάσει το `AppConstants.maxReceiptLines`.
+  /// Το όριο δίνεται ως όρισμα (SPoT — το κείμενο δεν το σκληροκωδικοποιεί).
+  static String receiptLinesLimitReached(int max) =>
+      'Η απόδειξη έχει φτάσει το όριο των $max γραμμών';
+
   // ─── Confirm dialog defaults (§2.4 ConfirmDialog) ─────────────────────────
   /// §2.4: "ConfirmDialog — τίτλος/μήνυμα/actions από παραμέτρους, SPoT strings".
   /// Default τίτλος επιβεβαιωτικού dialog.

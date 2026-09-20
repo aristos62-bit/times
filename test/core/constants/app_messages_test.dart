@@ -42,6 +42,13 @@ void main() {
       expect(AppMessages.itemNotFound('γαλα'), 'Δεν βρέθηκε είδος "γαλα"');
     });
 
+    test('receiptLinesLimitReached(100) — δυναμικό μήνυμα (§2.2 · Β5ε-2)', () {
+      expect(
+        AppMessages.receiptLinesLimitReached(100),
+        'Η απόδειξη έχει φτάσει το όριο των 100 γραμμών',
+      );
+    });
+
     // ─── Confirm dialog defaults (§2.4) ─────────────────────────────────────
     test('confirmDialogTitle = «Επιβεβαίωση» (§2.4)', () {
       expect(AppMessages.confirmDialogTitle, 'Επιβεβαίωση');

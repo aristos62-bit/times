@@ -77,6 +77,7 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
     this.showAllWhenEmpty = false,
     this.allOptionsProvider,
     this.initialValue,
+    this.onCleared,
   }) : assert(
           !showAllWhenEmpty || allOptionsProvider != null,
           'showAllWhenEmpty == true απαιτεί allOptionsProvider',
@@ -134,6 +135,12 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
   /// [onSelected] — ο καλών συγχρονίζει το δικό του state μόνος του (π.χ. το
   /// section διαβάζει την ίδια λίστα units).
   final T? initialValue;
+
+  /// Καλείται ΜΙΑ φορά όταν μια επιλογή/προεπιλογή ([onSelected], [initialValue])
+  /// παύει να ισχύει επειδή ο χρήστης άλλαξε το κείμενο (και πλήρες σβήσιμο).
+  /// Ο καλών μηδενίζει το δικό του state — αλλιώς το πεδίο φαίνεται άδειο ενώ
+  /// κρατά παλιά τιμή. Ξανακαλείται μόνο μετά από νέα επιλογή (Β5ε-1).
+  final VoidCallback? onCleared;
 
   @override
   ConsumerState<SearchableDropdownField<T>> createState() =>
@@ -324,7 +331,9 @@ class _SearchableDropdownFieldState<T>
   /// μετά το delay, μόνο η ΤΕΛΕΥΤΑΙΑ ενεργοποίηση «μετράει»). Μετά το
   /// setState, reflex για το overlay (βλ. `_refreshOptions`).
   void _onChanged(String value) {
+    final lost = _selectedLabel != null && value != _selectedLabel;
     if (value != _selectedLabel) _selectedLabel = null;
+    if (lost) widget.onCleared?.call(); // fire-once (Β5ε-1)
     _debouncer.run(() {
       if (!mounted) return;
       setState(() => _query = value.trim());

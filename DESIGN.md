@@ -184,6 +184,7 @@ presentation/price_entry/
     ├── new_item_flow_dialog.dart      -- popup Κατηγορία→Υποκατηγορία→Είδος (βλ. state machine)
     ├── unit_quantity_price_section.dart
     ├── draft_lines_list.dart          -- οι γραμμές που έχουν προστεθεί στο "καλάθι" της τρέχουσας απόδειξης
+    ├── save_receipt_button.dart       -- «Αποθήκευση Απόδειξης» (disabled-OR: κενό καλάθι ∨ χωρίς προμηθευτή ∨ isSaving) + feedback
     └── recent_receipts_list.dart      -- placeholder λίστα, Φάση 3 βήμα 7
 ```
 
@@ -321,6 +322,13 @@ presentation/settings/
   προστέθηκαν στο Βήμα 4 — χρησιμοποιούνται στο `new_item_flow_dialog`).
 - Στο `ReceiptHeaderSection` (Βήμα 3) το `<T>` = `Supplier` μέσω του υπάρχοντος
   `supplierSearchProvider` (Φάση 2) — χρήση, όχι νέα υλοποίηση (§2.0.5).
+- **Προαιρετικές παράμετροι Βήματος 5** (defaults `null`/`false` → υπάρχοντες
+  καλούντες άθικτοι): `showAllWhenEmpty` + `allOptionsProvider` (show-all-on-focus
+  σε κενό πεδίο, gated watch §2.0.1 — assert: το ένα απαιτεί το άλλο) ·
+  `initialValue` (μόνο εμφάνιση, ΔΕΝ καλεί `onSelected`, εφαρμόζεται όσο ο
+  χρήστης δεν έχει επιλέξει) · `onCleared` (fire-once όταν επιλογή/προεπιλογή
+  παύει να ισχύει από επεξεργασία κειμένου· ο καλών μηδενίζει το δικό του
+  state). Χρήση: Unit dropdown στο `unit_quantity_price_section.dart`.
 
 ---
 
@@ -435,4 +443,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε στη **Φάση 3, Βήμα 5 — Εισαγωγή γραμμών απόδειξης**: Unit dropdown (`SearchableDropdownField` §2.4), ποσότητα, τιμή, save flow ("καλάθι" απόδειξης — βλ. state machine §2.2) (DESIGN §4 Φάση 3 Βήμα 5). Το Βήμα 4 (Item search/autocomplete + "«+»" popup ροή Κατηγορία→Υποκατηγορία→Είδος) ολοκληρώθηκε: `item_search_controller` (AsyncNotifier) + `searchable_dropdown_field` icons + `new_item_flow_dialog` με sealed result · tests 485/485, analyze clean. Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης. Το `SearchableDropdownField` (§2.4.1) επαναχρησιμοποιείται για Κατηγορία/Υποκατηγορία (in-memory φιλτράρισμα, §3) και Unit (Βήμα 5).
+Είμαστε στη **Φάση 3, Βήμα 6 — Validation μέσω SPoT validators** (`domain/validators/receipt_validator.dart`, §2.2 «Validation πριν την αποθήκευση»): ≥1 γραμμή και ≤ `maxReceiptLines`, `price > validationMinPrice`, `quantity > validationMinQuantity`, ακέραιος έλεγχος όταν `Unit.allowsDecimal == false` (DESIGN §4 Φάση 3 Βήμα 6). Το Βήμα 5 (Unit dropdown, ποσότητα, τιμή, save flow — υποβήματα 5α–5ε) ολοκληρώθηκε: `draftLines` + `saveReceipt` (atomic transaction) + `save_receipt_button` ++ όριο `maxReceiptLines` στο UI/controller + αναζήτηση μονάδας σε όνομα ή συντομογραφία · tests ‹N›/‹N›, analyze clean. Ανοιχτό (χωρίς προγραμματισμένο Βήμα): επιβεβαίωση εξόδου με μη αποθηκευμένες γραμμές (§2.2 «Ημιτελής καταχώρηση» — `ConfirmDialog` + `PopScope`). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.

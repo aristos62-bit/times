@@ -10,6 +10,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/errors/app_exceptions.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/utils/greek_text_normalizer.dart';
@@ -53,8 +54,18 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
   /// το insert γίνεται ατομικά στο save (Βήμα 5δ). Το ίδιο είδος σε πολλές
   /// γραμμές ΕΠΙΤΡΕΠΕΤΑΙ — δεν γίνεται merge (§2.2:237). Η επικύρωση τιμών
   /// (unit/quantity/price) ανήκει στο section widget (κουμπί ανενεργό όταν
-  /// άκυρα)· εδώ φυλάσσεται μόνο έγκυρη γραμμή.
+  /// άκυρα)· εδώ φυλάσσεται μόνο έγκυρη γραμμή. Όριο `maxReceiptLines`
+  /// (Βήμα 5ε-2): στο όριο η γραμμή ΑΓΝΟΕΙΤΑΙ (safety-net — το section έχει
+  /// ήδη ανενεργό κουμπί)· ο καλών δεν ενημερώνεται με exception.
   void addDraftLine(DraftReceiptLine line) {
+    if (state.draftLines.length >= AppConstants.maxReceiptLines) {
+      AppLogger.info(
+        LogTag.ui,
+        'Όριο γραμμών (${AppConstants.maxReceiptLines}) — αγνοήθηκε: '
+            '${line.itemName}',
+      );
+      return;
+    }
     state = state.copyWith(draftLines: [...state.draftLines, line]);
     AppLogger.info(
       LogTag.ui,

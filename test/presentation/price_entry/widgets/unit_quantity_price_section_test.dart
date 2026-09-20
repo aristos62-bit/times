@@ -25,6 +25,9 @@ import 'package:times/data/providers/database_providers.dart';
 import 'package:times/presentation/price_entry/controllers/item_search_controller.dart';
 import 'package:times/presentation/price_entry/controllers/receipt_form_controller.dart';
 import 'package:times/presentation/price_entry/widgets/unit_quantity_price_section.dart';
+import 'package:times/core/constants/app_constants.dart';
+import 'package:times/core/constants/app_messages.dart';
+import 'package:times/presentation/price_entry/state/receipt_form_state.dart';
 
 import '../../../data/local/helpers/in_memory_db.dart';
 
@@ -281,6 +284,75 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(addEnabled(tester), isFalse, reason: 'Κενή ποσότητα → άκυρη');
+      expect(tester.takeException(), isNull);
+        });
+
+    testWidgets('S6 (Β5ε-1): σβήσιμο κειμένου μονάδας → unit null · '
+        'Add ανενεργό', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db); // default unit «Κιλό»
+      await pumpAt(tester, seeded.item, db);
+
+      await tester.enterText(
+        find.byWidget(fieldByLabel(tester, AppStrings.fieldPrice)),
+        '2,50',
+      );
+      await tester.pumpAndSettle();
+      expect(addEnabled(tester), isTrue, reason: 'Κιλό + 1 + 2,50 → έγκυρο');
+
+      await tester.enterText(
+        find.byWidget(fieldByLabel(tester, AppStrings.fieldUnit)),
+        '',
+      );
+      await tester.pumpAndSettle();
+      expect(addEnabled(tester), isFalse,
+          reason: 'Άδειο πεδίο μονάδας → unit null');
+      expect(tester.takeException(), isNull);
+    });
+    testWidgets('S7 (Β5ε-2): καλάθι στο όριο → Add ανενεργό + μήνυμα · '
+        'μετά από αφαίρεση ξανά ενεργό', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(UnitQuantityPriceSection)),
+      );
+      final notifier = container.read(receiptFormControllerProvider.notifier);
+      final limitMessage = AppMessages.receiptLinesLimitReached(
+        AppConstants.maxReceiptLines,
+      );
+
+      await tester.enterText(
+        find.byWidget(fieldByLabel(tester, AppStrings.fieldPrice)),
+        '2,50',
+      );
+      await tester.pumpAndSettle();
+      expect(addEnabled(tester), isTrue);
+      expect(find.text(limitMessage), findsNothing);
+
+      for (var i = 0; i < AppConstants.maxReceiptLines; i++) {
+        notifier.addDraftLine(
+          DraftReceiptLine(
+            itemId: seeded.item.id,
+            unitId: seeded.kiloId,
+            quantity: 1,
+            priceCents: 100,
+            itemName: 'Γάλα',
+            unitAbbreviation: 'κιλ',
+          ),
+        );
+      }
+      await tester.pumpAndSettle();
+      expect(addEnabled(tester), isFalse, reason: 'Καλάθι στο όριο');
+      expect(find.text(limitMessage), findsOneWidget);
+
+      notifier.removeDraftLine(0);
+      await tester.pumpAndSettle();
+      expect(addEnabled(tester), isTrue, reason: 'Μία θέση ελεύθερη');
+      expect(find.text(limitMessage), findsNothing);
       expect(tester.takeException(), isNull);
     });
   });

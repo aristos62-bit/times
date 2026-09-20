@@ -85,7 +85,9 @@ final unitsStreamProvider = StreamProvider<List<Unit>>(
 );
 
 /// LIVE αναζήτηση μονάδων για το Unit dropdown (Φάση 3 Βήμα 5). `.family`
-/// παραμετροποιημένο ανά [query]. In-memory filter πάνω στο
+/// παραμετροποιημένο ανά [query]. Match (κανονικοποιημένο, `contains`) στο
+/// ΟΝΟΜΑ Ή στη ΣΥΝΤΟΜΟΓΡΑΦΙΑ της μονάδας (Β5ε-3: π.χ. «λτ» → Λίτρο).
+/// In-memory filter πάνω στο
 /// `watchAll()` — ίδιο idiom με το `categorySearchProvider` (μικρή
 /// ήδη-φορτωμένη λίστα, DESIGN §3). Κενό query → `[]` (Stream.value, όχι
 /// Stream.empty — θα έμενε σε loading). Το show-all-στο-focus (Δ1, Β5β) ΔΕΝ
@@ -97,11 +99,14 @@ final unitSearchProvider = StreamProvider.family<List<Unit>, String>(
     if (normalized.isEmpty) return Stream.value(const []);
     return ref.watch(unitRepositoryProvider).watchAll().map(
           (units) => units
-              .where(
-                (u) => GreekTextNormalizer.normalize(u.name).contains(normalized),
-              )
-              .toList(),
-        );
+          .where(
+            (u) =>
+        GreekTextNormalizer.normalize(u.name).contains(normalized) ||
+            GreekTextNormalizer.normalize(u.abbreviation)
+                .contains(normalized),
+      )
+          .toList(),
+    );
   },
 );
 

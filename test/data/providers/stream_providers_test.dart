@@ -370,6 +370,28 @@ void main() {
       expect(toneRows.map((u) => u.name), contains('Κιλό'));
     });
 
+    test('match και στη συντομογραφία (Β5ε-3) · χωρίς διπλότυπα', () async {
+      final container = containerWithDb();
+      final repo = container.read(unitRepositoryProvider);
+      await repo.insert(name: 'Λίτρο', abbreviation: 'λτ');
+      await repo.insert(name: 'Κιλό', abbreviation: 'κιλ');
+      await repo.insert(name: 'Γραμμάριο', abbreviation: 'γρ');
+
+      // «ΛΤ» υπάρχει ΜΟΝΟ στη συντομογραφία του Λίτρο (όχι στο όνομα).
+      final abbr = await waitForValue<List<Unit>>(
+            (listen) => container.listen(unitSearchProvider('ΛΤ'), listen),
+            (v) => v.length == 1,
+      );
+      expect(abbr.map((u) => u.name), ['Λίτρο']);
+
+      // «γρ» ταιριάζει και στο όνομα ΚΑΙ στη συντομογραφία → 1 γραμμή.
+      final both = await waitForValue<List<Unit>>(
+            (listen) => container.listen(unitSearchProvider('γρ'), listen),
+            (v) => v.isNotEmpty,
+      );
+      expect(both.map((u) => u.name), ['Γραμμάριο']);
+    });
+
     test('live: νέα μονάδα εμφανίζεται στα αποτελέσματα (real-time)', () async {
       final container = containerWithDb();
       final resultsFuture = waitForValue<List<Unit>>(

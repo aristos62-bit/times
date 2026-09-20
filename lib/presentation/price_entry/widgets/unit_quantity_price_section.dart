@@ -27,6 +27,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/app_messages.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/providers/stream_providers.dart';
@@ -188,6 +189,12 @@ class _UnitQuantityPriceSectionState
 
     final allowsDecimal = _unit?.allowsDecimal ?? true;
     final theme = Theme.of(context);
+    // Β5ε-2: το καλάθι έφτασε το όριο; `select` → rebuild μόνο στη μετάβαση.
+    final atLimit = ref.watch(
+      receiptFormControllerProvider.select(
+            (s) => s.draftLines.length >= AppConstants.maxReceiptLines,
+      ),
+    );
 
     return Card(
       margin: EdgeInsets.zero,
@@ -204,6 +211,8 @@ class _UnitQuantityPriceSectionState
               labelOf: (unit) => unit.name,
               // Χωρίς «+»: οι μονάδες διαχειρίζονται από τις Ρυθμίσεις (Φάση 4/6).
               onSelected: _onUnitSelected,
+              // Β5ε-1: σβήσιμο/αλλαγή κειμένου → μονάδα null (Add ανενεργό).
+              onCleared: () => setState(() => _unit = null),
               showAllWhenEmpty: true,
               allOptionsProvider: () => unitsStreamProvider,
               initialValue: _unit,
@@ -240,10 +249,22 @@ class _UnitQuantityPriceSectionState
             ),
             const SizedBox(height: AppConstants.spacingM),
             FilledButton.icon(
-              onPressed: _canAdd ? _addLine : null,
+              onPressed: _canAdd && !atLimit ? _addLine : null,
               icon: const Icon(Icons.add),
               label: const Text(AppStrings.addReceiptLine),
             ),
+            if (atLimit)
+              Padding(
+                padding: const EdgeInsets.only(top: AppConstants.spacingS),
+                child: Text(
+                  AppMessages.receiptLinesLimitReached(
+                    AppConstants.maxReceiptLines,
+                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
