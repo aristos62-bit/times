@@ -12,10 +12,6 @@
 ///   * Όλες οι δημιουργίες (κατηγορία/υποκατηγορία) γίνονται σιωπηλά
 ///     (silent intermediate creates — §2.4 απόφαση): ΚΑΝΕΝΑ snackbar μέσα
 ///     στο dialog. Μόνο το τελικό Είδος «γυρίζει» πίσω με το result.
-///     Άκυρο όνομα ή διπλότυπο στο «+» (Βήμα 6ζ): ΚΑΜΙΑ δημιουργία και
-///     inline μήνυμα κάτω από το πεδίο του βήματος (`nameRequired`/
-///     `nameTooLong`/`nameExists`) — όχι snackbar. Σβήνει σε επιλογή ή σε
-///     επόμενη επιτυχημένη δημιουργία.
 ///   * Το feedback (SnackBar) γίνεται πάντα ΜΕΤΑ το pop από τον καλούντα
 ///     (ScaffoldMessenger caveat — αλλιώς το snackbar «κρύβεται» πίσω από
 ///     το dialog overlay). Το AppFeedback καλείται ΜΟΝΟ εκεί.
@@ -35,7 +31,6 @@ import '../../../core/constants/app_errors.dart';
 import '../../../core/constants/app_messages.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/errors/app_exceptions.dart';
-import '../../../core/logging/app_logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/providers/stream_providers.dart';
 import '../../../domain/validators/name_validator.dart';
@@ -88,10 +83,6 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
   /// Double-tap guard του «Προσθήκη» (§2.4).
   bool _isSaving = false;
 
-  /// Inline σφάλμα του «+» ανά βήμα (Βήμα 6ζ) — `null` = κανένα.
-  String? _categoryError;
-  String? _subCategoryError;
-
   @override
   void initState() {
     super.initState();
@@ -107,52 +98,23 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
   /// Βήμα 1: δημιουργία κατηγορίας από το «+» — ΣΙΩΠΗΛΗ (silent).
   /// Επιστρέφει την κατηγορία (ή null) στο field για να «κλείσει» το overlay
   /// (SearchableDropdownField.onCreate) + ενημερώνει τον τοπικό state.
-  /// Βήμα 6ζ: άκυρο όνομα (`NameValidator`, ΠΡΙΝ το DB) ή `null` από τον
-  /// controller (διπλότυπο, soft dup-check) → inline `_categoryError`.
   Future<Category?> _createCategory(String name) async {
-    final nameError = NameValidator.validate(name.trim());
-    if (nameError != null) {
-      AppLogger.info(LogTag.ui, 'Απόρριψη «+» κατηγορίας "$name": $nameError');
-      setState(() => _categoryError = nameError);
-      return null;
-    }
     final result =
-    await ref.read(itemSearchControllerProvider.notifier).createCategory(name);
-    if (!mounted) return result.category;
-    if (result.category == null) {
-      AppLogger.info(LogTag.ui, 'Απόρριψη «+» κατηγορίας "$name": διπλότυπο');
+        await ref.read(itemSearchControllerProvider.notifier).createCategory(name);
+    if (result.category != null && mounted) {
+      setState(() => _category = result.category);
     }
-    setState(() {
-      _categoryError = result.category == null ? AppErrors.nameExists : null;
-      if (result.category != null) _category = result.category;
-    });
     return result.category;
   }
 
-  /// Βήμα 2: δημιουργία υποκατηγορίας από το «+» — ΣΙΩΠΗΛΗ. Βήμα 6ζ: ίδιο
-  /// inline σφάλμα (`_subCategoryError`) με το βήμα 1.
+  /// Βήμα 2: δημιουργία υποκατηγορίας από το «+» — ΣΙΩΠΗΛΗ.
   Future<SubCategory?> _createSubCategory(String name) async {
-    final nameError = NameValidator.validate(name.trim());
-    if (nameError != null) {
-      AppLogger.info(
-        LogTag.ui,
-        'Απόρριψη «+» υποκατηγορίας "$name": $nameError',
-      );
-      setState(() => _subCategoryError = nameError);
-      return null;
-    }
     final result = await ref
         .read(itemSearchControllerProvider.notifier)
         .createSubCategory(categoryId: _category!.id, name: name);
-    if (!mounted) return result.subCategory;
-    if (result.subCategory == null) {
-      AppLogger.info(LogTag.ui, 'Απόρριψη «+» υποκατηγορίας "$name": διπλότυπο');
+    if (result.subCategory != null && mounted) {
+      setState(() => _subCategory = result.subCategory);
     }
-    setState(() {
-      _subCategoryError =
-      result.subCategory == null ? AppErrors.nameExists : null;
-      if (result.subCategory != null) _subCategory = result.subCategory;
-    });
     return result.subCategory;
   }
 
@@ -197,10 +159,7 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
       labelOf: (category) => category.name,
       createLabel: (query) => '${AppStrings.addNewCategory} "$query"',
       onCreate: _createCategory,
-      onSelected: (category) => setState(() {
-        _category = category;
-        _categoryError = null;
-      }),
+      onSelected: (category) => setState(() => _category = category),
       prefixIcon: const Icon(Icons.category_outlined),
       resultLeadingIcon: const Icon(Icons.category_outlined),
     );
@@ -218,10 +177,7 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
       labelOf: (sub) => sub.name,
       createLabel: (query) => '${AppStrings.addNewSubCategory} "$query"',
       onCreate: _createSubCategory,
-      onSelected: (sub) => setState(() {
-        _subCategory = sub;
-        _subCategoryError = null;
-      }),
+      onSelected: (sub) => setState(() => _subCategory = sub),
       prefixIcon: const Icon(Icons.folder_outlined),
       resultLeadingIcon: const Icon(Icons.folder_open_outlined),
     );
@@ -246,25 +202,6 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
     );
   }
 
-  /// Inline μήνυμα σφάλματος κάτω από ένα βήμα (Βήμα 6ζ) — όχι snackbar
-  /// (ScaffoldMessenger caveat). Wrap σε πολλές γραμμές (§1.4), χρώμα από το
-  /// theme (dark mode), `liveRegion` για screen readers (§1.6).
-  Widget _stepError(String message) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: AppConstants.spacingS),
-      child: Semantics(
-        liveRegion: true,
-        child: Text(
-          message,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.error,
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -278,11 +215,9 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildCategoryStep(),
-              if (_categoryError case final message?) _stepError(message),
               if (_category != null) ...[
                 const SizedBox(height: AppConstants.spacingL),
                 _buildSubCategoryStep(),
-                if (_subCategoryError case final message?) _stepError(message),
               ],
               if (_subCategory != null) ...[
                 const SizedBox(height: AppConstants.spacingL),
