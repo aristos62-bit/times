@@ -104,7 +104,6 @@ void main() {
       int unitId = 2,
       double quantity = 1.5,
       int priceCents = 250,
-      bool unitAllowsDecimal = true,
     }) =>
         DraftReceiptLine(
           itemId: itemId,
@@ -113,7 +112,6 @@ void main() {
           priceCents: priceCents,
           itemName: 'Γάλα',
           unitAbbreviation: 'κιλ',
-          unitAllowsDecimal: unitAllowsDecimal,
         );
 
     test('equality: ίδιες τιμές → equal (+ hashCode consistency)', () {
@@ -126,20 +124,6 @@ void main() {
       expect(line(), isNot(line(unitId: 9)));
       expect(line(), isNot(line(quantity: 9.0)));
       expect(line(), isNot(line(priceCents: 999)));
-      expect(line(), isNot(line(unitAllowsDecimal: false)));
-    });
-
-    test('unitAllowsDecimal: default true (υπάρχοντες καλούντες άθικτοι)', () {
-      const legacy = DraftReceiptLine(
-        itemId: 1,
-        unitId: 2,
-        quantity: 1.5,
-        priceCents: 250,
-        itemName: 'Γάλα',
-        unitAbbreviation: 'κιλ',
-      );
-      expect(legacy.unitAllowsDecimal, isTrue);
-      expect(legacy, line());
     });
   });
 

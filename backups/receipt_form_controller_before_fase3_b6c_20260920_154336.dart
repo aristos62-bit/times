@@ -16,8 +16,6 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/utils/greek_text_normalizer.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/providers/database_providers.dart';
-import '../../../domain/validators/name_validator.dart';
-import '../../../domain/validators/receipt_validator.dart';
 import '../state/receipt_form_state.dart';
 
 /// SPoT provider της φόρμας. Όχι autoDispose (§2.2:221): το IndexedStack
@@ -54,32 +52,17 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
 
   /// Προσθέτει γραμμή στο «καλάθι» (§2.2 · Βήμα 5γ). Καμία εγγραφή στη βάση —
   /// το insert γίνεται ατομικά στο save (Βήμα 5δ). Το ίδιο είδος σε πολλές
-  /// γραμμές ΕΠΙΤΡΕΠΕΤΑΙ — δεν γίνεται merge (§2.2:237). Η πρωτογενής
-  /// επικύρωση (unit/quantity/price) γίνεται στο section widget (κουμπί
-  /// ανενεργό όταν άκυρα)· εδώ φυλάσσεται μόνο έγκυρη γραμμή. Safety-net
-  /// (Βήμα 6γ): μέσω `ReceiptValidator.validateLine` η άκυρη γραμμή ΑΓΝΟΕΙΤΑΙ
-  /// + log `[UI][ERROR]` με τον λόγο (χωρίς exception). Όριο
-  /// `maxReceiptLines` (Βήμα 5ε-2): στο όριο η γραμμή ΑΓΝΟΕΙΤΑΙ (safety-net —
-  /// το section έχει ήδη ανενεργό κουμπί)· ο καλών δεν ενημερώνεται με
-  /// exception.
+  /// γραμμές ΕΠΙΤΡΕΠΕΤΑΙ — δεν γίνεται merge (§2.2:237). Η επικύρωση τιμών
+  /// (unit/quantity/price) ανήκει στο section widget (κουμπί ανενεργό όταν
+  /// άκυρα)· εδώ φυλάσσεται μόνο έγκυρη γραμμή. Όριο `maxReceiptLines`
+  /// (Βήμα 5ε-2): στο όριο η γραμμή ΑΓΝΟΕΙΤΑΙ (safety-net — το section έχει
+  /// ήδη ανενεργό κουμπί)· ο καλών δεν ενημερώνεται με exception.
   void addDraftLine(DraftReceiptLine line) {
     if (state.draftLines.length >= AppConstants.maxReceiptLines) {
       AppLogger.info(
         LogTag.ui,
         'Όριο γραμμών (${AppConstants.maxReceiptLines}) — αγνοήθηκε: '
             '${line.itemName}',
-      );
-      return;
-    }
-    final error = ReceiptValidator.validateLine(
-      quantity: line.quantity,
-      priceCents: line.priceCents,
-      allowsDecimal: line.unitAllowsDecimal,
-    );
-    if (error != null) {
-      AppLogger.error(
-        LogTag.ui,
-        'Άκυρη γραμμή — αγνοήθηκε: ${line.itemName} | $error',
       );
       return;
     }
@@ -118,13 +101,10 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
   ///     μέσω AppFeedback, pattern `createSupplier`· απρόβλεπτο → γενικό
   ///     `AppErrors.saveFailed`). Τα απρόβλεπτα καταγράφονται εδώ (tag DB).
   ///
-  /// Defensive guards (χωρίς DB touch, ΠΡΙΝ το `isSaving`): validation μέσω
-  /// `ReceiptValidator` (Βήμα 6γ) — προμηθευτής null, κενό/υπερβολικό
-  /// «καλάθι» Ή άκυρη γραμμή → log `[UI][ERROR]` με τον λόγο +
+  /// Defensive guards (χωρίς DB touch): προμηθευτής null Ή κενό «καλάθι» →
   /// `SaveReceiptException` (το UI τα αποκλείει με disabled-OR, §2.2 — εδώ
-  /// safety-net για programmatic κλήσεις· το ειδικό μήνυμα φαίνεται inline
-  /// στη φόρμα, όχι μέσω exception). Επανεισδοχή ενώ `isSaving` → no-op
-  /// (double-tap guard, §2.2:235 — το κουμπί είναι ανενεργό όσο σώζει).
+  /// safety-net για programmatic κλήσεις). Επανεισδοχή ενώ `isSaving` →
+  /// no-op (double-tap guard, §2.2:235 — το κουμπί είναι ανενεργό όσο σώζει).
   /// `ref.mounted` μετά το await (pattern `_search` Βήματος 4): disposed →
   /// παράλειψη ενημέρωσης state.
   Future<void> saveReceipt() async {
@@ -132,15 +112,7 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
     final supplier = state.supplier;
     final lines = state.draftLines;
     final date = state.date;
-    final error = ReceiptValidator.validateReceipt(
-      hasSupplier: supplier != null,
-      lineCount: lines.length,
-    ) ??
-        _firstLineError(lines);
-    if (supplier == null || error != null) {
-      // supplier == null ⟹ error != null (validateReceipt)· ο έλεγχος
-      // υπάρχει και για type promotion του `supplier` (χωρίς `!`).
-      AppLogger.error(LogTag.ui, 'Απόρριψη αποθήκευσης απόδειξης | $error');
+    if (supplier == null || lines.isEmpty) {
       throw const SaveReceiptException();
     }
 
@@ -179,20 +151,6 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
     }
   }
 
-  /// Πρώτο σφάλμα γραμμής του «καλαθιού» (safety-net Βήμα 6γ) ως
-  /// «είδος: μήνυμα», ή `null` όταν όλες οι γραμμές είναι έγκυρες.
-  String? _firstLineError(List<DraftReceiptLine> lines) {
-    for (final line in lines) {
-      final error = ReceiptValidator.validateLine(
-        quantity: line.quantity,
-        priceCents: line.priceCents,
-        allowsDecimal: line.unitAllowsDecimal,
-      );
-      if (error != null) return '${line.itemName}: $error';
-    }
-    return null;
-  }
-
   /// Καθαρισμός φόρμας μετά από επιτυχημένο save (§2.2:212): σημερινή
   /// ημερομηνία, κανένας προμηθευτής, κενό «καλάθι».
   void resetForm() {
@@ -203,10 +161,8 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
   /// Δημιουργεί προμηθευτή από την inline επιλογή «+» (§2.4). Επιστρέφει
   /// record `{ supplier, created }`:
   ///   * `supplier` = ο επιλεγμένος στο state `Supplier` (νέος ή ήδη-υπάρχων)
-  ///     ή `null` αν το [name] είναι κενό/whitespace ή πάνω από
-  ///     `maxItemNameLength` (`NameValidator`, §2.2 — χωρίς αποτέλεσμα και
-  ///     χωρίς DB access) ή αν το insert/NULL επέστρεψε μη-αναμενόμενο null
-  ///     read-back.
+  ///     ή `null` αν το [name] είναι κενό/whitespace (κενό → χωρίς αποτέλεσμα)
+  ///     ή αν το insert/NULL επέστρεψε μη-αναμενόμενο null read-back.
   ///   * `created` = true όταν ΜΠΗΚΕ νέα γραμμή στη βάση (καθαρό γεγονός DB)·
   ///     false σε κενό/υπάρχον. Επιτρέπει στο widget να διακρίνει τα δύο
   ///     μηνύματα ροής (AppMessages.supplierAdded vs supplierExists).
@@ -218,9 +174,7 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
   /// που είναι υπεύθυνο για το feedback (AppFeedback).
   Future<({Supplier? supplier, bool created})> createSupplier(String name) async {
     final trimmed = name.trim();
-    if (NameValidator.validate(trimmed) != null) {
-      return (supplier: null, created: false);
-    }
+    if (trimmed.isEmpty) return (supplier: null, created: false);
 
     final repo = ref.read(supplierRepositoryProvider);
     final existing = await repo.getByNormalizedName(

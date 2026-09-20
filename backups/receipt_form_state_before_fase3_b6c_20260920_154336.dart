@@ -26,7 +26,6 @@ class DraftReceiptLine {
     required this.priceCents,
     required this.itemName,
     required this.unitAbbreviation,
-    this.unitAllowsDecimal = true,
   });
 
   /// Id του είδους (FK → Items).
@@ -50,34 +49,26 @@ class DraftReceiptLine {
   /// Snapshot συντομογραφίας μονάδας για εμφάνιση (π.χ. «κιλ»).
   final String unitAbbreviation;
 
-  /// Snapshot του `Unit.allowsDecimal` (Βήμα 6γ) — τροφοδοτεί τον
-  /// `ReceiptValidator` (safety-net §2.2:218: ακέραια ποσότητα όταν false).
-  /// Προαιρετικό: default `true` = καμία απαίτηση ακεραιότητας (υπάρχοντες
-  /// καλούντες άθικτοι)· το section περνά την πραγματική τιμή στο Βήμα 6δ.
-  final bool unitAllowsDecimal;
-
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          other is DraftReceiptLine &&
-              other.itemId == itemId &&
-              other.unitId == unitId &&
-              other.quantity == quantity &&
-              other.priceCents == priceCents &&
-              other.itemName == itemName &&
-              other.unitAbbreviation == unitAbbreviation &&
-              other.unitAllowsDecimal == unitAllowsDecimal;
+      other is DraftReceiptLine &&
+          other.itemId == itemId &&
+          other.unitId == unitId &&
+          other.quantity == quantity &&
+          other.priceCents == priceCents &&
+          other.itemName == itemName &&
+          other.unitAbbreviation == unitAbbreviation;
 
   @override
   int get hashCode => Object.hash(
-    itemId,
-    unitId,
-    quantity,
-    priceCents,
-    itemName,
-    unitAbbreviation,
-    unitAllowsDecimal,
-  );
+        itemId,
+        unitId,
+        quantity,
+        priceCents,
+        itemName,
+        unitAbbreviation,
+      );
 }
 
 /// Κατάσταση της φόρμας απόδειξης — ημερομηνία + προμηθευτής + draft γραμμές.

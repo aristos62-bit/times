@@ -78,8 +78,6 @@ abstract final class AppConstants {
   static const int fieldErrorMaxLines = 3;
 
   // ─── Numeric / Precision ───────────────────────────────────────────────────
-
-  // ─── Numeric / Precision ───────────────────────────────────────────────────
   // Πόσα δεκαδικά δείχνει το UI όταν εμφανίζει τιμή (priceCents / 100).
   // ΜΟΝΟ formatting — η αποθήκευση είναι πάντα ακέραιος σε λεπτά (cents).
   static const int priceDecimalDigits = 2;
