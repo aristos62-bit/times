@@ -217,10 +217,7 @@ ITEM_SELECTED ──▶ εμφάνιση Unit dropdown (προεπιλογή: It
 - Τουλάχιστον 1 γραμμή, όχι πάνω από `maxReceiptLines`.
 - `price > validationMinPrice`, `quantity > validationMinQuantity`.
 - Αν `Unit.allowsDecimal == false` → `quantity` πρέπει να είναι ακέραιος (απόρριψη 2.5 τεμάχια).
-- Όνομα νέας Κατηγορίας/Υποκατηγορίας/Είδους: όχι κενό, ≤ `maxItemNameLength`, **case-insensitive έλεγχος διπλότυπου** πριν την εισαγωγή (αποφυγή "Γάλα" και "γαλα" ως δύο διαφορετικές εγγραφές) — `domain/validators/name_validator.dart`.
-- **Υλοποίηση (Φάση 3, Βήμα 6)**: ο `ReceiptValidator` είναι καθαρός (static, χωρίς UI/DB/logging, εξαρτάται μόνο από `core/constants`, δουλεύει με primitives) και όπως ο `NameValidator` επιστρέφει `String?` — `null` = ΟΚ, αλλιώς SPoT μήνυμα (`AppErrors` ή `AppMessages.receiptLinesLimitReached`)· ΚΑΝΕΝΑ exception (δεν ορίστηκε `ValidationException`). API: `validateUnit` · `validatePriceCents` (σε ΛΕΠΤΑ, §3) · `validateQuantity(q, allowsDecimal:)` · `validateLine` (ποσότητα → τιμή) · `validateLineCount` · `validateReceipt(hasSupplier, lineCount)` (γραμμές → προμηθευτής) · `isIncompleteNumber(text)` (τελικός διαχωριστής → κανένα σφάλμα «υπό πληκτρολόγηση»). Δεν υπολογίζει `lineTotalCents` — SPoT του `ReceiptLineDao` (§3).
-- **Ένας κανόνας, τρεις καταναλωτές**: (1) `unit_quantity_price_section` — inline σφάλμα (`errorText` στα `CurrencyTextField`/`QuantityTextField`, `AppConstants.fieldErrorMaxLines`) ΜΟΝΟ σε μη κενή, ολοκληρωμένη είσοδο + hint μονάδας· (2) `save_receipt_button` — `canSave` από `validateReceipt` + hint `supplierRequired` όταν υπάρχουν γραμμές αλλά όχι προμηθευτής· (3) `receipt_form_controller` — safety-net: το `addDraftLine` αγνοεί άκυρη γραμμή και το `saveReceipt` απορρίπτει ΠΡΙΝ το `isSaving`, και στις δύο περιπτώσεις με log `[UI][ERROR]` και (στο save) `SaveReceiptException` — ο λόγος μένει στο log, το ειδικό μήνυμα φαίνεται inline. Το `DraftReceiptLine.unitAllowsDecimal` (snapshot του `Unit.allowsDecimal`, default `true`) τροφοδοτεί τον κανόνα ακεραιότητας.
-- **Ονόματα στο «+»**: προμηθευτής (`receipt_header_section`) → `AppFeedback.showError(nameRequired/nameTooLong)` πριν το DB· Κατηγορία/Υποκατηγορία στο `new_item_flow_dialog` → inline μήνυμα κάτω από το πεδίο (`nameRequired`/`nameTooLong`/`nameExists`) — ΟΧΙ snackbar μέσα στο dialog (ScaffoldMessenger caveat, §2.4).
+- Όνομα νέας Κατηγορίας/Υποκατηγορίας/Είδους: όχι κενό, ≤ `maxItemNameLength`, **case-insensitive έλεγχος διπλότυπου** πριν την εισαγωγή (αποφυγή "Γάλα" και "γαλα" ως δύο διαφορετικές εγγραφές).
 
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
 - **Double-tap στο "+" προμηθευτή/είδους**: τοπικός busy-flag στο widget
@@ -283,8 +280,8 @@ presentation/settings/
 | `SearchableDropdownField` | Γενικό dropdown με αναζήτηση + slot για "+" νέο | Προμηθευτής, Κατηγορία, Υποκατηγορία, Unit |
 | `ConfirmDialog` | Γενικό επιβεβαιωτικό (τίτλος/μήνυμα/actions από παραμέτρους, SPoT strings) | Διαγραφή, Restore, έξοδος με unsaved data |
 | `AsyncValueView<T>` | Wrapper πάνω στο `AsyncValue.when` με ενιαία loading/error εμφάνιση | Όλες οι οθόνες με δεδομένα |
-| `CurrencyTextField` | Input formatter με `priceDecimalDigits`, εμφανίζει €, μετατρέπει σε cents στο submit · προαιρετικό `errorText` (Βήμα 6δ) | Τιμή στη Φάση 3 |
-| `QuantityTextField` | Input formatter με `quantityDecimalDigits` + δέχεται flag `allowsDecimal` · προαιρετικό `errorText` (Βήμα 6δ) | Ποσότητα στη Φάση 3 |
+| `CurrencyTextField` | Input formatter με `priceDecimalDigits`, εμφανίζει €, μετατρέπει σε cents στο submit | Τιμή στη Φάση 3 |
+| `QuantityTextField` | Input formatter με `quantityDecimalDigits` + δέχεται flag `allowsDecimal` | Ποσότητα στη Φάση 3 |
 | `AppFeedback` | SPoT snackbar/toast wrapper (§2.0.6) | Παντού |
 
 ### 2.4.1 `SearchableDropdownField` — υλοποίηση (Φάση 3, Βήμα 3)
@@ -332,15 +329,6 @@ presentation/settings/
   χρήστης δεν έχει επιλέξει) · `onCleared` (fire-once όταν επιλογή/προεπιλογή
   παύει να ισχύει από επεξεργασία κειμένου· ο καλών μηδενίζει το δικό του
   state). Χρήση: Unit dropdown στο `unit_quantity_price_section.dart`.
-- **Κείμενο πεδίου μετά την επιλογή (Βήμα 6ε)**: το `RawAutocomplete` γράφει
-  στο πεδίο το `displayStringForOption(επιλογή)` — default `toString()` της
-  γραμμής («Instance of '_CreateEntry<…>'»), που έμενε στο πεδίο όταν το
-  `onCreate` επέστρεφε `null` (άκυρο όνομα / σφάλμα). Δίνεται ρητό
-  `displayStringForOption`: αποτέλεσμα → label, «+» → το query του χρήστη. Οι
-  ιδιωτικές κλάσεις `_Entry` μεταφέρθηκαν σε `part` αρχείο
-  `searchable_dropdown_entry.dart` ώστε το κύριο αρχείο να μένει <500 γρ.
-
----
 
 ---
 
@@ -455,4 +443,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε στη **Φάση 3, Βήμα 7 — Placeholder λίστα αποδείξεων** (`recent_receipts_list.dart`, DESIGN §4 Φάση 3 Βήμα 7): read-only `ListView` με τις τελευταίες αποδείξεις (αριθμός, ημερομηνία, προμηθευτής, ένδειξη αριθμού γραμμών/συνόλου). Το Βήμα 6 (Validation, υποβήματα 6α–6ζ) ολοκληρώθηκε: `ReceiptValidator` (SPoT, §2.2) + inline σφάλματα τιμής/ποσότητας/μονάδας + hint προμηθευτή + safety-net στον controller + έλεγχος ονόματος στο «+» (προμηθευτής, κατηγορία, υποκατηγορία) + fix `displayStringForOption` στο `SearchableDropdownField` · tests 677/677, analyze clean. Για το Βήμα 7: το σύνολο γραμμής/απόδειξης θα χρειαστεί ΚΟΙΝΟ υπολογισμό (`lineTotalCents` = SPoT του `ReceiptLineDao`, §3) — εκεί να αντιμετωπιστεί και η περίπτωση `(priceCents * quantity).round() == 0` (π.χ. 0,01 € × 0,004). Ανοιχτά (χωρίς προγραμματισμένο Βήμα): επιβεβαίωση εξόδου με μη αποθηκευμένες γραμμές (§2.2 «Ημιτελής καταχώρηση» — `ConfirmDialog` + `PopScope`, προτεινόμενο «Βήμα 7β» πριν το Βήμα 8) · housekeeping (split των test αρχείων >500 γρ.: `receipt_form_controller_test`, `searchable_dropdown_field_test`· ενοποίηση του διπλού κεφαλαίου 14) · προαιρετικά `onChanged` στο `SearchableDropdownField` (σβήσιμο inline μηνυμάτων κατά την πληκτρολόγηση). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.
+Είμαστε στη **Φάση 3, Βήμα 6 — Validation μέσω SPoT validators** (`domain/validators/receipt_validator.dart`, §2.2 «Validation πριν την αποθήκευση»): ≥1 γραμμή και ≤ `maxReceiptLines`, `price > validationMinPrice`, `quantity > validationMinQuantity`, ακέραιος έλεγχος όταν `Unit.allowsDecimal == false` (DESIGN §4 Φάση 3 Βήμα 6). Το Βήμα 5 (Unit dropdown, ποσότητα, τιμή, save flow — υποβήματα 5α–5ε) ολοκληρώθηκε: `draftLines` + `saveReceipt` (atomic transaction) + `save_receipt_button` ++ όριο `maxReceiptLines` στο UI/controller + αναζήτηση μονάδας σε όνομα ή συντομογραφία · tests ‹N›/‹N›, analyze clean. Ανοιχτό (χωρίς προγραμματισμένο Βήμα): επιβεβαίωση εξόδου με μη αποθηκευμένες γραμμές (§2.2 «Ημιτελής καταχώρηση» — `ConfirmDialog` + `PopScope`). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.

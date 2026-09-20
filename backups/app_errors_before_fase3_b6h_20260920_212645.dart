@@ -6,12 +6,8 @@
 /// στα UI. Το logging των σφαλμάτων γίνεται στο σημείο αποτυχίας
 /// (tag DB/backup/UI, debug_config), όχι εδώ — καθαρά δεδομένα.
 ///
-/// NOTE(Φάση3-Βήμα6): τα validation messages (§2.2 «Validation πριν την
-/// αποθήκευση») προστέθηκαν σε δύο φάσεις: `nameRequired`/`nameTooLong` στο
-/// Βήμα 4 (NameValidator) και τιμή/ποσότητα/μονάδα/προμηθευτής/γραμμές/
-/// `nameExists` στο Βήμα 6α (ReceiptValidator + inline UI). Καταναλωτές:
-/// `domain/validators/*`, `unit_quantity_price_section`, `save_receipt_button`,
-/// `new_item_flow_dialog`, `receipt_header_section`.
+/// NOTE(Φάση0-Βήμα4): τα validation messages (§2.2:214-218) προστέθηκαν στη
+/// Φάση 3 Βήμα 4 μαζί με τον NameValidator — μοναδικός καταναλωτής τους.
 library;
 
 /// Abstract SPoT class — μόνο σταθερές, δεν instantiate (pattern AppConstants).
@@ -26,9 +22,8 @@ abstract final class AppErrors {
   ///
   /// NOTE(Φάση2-Βήμα1): το `loadDataFailed` καλύπτεται προσωρινά και για
   /// write-time FK/UNIQUE σφάλματα καταλόγου (χωρίς δικό τους μήνυμα ακόμα).
-  /// Το validation (Φάση 3 Βήμα 6) κάλυψε ΜΟΝΟ τα σφάλματα εισόδου (ονόματα,
-  /// τιμή, ποσότητα) πριν το DB· τα write-time conflicts (FK/UNIQUE) περνούν
-  /// στη Φάση 4 (Settings CRUD), όπου γίνονται πραγματικό σενάριο.
+  /// Θα αντικατασταθεί από ειδικό validation/conflict μήνυμα στη Φάση 3/4,
+  /// μαζί με τους validators — ίδιο μοτίβο με το NOTE στο app_exceptions.dart.
   static const String loadDataFailed = 'Σφάλμα κατά τη φόρτωση δεδομένων';
 
   // ─── Backup / Restore (§2.3) ────────────────────────────────────────────

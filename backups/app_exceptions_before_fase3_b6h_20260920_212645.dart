@@ -14,11 +14,9 @@
 /// AppErrors — raw string αδύνατον (σε αντίθεση με Freezed-generated
 /// κλάσεις που θα το επέτρεπαν ως παράμετρο).
 ///
-/// NOTE(Φάση3-Βήμα6): ΔΕΝ ορίστηκε `ValidationException` — οι validators
-/// (`NameValidator`, `ReceiptValidator`) επιστρέφουν `String?` (μήνυμα
-/// AppErrors ή null), απόφαση Βήματος 4 που επιβεβαιώθηκε στο Βήμα 6. Το
-/// safety-net του save καταλήγει σε `SaveReceiptException` (ο λόγος στο
-/// log). Βλ. αντίστοιχο NOTE στο app_errors.dart.
+/// NOTE(Φάση0-Βήμα4): validation exceptions (π.χ. ValidationException,
+/// μηνύματα §2.2:214-218) ορίζονται στη Φάση 3 μαζί με τους validators —
+/// βλ. αντίστοιχο NOTE στο app_errors.dart.
 library;
 
 import '../constants/app_errors.dart';
