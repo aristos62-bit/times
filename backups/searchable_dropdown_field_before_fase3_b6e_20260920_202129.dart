@@ -22,8 +22,7 @@
 ///     ΕΛΕΓΧΟΜΕΝΗ αλλαγή τιμής του controller (`_refreshOptions`, append/restore
 ///     κενού) ώστε ο RawAutocomplete να ξανατρέξει τον builder και να δείξει
 ///     τις φρέσκες γραμμές.
-///   * Εσωτερικός sealed wrapper `_Entry<T>` (part αρχείο
-///     `searchable_dropdown_entry.dart`): result rows + «+» row.
+///   * Εσωτερικός sealed wrapper `_Entry<T>`: result rows + «+» row.
 ///   * «+» (δημιουργία) εμφανίζεται ΠΑΝΤΑ στο τέλος της λίστας όταν
 ///     `query.isNotEmpty` ΚΑΙ έχει οριστεί `createLabel` — ορατό ακόμα και
 ///     με 0 αποτελέσματα (wrapper κρατά τη λίστα μη-κενή). Busy-flag του «+»
@@ -50,8 +49,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/debouncer.dart';
-
-part 'searchable_dropdown_entry.dart';
 
 /// Generic autocomplete field με live search + inline «+» δημιουργία.
 ///
@@ -148,6 +145,23 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
   @override
   ConsumerState<SearchableDropdownField<T>> createState() =>
       _SearchableDropdownFieldState<T>();
+}
+
+/// Οι «γραμμές» του overlay. Sealed: αποτέλεσμα ή «+» (create). Κρατά τη
+/// λίστα του `RawAutocomplete` πάντα μη-κενή όταν υπάρχει query, ώστε το
+/// «+» να είναι ορατό ΑΚΟΜΑ με 0 αποτελέσματα (§2.4).
+sealed class _Entry<T> {
+  const _Entry();
+}
+
+final class _ResultEntry<T> extends _Entry<T> {
+  const _ResultEntry(this.value);
+  final T value;
+}
+
+final class _CreateEntry<T> extends _Entry<T> {
+  const _CreateEntry(this.query);
+  final String query;
 }
 
 class _SearchableDropdownFieldState<T>
@@ -404,14 +418,6 @@ class _SearchableDropdownFieldState<T>
       textEditingController: _controller,
       focusNode: _focusNode,
       optionsBuilder: _optionsBuilder,
-      // Κείμενο πεδίου ΤΗ ΣΤΙΓΜΗ της επιλογής: αποτέλεσμα → label, «+» → το
-      // query του χρήστη. Αλλιώς το RawAutocomplete γράφει το toString() της
-      // γραμμής («Instance of '_CreateEntry<...>'») και το πεδίο το κρατά
-      // όταν το onCreate επιστρέψει null (άκυρο όνομα / σφάλμα DB).
-      displayStringForOption: (entry) => switch (entry) {
-        _ResultEntry<T>(value: final value) => widget.labelOf(value),
-        _CreateEntry<T>(query: final query) => query,
-      },
       onSelected: _handleSelected,
       fieldViewBuilder:
           (context, textEditingController, focusNode, onFieldSubmitted) {
