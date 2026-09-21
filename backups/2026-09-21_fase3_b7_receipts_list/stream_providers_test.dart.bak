@@ -26,7 +26,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_constants.dart';
 import 'package:times/data/local/app_database.dart';
-import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/providers/stream_providers.dart';
 
@@ -427,75 +426,6 @@ void main() {
         (v) => v.length == 2,
       );
       expect(rows.first.id, later);
-    });
-  });
-
-  group('recentReceiptsStreamProvider (Φάση 3, Βήμα 7)', () {
-    test('επιστρέφει σύνοψη: γραμμές + σύνολο + supplier από join', () async {
-      final container = containerWithDb();
-      final chain = await seedReceiptChain(container);
-      final receiptId = await container
-          .read(receiptRepositoryProvider)
-          .insertReceiptWithLines(
-            date: DateTime(2026, 1, 1),
-            supplierId: chain.supplierId,
-            lines: [
-              (itemId: chain.itemId,
-                  unitId: chain.unitId,
-                  quantity: 2,
-                  priceCents: 199),
-              (itemId: chain.itemId,
-                  unitId: chain.unitId,
-                  quantity: 1,
-                  priceCents: 50),
-            ],
-          );
-
-      final rows = await waitForValue<List<ReceiptSummary>>(
-        (listen) => container.listen(recentReceiptsStreamProvider, listen),
-        (v) => v.isNotEmpty,
-      );
-      expect(rows.first.id, receiptId);
-      expect(rows.first.supplierName, 'Μάρκος');
-      expect(rows.first.lineCount, 2);
-      expect(rows.first.totalCents, 199 * 2 + 50);
-    });
-
-    test('κενή βάση → []', () async {
-      final container = containerWithDb();
-
-      final rows = await waitForValue<List<ReceiptSummary>>(
-        (listen) => container.listen(recentReceiptsStreamProvider, listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('live: νέα απόδειξη εμφανίζεται αυτόματα (auto-refresh §2.2:212)',
-        () async {
-      final container = containerWithDb();
-      final chain = await seedReceiptChain(container);
-      final resultsFuture = waitForValue<List<ReceiptSummary>>(
-        (listen) => container.listen(recentReceiptsStreamProvider, listen),
-        (v) => v.any((s) => s.lineCount == 1),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      await container
-          .read(receiptRepositoryProvider)
-          .insertReceiptWithLines(
-            date: DateTime(2026, 1, 1),
-            supplierId: chain.supplierId,
-            lines: [
-              (itemId: chain.itemId,
-                  unitId: chain.unitId,
-                  quantity: 1,
-                  priceCents: 100),
-            ],
-          );
-
-      final rows = await resultsFuture;
-      expect(rows.single.lineCount, 1);
-      expect(rows.single.totalCents, 100);
     });
   });
 

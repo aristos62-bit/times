@@ -185,7 +185,7 @@ presentation/price_entry/
     ├── unit_quantity_price_section.dart
     ├── draft_lines_list.dart          -- οι γραμμές που έχουν προστεθεί στο "καλάθι" της τρέχουσας απόδειξης
     ├── save_receipt_button.dart       -- «Αποθήκευση Απόδειξης» (disabled-OR: κενό καλάθι ∨ χωρίς προμηθευτή ∨ isSaving) + feedback
-    └── recent_receipts_list.dart      -- read-only λίστα τελευταίων αποδείξεων: #, ημερομηνία, προμηθευτής, #γραμμές, σύνολο € · auto-refresh μέσω stream (Φάση 3 Βήμα 7)
+    └── recent_receipts_list.dart      -- placeholder λίστα, Φάση 3 βήμα 7
 ```
 
 **State machine εισαγωγής γραμμής (item_search_controller)**
@@ -212,13 +212,6 @@ ITEM_SELECTED ──▶ εμφάνιση Unit dropdown (προεπιλογή: It
 2. Πατώντας "Αποθήκευση Απόδειξης": validation (§ παρακάτω) → `receipt_form_controller` καλεί repository σε **μία transaction**: insert `Receipt` + όλες οι `ReceiptLine` μαζί (atomicity — είτε όλα είτε τίποτα).
 3. Επιτυχία → `AppFeedback.showSuccess` + καθαρισμός φόρμας + refresh του `recent_receipts_list` (αυτόματο, μέσω stream).
 4. Αποτυχία (π.χ. σφάλμα βάσης) → `AppFeedback.showError`, τα draft δεδομένα **παραμένουν** στη φόρμα (δεν χάνει ό,τι έγραψε ο χρήστης).
-
-**Λίστα πρόσφατων αποδείξεων (read-only, κάτω από το save — Φάση 3 Βήμα 7)**
-- Δεδομένα: `ReceiptSummary` projection (record `{id, date, supplierName, lineCount, lineTotalCentsSum}`) από `ReceiptDao.watchRecentSummaries` — ένα watch query (`customSelect` + `readsFrom`) πάνω σε **stored** `lineTotalCents` (SPoT §3). Το `(priceCents * quantity).round() == 0` (π.χ. 0,01 € × 0,004) είναι **έγκυρη** γραμμή με σύνολο **0,00 €** — δεν απορρίπτεται.
-- Ενημέρωση: `recentReceiptsStreamProvider` (StreamProvider, `autoDispose: false`, όριο `AppConstants.recentReceiptsLimit` = 20). Επειδή η λίστα παρακολουθεί το stream, **ανανεώνεται αυτόματα μετά από κάθε save** (βήμα 3 παραπάνω).
-- Εμφάνιση: `recent_receipts_list.dart` — `AsyncValue.when`: loading (spinner), error (`AppErrors.loadDataFailed` + «Επανάληψη» → `ref.invalidate`), empty (`recentReceiptsEmpty`), data (Card + ListTile ανά απόδειξη: subtitle `προμηθευτής · ημερομηνία · #γραμμές`, trailing `formatCents` €). Responsive 3 μεγέθη + dark/light.
-- SPoT κείμενα: `AppStrings.recentReceiptsTitle` / `recentReceiptsEmpty` · `AppMessages.receiptNumber(id)` / `receiptLinesLabel(count)`.
-- **Συνέπεια (Α1)**: η λίστα είναι **πάντα ορατή** στην PriceEntry → με το `IndexedStack` (§4 Φάση 3 Βήμα 1) η σελίδα φορτώνει στο launch και **η βάση ανοίγει στο launch** — κάθε widget test που pump-άρει `PriceEntryPage`/`TimesApp` κάνει override του `recentReceiptsStreamProvider`.
 
 **Validation πριν την αποθήκευση (SPoT validators, `domain/validators/receipt_validator.dart`)**
 - Τουλάχιστον 1 γραμμή, όχι πάνω από `maxReceiptLines`.
@@ -431,13 +424,13 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
    - **Αναζήτηση Item/Supplier**: ορίζεται στα **Repositories** (ΟΧΙ στα DAOs της Φάσης 1) η μέθοδος `searchByNormalizedName(String query, {int? limit})` — `WHERE normalizedName LIKE '%' || :normalizedQuery || '%'`, με το input ήδη κανονικοποιημένο (§2.0.4/§3). Προαιρετικό `limit` με default από `searchResultsLimit` (§2.0). Κατηγορία/Υποκατηγορία/Unit μένουν in-memory φιλτράρισμα πάνω στο stream (μικρές λίστες, §3).
 
 ### Φάση 3 — Σελίδα Εισαγωγής Τιμών (πυρήνας εφαρμογής)
-1. **App UI σκελετός** (ξεκινά τη Φάση 3): `GoRouter` με `StatefulShellRoute.indexedStack` + `NavigationBar` (3 branches: Home/PriceEntry/Settings, paths από `AppRoutes`) + placeholder σελίδες ανά οθόνη (καθαρά `Scaffold`, ΚΑΝΕΝΑ provider watch → η βάση δεν ανοίγει στο launch) + `NavLogObserver` (σημείο καταγραφής `LogTag.nav`). Responsive layout από εδώ (§1.4). **Απόφαση Α1 (Βήμα 7, §2.2)**: η λίστα πρόσφατων αποδείξεων είναι πάντα ορατή στην PriceEntry → η βάση **ανοίγει στο launch** (ο κανόνας «ΚΑΝΕΝΑ provider watch» ισχύει μόνο μέχρι το Βήμα 7 — από εκεί και μετά κάθε widget test που pump-άρει `PriceEntryPage`/`TimesApp` κάνει override του `recentReceiptsStreamProvider`).
+1. **App UI σκελετός** (ξεκινά τη Φάση 3): `GoRouter` με `StatefulShellRoute.indexedStack` + `NavigationBar` (3 branches: Home/PriceEntry/Settings, paths από `AppRoutes`) + placeholder σελίδες ανά οθόνη (καθαρά `Scaffold`, ΚΑΝΕΝΑ provider watch → η βάση δεν ανοίγει στο launch) + `NavLogObserver` (σημείο καταγραφής `LogTag.nav`). Responsive layout από εδώ (§1.4).
 2. Auto αριθμός απόδειξης + date picker.
 3. Supplier search/autocomplete + inline "+" δημιουργία.
 4. Item search/autocomplete με incremental filtering (debounce) + "+" popup ροή (Κατηγορία→Υποκατηγορία→Είδος).
 5. Unit dropdown, ποσότητα, τιμή, save flow ("καλάθι" απόδειξης — βλ. state machine §2.2).
 6. Validation (π.χ. τιμή > 0, υποχρεωτικά πεδία) μέσω SPoT validators.
-7. **Λίστα πρόσφατων αποδείξεων (read-only) — ΟΛΟΚΛΗΡΩΘΗΚΕ.** `ReceiptSummary` projection + `ReceiptDao.watchRecentSummaries` (ένα watch query πάνω σε stored `lineTotalCents`) · `recentReceiptsStreamProvider` (μη autoDispose, όριο `AppConstants.recentReceiptsLimit` = 20) → **auto-refresh μετά το save** · `recent_receipts_list.dart` (`AsyncValue.when`: loading/error+Επανάληψη/empty, Card+ListTile, responsive + dark/light) · SPoT strings/messages · έγκυρη γραμμή 0,00 € όταν `(priceCents*quantity).round()==0` (§2.2). Tests **699/699** ✓ · analyze καθαρό.
+7. **Placeholder λίστα αποδείξεων** (read-only `ListView` με τις τελευταίες αποδείξεις: αριθμός, ημερομηνία, προμηθευτής, ένδειξη αριθμού γραμμών/συνόλου) — όχι επεξεργάσιμη, ως "vertical slice" για οπτική επιβεβαίωση ότι η ροή δεδομένων δουλεύει πριν τη Φάση 5.
 8. Widget tests στη φόρμα.
 
 ### Φάση 4 — Ρυθμίσεις
@@ -462,4 +455,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε στη **Φάση 3, Βήμα 7 — Λίστα πρόσφατων αποδείξεων ΟΛΟΚΛΗΡΩΘΗΚΕ** (§2.2, §4 Φάση 3 Βήμα 7): `ReceiptSummary` projection + `watchRecentSummaries` (DAO+repo) · `recentReceiptsStreamProvider` (μη autoDispose, όριο `AppConstants.recentReceiptsLimit` = 20) · `recent_receipts_list.dart` (αριθμός/ημερομηνία/προμηθευτής/#γραμμές/σύνολο €, `AsyncValue.when` με loading/error+Επανάληψη/empty) · **auto-refresh μετά το save** μέσω stream · έγκυρη τιμή **0,00 €** όταν `(priceCents*quantity).round()==0`. **Tests 699/699** ✓ (+22) · `flutter analyze` **No issues** ✓. **Απόφαση Α1**: η λίστα είναι πάντα ορατή στην PriceEntry → η βάση ανοίγει στο launch (overrides σε όλα τα σχετικά widget tests). Διορθώθηκαν επίσης 5 compile errors: τα fakes `implements ReceiptRepository` (3 test files) απέκτησαν `watchRecentSummaries`. **Επόμενο**: Βήμα 8 (Widget tests στη φόρμα — τα ανά-υποβήμα widget tests υπάρχουν ήδη, έλεγχος κενών/ενοποίηση) → Φάση 4 (Ρυθμίσεις). Ανοιχτά (χωρίς προγραμματισμένο Βήμα): επιβεβαίωση εξόδου με μη αποθηκευμένες γραμμές (§2.2 «Ημιτελής καταχώρηση» — `ConfirmDialog` + `PopScope`) · housekeeping (split των test αρχείων >500 γρ.: `receipt_form_controller_test`, `searchable_dropdown_field_test`· ενοποίηση του διπλού κεφαλαίου 14) · προαιρετικό `onChanged` στο `SearchableDropdownField` (σβήσιμο inline μηνυμάτων κατά την πληκτρολόγηση). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.
+Είμαστε στη **Φάση 3, Βήμα 7 — Placeholder λίστα αποδείξεων** (`recent_receipts_list.dart`, DESIGN §4 Φάση 3 Βήμα 7): read-only `ListView` με τις τελευταίες αποδείξεις (αριθμός, ημερομηνία, προμηθευτής, ένδειξη αριθμού γραμμών/συνόλου). Το Βήμα 6 (Validation, υποβήματα 6α–6ζ) ολοκληρώθηκε: `ReceiptValidator` (SPoT, §2.2) + inline σφάλματα τιμής/ποσότητας/μονάδας + hint προμηθευτή + safety-net στον controller + έλεγχος ονόματος στο «+» (προμηθευτής, κατηγορία, υποκατηγορία) + fix `displayStringForOption` στο `SearchableDropdownField` · tests 677/677, analyze clean. Για το Βήμα 7: το σύνολο γραμμής/απόδειξης θα χρειαστεί ΚΟΙΝΟ υπολογισμό (`lineTotalCents` = SPoT του `ReceiptLineDao`, §3) — εκεί να αντιμετωπιστεί και η περίπτωση `(priceCents * quantity).round() == 0` (π.χ. 0,01 € × 0,004). Ανοιχτά (χωρίς προγραμματισμένο Βήμα): επιβεβαίωση εξόδου με μη αποθηκευμένες γραμμές (§2.2 «Ημιτελής καταχώρηση» — `ConfirmDialog` + `PopScope`, προτεινόμενο «Βήμα 7β» πριν το Βήμα 8) · housekeeping (split των test αρχείων >500 γρ.: `receipt_form_controller_test`, `searchable_dropdown_field_test`· ενοποίηση του διπλού κεφαλαίου 14) · προαιρετικά `onChanged` στο `SearchableDropdownField` (σβήσιμο inline μηνυμάτων κατά την πληκτρολόγηση). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.

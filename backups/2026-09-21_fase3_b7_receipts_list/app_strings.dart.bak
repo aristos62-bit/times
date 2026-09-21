@@ -50,11 +50,6 @@ abstract final class AppStrings {
   static const String draftLinesTitle = 'Γραμμές απόδειξης';
   /// Κενή κατάσταση της λίστας γραμμών — καμία γραμμή ακόμα (§2.2).
   static const String draftLinesEmpty = 'Δεν υπάρχουν γραμμές ακόμα';
-  /// Τίτλος της read-only λίστας πρόσφατων αποδείξεων (§2.2 · Βήμα 7).
-  static const String recentReceiptsTitle = 'Πρόσφατες αποδείξεις';
-  /// Κενή κατάσταση της λίστας πρόσφατων αποδείξεων (§2.2 · Βήμα 7).
-  static const String recentReceiptsEmpty =
-      'Δεν υπάρχουν αποθηκευμένες αποδείξεις ακόμα';
   /// Tooltip/semantics του κουμπιού διαγραφής γραμμής από το «καλάθι» (§2.2).
   static const String removeDraftLine = 'Αφαίρεση γραμμής';
   /// Inline ειδοποίηση περικοπής: δεκαδική ποσότητα σε μονάδα χωρίς κλάσματα

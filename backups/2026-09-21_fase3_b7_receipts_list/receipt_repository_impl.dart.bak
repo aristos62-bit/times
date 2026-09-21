@@ -17,7 +17,6 @@ import '../../core/errors/app_exceptions.dart';
 import '../local/daos/receipt_dao.dart';
 import '../local/daos/receipt_line_dao.dart';
 import '../local/app_database.dart';
-import '../models/receipt_summary.dart';
 import 'receipt_repository.dart';
 
 /// Υλοποίηση με δύο DAOs (κεφαλίδα + γραμμές) και transaction save.
@@ -41,13 +40,6 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
         (Object e, StackTrace s) =>
             Error.throwWithStackTrace(const DataLoadException(), s),
       );
-
-  @override
-  Stream<List<ReceiptSummary>> watchRecentSummaries({required int limit}) =>
-      _receiptDao.watchRecentSummaries(limit: limit).handleError(
-            (Object e, StackTrace s) =>
-                Error.throwWithStackTrace(const DataLoadException(), s),
-          );
 
   @override
   Future<Receipt?> getById(int id) => _guard(() => _receiptDao.getById(id));

@@ -8,8 +8,6 @@
 ///   * NAV logging μέσω `AppLogger.testSink` (LogTag.nav, §1.7).
 library;
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,8 +16,6 @@ import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/logging/app_logger.dart';
 import 'package:times/core/router/app_router.dart';
 import 'package:times/core/router/app_routes.dart';
-import 'package:times/data/models/receipt_summary.dart';
-import 'package:times/data/providers/stream_providers.dart';
 import 'package:times/presentation/home/home_page.dart';
 import 'package:times/presentation/price_entry/price_entry_page.dart';
 import 'package:times/presentation/settings/settings_page.dart';
@@ -33,19 +29,12 @@ void main() {
   // Επαναφορά sink μετά από κάθε test — το NAV test το ορίζει δικό του.
   tearDown(AppLogger.resetTestSink);
 
-  /// Overrides για κάθε pump: Βήμα 7 — η PriceEntryPage περιέχει τη λίστα
-  /// πρόσφατων (`recentReceiptsStreamProvider`) → κενή ροή (hermetic: τα
-  /// router tests ΔΕΝ ανοίγουν πραγματική βάση, §2.0.1).
-  // NOTE(Riverpod 3.4.3): το `Override` δεν εξάγεται από το flutter_riverpod —
-  // η λίστα δηλώνεται inline ώστε το infer του `ProviderScope(overrides:)`.
+  /// Pump με φρέσκο router (αποφεύγει shared GoRouter state μεταξύ tests).
+  /// ProviderScope απαραίτητο από το Βήμα 2: η PriceEntryPage είναι πλέον
+  /// ConsumerWidget (watch-άρει τον τοπικό receiptFormControllerProvider).
   Future<void> pumpApp(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          recentReceiptsStreamProvider.overrideWith(
-            (ref) => Stream.value(const <ReceiptSummary>[]),
-          ),
-        ],
         child: MaterialApp.router(routerConfig: buildAppRouter()),
       ),
     );
@@ -67,11 +56,6 @@ void main() {
       final router = buildAppRouter();
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            recentReceiptsStreamProvider.overrideWith(
-              (ref) => Stream.value(const <ReceiptSummary>[]),
-            ),
-          ],
           child: MaterialApp.router(routerConfig: router),
         ),
       );
@@ -125,11 +109,6 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            recentReceiptsStreamProvider.overrideWith(
-              (ref) => Stream.value(const <ReceiptSummary>[]),
-            ),
-          ],
           child: MaterialApp.router(routerConfig: buildAppRouter()),
         ),
       );

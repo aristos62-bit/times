@@ -19,7 +19,6 @@ import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/supplier_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
-import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/repositories/receipt_repository_impl.dart';
 
 import '../local/helpers/in_memory_db.dart';
@@ -30,15 +29,6 @@ class _FailingStreamReceiptLineDao extends ReceiptLineDao {
 
   @override
   Stream<List<ReceiptLine>> watchByReceiptId(int receiptId) =>
-      Stream.error(SqliteException(extendedResultCode: 1, message: 'test'));
-}
-
-/// DAO double — raw σφάλμα στο watchRecentSummaries για δοκιμή stream mapping.
-class _FailingStreamReceiptDao extends ReceiptDao {
-  _FailingStreamReceiptDao(super.db);
-
-  @override
-  Stream<List<ReceiptSummary>> watchRecentSummaries({required int limit}) =>
       Stream.error(SqliteException(extendedResultCode: 1, message: 'test'));
 }
 
@@ -244,41 +234,6 @@ void main() {
       );
 
       expect(await repo.watchAll().first, isEmpty);
-    });
-  });
-
-  group('ReceiptRepositoryImpl.watchRecentSummaries (Φάση 3, Βήμα 7)', () {
-    test('επιστρέφει σύνοψη με γραμμές + προμηθευτή (delegation)', () async {
-      final receiptId = await repo.insertReceiptWithLines(
-        date: DateTime(2026, 1, 1),
-        supplierId: supplierId,
-        lines: [
-          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199),
-          (itemId: secondItemId, unitId: unitId, quantity: 1, priceCents: 50),
-        ],
-      );
-
-      final summary =
-          (await repo.watchRecentSummaries(limit: 10).first).single;
-      expect(summary.id, receiptId);
-      expect(summary.supplierName, 'Μάρκος');
-      expect(summary.lineCount, 2);
-      expect(summary.totalCents, 199 * 2 + 50);
-    });
-
-    test('κενή βάση → κενή λίστα', () async {
-      expect(await repo.watchRecentSummaries(limit: 10).first, isEmpty);
-    });
-
-    test('raw stream σφάλμα → DataLoadException (stream mapping)', () async {
-      final failing = ReceiptRepositoryImpl(
-        _FailingStreamReceiptDao(db),
-        ReceiptLineDao(db),
-      );
-      await expectLater(
-        failing.watchRecentSummaries(limit: 10),
-        emitsError(isA<DataLoadException>()),
-      );
     });
   });
 }

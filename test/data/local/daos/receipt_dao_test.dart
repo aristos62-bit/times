@@ -5,6 +5,8 @@
 /// CASCADE στη διαγραφή (σβήνει και γραμμές), updateById (date/supplierId).
 library;
 
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -31,6 +33,21 @@ void main() {
   });
 
   tearDown(() async => await db.close());
+
+  /// Δημιουργεί Unit + Category + SubCategory + Item και επιστρέφει
+  /// (itemId, unitId) — απαραίτητα για την εισαγωγή γραμμής απόδειξης.
+  Future<({int itemId, int unitId})> seedItemWithUnit() async {
+    final unitId = await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
+    final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
+    final subId = await SubCategoryDao(db)
+        .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    final itemId = await ItemDao(db).insert(
+          subCategoryId: subId,
+          name: 'Γάλα',
+          defaultUnitId: unitId,
+        );
+    return (itemId: itemId, unitId: unitId);
+  }
 
   group('ReceiptDao.insert/getById', () {
     test('επιστρέφει id (αριθμός απόδειξης) και η εγγραφή διαβάζεται', () async {
@@ -131,6 +148,132 @@ void main() {
       // Το item παραμένει (RESTRICT μόνο σε γραμμές → items §2.3).
       expect(await ItemDao(db).getById(itemId), isNotNull);
       expect(lineId, greaterThan(0));
+    });
+  });
+
+  group('ReceiptDao.watchRecentSummaries (Φάση 3, Βήμα 7)', () {
+    test('κενή βάση → κενή λίστα', () async {
+      expect(await dao.watchRecentSummaries(limit: 10).first, isEmpty);
+    });
+
+    test('επιστρέφει κεφαλίδα + supplierName + γραμμές χωρίς γραμμές (0/0)',
+        () async {
+      final id = await dao.insert(
+        date: DateTime(2026, 1, 5, 10, 30),
+        supplierId: supplierId,
+      );
+
+      final summaries = await dao.watchRecentSummaries(limit: 10).first;
+      final summary = summaries.single;
+
+      expect(summary.id, id);
+      expect(summary.date, DateTime(2026, 1, 5, 10, 30));
+      expect(summary.supplierId, supplierId);
+      expect(summary.supplierName, 'Μάρκος');
+      expect(summary.lineCount, 0);
+      expect(summary.totalCents, 0);
+    });
+
+    test('lineCount + totalCents = SUM(lineTotalCents) (SQL aggregation §2.1)',
+        () async {
+      final seed = await seedItemWithUnit();
+      final receiptId =
+          await dao.insert(date: DateTime(2026, 1, 1), supplierId: supplierId);
+      final lineDao = ReceiptLineDao(db);
+      await lineDao.insert(
+        receiptId: receiptId,
+        itemId: seed.itemId,
+        unitId: seed.unitId,
+        quantity: 2,
+        priceCents: 199,
+      );
+      await lineDao.insert(
+        receiptId: receiptId,
+        itemId: seed.itemId,
+        unitId: seed.unitId,
+        quantity: 1,
+        priceCents: 50,
+      );
+
+      final summary =
+          (await dao.watchRecentSummaries(limit: 10).first).single;
+
+      expect(summary.lineCount, 2);
+      expect(summary.totalCents, 199 * 2 + 50);
+    });
+
+    test('lineTotalCents == 0 (edge §5: 0,01 € × 0,004) → σύνολο 0 €',
+        () async {
+      final seed = await seedItemWithUnit();
+      final receiptId =
+          await dao.insert(date: DateTime(2026, 1, 1), supplierId: supplierId);
+      await ReceiptLineDao(db).insert(
+        receiptId: receiptId,
+        itemId: seed.itemId,
+        unitId: seed.unitId,
+        quantity: 0.004,
+        priceCents: 1,
+      );
+
+      final summary =
+          (await dao.watchRecentSummaries(limit: 10).first).single;
+
+      expect(summary.lineCount, 1);
+      expect(summary.totalCents, 0, reason: '0,01 € × 0,004 → round() = 0');
+    });
+
+    test('ordering: date desc, μετά id desc (ίδια σειρά με watchAll)', () async {
+      final idOlder =
+          await dao.insert(date: DateTime(2026, 1, 1), supplierId: supplierId);
+      final idNewer =
+          await dao.insert(date: DateTime(2026, 1, 2), supplierId: supplierId);
+      final idSame =
+          await dao.insert(date: DateTime(2026, 1, 2), supplierId: supplierId);
+
+      final ids = (await dao.watchRecentSummaries(limit: 10).first)
+          .map((s) => s.id)
+          .toList();
+      expect(ids, [idSame, idNewer, idOlder]);
+    });
+
+    test('limit: επιστρέφει μόνο τις N νεότερες', () async {
+      final idNewest =
+          await dao.insert(date: DateTime(2026, 1, 3), supplierId: supplierId);
+      final idMiddle =
+          await dao.insert(date: DateTime(2026, 1, 2), supplierId: supplierId);
+      await dao.insert(date: DateTime(2026, 1, 1), supplierId: supplierId);
+
+      final summaries = await dao.watchRecentSummaries(limit: 2).first;
+      expect(summaries.map((s) => s.id).toList(), [idNewest, idMiddle]);
+    });
+
+    test('re-emit: το stream ξανα-εκπέμπει όταν αλλάζουν τα δεδομένα', () async {
+      final snapshots = <int>[]; // πλήθος summaries ανά snapshot
+      final firstSnapshot = Completer<void>();
+      final secondSnapshot = Completer<void>();
+      final sub = dao.watchRecentSummaries(limit: 10).listen(
+        (value) {
+          snapshots.add(value.length);
+          if (snapshots.length == 1) {
+            firstSnapshot.complete();
+          } else if (snapshots.length == 2) {
+            secondSnapshot.complete();
+          }
+        },
+        onError: (Object e, StackTrace s) {
+          if (!firstSnapshot.isCompleted) firstSnapshot.completeError(e, s);
+          if (!secondSnapshot.isCompleted) secondSnapshot.completeError(e, s);
+        },
+      );
+      addTearDown(sub.cancel);
+
+      await firstSnapshot.future.timeout(const Duration(seconds: 2));
+      expect(snapshots.first, 0);
+
+      await dao.insert(date: DateTime(2026, 1, 1), supplierId: supplierId);
+
+      await secondSnapshot.future.timeout(const Duration(seconds: 2));
+      expect(snapshots.last, 1);
     });
   });
 }

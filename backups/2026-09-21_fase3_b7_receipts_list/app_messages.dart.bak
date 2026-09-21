@@ -36,13 +36,6 @@ abstract final class AppMessages {
   static String receiptLinesLimitReached(int max) =>
       'Η απόδειξη έχει φτάσει το όριο των $max γραμμών';
 
-  // ─── Λίστα πρόσφατων αποδείξεων (§2.2 · Φάση 3 Βήμα 7) ─────────────────────
-  /// Label του αριθμού (id) απόδειξης στη λίστα — «Απόδειξη #12».
-  static String receiptNumber(int id) => 'Απόδειξη #$id';
-
-  /// Ένδειξη πλήθους γραμμών απόδειξης στη λίστα — «3 γραμμές».
-  static String receiptLinesLabel(int count) => '$count γραμμές';
-
   // ─── Confirm dialog defaults (§2.4 ConfirmDialog) ─────────────────────────
   /// §2.4: "ConfirmDialog — τίτλος/μήνυμα/actions από παραμέτρους, SPoT strings".
   /// Default τίτλος επιβεβαιωτικού dialog.

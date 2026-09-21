@@ -24,7 +24,6 @@ import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
-import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/repositories/receipt_repository.dart';
 import 'package:times/data/repositories/receipt_repository_impl.dart';
@@ -378,9 +377,6 @@ class _FailingReceiptRepo implements ReceiptRepository {
   @override
   Stream<List<Receipt>> watchAll() => throw const DataLoadException();
   @override
-  Stream<List<ReceiptSummary>> watchRecentSummaries({required int limit}) =>
-      throw const DataLoadException();
-  @override
   Future<Receipt?> getById(int id) => throw const DataLoadException();
   @override
   Future<int> insert({required DateTime date, required int supplierId}) =>
@@ -411,9 +407,6 @@ class _BlockingReceiptRepo implements ReceiptRepository {
 
   @override
   Stream<List<Receipt>> watchAll() => inner.watchAll();
-  @override
-  Stream<List<ReceiptSummary>> watchRecentSummaries({required int limit}) =>
-      inner.watchRecentSummaries(limit: limit);
   @override
   Future<Receipt?> getById(int id) => inner.getById(id);
   @override

@@ -49,14 +49,6 @@ void main() {
       );
     });
 
-    test('receiptNumber(12) — label αριθμού απόδειξης (§2.2 · Βήμα 7)', () {
-      expect(AppMessages.receiptNumber(12), 'Απόδειξη #12');
-    });
-
-    test('receiptLinesLabel(3) — ένδειξη πλήθους γραμμών (§2.2 · Βήμα 7)', () {
-      expect(AppMessages.receiptLinesLabel(3), '3 γραμμές');
-    });
-
     // ─── Confirm dialog defaults (§2.4) ─────────────────────────────────────
     test('confirmDialogTitle = «Επιβεβαίωση» (§2.4)', () {
       expect(AppMessages.confirmDialogTitle, 'Επιβεβαίωση');

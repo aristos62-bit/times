@@ -15,7 +15,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/greek_text_normalizer.dart';
 import '../local/app_database.dart';
-import '../models/receipt_summary.dart';
 import 'database_providers.dart';
 
 /// Όλες οι κατηγορίες, αλφαβητικά · `AsyncValue<List<Category>>`.
@@ -143,17 +142,6 @@ final supplierSearchProvider = StreamProvider.family<List<Supplier>, String>(
 /// Όλες οι αποδείξεις, νεότερες πρώτα.
 final receiptsStreamProvider = StreamProvider<List<Receipt>>(
   (ref) => ref.watch(receiptRepositoryProvider).watchAll(),
-);
-
-/// Οι τελευταίες [AppConstants.recentReceiptsLimit] αποδείξεις με σύνοψη
-/// (ReceiptSummary: αριθμός, ημερομηνία, προμηθευτής, γραμμές, σύνολο €)
-/// για τη read-only λίστα (§2.2 Βήμα 7). NON-autoDispose (ίδιο idiom με
-/// όλα τα stream providers): το stream ζει όσο η εφαρμογή — η λίστα
-/// ανανεώνεται μόνη της μετά το save (re-emit του customSelectStream).
-final recentReceiptsStreamProvider = StreamProvider<List<ReceiptSummary>>(
-  (ref) => ref
-      .watch(receiptRepositoryProvider)
-      .watchRecentSummaries(limit: AppConstants.recentReceiptsLimit),
 );
 
 /// Γραμμές απόδειξης — `.family` παραμετροποιημένο ανά [receiptId].

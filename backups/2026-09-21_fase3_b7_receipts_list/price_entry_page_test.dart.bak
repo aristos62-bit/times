@@ -2,21 +2,14 @@
 ///
 /// Πλέον ConsumerWidget: watch-άρει τον τοπικό `receiptFormControllerProvider`
 /// (καμία εξάρτηση από repository → η βάση δεν ανοίγει, όπως στο Βήμα 1).
-/// Βήμα 7: η σελίδα περιέχει πλέον τη λίστα πρόσφατων αποδείξεων
-/// (`recentReceiptsStreamProvider`) → override με ΚΕΝΗ λίστα (hermetic:
-/// κανένα DB access — αλλιώς θα άνοιγε πραγματική βάση, §2.0.1).
 /// Responsive §1.4: 3 μεγέθη (mobile/tablet/desktop) — κανένα overflow.
 library;
-
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_strings.dart';
-import 'package:times/data/models/receipt_summary.dart';
-import 'package:times/data/providers/stream_providers.dart';
 import 'package:times/presentation/price_entry/price_entry_page.dart';
 import 'package:times/presentation/price_entry/widgets/item_search_field.dart';
 import 'package:times/presentation/price_entry/widgets/receipt_header_section.dart';
@@ -24,12 +17,6 @@ import 'package:times/presentation/price_entry/widgets/receipt_header_section.da
 void main() {
   Widget wrap(Size size) {
     return ProviderScope(
-      overrides: [
-        // Βήμα 7: read-only λίστα πρόσφατων — κενή ροή (χωρίς DB access).
-        recentReceiptsStreamProvider.overrideWith(
-          (ref) => Stream.value(const <ReceiptSummary>[]),
-        ),
-      ],
       child: MaterialApp(
         home: MediaQuery(
           data: MediaQueryData(size: size),
@@ -72,9 +59,6 @@ void main() {
             .enabled,
         isFalse,
       );
-      // Βήμα 7: read-only λίστα πρόσφατων αποδείξεων (κενή — override).
-      expect(find.text(AppStrings.recentReceiptsTitle), findsOneWidget);
-      expect(find.text(AppStrings.recentReceiptsEmpty), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -82,22 +66,18 @@ void main() {
     testWidgets('mobile (320×568) — κανένα overflow', (tester) async {
       await pumpAt(tester, const Size(320, 568));
       expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
-      // Βήμα 7: η λίστα πρόσφατων είναι ορατή και σε στενή οθόνη.
-      expect(find.text(AppStrings.recentReceiptsTitle), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('tablet (800×600) — κανένα overflow', (tester) async {
       await pumpAt(tester, const Size(800, 600));
       expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
-      expect(find.text(AppStrings.recentReceiptsTitle), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('desktop (1200×800) — κανένα overflow', (tester) async {
       await pumpAt(tester, const Size(1200, 800));
       expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
-      expect(find.text(AppStrings.recentReceiptsTitle), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

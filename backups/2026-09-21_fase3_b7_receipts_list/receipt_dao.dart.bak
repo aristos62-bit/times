@@ -7,7 +7,6 @@ library;
 
 import 'package:drift/drift.dart';
 
-import '../../models/receipt_summary.dart';
 import '../app_database.dart';
 import '../base_dao.dart';
 
@@ -24,59 +23,6 @@ class ReceiptDao extends BaseDao {
                 (t) => OrderingTerm.desc(t.id),
               ]))
             .watch(),
-      );
-
-  /// Παρακολουθεί τις τελευταίες [limit] αποδείξεις με σύνοψη για τη
-  /// read-only λίστα (§2.2 Βήμα 7).
-  ///
-  /// SQL aggregation (DESIGN §2.1 «η άθροιση γίνεται στο SQL, όχι στη
-  /// μνήμη»): COUNT γραμμών + SUM του αποθηκευμένου `lineTotalCents`
-  /// (SPoT υπολογισμού: ReceiptLineDao, §3) πάνω σε LEFT JOIN, ώστε
-  /// απόδειξη χωρίς γραμμές να εμφανίζεται με 0/0 (ποτέ δεν «χάνεται» από
-  /// τη λίστα). Σειρά: date desc, id desc — ίδια με [watchAll].
-  ///
-  /// Custom SQL → drift δεν μπορεί να συμπεράνει τους πίνακες: δηλώνουμε
-  /// [readsFrom] ώστε το stream να ξανα-εκπέμπει όταν αλλάξει ο,τιδήποτε
-  /// στους 3 πίνακες (receipts/suppliers/receipt_lines). Το `read<DateTime>`
-  /// για το `r.date` χρησιμοποιεί το default drift mapping
-  /// (unix seconds → DateTime) — καμία χειροκίνητη μετατροπή.
-  Stream<List<ReceiptSummary>> watchRecentSummaries({required int limit}) =>
-      guardStream(
-        'Ανάγνωση πρόσφατων αποδείξεων',
-        () => db
-            .customSelect(
-              '''
-        SELECT r.id AS id,
-               r.date AS date,
-               r.supplier_id AS supplierId,
-               s.name AS supplierName,
-               COUNT(rl.id) AS lineCount,
-               COALESCE(SUM(rl.line_total_cents), 0) AS totalCents
-        FROM receipts r
-        LEFT JOIN suppliers s      ON s.id = r.supplier_id
-        LEFT JOIN receipt_lines rl ON rl.receipt_id = r.id
-        GROUP BY r.id, r.date, r.supplier_id, s.name
-        ORDER BY r.date DESC, r.id DESC
-        LIMIT ?
-      ''',
-              variables: [Variable.withInt(limit)],
-              readsFrom: {db.receipts, db.suppliers, db.receiptLines},
-            )
-            .watch()
-            .map(
-              (rows) => rows
-                  .map(
-                    (row) => (
-                      id: row.read<int>('id'),
-                      date: row.read<DateTime>('date'),
-                      supplierId: row.read<int>('supplierId'),
-                      supplierName: row.read<String>('supplierName'),
-                      lineCount: row.read<int>('lineCount'),
-                      totalCents: row.read<int>('totalCents'),
-                    ),
-                  )
-                  .toList(),
-            ),
       );
 
   /// Διαβάζει μία απόδειξη ή null αν δεν υπάρχει.

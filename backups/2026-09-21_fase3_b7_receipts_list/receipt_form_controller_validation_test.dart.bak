@@ -16,7 +16,6 @@ import 'package:times/core/constants/app_errors.dart';
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/core/logging/app_logger.dart';
 import 'package:times/data/local/app_database.dart';
-import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/repositories/receipt_repository.dart';
 import 'package:times/presentation/price_entry/controllers/receipt_form_controller.dart';
@@ -316,9 +315,6 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
 
   @override
   Stream<List<Receipt>> watchAll() => throw UnimplementedError();
-  @override
-  Stream<List<ReceiptSummary>> watchRecentSummaries({required int limit}) =>
-      throw UnimplementedError();
   @override
   Future<Receipt?> getById(int id) => throw UnimplementedError();
   @override

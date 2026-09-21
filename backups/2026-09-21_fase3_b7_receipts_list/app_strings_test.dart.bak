@@ -71,14 +71,6 @@ void main() {
       expect(AppStrings.removeDraftLine, 'Αφαίρεση γραμμής');
     });
 
-    test('recent receipts — τίτλος + κενή κατάσταση (§2.2 · Βήμα 7)', () {
-      expect(AppStrings.recentReceiptsTitle, 'Πρόσφατες αποδείξεις');
-      expect(
-        AppStrings.recentReceiptsEmpty,
-        'Δεν υπάρχουν αποθηκευμένες αποδείξεις ακόμα',
-      );
-    });
-
     test('quantityTruncatedForUnit — ειδοποίηση περικοπής (§2.2:218)', () {
       expect(
         AppStrings.quantityTruncatedForUnit,
@@ -180,8 +172,6 @@ const List<String> _allStrings = [
   AppStrings.draftLinesTitle,
   AppStrings.draftLinesEmpty,
   AppStrings.removeDraftLine,
-  AppStrings.recentReceiptsTitle,
-  AppStrings.recentReceiptsEmpty,
   AppStrings.quantityTruncatedForUnit,
   AppStrings.supplierSearchHint,
   AppStrings.addNewSupplier,

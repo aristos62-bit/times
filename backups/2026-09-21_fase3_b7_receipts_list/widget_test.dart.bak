@@ -2,37 +2,22 @@
 ///
 /// Επαληθεύει το ριζικό δέντρο: `ProviderScope` + `TimesApp` με GoRouter
 /// (StatefulShellRoute) χωρίς default Flutter template (DESIGN §0).
-/// Βήμα 7: η PriceEntryPage (branch «Εισαγωγή») περιέχει πλέον τη λίστα
-/// πρόσφατων (`recentReceiptsStreamProvider`) → override με ΚΕΝΗ λίστα
-/// (hermetic — το smoke test ΔΕΝ ανοίγει πραγματική βάση, §2.0.1).
+/// Οι placeholder σελίδες ΔΕΝ «βλέπουν» data providers → δεν χρειάζεται
+/// override του `appDatabaseProvider` σε αυτό το widget test.
 library;
-
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_strings.dart';
-import 'package:times/data/models/receipt_summary.dart';
-import 'package:times/data/providers/stream_providers.dart';
 import 'package:times/main.dart';
 
 void main() {
-  /// ProviderScope με override της λίστας πρόσφατων (κενή ροή).
-  ProviderScope scope() => ProviderScope(
-        overrides: [
-          recentReceiptsStreamProvider.overrideWith(
-            (ref) => Stream.value(const <ReceiptSummary>[]),
-          ),
-        ],
-        child: const TimesApp(),
-      );
-
   testWidgets(
       'TimesApp εμφανίζει Home (AppBar «Τιμές») + NavigationBar με 3 tabs — '
       'κανένα στοιχείο Flutter template', (WidgetTester tester) async {
-    await tester.pumpWidget(scope());
+    await tester.pumpWidget(const ProviderScope(child: TimesApp()));
     await tester.pumpAndSettle();
 
     // Αρχική branch: Home placeholder — AppBar με τον τίτλο «Τιμές»
@@ -50,7 +35,7 @@ void main() {
 
   testWidgets('αλλαγή tab στο PriceEntry φέρνει «Εισαγωγή Τιμών»',
       (WidgetTester tester) async {
-    await tester.pumpWidget(scope());
+    await tester.pumpWidget(const ProviderScope(child: TimesApp()));
     await tester.pumpAndSettle();
 
     // Εύρεση του destination «Εισαγωγή» στο NavigationBar (SPoT label §1.1).
@@ -61,11 +46,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Πλέον βλέπουμε τη PriceEntry (AppBar «Εισαγωγή Τιμών» + κενό «καλάθι»
-    // + κουμπί αποθήκευσης + Βήμα 7: read-only λίστα πρόσφατων — κενή).
+    // + κουμπί αποθήκευσης).
     expect(find.text(AppStrings.titlePriceEntry), findsOneWidget);
     expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
     expect(find.text(AppStrings.saveReceipt), findsOneWidget);
-    expect(find.text(AppStrings.recentReceiptsTitle), findsOneWidget);
-    expect(find.text(AppStrings.recentReceiptsEmpty), findsOneWidget);
   });
 }
