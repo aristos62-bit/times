@@ -10,17 +10,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_strings.dart';
-import 'package:times/core/theme/app_theme.dart';
 import 'package:times/presentation/price_entry/controllers/receipt_form_controller.dart';
 import 'package:times/presentation/price_entry/state/receipt_form_state.dart';
 import 'package:times/presentation/price_entry/widgets/draft_lines_list.dart';
 
 void main() {
-  Widget wrap({ThemeData? theme}) {
-    return ProviderScope(
+  Widget wrap() {
+    return const ProviderScope(
       child: MaterialApp(
-        theme: theme,
-        home: const Scaffold(body: DraftLinesList()),
+        home: Scaffold(body: DraftLinesList()),
       ),
     );
   }
@@ -104,20 +102,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('dark mode: γραμμές ορατές χωρίς exception (§1.5)',
-        (tester) async {
-      await tester.pumpWidget(wrap(theme: AppTheme.dark));
-      final container = containerOf(tester);
-      container.read(receiptFormControllerProvider.notifier).addDraftLine(
-            line(),
-          );
-      await tester.pumpAndSettle();
-
-      expect(find.text('Γάλα'), findsOneWidget);
-      expect(find.text('2,5 κιλ · 2,50 €'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

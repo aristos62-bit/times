@@ -1,22 +1,13 @@
 /// Unit tests για τα StreamProviders (stream_providers.dart) — Φάση 2, Βήμα 3.
 ///
-/// Επαληθεύει ότι κάθε `xxxStreamProvider` εκπέμπει τα δεδομένα από το
-/// αντίστοιχο repository (seeding μέσω repositories, ίδιο idiom με τα
-/// repository impl tests) και τα `.family` φιλτράρουν σωστά. Loading/error
-/// state διαχειρίζεται το UI (AsyncValueView, Φάση 3) — εδώ μόνο data.
+/// Μέρος 1/3 — catalog streams + family list: κατηγορίες, υποκατηγορίες,
+/// μονάδες, είδη, προμηθευτές + `subCategoriesByCategoryProvider`. Τα
+/// search families ζουν στο `stream_providers_search_test.dart` και τα
+/// receipts στο `stream_providers_receipts_test.dart`.
 ///
-/// Δύο αναγκαίες τεχνικές επιλογές (Riverpod 3.4.3):
-///   * Το `.future` του StreamProvider ΔΕΝ πιάνει την πρώτη εκπομπή των
-///     drift stream queries (αποδεδειγμένο empirικά — hang μέχρι timeout).
-///     Αντί αυτού: `container.listen` + `Completer` με predicate.
-///   * Το `ProviderListenable` είναι internal (annotation `@publicInMisc`),
-///     δεν είναι ορατό στα tests → το helper παίρνει το provider μέσω
-///     callback subscribe. Ο T δίνεται ΡΗΤΑ σε κάθε κλήση (περιορισμός
-///     inference του Dart μεταξύ κλεισίματος subscribe και predicate).
-///
-/// `ProviderContainer.test()` διαθέτει το container αυτόματα (Riverpod 3.x)·
-/// το override `overrideWithValue` προσπερνά το `onDispose` → χειροκίνητο
-/// `addTearDown(db.close)`.
+/// Riverpod 3.4.3: το `.future` του StreamProvider ΔΕΝ πιάνει την πρώτη
+/// εκπομπή drift stream queries (hang μέχρι timeout) → `container.listen` +
+/// `Completer` με predicate (επιλεκτική ακρόαση).
 library;
 
 import 'dart:async';
@@ -24,9 +15,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:times/core/constants/app_constants.dart';
 import 'package:times/data/local/app_database.dart';
-import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/providers/stream_providers.dart';
 
@@ -52,8 +41,6 @@ Future<T> waitForValue<T>(
 }
 
 void main() {
-  // ─── Helpers ───────────────────────────────────────────────────────────────
-
   ProviderContainer containerWithDb() {
     final db = inMemoryDb();
     addTearDown(db.close);
@@ -61,31 +48,6 @@ void main() {
       overrides: [appDatabaseProvider.overrideWithValue(db)],
     );
   }
-
-  /// Πλήρης αλυσίδα seed για αποδείξεις (unit → category → sub → items →
-  /// supplier) — επιστρέφει τα id που χρειάζονται τα receipt tests.
-  Future<({int supplierId, int itemId, int unitId})> seedReceiptChain(
-    ProviderContainer container,
-  ) async {
-    final unitId = await container.read(unitRepositoryProvider).insert(
-          name: 'Τεμάχιο',
-          abbreviation: 'τεμ',
-        );
-    final categoryId = await container
-        .read(categoryRepositoryProvider)
-        .insert(name: 'ΤΡΟΦΙΜΑ');
-    final subId = await container
-        .read(subCategoryRepositoryProvider)
-        .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    final itemId = await container
-        .read(itemRepositoryProvider)
-        .insert(subCategoryId: subId, name: 'Γάλα');
-    final supplierId =
-        await container.read(supplierRepositoryProvider).insert(name: 'Μάρκος');
-    return (supplierId: supplierId, itemId: itemId, unitId: unitId);
-  }
-
-  // ─── Plain stream providers ────────────────────────────────────────────────
 
   group('categoryStreamProvider', () {
     test('αρχικά [] · μετά insert εκπέμπει την κατηγορία (real-time)',
@@ -181,326 +143,6 @@ void main() {
     });
   });
 
-  group('supplierSearchProvider (family · Φάση 3 Βήμα 3)', () {
-    test('κενό query → άμεσα [] (χωρίς DB access)', () async {
-      final container = containerWithDb();
-
-      final rows = await waitForValue<List<Supplier>>(
-        (listen) => container.listen(supplierSearchProvider(''), listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('LIKE match από RAW query — κανονικοποίηση εσωτερικά', () async {
-      final container = containerWithDb();
-      await container.read(supplierRepositoryProvider).insert(name: 'Μάρκος');
-      await container
-          .read(supplierRepositoryProvider)
-          .insert(name: 'Μαρκοπούλου');
-      await container.read(supplierRepositoryProvider).insert(name: 'Καφενείο');
-
-      final rows = await waitForValue<List<Supplier>>(
-        (listen) => container.listen(supplierSearchProvider('ΜΆΡΚΟ'), listen),
-        (v) => v.length == 2,
-      );
-      expect(
-        rows.map((s) => s.name),
-        containsAll(['Μάρκος', 'Μαρκοπούλου']),
-      );
-    });
-
-    test('καμία αντιστοιχία → [] (όχι error)', () async {
-      final container = containerWithDb();
-      await container.read(supplierRepositoryProvider).insert(name: 'Μάρκος');
-
-      final rows = await waitForValue<List<Supplier>>(
-        (listen) => container.listen(supplierSearchProvider('ζζζ'), listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('όριο AppConstants.searchResultsLimit (15)', () async {
-      final container = containerWithDb();
-      for (var i = 1; i <= 20; i++) {
-        await container.read(supplierRepositoryProvider).insert(name: 'Μ αρ $i');
-      }
-
-      final rows = await waitForValue<List<Supplier>>(
-        (listen) => container.listen(supplierSearchProvider('μ αρ'), listen),
-        (v) => v.length == AppConstants.searchResultsLimit,
-      );
-      expect(rows.length, AppConstants.searchResultsLimit);
-    });
-
-    test('live: insert προμηθευτή εμφανίζεται στα αποτελέσματα (real-time)',
-        () async {
-      final container = containerWithDb();
-      final resultsFuture = waitForValue<List<Supplier>>(
-        (listen) => container.listen(supplierSearchProvider('lidl'), listen),
-        (v) => v.any((s) => s.name == 'Lidl'),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      await container.read(supplierRepositoryProvider).insert(name: 'Lidl');
-
-      final rows = await resultsFuture;
-      expect(rows.map((s) => s.name), contains('Lidl'));
-    });
-  });
-
-  // ─── Item search families (Φάση 3 Βήμα 4) ──────────────────────────────
-
-  group('categorySearchProvider (family · Φάση 3 Βήμα 4)', () {
-    test('κενό query → άμεσα [] (χωρίς DB access)', () async {
-      final container = containerWithDb();
-
-      final rows = await waitForValue<List<Category>>(
-        (listen) => container.listen(categorySearchProvider(''), listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('in-memory filter: ταιριάζει μόνο τις κατηγορίες με match',
-        () async {
-      final container = containerWithDb();
-      await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΤΡΟΦΙΜΑ');
-      await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΡΟΥΧΑ');
-
-      final rows = await waitForValue<List<Category>>(
-        (listen) =>
-            container.listen(categorySearchProvider('ροφ'), listen),
-        (v) => v.length == 1,
-      );
-      expect(rows.map((c) => c.name), contains('ΤΡΟΦΙΜΑ'));
-    });
-
-    test('case/tone-insensitive: ΓΑΛΑ ταιριάζει Γαλακτοκομικά', () async {
-      final container = containerWithDb();
-      await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'Γαλακτοκομικά');
-
-      final rows = await waitForValue<List<Category>>(
-        (listen) =>
-            container.listen(categorySearchProvider('ΓΑΛΑ'), listen),
-        (v) => v.isNotEmpty,
-      );
-      expect(rows.map((c) => c.name), contains('Γαλακτοκομικά'));
-    });
-  });
-
-  group('subCategorySearchProvider (family · Φάση 3 Βήμα 4)', () {
-    test('κενό query → άμεσα [] (χωρίς DB access)', () async {
-      final container = containerWithDb();
-
-      final rows = await waitForValue<List<SubCategory>>(
-        (listen) => container.listen(
-          subCategorySearchProvider((categoryId: 1, query: '')),
-          listen,
-        ),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('in-memory filter ανά categoryId + query', () async {
-      final container = containerWithDb();
-      final catA = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΤΡΟΦΙΜΑ');
-      final catB = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΡΟΥΧΑ');
-      await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: catA, name: 'Γαλακτοκομικά');
-      await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: catA, name: 'Κρέας');
-      await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: catB, name: 'Παντελόνια');
-
-      final rows = await waitForValue<List<SubCategory>>(
-        (listen) => container.listen(
-          subCategorySearchProvider((categoryId: catA, query: 'κρε')),
-          listen,
-        ),
-        (v) => v.length == 1,
-      );
-      expect(rows.map((s) => s.name), contains('Κρέας'));
-    });
-  });
-
-  group('unitSearchProvider (family · Φάση 3 Βήμα 5)', () {
-    test('κενό query → άμεσα [] (χωρίς DB access)', () async {
-      final container = containerWithDb();
-
-      final rows = await waitForValue<List<Unit>>(
-        (listen) => container.listen(unitSearchProvider(''), listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('in-memory filter: case/tone-insensitive match', () async {
-      final container = containerWithDb();
-      await container
-          .read(unitRepositoryProvider)
-          .insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
-      await container
-          .read(unitRepositoryProvider)
-          .insert(name: 'Κιλό', abbreviation: 'κιλ');
-
-      final rows = await waitForValue<List<Unit>>(
-        (listen) => container.listen(unitSearchProvider('κιλ'), listen),
-        (v) => v.length == 1,
-      );
-      expect(rows.map((u) => u.name), contains('Κιλό'));
-
-      final toneRows = await waitForValue<List<Unit>>(
-        (listen) => container.listen(unitSearchProvider('ΚΙΛ'), listen),
-        (v) => v.length == 1,
-      );
-      expect(toneRows.map((u) => u.name), contains('Κιλό'));
-    });
-
-    test('match και στη συντομογραφία (Β5ε-3) · χωρίς διπλότυπα', () async {
-      final container = containerWithDb();
-      final repo = container.read(unitRepositoryProvider);
-      await repo.insert(name: 'Λίτρο', abbreviation: 'λτ');
-      await repo.insert(name: 'Κιλό', abbreviation: 'κιλ');
-      await repo.insert(name: 'Γραμμάριο', abbreviation: 'γρ');
-
-      // «ΛΤ» υπάρχει ΜΟΝΟ στη συντομογραφία του Λίτρο (όχι στο όνομα).
-      final abbr = await waitForValue<List<Unit>>(
-            (listen) => container.listen(unitSearchProvider('ΛΤ'), listen),
-            (v) => v.length == 1,
-      );
-      expect(abbr.map((u) => u.name), ['Λίτρο']);
-
-      // «γρ» ταιριάζει και στο όνομα ΚΑΙ στη συντομογραφία → 1 γραμμή.
-      final both = await waitForValue<List<Unit>>(
-            (listen) => container.listen(unitSearchProvider('γρ'), listen),
-            (v) => v.isNotEmpty,
-      );
-      expect(both.map((u) => u.name), ['Γραμμάριο']);
-    });
-
-    test('live: νέα μονάδα εμφανίζεται στα αποτελέσματα (real-time)', () async {
-      final container = containerWithDb();
-      final resultsFuture = waitForValue<List<Unit>>(
-        (listen) => container.listen(unitSearchProvider('δωδ'), listen),
-        (v) => v.any((u) => u.name == 'Δωδεκάδα'),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      await container
-          .read(unitRepositoryProvider)
-          .insert(name: 'Δωδεκάδα', abbreviation: 'δωδ');
-
-      final rows = await resultsFuture;
-      expect(rows.map((u) => u.name), contains('Δωδεκάδα'));
-    });
-  });
-
-  group('receiptsStreamProvider', () {
-    test('εκπέμπει τις αποδείξεις νεότερες πρώτα', () async {
-      final container = containerWithDb();
-      final chain = await seedReceiptChain(container);
-      await container.read(receiptRepositoryProvider).insert(
-            date: DateTime(2026, 1, 1),
-            supplierId: chain.supplierId,
-          );
-      final later = await container.read(receiptRepositoryProvider).insert(
-            date: DateTime(2026, 2, 1),
-            supplierId: chain.supplierId,
-          );
-
-      final rows = await waitForValue<List<Receipt>>(
-        (listen) => container.listen(receiptsStreamProvider, listen),
-        (v) => v.length == 2,
-      );
-      expect(rows.first.id, later);
-    });
-  });
-
-  group('recentReceiptsStreamProvider (Φάση 3, Βήμα 7)', () {
-    test('επιστρέφει σύνοψη: γραμμές + σύνολο + supplier από join', () async {
-      final container = containerWithDb();
-      final chain = await seedReceiptChain(container);
-      final receiptId = await container
-          .read(receiptRepositoryProvider)
-          .insertReceiptWithLines(
-            date: DateTime(2026, 1, 1),
-            supplierId: chain.supplierId,
-            lines: [
-              (itemId: chain.itemId,
-                  unitId: chain.unitId,
-                  quantity: 2,
-                  priceCents: 199),
-              (itemId: chain.itemId,
-                  unitId: chain.unitId,
-                  quantity: 1,
-                  priceCents: 50),
-            ],
-          );
-
-      final rows = await waitForValue<List<ReceiptSummary>>(
-        (listen) => container.listen(recentReceiptsStreamProvider, listen),
-        (v) => v.isNotEmpty,
-      );
-      expect(rows.first.id, receiptId);
-      expect(rows.first.supplierName, 'Μάρκος');
-      expect(rows.first.lineCount, 2);
-      expect(rows.first.totalCents, 199 * 2 + 50);
-    });
-
-    test('κενή βάση → []', () async {
-      final container = containerWithDb();
-
-      final rows = await waitForValue<List<ReceiptSummary>>(
-        (listen) => container.listen(recentReceiptsStreamProvider, listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
-    });
-
-    test('live: νέα απόδειξη εμφανίζεται αυτόματα (auto-refresh §2.2:212)',
-        () async {
-      final container = containerWithDb();
-      final chain = await seedReceiptChain(container);
-      final resultsFuture = waitForValue<List<ReceiptSummary>>(
-        (listen) => container.listen(recentReceiptsStreamProvider, listen),
-        (v) => v.any((s) => s.lineCount == 1),
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-      await container
-          .read(receiptRepositoryProvider)
-          .insertReceiptWithLines(
-            date: DateTime(2026, 1, 1),
-            supplierId: chain.supplierId,
-            lines: [
-              (itemId: chain.itemId,
-                  unitId: chain.unitId,
-                  quantity: 1,
-                  priceCents: 100),
-            ],
-          );
-
-      final rows = await resultsFuture;
-      expect(rows.single.lineCount, 1);
-      expect(rows.single.totalCents, 100);
-    });
-  });
-
-  // ─── Family providers ──────────────────────────────────────────────────────
-
   group('subCategoriesByCategoryProvider (family)', () {
     test('επιστρέφει ΜΟΝΟ τις υποκατηγορίες της κατηγορίας', () async {
       final container = containerWithDb();
@@ -523,43 +165,6 @@ void main() {
         (v) => v.length == 1,
       );
       expect(rows.map((r) => r.name), ['Μήλα']);
-    });
-  });
-
-  group('receiptLinesStreamProvider (family)', () {
-    test('επιστρέφει τις γραμμές της συγκεκριμένης απόδειξης', () async {
-      final container = containerWithDb();
-      final chain = await seedReceiptChain(container);
-      final receiptId = await container
-          .read(receiptRepositoryProvider)
-          .insertReceiptWithLines(
-            date: DateTime(2026, 1, 1),
-            supplierId: chain.supplierId,
-            lines: [
-              (itemId: chain.itemId, unitId: chain.unitId, quantity: 2, priceCents: 199),
-            ],
-          );
-
-      final rows = await waitForValue<List<ReceiptLine>>(
-        (listen) => container.listen(receiptLinesStreamProvider(receiptId), listen),
-        (v) => v.length == 1,
-      );
-      expect(rows.first.itemId, chain.itemId);
-      expect(rows.first.lineTotalCents, 398);
-    });
-
-    test('απόδειξη χωρίς γραμμές → []', () async {
-      final container = containerWithDb();
-      final chain = await seedReceiptChain(container);
-      final receiptId = await container
-          .read(receiptRepositoryProvider)
-          .insert(date: DateTime(2026, 1, 1), supplierId: chain.supplierId);
-
-      final rows = await waitForValue<List<ReceiptLine>>(
-        (listen) => container.listen(receiptLinesStreamProvider(receiptId), listen),
-        (v) => v.isEmpty,
-      );
-      expect(rows, isEmpty);
     });
   });
 }

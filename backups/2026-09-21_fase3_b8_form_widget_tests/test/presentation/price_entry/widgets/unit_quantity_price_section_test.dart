@@ -16,7 +16,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_strings.dart';
-import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
@@ -34,11 +33,10 @@ import '../../../data/local/helpers/in_memory_db.dart';
 
 /// Shared wrap: ProviderScope (in-memory DB) + MaterialApp ελληνικά +
 /// Scaffold. Η ενότητα παίρνει `key: ValueKey(item.id)` όπως η σελίδα (Δ8).
-Widget wrap(Item item, AppDatabase db, {ThemeData? theme}) {
+Widget wrap(Item item, AppDatabase db) {
   return ProviderScope(
     overrides: [appDatabaseProvider.overrideWithValue(db)],
     child: MaterialApp(
-      theme: theme,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [Locale('el')],
       locale: const Locale('el'),
@@ -59,13 +57,12 @@ Widget wrap(Item item, AppDatabase db, {ThemeData? theme}) {
 }
 
 void main() {
-  Future<void> pumpAt(WidgetTester tester, Item item, AppDatabase db,
-      {ThemeData? theme}) async {
+  Future<void> pumpAt(WidgetTester tester, Item item, AppDatabase db) async {
     tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(wrap(item, db, theme: theme));
+    await tester.pumpWidget(wrap(item, db));
     await tester.pumpAndSettle();
   }
 
@@ -356,19 +353,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(addEnabled(tester), isTrue, reason: 'Μία θέση ελεύθερη');
       expect(find.text(limitMessage), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
-    // ─── Dark mode §1.5 ───────────────────────────────────────────────────────
-    testWidgets('S8: dark theme — prefill + Add ανενεργό · χωρίς exception',
-        (tester) async {
-      final db = inMemoryDb();
-      addTearDown(db.close);
-      final seeded = await seed(db);
-      await pumpAt(tester, seeded.item, db, theme: AppTheme.dark);
-
-      expect(textOf(tester, AppStrings.fieldUnit), 'Κιλό');
-      expect(addEnabled(tester), isFalse);
       expect(tester.takeException(), isNull);
     });
   });

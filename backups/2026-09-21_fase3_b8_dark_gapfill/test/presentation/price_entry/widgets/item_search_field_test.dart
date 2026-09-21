@@ -22,7 +22,6 @@ import 'package:times/core/constants/app_messages.dart';
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/core/logging/app_logger.dart';
-import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
@@ -39,15 +38,13 @@ import '../../../data/local/helpers/in_memory_db.dart';
 /// Shared wrap: ProviderScope (με προαιρετικό in-memory DB) + MaterialApp με
 /// ελληνικά locale (όπως στο main) + Scaffold (SnackBar). Για no-DB tests το
 /// [db] παραλείπεται (η βάση παραμένει ακόμα κλειστή — §2.0.1).
-Widget wrap(Size size,
-    {AppDatabase? db, List<dynamic> extra = const [], ThemeData? theme}) {
+Widget wrap(Size size, {AppDatabase? db, List<dynamic> extra = const []}) {
   return ProviderScope(
     overrides: [
       if (db != null) appDatabaseProvider.overrideWithValue(db),
       ...extra,
     ],
     child: MaterialApp(
-      theme: theme,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [Locale('el')],
       locale: const Locale('el'),
@@ -76,12 +73,12 @@ void main() {
   });
 
   Future<void> pumpAt(WidgetTester tester, Size size,
-      {AppDatabase? db, List<dynamic> extra = const [], ThemeData? theme}) async {
+      {AppDatabase? db, List<dynamic> extra = const []}) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(wrap(size, db: db, extra: extra, theme: theme));
+    await tester.pumpWidget(wrap(size, db: db, extra: extra));
     await tester.pumpAndSettle();
   }
 
@@ -327,23 +324,6 @@ void main() {
     testWidgets('desktop (1200×800) — κανένα overflow', (tester) async {
       await pumpAt(tester, const Size(1200, 800));
       expect(find.text(AppStrings.itemSearchIdle), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    // ─── Dark mode §1.5 ───────────────────────────────────────────────────────
-    testWidgets('dark mode: search + select χωρίς exception', (tester) async {
-      final db = inMemoryDb();
-      addTearDown(db.close);
-      await seedChain(db, itemName: 'Γάλα');
-      await pumpAt(tester, const Size(800, 600), db: db, theme: AppTheme.dark);
-
-      await tester.enterText(find.byType(TextField), 'γάλα');
-      await settleSearch(tester);
-
-      expect(find.text('Γάλα'), findsOneWidget);
-      await tester.tap(find.text('Γάλα'));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.changeItem), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

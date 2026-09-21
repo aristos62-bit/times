@@ -17,7 +17,6 @@ import 'package:times/core/constants/app_errors.dart';
 import 'package:times/core/constants/app_messages.dart';
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/errors/app_exceptions.dart';
-import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
@@ -38,14 +37,13 @@ import '../../../data/local/helpers/in_memory_db.dart';
 
 /// Shared wrap: ProviderScope (προαιρετικό in-memory DB + extras) +
 /// MaterialApp ελληνικά + Scaffold (SnackBar).
-Widget wrap({AppDatabase? db, List<dynamic> extra = const [], ThemeData? theme}) {
+Widget wrap({AppDatabase? db, List<dynamic> extra = const []}) {
   return ProviderScope(
     overrides: [
       if (db != null) appDatabaseProvider.overrideWithValue(db),
       ...extra,
     ],
     child: MaterialApp(
-      theme: theme,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [Locale('el')],
       locale: const Locale('el'),
@@ -61,13 +59,12 @@ void main() {
     WidgetTester tester, {
     AppDatabase? db,
     List<dynamic> extra = const [],
-    ThemeData? theme,
   }) async {
     tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(wrap(db: db, extra: extra, theme: theme));
+    await tester.pumpWidget(wrap(db: db, extra: extra));
     await tester.pumpAndSettle();
   }
 
@@ -295,20 +292,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(AppMessages.savedReceipt), findsOneWidget);
       expect(tester.takeException(), isNull);
-        });
-
-    // ─── Dark mode §1.5 ───────────────────────────────────────────────────────
-    testWidgets('dark mode: έτοιμη φόρμα → ενεργό · χωρίς exception',
-            (tester) async {
-          final db = inMemoryDb();
-          addTearDown(db.close);
-          await pumpIt(tester, db: db, theme: AppTheme.dark);
-          final container = containerOf(tester);
-          await seedReadyForm(container);
-          await tester.pumpAndSettle();
-
-          expect(buttonEnabled(tester), isTrue);
-          expect(tester.takeException(), isNull);
         });
   });
 

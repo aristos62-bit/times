@@ -18,7 +18,6 @@ import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/constants/app_errors.dart';
 import 'package:times/core/constants/app_messages.dart';
 import 'package:times/core/constants/app_strings.dart';
-import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/supplier_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
@@ -30,13 +29,12 @@ import '../../../data/local/helpers/in_memory_db.dart';
 
 /// Shared wrap: ProviderScope (με προαιρετικό in-memory DB override) +
 /// MaterialApp με ελληνικά locale (όπως στο main) + Scaffold (SnackBar).
-Widget wrap(Size size, {Widget? child, AppDatabase? db, ThemeData? theme}) {
+Widget wrap(Size size, {Widget? child, AppDatabase? db}) {
   return ProviderScope(
     overrides: [
       if (db != null) appDatabaseProvider.overrideWithValue(db),
     ],
     child: MaterialApp(
-      theme: theme,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       supportedLocales: const [Locale('el')],
       locale: const Locale('el'),
@@ -52,13 +50,12 @@ Widget wrap(Size size, {Widget? child, AppDatabase? db, ThemeData? theme}) {
 
 void main() {
   /// Θέτει τη θύρα (logical, dpr=1) και περιμένει το δέντρο.
-  Future<void> pumpAt(WidgetTester tester, Size size,
-      {AppDatabase? db, ThemeData? theme}) async {
+  Future<void> pumpAt(WidgetTester tester, Size size, {AppDatabase? db}) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(wrap(size, db: db, theme: theme));
+    await tester.pumpWidget(wrap(size, db: db));
     await tester.pumpAndSettle();
   }
 
@@ -320,16 +317,6 @@ void main() {
     testWidgets('desktop (1200×800) — κανένα overflow', (tester) async {
       await pumpAt(tester, const Size(1200, 800));
       expect(find.text(mediumNow(tester)), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    // ─── Dark mode §1.5 ───────────────────────────────────────────────────────
-    testWidgets('dark mode: ημερομηνία + πεδίο προμηθευτή χωρίς exception',
-        (tester) async {
-      await pumpAt(tester, const Size(800, 600), theme: AppTheme.dark);
-
-      expect(find.text(mediumNow(tester)), findsOneWidget);
-      expect(find.text(AppStrings.fieldSupplier), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

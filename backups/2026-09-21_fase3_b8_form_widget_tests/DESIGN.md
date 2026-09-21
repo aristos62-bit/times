@@ -1,0 +1,465 @@
+# DESIGN.md — Εφαρμογή "Times" (Τιμές)
+
+> Έγγραφο αρχιτεκτονικής και σχεδιασμού. Ενημερώνεται μετά από κάθε ουσιαστική αλλαγή στην εφαρμογή. Αντικαθιστά πλήρως κάθε προηγούμενη έκδοση/προδιαγραφή.
+
+---
+
+## 0. Ταυτότητα Εφαρμογής
+
+| Στοιχείο | Τιμή |
+|---|---|
+| Όνομα εφαρμογής | **Τιμές** (διεθνές/τεχνικό όνομα: `Times`) |
+| Σκοπός | Προσωπική καταγραφή αγορών/αποδείξεων, παρακολούθηση τιμών ειδών ανά προμηθευτή, στατιστικά και συγκρίσεις τιμών στον χρόνο |
+| Πλατφόρμα | Flutter/Dart — Android, iOS, Windows (desktop), Web (προαιρετικά αργότερα) |
+| Γλώσσα UI | Ελληνικά (μοναδική γλώσσα, μέσω SPoT strings — όχι hardcoded) |
+| Βάση δεδομένων | SQLite μέσω **Drift** (type-safe ORM, ενεργά συντηρούμενο, αντικαθιστά το εγκαταλελειμμένο Isar) |
+| State management | Riverpod · **StreamProvider / AsyncNotifier όταν το state εξαρτάται από async πηγή (DB/stream)** — ό,τι χρειάζεται real-time · **plain Notifier όταν το state είναι καθαρά τοπικό/σύγχρονο**, με τα async actions σημειωμένα μέσα στο state (π.χ. `isSaving` flag) |
+| Πλοήγηση | GoRouter |
+| Θέμα | Light / Dark / Auto (system) |
+| Λειτουργία | 100% offline-first, τοπική βάση· "online" = προαιρετικός μελλοντικός συγχρονισμός (δεν είναι στο MVP, σχεδιάζεται ως επέκταση) |
+| "Real-time" | UI ενημερώνεται αυτόματα και άμεσα σε κάθε αλλαγή δεδομένων μέσω reactive streams — όχι δικτυακός συγχρονισμός |
+
+**Λογότυπο / branding**: Ορίστηκε στη Φάση 0, Βήμα 2 — παλέτα (teal seed `#00897B`), εικονίδιο εφαρμογής & splash (`assets/icons/Times.png`), εμφανιζόμενο όνομα «Τιμές», package id `com.app.times`. Καμία σελίδα δεν θα κυκλοφορήσει με προεπιλεγμένο Flutter branding, γενικές περιγραφές τύπου "My App" ή placeholder εικόνες.
+
+---
+
+## 1. Αρχιτεκτονικές Αρχές (Δεσμευτικές για όλο το project)
+
+1. **SPoT (Single Point of Truth) παντού**
+   - Κείμενα UI → `lib/core/constants/app_strings.dart`
+   - Αριθμητικές/στατικές τιμές (paddings, διάρκειες, όρια) → `lib/core/constants/app_constants.dart`
+   - Χρώματα/θέματα → `lib/core/theme/app_theme.dart` + `app_colors.dart`
+   - Μονάδες μέτρησης, τύποι κατηγοριών → `lib/core/constants/app_enums.dart` (ή πίνακας στη βάση, βλ. §3)
+   - Routes → `lib/core/router/app_routes.dart` (ονόματα/paths ως σταθερές, ποτέ raw strings σε `context.go(...)`)
+   - **Κανόνας**: αν μια τιμή/κείμενο/χρώμα εμφανίζεται σε 2+ σημεία ή είναι πιθανό να αλλάξει, πάει σε SPoT αρχείο. Καμία εξαίρεση.
+
+2. **Διαχωρισμός επιπέδων (Clean Layering)**
+   ```
+   lib/
+   ├── core/
+   │   ├── constants/   (SPoT: app_constants, app_strings, app_messages, app_errors, app_enums)
+   │   ├── theme/       (app_theme, app_colors)
+   │   ├── router/      (app_routes, app_router [route definitions + GoRouter], nav_log_observer)
+   │   ├── utils/       (debouncer, greek_text_normalizer, app_feedback)
+   │   ├── errors/      (app_exceptions)
+   │   ├── logging/     (app_logger)
+   │   └── debug/       (debug_config)
+   ├── data/
+   │   ├── local/       (Drift database, tables, DAOs)
+   │   ├── models/      (κενό placeholder — ο ανοιχτός φάκελος για οντότητες · καμία Freezed: τα repos επιστρέφουν Drift data classes απευθείας, απόφαση Φάση 2 Βήμα 1)
+   │   ├── repositories/(abstract + implementation, μοναδικό σημείο πρόσβασης στη βάση)
+   │   └── providers/   (Riverpod DI δέντρο + StreamProviders — η γέφυρα repos → UI)
+   ├── domain/
+   │   ├── services/    (business logic: στατιστικά, συγκρίσεις τιμών)
+   │   └── validators/  (SPoT validators: receipt_validator, name_validator)
+   ├── presentation/
+   │   ├── home/        (Κεντρική: home_page, controllers/, state/, widgets/) — §2.1
+   │   ├── price_entry/ (Εισαγωγή τιμών: price_entry_page, controllers/, state/, widgets/) — §2.2
+   │   ├── settings/    (Ρυθμίσεις: settings_page, controllers/, state/, widgets/) — §2.3
+   │   └── shared/      (κοινά widgets: SearchableDropdownField, ConfirmDialog, AsyncValueView, ...) — §2.4
+   └── main.dart
+   ```
+   - Το UI **δεν** μιλάει ποτέ απευθείας με τη βάση· περνάει πάντα από Repository → Riverpod Provider → Widget.
+   - Κάθε repository εκθέτει `Stream<List<T>>` για ό,τι πρέπει να ενημερώνεται real-time.
+
+3. **Καμία hardcoded τιμή σε UI ή business logic.** Κάθε αριθμός/κείμενο/χρώμα περνάει από SPoT αρχείο (βλ. §1.1).
+
+4. **Responsive & χωρίς overflow παντού**
+   - `LayoutBuilder` / `MediaQuery` breakpoints ορισμένα σε `app_constants.dart` (π.χ. `mobileMaxWidth`, `tabletMaxWidth`).
+   - Χρήση `Flexible`/`Expanded`/`Wrap`/`SingleChildScrollView` σε κάθε οθόνη — ποτέ σταθερά `SizedBox` ύψη σε λίστες/φόρμες που μπορεί να μεγαλώσουν.
+   - Test σε τουλάχιστον 3 μεγέθη οθόνης (μικρό κινητό, tablet, desktop window resize) πριν κλείσει κάθε Phase.
+
+5. **Θέμα**
+   - `ThemeMode.system` ως προεπιλογή, με δυνατότητα override από τον χρήστη (Light/Dark/Auto) αποθηκευμένη τοπικά (SharedPreferences).
+   - Όλα τα χρώματα από `ColorScheme`, ποτέ raw `Color(0xFF...)` μέσα σε widgets.
+
+6. **Προσβασιμότητα**: `Semantics` labels σε όλα τα interactive στοιχεία (πεδία, κουμπιά, dropdowns), ιδίως στη φόρμα εισαγωγής τιμών.
+
+7. **Logging / Debug**
+   - `lib/core/logging/app_logger.dart` — SPoT logger με ομαδοποιημένα tags: `DB`, `UI`, `NAV`, `STATS`, `BACKUP`.
+   - Κάθε repository/service καταγράφει: create/update/delete operations, σφάλματα, query results (σε debug mode μόνο).
+   - Config αρχείο `lib/core/debug/debug_config.dart` για ενεργοποίηση/απενεργοποίηση ανά κατηγορία log.
+
+8. **Testing**
+   - `test/` mirror του `lib/` δέντρου.
+   - Unit tests: repositories, services (στατιστικά, price comparison logic), validators.
+   - Widget tests: φόρμα εισαγωγής τιμών (πιο κρίσιμη οθόνη), search/autocomplete λογική.
+   - Στόχος: **>80% coverage** μέσω `flutter test --coverage`.
+   - Κάθε νέο feature σε κάθε Phase συνοδεύεται από αντίστοιχα tests πριν κλείσει η φάση.
+
+9. **Backup/Restore**
+   - Export ολόκληρης της SQLite βάσης σε αρχείο `.db` (ή JSON export ως εναλλακτική, ανθρωπίνως αναγνώσιμη) σε επιλεγμένο φάκελο συσκευής.
+   - Restore με επιβεβαίωση (προειδοποίηση αντικατάστασης τρεχόντων δεδομένων) και validation του αρχείου πριν την εισαγωγή.
+
+10. **Καμία αλλαγή στο documentation δεν μένει εκκρεμής** — μετά από κάθε Phase/βήμα ενημερώνονται: `DESIGN.md` (αυτό το αρχείο), `AGENTS.md` (κανόνες συνεργασίας), τυχόν `oldsessions.md`.
+
+---
+
+## 2. Αρχιτεκτονική Οθονών (Λεπτομερής)
+
+### 2.0 Κοινό Πρότυπο ανά Οθόνη (δεσμευτικό για όλες τις σελίδες)
+
+Κάθε σελίδα ακολουθεί **την ίδια** εσωτερική δομή, ώστε να μην αποφασίζουμε ξανά αρχιτεκτονική σε κάθε Phase:
+
+```
+presentation/<screen>/
+├── <screen>_page.dart          -- ConsumerWidget, ΜΟΝΟ layout/σύνθεση, καθόλου business logic
+├── controllers/
+│   └── <screen>_controller.dart -- Notifier/AsyncNotifier, όλη η λογική & state (επιλογή βάσει κανόνα, §2.0)
+├── state/
+│   └── <screen>_state.dart      -- Freezed immutable state class
+└── widgets/
+    └── ...                       -- μικρά, "χαζά" (dumb) widgets· παίρνουν δεδομένα από το page, δεν διαβάζουν providers μόνα τους (εκτός αν είναι self-contained, π.χ. search field)
+```
+
+**Κανόνες που ισχύουν παντού (αποτρέπουν τα πιο συνηθισμένα λάθη):**
+
+1. **Ένα state, τέσσερις καταστάσεις.** Κάθε οθόνη/section με δεδομένα από τη βάση περνάει πάντα από `AsyncValue<T>.when(data:, loading:, error:)` — ποτέ χειροκίνητο `isLoading` bool flag ξεχωριστά από `AsyncValue`. Έτσι loading/empty/error αντιμετωπίζονται ομοιόμορφα παντού.
+2. **Naming convention providers** (SPoT και στα ονόματα, όχι μόνο στις τιμές):
+   - `xxxRepositoryProvider` → το repository (Provider, singleton)
+   - `xxxStreamProvider` → ζωντανή λίστα από repository (StreamProvider)
+   - `xxxControllerProvider` → φόρμες/actions · **AsyncNotifierProvider** όταν το state προέρχεται από async πηγή (DB/stream), **plain NotifierProvider** όταν το state είναι καθαρά τοπικό/σύγχρονο με async actions σημειωμένα μέσα στο state (π.χ. `isSaving` flag) — βλ. παράδειγμα `receipt_form_controller` (§2.2)
+   - `selectedXxxProvider` → απλή επιλογή UI state (StateProvider), π.χ. φίλτρο
+3. **Debounce σε ΚΑΘΕ text input που πυροδοτεί query** (όχι μόνο στην αναζήτηση ειδών) — χρήση κοινού `Debouncer` util στο `core/utils/debouncer.dart`, με τιμή από `AppConstants.searchDebounceMillis`. Κάθε νέο keystroke **ακυρώνει** το προηγούμενο pending query (αποφυγή race condition: παλιό αργό αποτέλεσμα να "προσπεράσει" νεότερο).
+4. **Ελληνικό normalization στην αναζήτηση**: η αναζήτηση ειδών/προμηθευτών/κατηγοριών πρέπει να δουλεύει ανεξαρτήτως τόνων/κεφαλαίων (π.χ. "γαλα" να βρίσκει "Γάλα") και τελικού σίγμα (αδιάφορο σ/ς). SPoT utility `core/utils/greek_text_normalizer.dart` → εφαρμόζεται και στο SQL query (αποθηκευμένη normalized στήλη `normalizedName`, §3) και στο UI input πριν το query φύγει.
+5. **Καμία οθόνη δεν διαβάζει repository απευθείας** — πάντα μέσω controller/provider (ισχύει ήδη στο §1.2, το επαναλαμβάνω εδώ γιατί είναι το σημείο που παραβιάζεται πιο εύκολα μέσα σε popup/dialog widgets που "βολεύει" να πάρουν shortcut).
+6. **Snackbars/Toasts μόνο μέσω SPoT wrapper** `core/utils/app_feedback.dart` (`AppFeedback.showSuccess(context, msg)` / `showError(...)`) — χρησιμοποιεί `AppConstants.snackBarDurationSeconds`, ώστε να μην ξαναγραφτεί `ScaffoldMessenger.of(context).showSnackBar(...)` σκόρπιο σε 10 σημεία.
+
+---
+
+### 2.1 Κεντρική Σελίδα — Γραφήματα & Στατιστικά
+
+**Σκοπός**: σύνολο δαπανών ανά περίοδο, top ακριβότερα/φθηνότερα είδη, εξέλιξη τιμής είδους στον χρόνο, σύγκριση προμηθευτών.
+
+**Δομή αρχείων**
+```
+presentation/home/
+├── home_page.dart
+├── controllers/home_controller.dart
+├── state/home_state.dart
+└── widgets/
+    ├── period_filter_bar.dart      -- επιλογή μήνας/τρίμηνο/έτος/custom range
+    ├── category_filter_chip.dart
+    ├── summary_totals_card.dart    -- σύνολο δαπανών περιόδου
+    ├── price_trend_chart.dart      -- εξέλιξη τιμής είδους (line chart)
+    ├── supplier_comparison_chart.dart -- bar chart σύγκρισης προμηθευτών
+    ├── top_items_list.dart
+    └── chart_fallback_table.dart   -- βλ. §4 Φάση 5, βήμα 3
+```
+
+**Providers / ροή δεδομένων**
+- `selectedPeriodProvider` (StateProvider<DateRange>) — αρχικοποιείται σε "τρέχων μήνας".
+- `selectedCategoryProvider` (StateProvider<int?>) — `null` = όλες οι κατηγορίες.
+- `homeStatisticsProvider` = `FutureProvider.autoDispose` που κάνει `ref.watch` στα δύο παραπάνω → καλεί `StatisticsService` (domain layer) → επιστρέφει `HomeStatisticsResult` (Freezed: totals, trendPoints, supplierComparison, topItems).
+- **Κρίσιμο**: η άθροιση γίνεται **στο SQL** (`SUM(lineTotalCents) GROUP BY ...`), όχι φορτώνοντας όλες τις γραμμές στη μνήμη και αθροίζοντας σε Dart — αλλιώς σε μεγάλο ιστορικό (πολλούς μήνες) η οθόνη κολλάει.
+
+**Καταστάσεις οθόνης**
+- `loading` → skeleton/placeholder cards (όχι κενή οθόνη — αποφυγή "flash of empty content").
+- `data` με άδεια αποτελέσματα → μήνυμα *"Δεν υπάρχουν καταχωρημένες τιμές για αυτή την περίοδο"* (SPoT string) αντί για κενό γράφημα.
+- `error` → μήνυμα + κουμπί "Επανάληψη" (`ref.invalidate(homeStatisticsProvider)`).
+
+**Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
+- Αλλαγή φίλτρου δεν πρέπει να ξαναχτίζει ολόκληρη τη σελίδα (jank) — μόνο το section που εξαρτάται από το φίλτρο μέσα σε `Consumer` τοπικό, όχι όλο το `HomePage` σε ένα `ConsumerWidget.build`.
+- Το `price_trend_chart` χρειάζεται δεδομένα **ανά είδος** — άρα προαπαιτεί επιλογή είδους (dropdown/search μέσα στη σελίδα, ξεχωριστό state `selectedItemForTrendProvider`), κάτι που δεν ήταν ρητό πριν· το προσθέτω τώρα ως απαιτούμενο widget.
+
+---
+
+### 2.2 Σελίδα Εισαγωγής Τιμών (ο πυρήνας της εφαρμογής)
+
+Αυτή είναι η πιο πολύπλοκη οθόνη (πολλαπλά εμφωλευμένα "+" flows) — περιγράφεται ως **state machine**, όχι απλή λίστα βημάτων, ώστε να μην υπάρχει αμφισημία στην υλοποίηση.
+
+**Δομή αρχείων**
+```
+presentation/price_entry/
+├── price_entry_page.dart
+├── controllers/
+│   ├── receipt_form_controller.dart   -- header (ημερομηνία, προμηθευτής) + λίστα draft γραμμών + save · **plain Notifier** (τοπικό/σύγχρονο state `ReceiptFormState{date, supplier, draftLines[], isSaving}`, async save σημειωμένο με `isSaving`)
+│   └── item_search_controller.dart    -- αναζήτηση/επιλογή είδους, ξεχωριστό γιατί έχει δικό του lifecycle (debounce, cancel) · **AsyncNotifier** (αποτελέσματα από DB/stream)
+├── state/
+│   ├── receipt_form_state.dart        -- Freezed: date, supplier, draftLines[], isSaving
+│   └── item_search_state.dart         -- Freezed: query, results[], selectedItem, status(idle/searching/found/notFound)
+└── widgets/
+    ├── receipt_header_section.dart    -- ημερομηνία + προμηθευτής (με inline "+" νέου προμηθευτή)
+    ├── item_search_field.dart         -- το search box με live αποτελέσματα από κάτω
+    ├── new_item_flow_dialog.dart      -- popup Κατηγορία→Υποκατηγορία→Είδος (βλ. state machine)
+    ├── unit_quantity_price_section.dart
+    ├── draft_lines_list.dart          -- οι γραμμές που έχουν προστεθεί στο "καλάθι" της τρέχουσας απόδειξης
+    ├── save_receipt_button.dart       -- «Αποθήκευση Απόδειξης» (disabled-OR: κενό καλάθι ∨ χωρίς προμηθευτή ∨ isSaving) + feedback
+    └── recent_receipts_list.dart      -- read-only λίστα τελευταίων αποδείξεων: #, ημερομηνία, προμηθευτής, #γραμμές, σύνολο € · auto-refresh μέσω stream (Φάση 3 Βήμα 7)
+```
+
+**State machine εισαγωγής γραμμής (item_search_controller)**
+
+```
+IDLE  ──(πληκτρολόγηση ≥ searchMinChars)──▶  SEARCHING
+SEARCHING ──(βρέθηκαν 1+ αποτελέσματα, ≤ searchResultsLimit)──▶ RESULTS_FOUND
+SEARCHING ──(0 αποτελέσματα)──▶ NOT_FOUND
+RESULTS_FOUND ──(χρήστης επιλέγει είδος)──▶ ITEM_SELECTED
+RESULTS_FOUND ──(χρήστης πατά "+")──▶ NEW_ITEM_FLOW
+NOT_FOUND ──(αυτόματα εμφανίζεται "+")──▶ NEW_ITEM_FLOW
+NEW_ITEM_FLOW: επιλογή Κατηγορίας [υπάρχουσα ▸ ή "+" νέα] 
+             → επιλογή Υποκατηγορίας [υπάρχουσα ▸ ή "+" νέα]
+             → εισαγωγή ονόματος νέου Είδους
+             → (save Category/SubCategory/Item αν χρειάζεται) ──▶ ITEM_SELECTED
+ITEM_SELECTED ──▶ εμφάνιση Unit dropdown (προεπιλογή: Item.defaultUnitId αν υπάρχει)
+             → Ποσότητα (input τύπου ανάλογα με Unit.allowsDecimal)
+             → Τιμή
+             → "Προσθήκη γραμμής" ──▶ γραμμή μπαίνει στο draftLines[] της απόδειξης, το search field καθαρίζει και επιστρέφει σε IDLE (έτοιμο για επόμενο είδος)
+```
+
+**Ροή αποθήκευσης ολόκληρης απόδειξης**
+1. Ο χρήστης προσθέτει 1+ γραμμές στο "καλάθι" (`draftLines`) — καμία εγγραφή στη βάση ακόμα.
+2. Πατώντας "Αποθήκευση Απόδειξης": validation (§ παρακάτω) → `receipt_form_controller` καλεί repository σε **μία transaction**: insert `Receipt` + όλες οι `ReceiptLine` μαζί (atomicity — είτε όλα είτε τίποτα).
+3. Επιτυχία → `AppFeedback.showSuccess` + καθαρισμός φόρμας + refresh του `recent_receipts_list` (αυτόματο, μέσω stream).
+4. Αποτυχία (π.χ. σφάλμα βάσης) → `AppFeedback.showError`, τα draft δεδομένα **παραμένουν** στη φόρμα (δεν χάνει ό,τι έγραψε ο χρήστης).
+
+**Λίστα πρόσφατων αποδείξεων (read-only, κάτω από το save — Φάση 3 Βήμα 7)**
+- Δεδομένα: `ReceiptSummary` projection (record `{id, date, supplierName, lineCount, lineTotalCentsSum}`) από `ReceiptDao.watchRecentSummaries` — ένα watch query (`customSelect` + `readsFrom`) πάνω σε **stored** `lineTotalCents` (SPoT §3). Το `(priceCents * quantity).round() == 0` (π.χ. 0,01 € × 0,004) είναι **έγκυρη** γραμμή με σύνολο **0,00 €** — δεν απορρίπτεται.
+- Ενημέρωση: `recentReceiptsStreamProvider` (StreamProvider, `autoDispose: false`, όριο `AppConstants.recentReceiptsLimit` = 20). Επειδή η λίστα παρακολουθεί το stream, **ανανεώνεται αυτόματα μετά από κάθε save** (βήμα 3 παραπάνω).
+- Εμφάνιση: `recent_receipts_list.dart` — `AsyncValue.when`: loading (spinner), error (`AppErrors.loadDataFailed` + «Επανάληψη» → `ref.invalidate`), empty (`recentReceiptsEmpty`), data (Card + ListTile ανά απόδειξη: subtitle `προμηθευτής · ημερομηνία · #γραμμές`, trailing `formatCents` €). Responsive 3 μεγέθη + dark/light.
+- SPoT κείμενα: `AppStrings.recentReceiptsTitle` / `recentReceiptsEmpty` · `AppMessages.receiptNumber(id)` / `receiptLinesLabel(count)`.
+- **Συνέπεια (Α1)**: η λίστα είναι **πάντα ορατή** στην PriceEntry → με το `IndexedStack` (§4 Φάση 3 Βήμα 1) η σελίδα φορτώνει στο launch και **η βάση ανοίγει στο launch** — κάθε widget test που pump-άρει `PriceEntryPage`/`TimesApp` κάνει override του `recentReceiptsStreamProvider`.
+
+**Validation πριν την αποθήκευση (SPoT validators, `domain/validators/receipt_validator.dart`)**
+- Τουλάχιστον 1 γραμμή, όχι πάνω από `maxReceiptLines`.
+- `price > validationMinPrice`, `quantity > validationMinQuantity`.
+- Αν `Unit.allowsDecimal == false` → `quantity` πρέπει να είναι ακέραιος (απόρριψη 2.5 τεμάχια).
+- Όνομα νέας Κατηγορίας/Υποκατηγορίας/Είδους: όχι κενό, ≤ `maxItemNameLength`, **case-insensitive έλεγχος διπλότυπου** πριν την εισαγωγή (αποφυγή "Γάλα" και "γαλα" ως δύο διαφορετικές εγγραφές) — `domain/validators/name_validator.dart`.
+- **Υλοποίηση (Φάση 3, Βήμα 6)**: ο `ReceiptValidator` είναι καθαρός (static, χωρίς UI/DB/logging, εξαρτάται μόνο από `core/constants`, δουλεύει με primitives) και όπως ο `NameValidator` επιστρέφει `String?` — `null` = ΟΚ, αλλιώς SPoT μήνυμα (`AppErrors` ή `AppMessages.receiptLinesLimitReached`)· ΚΑΝΕΝΑ exception (δεν ορίστηκε `ValidationException`). API: `validateUnit` · `validatePriceCents` (σε ΛΕΠΤΑ, §3) · `validateQuantity(q, allowsDecimal:)` · `validateLine` (ποσότητα → τιμή) · `validateLineCount` · `validateReceipt(hasSupplier, lineCount)` (γραμμές → προμηθευτής) · `isIncompleteNumber(text)` (τελικός διαχωριστής → κανένα σφάλμα «υπό πληκτρολόγηση»). Δεν υπολογίζει `lineTotalCents` — SPoT του `ReceiptLineDao` (§3).
+- **Ένας κανόνας, τρεις καταναλωτές**: (1) `unit_quantity_price_section` — inline σφάλμα (`errorText` στα `CurrencyTextField`/`QuantityTextField`, `AppConstants.fieldErrorMaxLines`) ΜΟΝΟ σε μη κενή, ολοκληρωμένη είσοδο + hint μονάδας· (2) `save_receipt_button` — `canSave` από `validateReceipt` + hint `supplierRequired` όταν υπάρχουν γραμμές αλλά όχι προμηθευτής· (3) `receipt_form_controller` — safety-net: το `addDraftLine` αγνοεί άκυρη γραμμή και το `saveReceipt` απορρίπτει ΠΡΙΝ το `isSaving`, και στις δύο περιπτώσεις με log `[UI][ERROR]` και (στο save) `SaveReceiptException` — ο λόγος μένει στο log, το ειδικό μήνυμα φαίνεται inline. Το `DraftReceiptLine.unitAllowsDecimal` (snapshot του `Unit.allowsDecimal`, default `true`) τροφοδοτεί τον κανόνα ακεραιότητας.
+- **Ονόματα στο «+»**: προμηθευτής (`receipt_header_section`) → `AppFeedback.showError(nameRequired/nameTooLong)` πριν το DB· Κατηγορία/Υποκατηγορία στο `new_item_flow_dialog` → inline μήνυμα κάτω από το πεδίο (`nameRequired`/`nameTooLong`/`nameExists`) — ΟΧΙ snackbar μέσα στο dialog (ScaffoldMessenger caveat, §2.4).
+
+**Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
+- **Double-tap στο "+" προμηθευτή/είδους**: τοπικός busy-flag στο widget
+  (`_isCreating`) + guard στον controller — μια μόνο δημιουργία ανά tap
+  (§2.4.1).
+- **Διπλότυπος προμηθευτής από το «+»**: ο `createSupplier` του
+  `receipt_form_controller` τρέχει exact-match έλεγχο στο `normalizedName`
+  (getByNormalizedName §2.0.4) ΠΡΙΝ το insert και — αντί για exception —
+  επιστρέφει **record `({Supplier? supplier, bool created})`**: `created=false`
+  σημαίνει «υπάρχει ήδη» → ο καλών εμφανίζει το σωστό snackbar
+  (`supplierAdded` ή `supplierExists` via `AppFeedback`), χωρίς soft-fail στο
+  UNIQUE constraint της βάσης. Το UNIQUE παραμένει το safety-net (αν περάσει,
+  `DataLoadException`).
+- **Ημιτελής καταχώρηση κατά την έξοδο**: αν ο χρήστης φύγει από τη σελίδα με μη αποθηκευμένες `draftLines`, ο router (GoRouter `onExit`/`PopScope`) εμφανίζει επιβεβαίωση *"Έχετε μη αποθηκευμένες γραμμές. Έξοδος χωρίς αποθήκευση;"*. Το state του controller έχει `autoDispose: false` όσο υπάρχουν draft δεδομένα, ώστε προσωρινή αλλαγή tab να μην τα σβήσει.
+- **Race condition αναζήτησης**: κάθε νέο keystroke ακυρώνει το προηγούμενο pending search (§2.0.3) — αλλιώς ένα αργό query για "γ" μπορεί να εμφανιστεί *μετά* το γρήγορο query για "γάλα" και να δείξει λάθος αποτελέσματα.
+- **Διπλή δημιουργία είδους σε γρήγορο double-tap** στο "+": το κουμπί απενεργοποιείται (`isSaving` flag) μέχρι να ολοκληρωθεί το insert.
+- **defaultUnitId vs χειροκίνητη επιλογή**: το dropdown προτείνει το `Item.defaultUnitId` αλλά επιτρέπει αλλαγή· αν αλλάξει ο χρήστης μονάδα σε σχέση με το default, **δεν** ενημερώνεται αυτόματα το `Item.defaultUnitId` (θα ήταν απρόβλεπτη πλευρική ενέργεια) — μόνο από τις Ρυθμίσεις, ρητά.
+- **Πολλαπλές γραμμές ίδιου είδους στην ίδια απόδειξη** (π.χ. 2 διαφορετικές τιμές/συσκευασίες γάλακτος): επιτρέπεται — δεν κάνουμε merge, κάθε γραμμή είναι ανεξάρτητη.
+
+---
+
+### 2.3 Σελίδα Ρυθμίσεων
+
+**Δομή αρχείων**
+```
+presentation/settings/
+├── settings_page.dart
+├── controllers/
+│   ├── theme_controller.dart
+│   ├── category_management_controller.dart
+│   └── backup_restore_controller.dart
+├── state/settings_state.dart
+└── widgets/
+    ├── theme_mode_selector.dart
+    ├── category_tree_editor.dart      -- λίστα Κατηγορία▸Υποκατηγορία με edit/delete εικονίδια
+    └── backup_restore_section.dart
+```
+
+**Providers / λογική**
+- `themeModeProvider` (Notifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` για `MaterialApp.themeMode`.
+- `categoryTreeStreamProvider` (StreamProvider) → live λίστα Κατηγοριών με nested Υποκατηγορίες.
+- `canDeleteCategoryProvider` / `canDeleteSubCategoryProvider` (`FutureProvider.family<bool, int>`) → **προ-έλεγχος** (μετράει συνδεδεμένα Items/ReceiptLines) πριν καν εμφανιστεί ενεργό το εικονίδιο διαγραφής.
+
+**Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
+- Το κουμπί διαγραφής **δεν** εμφανίζεται απλά "με error μετά το tap" — είναι **greyed-out με tooltip** ("Δεν μπορεί να διαγραφεί: περιέχει X είδη") όταν `canDelete == false`. Αυτό αποτρέπει frustration-click και ταιριάζει με τη γενική αρχή §1.4 (καμία απρόβλεπτη συμπεριφορά).
+- Edit ονόματος Κατηγορίας/Υποκατηγορίας περνάει από τον **ίδιο** case-insensitive duplicate-check validator με τη Φάση 3 (κοινό `domain/validators/name_validator.dart` — SPoT, όχι διπλή υλοποίηση).
+
+**Backup/Restore — αναλυτική ροή**
+1. **Export**: tap → `file_picker` save dialog, προτεινόμενο filename από `AppConstants.backupFileNamePattern` + τρέχον timestamp → εγγραφή αντιγράφου της SQLite βάσης → `AppFeedback.showSuccess`.
+2. **Restore**: tap → επιλογή αρχείου → **validation αρχείου** πριν από οτιδήποτε άλλο (έλεγχος SQLite header magic bytes + ύπαρξη αναμενόμενων πινάκων) → αν άκυρο, error χωρίς καμία αλλαγή στην τρέχουσα βάση.
+3. Αν το αρχείο είναι έγκυρο → **υποχρεωτικό αυτόματο backup** της *τρέχουσας* βάσης πριν γίνει η αντικατάσταση (safety net, §1.9 / §2.3 προηγούμενη απόφαση).
+4. Επιβεβαιωτικό dialog με ρητή προειδοποίηση αντικατάστασης δεδομένων → OK → αντικατάσταση αρχείου βάσης → **restart των Riverpod providers** (`ref.invalidate` στο root ή πλήρες app restart) ώστε όλο το UI να διαβάσει τα νέα δεδομένα — όχι μόνο αντικατάσταση αρχείου χωρίς ανανέωση state (κλασικό λάθος: το UI δείχνει "παλιά" δεδομένα από cached providers μετά το restore).
+
+---
+
+### 2.4 Κοινά (Shared) Widgets — χτίζονται μία φορά, χρησιμοποιούνται παντού
+
+| Widget | Ρόλος | Χρησιμοποιείται σε |
+|---|---|---|
+| `SearchableDropdownField` | Γενικό dropdown με αναζήτηση + slot για "+" νέο | Προμηθευτής, Κατηγορία, Υποκατηγορία, Unit |
+| `ConfirmDialog` | Γενικό επιβεβαιωτικό (τίτλος/μήνυμα/actions από παραμέτρους, SPoT strings) | Διαγραφή, Restore, έξοδος με unsaved data |
+| `AsyncValueView<T>` | Wrapper πάνω στο `AsyncValue.when` με ενιαία loading/error εμφάνιση | Όλες οι οθόνες με δεδομένα |
+| `CurrencyTextField` | Input formatter με `priceDecimalDigits`, εμφανίζει €, μετατρέπει σε cents στο submit · προαιρετικό `errorText` (Βήμα 6δ) | Τιμή στη Φάση 3 |
+| `QuantityTextField` | Input formatter με `quantityDecimalDigits` + δέχεται flag `allowsDecimal` · προαιρετικό `errorText` (Βήμα 6δ) | Ποσότητα στη Φάση 3 |
+| `AppFeedback` | SPoT snackbar/toast wrapper (§2.0.6) | Παντού |
+
+### 2.4.1 `SearchableDropdownField` — υλοποίηση (Φάση 3, Βήμα 3)
+
+Υλοποιήθηκε ως `ConsumerStatefulWidget` πάνω στο native `RawAutocomplete`
+(keyboard/accessibility δωρεάν) + `Debouncer` + **gated watch**. Ρητές
+αποφάσεις υλοποίησης (δεσμευτικές για το ίδιο widget και στα Βήματα 4/6):
+
+- **Τα αποτελέσματα έρχονται ΜΟΝΟ μέσω `ref.watch(searchProvider(query))`
+  `.when(data:, loading:, error:)`** — ο `optionsBuilder` του RawAutocomplete
+  είναι **σύγχρονος** (επιστρέφει τις γραμμές μιας ήδη-υπολογισμένης λίστας,
+  ΚΑΝΕΝΑ read provider μέσα του). Εκδόσεις με async builder + `provider.future`
+  απορρίφθηκαν επί τόπου: το `.future` δεν ολοκληρώνεται σε tests και ο
+  RawAutocomplete ξανατρέχει τον builder μόνο σε αλλαγή κειμένου/focus.
+- **TO SPECIFIC (RawAutocomplete)**: ο builder ΔΕΝ ξανακαλείται όταν αλλάζει
+  μόνο το state του parent widget. Λύση = **controlled refresh**: μετά από
+  debounce που «κλειδώνει» το query και μετά από άφιξη δεδομένων
+  (loading→data) γίνεται transient αλλαγή του controller value (append/restore
+  κενού, αμφότερα σύγχρονα) → ο RawAutocomplete ξανατρέχει τον builder και το
+  overlay δείχνει τις φρέσκες γραμμές. Στο build συγκρίνεται η τελευταία λίστα
+  αποτελεσμάτων (`_lastResults`) για το refresh-on-data-arrival.
+- **Gated watch (§2.0.1)**: `ref.watch` γίνεται ΜΟΝΟ όταν `query.length >=
+  minChars`· κάτω από το όριο (και στο κενό πεδίο) καμία εξάρτηση → η βάση
+  δεν ανοίγει στο launch. Κανένα χειροκίνητο `isLoading` bool.
+- **«+» πάντα στο τέλος** της λίστας όταν `createLabel != null` και υπάρχει
+  query — ορατό ΑΚΟΜΑ και με 0 αποτελέσματα (η λίστα wrapper `_Entry<T>`
+  κρατιέται μη-κενή). Error path (`.when(error:)`) → «+» μόνο (σιωπηλό).
+- **Double-tap guard**: τοπικό busy-flag `_isCreating` στο widget (guard πριν
+  το callback + γκριζάρισμα της γραμμής). Το widget ΔΕΝ εμφανίζει feedback —
+  ο καλών διαχειρίζεται snackbar μέσω SPoT `AppFeedback`.
+- **`_selectedLabel` guard**: το πεδίο δείχνει το label μετά από
+  επιλογή/prefill και το overlay μένει κλειστό όσο το κείμενο ταυτίζεται με
+  αυτό· νέα επεξεργασία ενεργοποιεί ξανά την αναζήτηση.
+- Ο καλών δίνει μόνο: `labelText`/`hintText` (SPoT strings), `searchProvider`
+  (callable family), `labelOf`, προαιρετικά `createLabel`+`onCreate`
+  (INVARIANT: αν δίνεται το ένα ΟΦΕΙΛΕΤΑΙ και το άλλο), `onSelected`,
+  καθώς και προαιρετικά `prefixIcon`/`resultLeadingIcon` (SPoT icons,
+  προστέθηκαν στο Βήμα 4 — χρησιμοποιούνται στο `new_item_flow_dialog`).
+- Στο `ReceiptHeaderSection` (Βήμα 3) το `<T>` = `Supplier` μέσω του υπάρχοντος
+  `supplierSearchProvider` (Φάση 2) — χρήση, όχι νέα υλοποίηση (§2.0.5).
+- **Προαιρετικές παράμετροι Βήματος 5** (defaults `null`/`false` → υπάρχοντες
+  καλούντες άθικτοι): `showAllWhenEmpty` + `allOptionsProvider` (show-all-on-focus
+  σε κενό πεδίο, gated watch §2.0.1 — assert: το ένα απαιτεί το άλλο) ·
+  `initialValue` (μόνο εμφάνιση, ΔΕΝ καλεί `onSelected`, εφαρμόζεται όσο ο
+  χρήστης δεν έχει επιλέξει) · `onCleared` (fire-once όταν επιλογή/προεπιλογή
+  παύει να ισχύει από επεξεργασία κειμένου· ο καλών μηδενίζει το δικό του
+  state). Χρήση: Unit dropdown στο `unit_quantity_price_section.dart`.
+- **Κείμενο πεδίου μετά την επιλογή (Βήμα 6ε)**: το `RawAutocomplete` γράφει
+  στο πεδίο το `displayStringForOption(επιλογή)` — default `toString()` της
+  γραμμής («Instance of '_CreateEntry<…>'»), που έμενε στο πεδίο όταν το
+  `onCreate` επέστρεφε `null` (άκυρο όνομα / σφάλμα). Δίνεται ρητό
+  `displayStringForOption`: αποτέλεσμα → label, «+» → το query του χρήστη. Οι
+  ιδιωτικές κλάσεις `_Entry` μεταφέρθηκαν σε `part` αρχείο
+  `searchable_dropdown_entry.dart` ώστε το κύριο αρχείο να μένει <500 γρ.
+
+---
+
+---
+
+### 2.5 Σύνοψη Ροής Δεδομένων (ισχύει σε όλες τις οθόνες)
+
+```
+SQLite (Drift) 
+   ↓ Stream<List<T>>
+Repository (data/repositories) 
+   ↓ (business rules, aggregation) 
+Domain Service (μόνο όπου χρειάζεται υπολογισμό, π.χ. StatisticsService, ReceiptValidator)
+   ↓
+Riverpod Provider (xxxStreamProvider / xxxControllerProvider)
+   ↓ ref.watch
+<screen>_page.dart (σύνθεση layout, ΚΑΝΕΝΑ business logic εδώ)
+   ↓
+widgets/ (dumb components, παίρνουν έτοιμα δεδομένα ως παραμέτρους)
+```
+Αυτή η κατεύθυνση **δεν αντιστρέφεται ποτέ** — ένα widget δεν καλεί ποτέ repository, ένα repository δεν ξέρει τίποτα για Riverpod ή Widgets.
+
+---
+
+## 3. Σχήμα Βάσης Δεδομένων (Drift)
+
+```
+Category        (id, name, createdAt)
+SubCategory     (id, categoryId → Category, name)
+Item            (id, subCategoryId → SubCategory, name, normalizedName [UNIQUE], defaultUnitId → Unit)
+Unit            (id, name, abbreviation, allowsDecimal)  -- π.χ. Τεμάχιο/τεμ (allowsDecimal=false), Κιλό/κιλ (true), Λίτρο/λτ (true)
+Supplier        (id, name, normalizedName [UNIQUE], createdAt)
+Receipt         (id, receiptNumber [auto], date, supplierId → Supplier)
+ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId → Unit,
+                 quantity [REAL], priceCents [INTEGER], lineTotalCents [INTEGER])
+```
+- `receiptNumber`: χρησιμοποιείται το **internal `INTEGER PRIMARY KEY AUTOINCREMENT` id της απόδειξης**. Η εφαρμογή είναι προσωπική και όχι φορολογικό βιβλίο, άρα οι πιθανές "τρύπες" στην αρίθμηση μετά από διαγραφή δεν είναι πρόβλημα. Αυτή την απόφαση την ορίζουμε ρητά στη Φάση 1 (δεν χρειάζεται ξεχωριστό sequence table/counter).
+- **`priceCents`**: ακέραιος σε λεπτά (μέγεθος ×100, π.χ. 2,50€ → 250). Το χρήμα αποθηκεύεται **ποτέ** ως float — όλα τα αθροίσματα/στατιστικά γίνονται σε ακέραιους χωρίς floating-point σφάλματα.
+- **`quantity`**: REAL — φυσικό μέγεθος (κιλά/λίτρα/τεμάχια), δεν εμφανίζεται ποτέ μόνο του σε λογιστικό άθροισμα.
+- **`lineTotalCents`**: INTEGER, υπολογισμένο **μία φορά** κατά το insert `(priceCents * quantity).round()` — **όχι** Drift generated column (παραμένει ελεγχόμενο, testable, ανεξάρτητο από SQLite float handling). Κάθε επόμενος υπολογισμός (Φάση 5: μέσος όρος, σύνολο μήνα, σύγκριση προμηθευτών) δουλεύει **μόνο** σε `SUM(lineTotalCents)`.
+- **`Unit.allowsDecimal`**: flag που ορίζει αν μια μονάδα δέχεται κλασματική ποσότητα (π.χ. Τεμάχιο=false, Κιλό=true). Χρησιμοποιείται από τη φόρμα εισαγωγής (Φάση 3) για απόρριψη τιμών όπως «2.5 τεμάχια».
+- **Foreign key policy** (απόφαση, Φάση 1):
+  - `ON DELETE RESTRICT` για Category/SubCategory/Item/Supplier/Unit (ώστε να μην διαγράφονται αν έχουν δεδομένα — υλοποιεί απευθείας τον κανόνα της §2.3).
+  - `ReceiptLine.receiptId → ON DELETE CASCADE`: η γραμμή χωρίς κεφαλίδα είναι άχρηστη (σχέση κυριότητας) — η διαγραφή απόδειξης σβήνει και τις γραμμές της. Εξαιρείται ρητά από τον RESTRICT κανόνα της §2.3.
+  - `Item.defaultUnitId → ON DELETE SET NULL`: η προτεινόμενη μονάδα είναι προαιρετική — αν σβηστεί η μονάδα, το είδος απλώς μένει χωρίς πρόταση (null).
+- **`normalizedName`** (Item & Supplier): καθαρή `GreekTextNormalizer.normalize(name)` (lowercase + αφαίρεση τόνων + ς→σ) που υπολογίζεται στο Dart κατά insert/update — όχι DB-generated column, ελεγχόμενο/testable, ίδιο μοτίβο με το `lineTotalCents`. Η αναζήτηση γίνεται πάντα με `WHERE normalizedName LIKE '%' || :normalizedQuery || '%'`, όπου `:normalizedQuery` έχει ήδη περάσει από το `GreekTextNormalizer.normalize()` στο UI input (§2.0.4). Αυτό είναι υποχρεωτικό, όχι προαιρετικό: το SQLite `COLLATE NOCASE` είναι ASCII-only και ΔΕΝ ξέρει ότι «Α»=«α» — LIKE πάνω στο raw `name` θα έβρισκε ελληνικά μόνο σε συγκεκριμένη περίπτωση (σιωπηλό, δύσκολο bug). Κατηγορία/Υποκατηγορία/Unit δεν χρειάζονται στήλη: επιλέγονται από μικρές ήδη-φορτωμένες λίστες (SearchableDropdownField §2.4) — φιλτράρισμα in-memory πάνω στο stream, χωρίς DB query. Ο ίδιος `normalizedName` χρησιμοποιείται και στον case-insensitive duplicate-check του §2.2 (exact match, όχι LIKE) — μία μόνο υλοποίηση normalization, καμία διπλή λογική.
+- **[Φάση 1] `UNIQUE` στο `Item.normalizedName`** (global constraint): η απαγόρευση διπλότυπων ονομάτων εγγυάται σε επίπεδο βάσης μέσω exact-match στο `normalizedName` (πεζά/άτονα/ς→σ, §2.2). Δεν επαρκεί `UNIQUE` στο raw `name`, γιατί το SQLite string match δεν είναι case/tone-insensitive («Γάλα»≠«γάλα» ως strings). Εγκρίθηκε το ίδιο `UNIQUE` και στον `Supplier.normalizedName` — και για τα δύο απαγορεύεται σε επίπεδο βάσης ο προμηθευτής/είδος με ίδιο κανονικοποιημένο όνομα (πεζά/άτονα/ς→σ).
+- Σημ.: τα `UNIQUE` σε `Item.normalizedName` και `Supplier.normalizedName` δημιουργούν αυτόματα δικό τους index — **δεν** προστίθενται ξεχωριστά indexes σ' αυτά τα columns. Το μοναδικό ρητό index βάσει σχήματος είναι στο `ReceiptLine.itemId` (επιτάχυνση στατιστικών). Ως εκ τούτου δεν χρησιμοποιείται `@TableIndex` σε Item/Supplier (μόνο `ReceiptLine.itemId`). Το substring `LIKE '%...%'` του §3 παραμένει full scan στο SQLite χωρίς FTS5 — αμελητέο για τον όγκο δεδομένων προσωπικής χρήσης.
+
+---
+
+## 4. Φάσεις Ανάπτυξης
+
+> Κάθε φάση κλείνει μόνο όταν: (α) ο κώδικας λειτουργεί, (β) τα tests της φάσης περνάνε, (γ) το DESIGN.md ενημερώνεται, (δ) έχεις δώσει ρητό OK.
+
+### Φάση 0 — Θεμελίωση Project
+1. Δημιουργία Flutter project, ρύθμιση `pubspec.yaml` (Drift, Riverpod, GoRouter, fl_chart, shared_preferences, file_picker για backup).
+2. Ορισμός branding: όνομα app, package id, εικονίδιο, splash screen, χρωματική παλέτα.
+3. Δημιουργία δομής φακέλων (§1.2) με κενά αρχεία-σκελετούς.
+4. SPoT σκελετοί (`lib/core/`): `app_constants.dart`, `app_strings.dart`, `app_messages.dart`, `app_errors.dart`, `app_enums.dart`, `app_theme.dart`, `app_colors.dart`, `app_routes.dart`, `app_exceptions.dart`.
+5. `app_logger.dart` + `debug_config.dart`.
+6. SPoT utilities στο `lib/core/utils/`: `debouncer.dart` (common debounce με cancel — §2.0.3), `greek_text_normalizer.dart` (αφαίρεση τόνων/κεφαλαίων — §2.0.4), `app_feedback.dart` (SPoT snackbar wrapper — §2.0.6).
+7. `AGENTS.md` με τους κανόνες συνεργασίας μας (βήμα-βήμα, backups, confirmations).
+
+### Φάση 1 — Βάση Δεδομένων & Domain Models
+1. Ορισμός Drift tables (§3).
+2. DAOs με βασικά CRUD + streams.
+3. **Seed δεδομένων** — bootstrap **μία φορά** στο Drift `onCreate` (νέο DB file), μέσα σε **ένα transaction**· όχι σε κάθε launch.
+   - **Μονάδες μέτρησης** (Τεμάχιο/τεμ `allowsDecimal=false`, Κιλό/κιλ `true`, Λίτρο/λτ `true`, Γραμμάριο/γρ, Χιλιοστόλιτρο/χλτ κ.λπ.) ως Dart seed constants — κάθε μονάδα με `name`, `abbreviation`, `allowsDecimal` (§3). Όχι hardcoded στο UI.
+   - **Κατηγορίες / Υποκατηγορίες / Είδη**: πηγή-αναφορά το `supermarket_categories_v2.md` (root repo, 9 κατηγορίες / 53 υποκατηγορίες / 535 είδη). Τα δεδομένα μεταγράφονται σε Dart seed constants στο `lib/data/local/seed/` (**πολλά αρχεία**, rule 7 — ένα ανά κατηγορία)· καμία runtime ανάγνωση του .md.
+     - Κάθε Item εγγράφεται με `normalizedName = GreekTextNormalizer.normalize(name)` (**υπάρχον** SPoT util, §3) + έλεγχο μήκους `≤ AppConstants.maxItemNameLength`· κάθε Category με `createdAt`.
+     - Το .md δεν ορίζει μονάδα ανά είδος → στο seed ορίζεται **προτεινόμενη** `defaultUnitId` από τη φύση του προϊόντος με βάση το `Unit.allowsDecimal` (Τεμάχιο για μετρητά, Κιλό για ζυγιζόμενα, Λίτρο για υγρά) — είναι πρόταση, όχι δεσμευτική (§2.2 επιτρέπει αλλαγή ανά γραμμή).
+     - Διπλότυπα ονόματα σε **διαφορετικές** υποκατηγορίες: μετά τη διόρθωση του `supermarket_categories_v2.md` δεν υπάρχει κανένα στο seed, και το `UNIQUE` του `Item.normalizedName` (§3) απαγορεύει πλέον παγκοσμίως δύο Items με ίδιο `normalizedName` — ένα Item = πάντα μία υποκατηγορία.
+     - Logging της διαδικασίας μέσω `AppLogger` (tag `DB`).
+   - **Καμία seed για Suppliers** (δεν υπάρχει στο .md) — δημιουργούνται χειροκίνητα στην εισαγωγή.
+4. Unit tests στα DAOs — **συμπεριλαμβάνουν seed-import tests**: πλήθος εγγραφών (9/53/535), `normalizedName` = `GreekTextNormalizer.normalize(name)`, **κανένα διπλότυπο (global — εγγυημένο και από το UNIQUE του §3)**, σωστά `createdAt`/`abbreviation`, ατομικότητα σε σφάλμα, και ότι το `onCreate` τρέχει μία φορά (επανα-άνοιγμα DB χωρίς νέο seed).
+
+### Φάση 2 — Repository Layer
+1. Abstract repositories (Category, SubCategory, Item, Unit, Supplier, Receipt).
+2. Υλοποιήσεις πάνω στα DAOs, με `Stream` methods για real-time.
+3. Riverpod providers (`StreamProvider`) πάνω στα repositories.
+4. Unit tests repositories (mocked DB ή in-memory Drift).
+   - **Αναζήτηση Item/Supplier**: ορίζεται στα **Repositories** (ΟΧΙ στα DAOs της Φάσης 1) η μέθοδος `searchByNormalizedName(String query, {int? limit})` — `WHERE normalizedName LIKE '%' || :normalizedQuery || '%'`, με το input ήδη κανονικοποιημένο (§2.0.4/§3). Προαιρετικό `limit` με default από `searchResultsLimit` (§2.0). Κατηγορία/Υποκατηγορία/Unit μένουν in-memory φιλτράρισμα πάνω στο stream (μικρές λίστες, §3).
+
+### Φάση 3 — Σελίδα Εισαγωγής Τιμών (πυρήνας εφαρμογής)
+1. **App UI σκελετός** (ξεκινά τη Φάση 3): `GoRouter` με `StatefulShellRoute.indexedStack` + `NavigationBar` (3 branches: Home/PriceEntry/Settings, paths από `AppRoutes`) + placeholder σελίδες ανά οθόνη (καθαρά `Scaffold`, ΚΑΝΕΝΑ provider watch → η βάση δεν ανοίγει στο launch) + `NavLogObserver` (σημείο καταγραφής `LogTag.nav`). Responsive layout από εδώ (§1.4). **Απόφαση Α1 (Βήμα 7, §2.2)**: η λίστα πρόσφατων αποδείξεων είναι πάντα ορατή στην PriceEntry → η βάση **ανοίγει στο launch** (ο κανόνας «ΚΑΝΕΝΑ provider watch» ισχύει μόνο μέχρι το Βήμα 7 — από εκεί και μετά κάθε widget test που pump-άρει `PriceEntryPage`/`TimesApp` κάνει override του `recentReceiptsStreamProvider`).
+2. Auto αριθμός απόδειξης + date picker.
+3. Supplier search/autocomplete + inline "+" δημιουργία.
+4. Item search/autocomplete με incremental filtering (debounce) + "+" popup ροή (Κατηγορία→Υποκατηγορία→Είδος).
+5. Unit dropdown, ποσότητα, τιμή, save flow ("καλάθι" απόδειξης — βλ. state machine §2.2).
+6. Validation (π.χ. τιμή > 0, υποχρεωτικά πεδία) μέσω SPoT validators.
+7. **Λίστα πρόσφατων αποδείξεων (read-only) — ΟΛΟΚΛΗΡΩΘΗΚΕ.** `ReceiptSummary` projection + `ReceiptDao.watchRecentSummaries` (ένα watch query πάνω σε stored `lineTotalCents`) · `recentReceiptsStreamProvider` (μη autoDispose, όριο `AppConstants.recentReceiptsLimit` = 20) → **auto-refresh μετά το save** · `recent_receipts_list.dart` (`AsyncValue.when`: loading/error+Επανάληψη/empty, Card+ListTile, responsive + dark/light) · SPoT strings/messages · έγκυρη γραμμή 0,00 € όταν `(priceCents*quantity).round()==0` (§2.2). Tests **699/699** ✓ · analyze καθαρό.
+8. Widget tests στη φόρμα.
+
+### Φάση 4 — Ρυθμίσεις
+1. Theme switcher (Light/Dark/Auto) με persistence.
+2. CRUD Κατηγοριών/Υποκατηγοριών με έλεγχο δυνατότητας διαγραφής.
+3. Backup export (.db/JSON) και Restore import με validation.
+4. Tests.
+
+### Φάση 5 — Κεντρική Σελίδα (Στατιστικά & Γραφήματα)
+1. Domain service για υπολογισμούς (μέση τιμή ανά περίοδο, εξέλιξη τιμής είδους, σύγκριση προμηθευτών).
+2. UI φίλτρων περιόδου/κατηγορίας.
+3. Γραφήματα με `fl_chart`, responsive σε όλα τα μεγέθη οθόνης, dark-mode συμβατά χρώματα. **Ρητή απαίτηση**: τα γραφήματα πρέπει να δίνουν ρητά constraints ώστε να μην κόβονται legends/labels σε πολύ στενά ή πολύ φαρδιά containers· όπου το γράφημα δεν χωράει στο διαθέσιμο χώρο, χρησιμοποιείται **fallback σε πίνακα/λίστα** (safety net) αντί για overflow ή μη-αναγνώσιμο γράφημα.
+4. Unit tests στο domain service (η πιο κρίσιμη λογική για coverage).
+
+### Φάση 6 — Στίλβωση & Επεκτάσεις
+1. Πλήρης έλεγχος responsive/overflow σε real συσκευές/μεγέθη.
+2. Accessibility pass (Semantics σε όλη την εφαρμογή).
+3. Έλεγχος συνολικού test coverage (>80%) και συμπλήρωση κενών.
+4. Προαιρετικά (μόνο αν το ζητήσεις): διαχείριση κατηγοριών/υποκατηγοριών/προμηθευτών/μονάδων από Ρυθμίσεις, cloud sync ως μελλοντική επέκταση, **αυτόματο περιστασιακό backup (weekly)** — σημειωμένο ως επέκταση που απαιτεί background scheduling (WorkManager/permissions), όχι απαίτηση MVP.
+
+---
+
+## 5. Επόμενο Βήμα
+
+Είμαστε στη **Φάση 3, Βήμα 7 — Λίστα πρόσφατων αποδείξεων ΟΛΟΚΛΗΡΩΘΗΚΕ** (§2.2, §4 Φάση 3 Βήμα 7): `ReceiptSummary` projection + `watchRecentSummaries` (DAO+repo) · `recentReceiptsStreamProvider` (μη autoDispose, όριο `AppConstants.recentReceiptsLimit` = 20) · `recent_receipts_list.dart` (αριθμός/ημερομηνία/προμηθευτής/#γραμμές/σύνολο €, `AsyncValue.when` με loading/error+Επανάληψη/empty) · **auto-refresh μετά το save** μέσω stream · έγκυρη τιμή **0,00 €** όταν `(priceCents*quantity).round()==0`. **Tests 699/699** ✓ (+22) · `flutter analyze` **No issues** ✓. **Απόφαση Α1**: η λίστα είναι πάντα ορατή στην PriceEntry → η βάση ανοίγει στο launch (overrides σε όλα τα σχετικά widget tests). Διορθώθηκαν επίσης 5 compile errors: τα fakes `implements ReceiptRepository` (3 test files) απέκτησαν `watchRecentSummaries`. **Επόμενο**: Βήμα 8 (Widget tests στη φόρμα — τα ανά-υποβήμα widget tests υπάρχουν ήδη, έλεγχος κενών/ενοποίηση) → Φάση 4 (Ρυθμίσεις). Ανοιχτά (χωρίς προγραμματισμένο Βήμα): επιβεβαίωση εξόδου με μη αποθηκευμένες γραμμές (§2.2 «Ημιτελής καταχώρηση» — `ConfirmDialog` + `PopScope`) · housekeeping (split των test αρχείων >500 γρ.: `receipt_form_controller_test`, `searchable_dropdown_field_test`· ενοποίηση του διπλού κεφαλαίου 14) · προαιρετικό `onChanged` στο `SearchableDropdownField` (σβήσιμο inline μηνυμάτων κατά την πληκτρολόγηση). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.
