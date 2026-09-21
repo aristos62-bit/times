@@ -25,6 +25,7 @@ void main() {
       expect(s.status, ItemSearchStatus.idle);
       expect(s.results, isEmpty);
       expect(s.selectedItem, isNull);
+      expect(s.errorOccurred, isFalse);
     });
 
     test('equality: ίδιες τιμές → ίσα, copyWith αποκλίσεις → διαφορετικά', () {

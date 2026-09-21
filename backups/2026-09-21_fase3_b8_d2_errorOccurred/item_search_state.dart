@@ -30,10 +30,12 @@ abstract class ItemSearchState with _$ItemSearchState {
   /// [status] — στάδιο της αναζήτησης (§2.4).
   /// [results] — αποτελέσματα της τελευταίας αναζήτησης (found).
   /// [selectedItem] — «null» = κανένα επιλεγμένο είδος.
+  /// [errorOccurred] — flag για το retry μετά από σφάλμα (error).
   const factory ItemSearchState({
     @Default('') String query,
     @Default(ItemSearchStatus.idle) ItemSearchStatus status,
     @Default(<Item>[]) List<Item> results,
     Item? selectedItem,
+    @Default(false) bool errorOccurred,
   }) = _ItemSearchState;
 }

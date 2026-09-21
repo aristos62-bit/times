@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ItemSearchState {
 
- String get query; ItemSearchStatus get status; List<Item> get results; Item? get selectedItem;
+ String get query; ItemSearchStatus get status; List<Item> get results; Item? get selectedItem; bool get errorOccurred;
 /// Create a copy of ItemSearchState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $ItemSearchStateCopyWith<ItemSearchState> get copyWith => _$ItemSearchStateCopyW
 @override
 bool operator ==(Object other) {
   final _this = this as ItemSearchState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ItemSearchState&&(identical(other.query, _this.query) || other.query == _this.query)&&(identical(other.status, _this.status) || other.status == _this.status)&&const DeepCollectionEquality().equals(other.results, _this.results)&&const DeepCollectionEquality().equals(other.selectedItem, _this.selectedItem));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ItemSearchState&&(identical(other.query, _this.query) || other.query == _this.query)&&(identical(other.status, _this.status) || other.status == _this.status)&&const DeepCollectionEquality().equals(other.results, _this.results)&&const DeepCollectionEquality().equals(other.selectedItem, _this.selectedItem)&&(identical(other.errorOccurred, _this.errorOccurred) || other.errorOccurred == _this.errorOccurred));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ItemSearchState;
-  return Object.hash(runtimeType,_this.query,_this.status,const DeepCollectionEquality().hash(_this.results),const DeepCollectionEquality().hash(_this.selectedItem));
+  return Object.hash(runtimeType,_this.query,_this.status,const DeepCollectionEquality().hash(_this.results),const DeepCollectionEquality().hash(_this.selectedItem),_this.errorOccurred);
 }
 
 @override
 String toString() {
   final _this = this as ItemSearchState;
-  return 'ItemSearchState(query: ${_this.query}, status: ${_this.status}, results: ${_this.results}, selectedItem: ${_this.selectedItem})';
+  return 'ItemSearchState(query: ${_this.query}, status: ${_this.status}, results: ${_this.results}, selectedItem: ${_this.selectedItem}, errorOccurred: ${_this.errorOccurred})';
 }
 
 
@@ -51,7 +51,7 @@ abstract mixin class $ItemSearchStateCopyWith<$Res>  {
   factory $ItemSearchStateCopyWith(ItemSearchState value, $Res Function(ItemSearchState) _then) = _$ItemSearchStateCopyWithImpl;
 @useResult
 $Res call({
- String query, ItemSearchStatus status, List<Item> results, Item? selectedItem
+ String query, ItemSearchStatus status, List<Item> results, Item? selectedItem, bool errorOccurred
 });
 
 
@@ -68,13 +68,14 @@ class _$ItemSearchStateCopyWithImpl<$Res>
 
 /// Create a copy of ItemSearchState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? query = null,Object? status = null,Object? results = null,Object? selectedItem = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? query = null,Object? status = null,Object? results = null,Object? selectedItem = freezed,Object? errorOccurred = null,}) {
   return _then(ItemSearchState(
 query: null == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as ItemSearchStatus,results: null == results ? _self.results : results // ignore: cast_nullable_to_non_nullable
 as List<Item>,selectedItem: freezed == selectedItem ? _self.selectedItem : selectedItem // ignore: cast_nullable_to_non_nullable
-as Item?,
+as Item?,errorOccurred: null == errorOccurred ? _self.errorOccurred : errorOccurred // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 
@@ -159,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String query,  ItemSearchStatus status,  List<Item> results,  Item? selectedItem)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String query,  ItemSearchStatus status,  List<Item> results,  Item? selectedItem,  bool errorOccurred)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ItemSearchState() when $default != null:
-return $default(_that.query,_that.status,_that.results,_that.selectedItem);case _:
+return $default(_that.query,_that.status,_that.results,_that.selectedItem,_that.errorOccurred);case _:
   return orElse();
 
 }
@@ -180,10 +181,10 @@ return $default(_that.query,_that.status,_that.results,_that.selectedItem);case 
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String query,  ItemSearchStatus status,  List<Item> results,  Item? selectedItem)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String query,  ItemSearchStatus status,  List<Item> results,  Item? selectedItem,  bool errorOccurred)  $default,) {final _that = this;
 switch (_that) {
 case _ItemSearchState():
-return $default(_that.query,_that.status,_that.results,_that.selectedItem);case _:
+return $default(_that.query,_that.status,_that.results,_that.selectedItem,_that.errorOccurred);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +201,10 @@ return $default(_that.query,_that.status,_that.results,_that.selectedItem);case 
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String query,  ItemSearchStatus status,  List<Item> results,  Item? selectedItem)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String query,  ItemSearchStatus status,  List<Item> results,  Item? selectedItem,  bool errorOccurred)?  $default,) {final _that = this;
 switch (_that) {
 case _ItemSearchState() when $default != null:
-return $default(_that.query,_that.status,_that.results,_that.selectedItem);case _:
+return $default(_that.query,_that.status,_that.results,_that.selectedItem,_that.errorOccurred);case _:
   return null;
 
 }
@@ -215,7 +216,7 @@ return $default(_that.query,_that.status,_that.results,_that.selectedItem);case 
 
 
 class _ItemSearchState implements ItemSearchState {
-  const _ItemSearchState({this.query = '', this.status = ItemSearchStatus.idle,  List<Item> results = const <Item>[], this.selectedItem}): _results = results;
+  const _ItemSearchState({this.query = '', this.status = ItemSearchStatus.idle,  List<Item> results = const <Item>[], this.selectedItem, this.errorOccurred = false}): _results = results;
   
 
 @override@JsonKey() final  String query;
@@ -228,6 +229,7 @@ class _ItemSearchState implements ItemSearchState {
 }
 
 @override final  Item? selectedItem;
+@override@JsonKey() final  bool errorOccurred;
 
 /// Create a copy of ItemSearchState
 /// with the given fields replaced by the non-null parameter values.
@@ -239,18 +241,18 @@ _$ItemSearchStateCopyWith<_ItemSearchState> get copyWith => __$ItemSearchStateCo
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ItemSearchState&&(identical(other.query, query) || other.query == query)&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.results, _results)&&const DeepCollectionEquality().equals(other.selectedItem, selectedItem));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ItemSearchState&&(identical(other.query, query) || other.query == query)&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.results, _results)&&const DeepCollectionEquality().equals(other.selectedItem, selectedItem)&&(identical(other.errorOccurred, errorOccurred) || other.errorOccurred == errorOccurred));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,query,status,const DeepCollectionEquality().hash(_results),const DeepCollectionEquality().hash(selectedItem));
+    return Object.hash(runtimeType,query,status,const DeepCollectionEquality().hash(_results),const DeepCollectionEquality().hash(selectedItem),errorOccurred);
 }
 
 @override
 String toString() {
-    return 'ItemSearchState(query: $query, status: $status, results: $results, selectedItem: $selectedItem)';
+    return 'ItemSearchState(query: $query, status: $status, results: $results, selectedItem: $selectedItem, errorOccurred: $errorOccurred)';
 }
 
 
@@ -261,7 +263,7 @@ abstract mixin class _$ItemSearchStateCopyWith<$Res> implements $ItemSearchState
   factory _$ItemSearchStateCopyWith(_ItemSearchState value, $Res Function(_ItemSearchState) _then) = __$ItemSearchStateCopyWithImpl;
 @override @useResult
 $Res call({
- String query, ItemSearchStatus status, List<Item> results, Item? selectedItem
+ String query, ItemSearchStatus status, List<Item> results, Item? selectedItem, bool errorOccurred
 });
 
 
@@ -278,13 +280,14 @@ class __$ItemSearchStateCopyWithImpl<$Res>
 
 /// Create a copy of ItemSearchState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? query = null,Object? status = null,Object? results = null,Object? selectedItem = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? query = null,Object? status = null,Object? results = null,Object? selectedItem = freezed,Object? errorOccurred = null,}) {
   return _then(_ItemSearchState(
 query: null == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as ItemSearchStatus,results: null == results ? _self._results : results // ignore: cast_nullable_to_non_nullable
 as List<Item>,selectedItem: freezed == selectedItem ? _self.selectedItem : selectedItem // ignore: cast_nullable_to_non_nullable
-as Item?,
+as Item?,errorOccurred: null == errorOccurred ? _self.errorOccurred : errorOccurred // ignore: cast_nullable_to_non_nullable
+as bool,
   ));
 }
 

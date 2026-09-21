@@ -113,6 +113,7 @@ class ItemSearchController extends AsyncNotifier<ItemSearchState> {
           ItemSearchState(
             query: query,
             status: ItemSearchStatus.notFound,
+            errorOccurred: false,
           ),
         );
       } else {

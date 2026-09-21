@@ -101,6 +101,7 @@ void main() {
       expect(state.status, ItemSearchStatus.idle);
       expect(state.results, isEmpty);
       expect(state.selectedItem, isNull);
+      expect(state.errorOccurred, isFalse);
     });
 
     test('build() χωρίς repo reads — log [DB] δεν εμφανίζεται', () async {
@@ -160,6 +161,7 @@ void main() {
       );
       expect(state.query, 'Γάλα', reason: 'trim στο controller');
       expect(state.results.map((r) => r.name), contains('Γάλα'));
+      expect(state.errorOccurred, isFalse);
     });
 
     test('case/tone-insensitive: «ΓΑΛΑ» βρίσκει «Γάλα»', () async {
@@ -188,6 +190,7 @@ void main() {
         (s) => s.status == ItemSearchStatus.notFound,
       );
       expect(state.results, isEmpty);
+      expect(state.errorOccurred, isFalse);
     });
 
     test('debounce: πολλές γρήγορες πληκτρολογήσεις → μόνο η τελευταία',

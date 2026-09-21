@@ -109,9 +109,6 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
   /// (SearchableDropdownField.onCreate) + ενημερώνει τον τοπικό state.
   /// Βήμα 6ζ: άκυρο όνομα (`NameValidator`, ΠΡΙΝ το DB) ή `null` από τον
   /// controller (διπλότυπο, soft dup-check) → inline `_categoryError`.
-  /// Σφάλμα DB (DataLoadException) → inline `_categoryError` =
-  /// `AppErrors.loadDataFailed`, χωρίς pop (ίδια ασυμμετρία ευρήματος 1 που
-  /// κλείνει εδώ — πρότυπο ο `_createSupplier` του header §2.4).
   Future<Category?> _createCategory(String name) async {
     final nameError = NameValidator.validate(name.trim());
     if (nameError != null) {
@@ -119,30 +116,21 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
       setState(() => _categoryError = nameError);
       return null;
     }
-    try {
-      final result = await ref
-          .read(itemSearchControllerProvider.notifier)
-          .createCategory(name);
-      if (!mounted) return result.category;
-      if (result.category == null) {
-        AppLogger.info(LogTag.ui, 'Απόρριψη «+» κατηγορίας "$name": διπλότυπο');
-      }
-      setState(() {
-        _categoryError = result.category == null ? AppErrors.nameExists : null;
-        if (result.category != null) _category = result.category;
-      });
-      return result.category;
-    } on DataLoadException {
-      AppLogger.error(LogTag.db, 'Αποτυχία «+» κατηγορίας "$name" (DB)');
-      if (!mounted) return null;
-      setState(() => _categoryError = AppErrors.loadDataFailed);
-      return null;
+    final result =
+    await ref.read(itemSearchControllerProvider.notifier).createCategory(name);
+    if (!mounted) return result.category;
+    if (result.category == null) {
+      AppLogger.info(LogTag.ui, 'Απόρριψη «+» κατηγορίας "$name": διπλότυπο');
     }
+    setState(() {
+      _categoryError = result.category == null ? AppErrors.nameExists : null;
+      if (result.category != null) _category = result.category;
+    });
+    return result.category;
   }
 
   /// Βήμα 2: δημιουργία υποκατηγορίας από το «+» — ΣΙΩΠΗΛΗ. Βήμα 6ζ: ίδιο
-  /// inline σφάλμα (`_subCategoryError`) με το βήμα 1. Σφάλμα DB
-  /// (DataLoadException) → inline `_subCategoryError` = `AppErrors.loadDataFailed`.
+  /// inline σφάλμα (`_subCategoryError`) με το βήμα 1.
   Future<SubCategory?> _createSubCategory(String name) async {
     final nameError = NameValidator.validate(name.trim());
     if (nameError != null) {
@@ -153,29 +141,19 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
       setState(() => _subCategoryError = nameError);
       return null;
     }
-    try {
-      final result = await ref
-          .read(itemSearchControllerProvider.notifier)
-          .createSubCategory(categoryId: _category!.id, name: name);
-      if (!mounted) return result.subCategory;
-      if (result.subCategory == null) {
-        AppLogger.info(
-          LogTag.ui,
-          'Απόρριψη «+» υποκατηγορίας "$name": διπλότυπο',
-        );
-      }
-      setState(() {
-        _subCategoryError =
-        result.subCategory == null ? AppErrors.nameExists : null;
-        if (result.subCategory != null) _subCategory = result.subCategory;
-      });
-      return result.subCategory;
-    } on DataLoadException {
-      AppLogger.error(LogTag.db, 'Αποτυχία «+» υποκατηγορίας "$name" (DB)');
-      if (!mounted) return null;
-      setState(() => _subCategoryError = AppErrors.loadDataFailed);
-      return null;
+    final result = await ref
+        .read(itemSearchControllerProvider.notifier)
+        .createSubCategory(categoryId: _category!.id, name: name);
+    if (!mounted) return result.subCategory;
+    if (result.subCategory == null) {
+      AppLogger.info(LogTag.ui, 'Απόρριψη «+» υποκατηγορίας "$name": διπλότυπο');
     }
+    setState(() {
+      _subCategoryError =
+      result.subCategory == null ? AppErrors.nameExists : null;
+      if (result.subCategory != null) _subCategory = result.subCategory;
+    });
+    return result.subCategory;
   }
 
   bool get _nameIsValid => NameValidator.validate(_nameController.text) == null;
