@@ -4,7 +4,7 @@
 > Η PriceEntryPage αποκτά ολόκληρη τη ροή του «καλαθιού»: επιλογή μονάδας
 > (show-all dropdown), ποσότητα και τιμή με SPoT parse/format, λίστα draft
 > γραμμών και ατομική αποθήκευση της απόδειξης. Υλοποιήθηκε σε υποβήματα
-> 5α–5δ + 5ε (5ε-1…5ε-3: κλείσιμο αποκλίσεων από το πλάνο).
+> 5α–5δ + 5ε (κλείσιμο αποκλίσεων).
 
 ---
 
@@ -18,15 +18,13 @@
 | 5δ — Save & feedback | `saveReceipt` (`isSaving` double-tap guard · defensive guards supplier/κενό καλάθι → `SaveReceiptException` · `ref.mounted` μετά το await · επιτυχία → `resetForm`, αποτυχία → drafts μένουν + rethrow) · `save_receipt_button.dart` (disabled-OR, feedback ΜΟΝΟ στο widget) |
 | 5ε-1 — `onCleared` | Νέο προαιρετικό callback στο `SearchableDropdownField`: fire-once όταν επιλογή/προεπιλογή παύει να ισχύει από επεξεργασία κειμένου. Στο section: `onCleared → _unit = null` (πριν, σβήσιμο του πεδίου μονάδας άφηνε το Add ενεργό με αόρατη μονάδα) |
 | 5ε-2 — Όριο καλαθιού | `addDraftLine` αγνοεί γραμμή στο `maxReceiptLines` (100) — safety-net + log · section: Add ανενεργό + inline `AppMessages.receiptLinesLimitReached(max)` |
-| 5ε-3 — Unit search σε συντομογραφία | `unitSearchProvider`: match (κανονικοποιημένο, `contains`) στο όνομα Ή στη συντομογραφία, ένα `where` με `\|\|` (χωρίς διπλότυπα). Πριν, «λτ» (Λίτρο) και «χλτ» (Χιλιοστόλιτρο) δεν έβρισκαν τίποτα |
 
 ## 2. Αποκλίσεις από το πλάνο (Μέρος Γ) και πώς λύθηκαν
 
 1. Το κουμπί αποθήκευσης υλοποιήθηκε ως ξεχωριστό `save_receipt_button.dart`
    (το πλάνο το έβαζε στο `draft_lines_list`) — SoC, εγκεκριμένο.
-2. Το `onCleared` (5β), το όριο `maxReceiptLines` στο `addDraftLine` (5γ) και
-   το match συντομογραφίας στο `unitSearchProvider` (5β) είχαν παραλειφθεί —
-   υλοποιήθηκαν στο 5ε-1, 5ε-2, 5ε-3 αντίστοιχα.
+2. Το `onCleared` (5β) και το όριο `maxReceiptLines` στο `addDraftLine` (5γ)
+   είχαν παραλειφθεί — υλοποιήθηκαν στο 5ε.
 3. Ονόματα strings διαφέρουν ελαφρά από το πλάνο (`draftLinesEmpty`,
    `removeDraftLine`)· δεν προστέθηκε `errorInvalidAmount` (το validation
    ανήκει στο Βήμα 6). Ο private `_reset` του πλάνου έγινε public `resetForm`.
@@ -39,11 +37,9 @@
 | `presentation/price_entry/widgets/unit_quantity_price_section.dart` | +`onCleared`, +`atLimit` watch (`select`) + μήνυμα ορίου |
 | `presentation/price_entry/controllers/receipt_form_controller.dart` | όριο στο `addDraftLine` |
 | `core/constants/app_messages.dart` | +`receiptLinesLimitReached(int max)` |
-| `data/providers/stream_providers.dart` | `unitSearchProvider`: όνομα Ή συντομογραφία |
-| Tests | `searchable_dropdown_field_selection_test.dart` (νέο) · `receipt_form_controller_limit_test.dart` (νέο) · +S6, +S7 στο `unit_quantity_price_section_test` · +1 στο `app_messages_test` · +1 στο `stream_providers_test` (494 γρ.) |
+| Tests | `searchable_dropdown_field_selection_test.dart` (νέο) · `receipt_form_controller_limit_test.dart` (νέο) · +S6, +S7 στο `unit_quantity_price_section_test` · +1 στο `app_messages_test` |
 
-Backups: `backups/*_before_fase3_b5e1_*`, `*_before_fase3_b5e2_*`,
-`*_before_fase3_b5e3_*`.
+Backups: `backups/*_before_fase3_b5e1_*`, `*_before_fase3_b5e2_*`.
 
 ## 4. Verification
 
@@ -56,6 +52,8 @@ Backups: `backups/*_before_fase3_b5e1_*`, `*_before_fase3_b5e2_*`,
   καταχώρηση»): το `AppMessages.exitUnsavedConfirm` υπάρχει χωρίς καταναλωτή·
   δεν υπάρχει `ConfirmDialog` (§2.4) ούτε `PopScope`. Δεν ανήκει σε κανένα
   υποβήμα του Βήματος 5 — να προγραμματιστεί ρητά.
+- **`unitSearchProvider`**: ταιριάζει μόνο στο όνομα (κανονικοποιημένο), όχι
+  στη συντομογραφία. Π.χ. «λτ» (Λίτρο) ή «χλτ» δεν βρίσκουν τίποτα.
 - **Validation στο save** (`receipt_validator`, `maxReceiptLines` κ.λπ.) →
   Βήμα 6.
 
