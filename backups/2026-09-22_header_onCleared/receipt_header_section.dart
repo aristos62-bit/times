@@ -5,9 +5,6 @@
 /// ημερομηνία· η ΜΟΝΗ repo πρόσβαση είναι η inline δημιουργία προμηθευτή
 /// («+») — user action, επιτρεπτή (§2.0.1). Το feedback (SnackBar) γίνεται
 /// μόνο από εδώ μέσω AppFeedback (SPoT app_messages/app_errors).
-/// Αποεπιλογή προμηθευτή: νέα πληκτρολόγηση πάνω στον επιλεγμένο τον
-/// μηδενίζει από τη φόρμα (`onCleared`, §2.4.1) και ενεργοποιεί ξανά την
-/// αναζήτηση — το «Αποθήκευση Απόδειξης» μένει ανενεργό μέχρι νέα επιλογή.
 library;
 
 import 'package:flutter/material.dart';
@@ -43,12 +40,6 @@ class _ReceiptHeaderSectionState extends ConsumerState<ReceiptHeaderSection> {
   /// υποστηρίζει εξωτερικό καθάρισμα.
   int _supplierFieldEpoch = 0;
 
-  /// Αποεπιλογή από το ίδιο το πεδίο (onCleared μέσω πληκτρολόγησης). Όταν
-  /// true, ο `ref.listen` ΔΕΝ αυξάνει το epoch — το SearchableDropdownField
-  /// διαχειρίζεται μόνο του το κείμενό του (το resetForm εξακολουθεί να κάνει
-  /// epoch κανονικά). Καταναλώνεται στο πρώτο null-transition.
-  bool _clearedFromEdit = false;
-
   Future<void> _pickDate(BuildContext context, WidgetRef ref) async {
     final current = ref.read(receiptFormControllerProvider).date;
     AppLogger.info(LogTag.ui, 'Άνοιγμα date picker απόδειξης');
@@ -70,19 +61,20 @@ class _ReceiptHeaderSectionState extends ConsumerState<ReceiptHeaderSection> {
   /// επικυρώνεται ΠΡΙΝ το DB (`NameValidator`, §2.2) — κενό ή πάνω από
   /// `maxItemNameLength` → snackbar σφάλματος, καμία εγγραφή.
   Future<Supplier?> _createSupplier(
-    BuildContext context,
-    WidgetRef ref,
-    String name,
-  ) async {
+      BuildContext context,
+      WidgetRef ref,
+      String name,
+      ) async {
     final nameError = NameValidator.validate(name);
     if (nameError != null) {
       AppFeedback.showError(context, nameError);
       return null;
     }
     try {
-      final result = await ref
-          .read(receiptFormControllerProvider.notifier)
-          .createSupplier(name);
+      final result =
+          await ref.read(receiptFormControllerProvider.notifier).createSupplier(
+                name,
+              );
       if (!context.mounted) return result.supplier;
       if (result.supplier == null) return null;
       if (result.created) {
@@ -104,16 +96,8 @@ class _ReceiptHeaderSectionState extends ConsumerState<ReceiptHeaderSection> {
     // Καθάρισμα πεδίου προμηθευτή όταν η φόρμα μηδενίζεται (§2.2:212).
     ref.listen<Supplier?>(
       receiptFormControllerProvider.select((s) => s.supplier),
-      (previous, next) {
+          (previous, next) {
         if (previous != null && next == null) {
-          if (_clearedFromEdit) {
-            // Αποεπιλογή από πληκτρολόγηση στο ίδιο το πεδίο (onCleared): το
-            // SearchableDropdownField διαχειρίζεται το κείμενό του — ΚΑΝΕΝΑ
-            // epoch (το πεδίο δεν πρέπει να αδειάσει). Το resetForm μετά από
-            // save εξακολουθεί να κάνει epoch κανονικά.
-            _clearedFromEdit = false;
-            return;
-          }
           setState(() => _supplierFieldEpoch++);
         }
       },
@@ -150,21 +134,11 @@ class _ReceiptHeaderSectionState extends ConsumerState<ReceiptHeaderSection> {
               labelOf: (supplier) => supplier.name,
               // «+» ΠΑΝΤΑ τοποθετείται στην ουρά της λίστας όταν υπάρχει
               // query — ορατό ακόμα με 0 αποτελέσματα (απόφαση χρήστη §2.4).
-              createLabel: (query) => '${AppStrings.addNewSupplier} "$query"',
+              createLabel: (query) =>
+                  '${AppStrings.addNewSupplier} "$query"',
               onSelected: (supplier) => ref
                   .read(receiptFormControllerProvider.notifier)
                   .setSupplier(supplier),
-              // Αποεπιλογή με πληκτρολόγηση (§2.4.1 · φάση-3 closure fix):
-              // νέα επεξεργασία πάνω στον επιλεγμένο μηδενίζει τον προμηθευτή
-              // της φόρμας → το «Αποθήκευση Απόδειξης» μένει ανενεργό μέχρι
-              // νέα επιλογή (hint supplierRequired, §2.2). Το flag αποτρέπει
-              // το epoch ώστε το πεδίο να κρατήσει το κείμενο του χρήστη.
-              onCleared: () {
-                _clearedFromEdit = true;
-                ref
-                    .read(receiptFormControllerProvider.notifier)
-                    .setSupplier(null);
-              },
               onCreate: (name) => _createSupplier(context, ref, name),
             ),
           ),

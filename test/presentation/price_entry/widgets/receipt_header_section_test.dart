@@ -32,9 +32,7 @@ import '../../../data/local/helpers/in_memory_db.dart';
 /// MaterialApp με ελληνικά locale (όπως στο main) + Scaffold (SnackBar).
 Widget wrap(Size size, {Widget? child, AppDatabase? db, ThemeData? theme}) {
   return ProviderScope(
-    overrides: [
-      if (db != null) appDatabaseProvider.overrideWithValue(db),
-    ],
+    overrides: [if (db != null) appDatabaseProvider.overrideWithValue(db)],
     child: MaterialApp(
       theme: theme,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
@@ -42,9 +40,7 @@ Widget wrap(Size size, {Widget? child, AppDatabase? db, ThemeData? theme}) {
       locale: const Locale('el'),
       home: MediaQuery(
         data: MediaQueryData(size: size),
-        child: Scaffold(
-          body: child ?? const ReceiptHeaderSection(),
-        ),
+        child: Scaffold(body: child ?? const ReceiptHeaderSection()),
       ),
     ),
   );
@@ -52,8 +48,12 @@ Widget wrap(Size size, {Widget? child, AppDatabase? db, ThemeData? theme}) {
 
 void main() {
   /// Θέτει τη θύρα (logical, dpr=1) και περιμένει το δέντρο.
-  Future<void> pumpAt(WidgetTester tester, Size size,
-      {AppDatabase? db, ThemeData? theme}) async {
+  Future<void> pumpAt(
+    WidgetTester tester,
+    Size size, {
+    AppDatabase? db,
+    ThemeData? theme,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -76,169 +76,231 @@ void main() {
 
   /// Διαβάζει το state της φόρμας μέσα από το δέντρο του ProviderScope.
   ReceiptFormState formState(WidgetTester tester) {
-    final container =
-    ProviderScope.containerOf(tester.element(find.byType(ReceiptHeaderSection)));
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(ReceiptHeaderSection)),
+    );
     return container.read(receiptFormControllerProvider);
   }
 
   group('ReceiptHeaderSection', () {
-    testWidgets('εμφανίζει label «Ημερομηνία» + formatMediumDate(σήμερα)',
-            (tester) async {
-          await pumpAt(tester, const Size(800, 600));
+    testWidgets('εμφανίζει label «Ημερομηνία» + formatMediumDate(σήμερα)', (
+      tester,
+    ) async {
+      await pumpAt(tester, const Size(800, 600));
 
-          expect(find.text(AppStrings.fieldDate), findsOneWidget);
-          expect(find.text(mediumNow(tester)), findsOneWidget);
-          expect(tester.takeException(), isNull);
-        });
+      expect(find.text(AppStrings.fieldDate), findsOneWidget);
+      expect(find.text(mediumNow(tester)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
 
-    testWidgets('εμφανίζει το πεδίο προμηθευτή (label + hint, §2.4)',
-            (tester) async {
-          await pumpAt(tester, const Size(800, 600));
+    testWidgets('εμφανίζει το πεδίο προμηθευτή (label + hint, §2.4)', (
+      tester,
+    ) async {
+      await pumpAt(tester, const Size(800, 600));
 
-          expect(find.text(AppStrings.fieldSupplier), findsOneWidget);
-          expect(find.text(AppStrings.supplierSearchHint), findsOneWidget);
-          expect(find.byType(TextField), findsOneWidget);
-          expect(tester.takeException(), isNull);
-        });
+      expect(find.text(AppStrings.fieldSupplier), findsOneWidget);
+      expect(find.text(AppStrings.supplierSearchHint), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
 
-    testWidgets('είναι interactive (tap → ανοίγει DatePickerDialog)',
-            (tester) async {
-          await pumpAt(tester, const Size(800, 600));
+    testWidgets('είναι interactive (tap → ανοίγει DatePickerDialog)', (
+      tester,
+    ) async {
+      await pumpAt(tester, const Size(800, 600));
 
-          await tester.tap(find.byType(ListTile));
-          await tester.pumpAndSettle();
+      await tester.tap(find.byType(ListTile));
+      await tester.pumpAndSettle();
 
-          expect(find.byType(DatePickerDialog), findsOneWidget);
-        });
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+    });
 
-    testWidgets('OK χωρίς αλλαγή → παραμένει η σημερινή ημερομηνία',
-            (tester) async {
-          await pumpAt(tester, const Size(800, 600));
+    testWidgets('OK χωρίς αλλαγή → παραμένει η σημερινή ημερομηνία', (
+      tester,
+    ) async {
+      await pumpAt(tester, const Size(800, 600));
 
-          await tester.tap(find.byType(ListTile));
-          await tester.pumpAndSettle();
-          await tester.tap(find.text(MaterialLocalizations.of(
-              tester.element(find.byType(ReceiptHeaderSection)))
-              .okButtonLabel));
-          await tester.pumpAndSettle();
+      await tester.tap(find.byType(ListTile));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.text(
+          MaterialLocalizations.of(
+            tester.element(find.byType(ReceiptHeaderSection)),
+          ).okButtonLabel,
+        ),
+      );
+      await tester.pumpAndSettle();
 
-          expect(find.byType(DatePickerDialog), findsNothing);
-          expect(find.text(mediumNow(tester)), findsOneWidget);
-          expect(tester.takeException(), isNull);
-        });
+      expect(find.byType(DatePickerDialog), findsNothing);
+      expect(find.text(mediumNow(tester)), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
 
-    testWidgets('επιλογή διαφορετικής ημέρας → ημερομηνία ενημερώνεται',
-            (tester) async {
-          await pumpAt(tester, const Size(800, 600));
+    testWidgets('επιλογή διαφορετικής ημέρας → ημερομηνία ενημερώνεται', (
+      tester,
+    ) async {
+      await pumpAt(tester, const Size(800, 600));
 
-          await tester.tap(find.byType(ListTile));
-          await tester.pumpAndSettle();
+      await tester.tap(find.byType(ListTile));
+      await tester.pumpAndSettle();
 
-          // Άλλη ημέρα του τρέχοντος μήνα (πάντα εντός bounds, ≠ σημερινή).
-          final now = DateTime.now();
-          final altDay = now.day == 15 ? 16 : 15;
+      // Άλλη ημέρα του τρέχοντος μήνα (πάντα εντός bounds, ≠ σημερινή).
+      final now = DateTime.now();
+      final altDay = now.day == 15 ? 16 : 15;
 
-          await tester.tap(find.descendant(
-            of: find.byType(DatePickerDialog),
-            matching: find.text('$altDay'),
-          ));
-          await tester.pump();
-          await tester.tap(find.text(MaterialLocalizations.of(
-              tester.element(find.byType(ReceiptHeaderSection)))
-              .okButtonLabel));
-          await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byType(DatePickerDialog),
+          matching: find.text('$altDay'),
+        ),
+      );
+      await tester.pump();
+      await tester.tap(
+        find.text(
+          MaterialLocalizations.of(
+            tester.element(find.byType(ReceiptHeaderSection)),
+          ).okButtonLabel,
+        ),
+      );
+      await tester.pumpAndSettle();
 
-          final ctx = tester.element(find.byType(ReceiptHeaderSection));
-          final expected = MaterialLocalizations.of(ctx)
-              .formatMediumDate(DateTime(now.year, now.month, altDay));
-          expect(find.text(expected), findsOneWidget);
-          expect(tester.takeException(), isNull);
-        });
+      final ctx = tester.element(find.byType(ReceiptHeaderSection));
+      final expected = MaterialLocalizations.of(ctx)
+          .formatMediumDate(DateTime(now.year, now.month, altDay));
+      expect(find.text(expected), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
 
-    testWidgets('επιλογή υπάρχοντος προμηθευτή → state.supplier ενημερώνεται',
-            (tester) async {
-          final db = inMemoryDb();
-          addTearDown(db.close);
-          await SupplierDao(db).insert(name: 'Μάρκος');
-          await pumpAt(tester, const Size(800, 600), db: db);
+    testWidgets('επιλογή υπάρχοντος προμηθευτή → state.supplier ενημερώνεται', (
+      tester,
+    ) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await SupplierDao(db).insert(name: 'Μάρκος');
+      await pumpAt(tester, const Size(800, 600), db: db);
 
-          await tester.enterText(find.byType(TextField), 'μάρκος');
-          await settleSearch(tester);
+      await tester.enterText(find.byType(TextField), 'μάρκος');
+      await settleSearch(tester);
 
-          expect(find.text('Μάρκος'), findsOneWidget);
-          await tester.tap(find.text('Μάρκος'));
-          await tester.pumpAndSettle();
+      expect(find.text('Μάρκος'), findsOneWidget);
+      await tester.tap(find.text('Μάρκος'));
+      await tester.pumpAndSettle();
 
-          expect(formState(tester).supplier?.name, 'Μάρκος');
-          expect(tester.takeException(), isNull);
-        });
+      expect(formState(tester).supplier?.name, 'Μάρκος');
+      expect(tester.takeException(), isNull);
+    });
 
-    testWidgets('«+» νέος προμηθευτής → supplierAdded + πεδίο ενημερώνεται',
-            (tester) async {
-          final db = inMemoryDb();
-          addTearDown(db.close);
-          await pumpAt(tester, const Size(800, 600), db: db);
+    testWidgets('«+» νέος προμηθευτής → supplierAdded + πεδίο ενημερώνεται', (
+      tester,
+    ) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await pumpAt(tester, const Size(800, 600), db: db);
 
-          const name = 'Καθαριστήρια Αστραπή';
-          await tester.enterText(find.byType(TextField), name);
-          await settleSearch(tester);
+      const name = 'Καθαριστήρια Αστραπή';
+      await tester.enterText(find.byType(TextField), name);
+      await settleSearch(tester);
 
-          final createRow = find.text('${AppStrings.addNewSupplier} "$name"');
-          expect(createRow, findsOneWidget);
-          await tester.tap(createRow);
-          await tester.pumpAndSettle();
+      final createRow = find.text('${AppStrings.addNewSupplier} "$name"');
+      expect(createRow, findsOneWidget);
+      await tester.tap(createRow);
+      await tester.pumpAndSettle();
 
-          expect(find.text(AppMessages.supplierAdded), findsOneWidget);
-          expect(find.text(name), findsOneWidget);
-          expect(formState(tester).supplier?.name, name);
-          expect(tester.takeException(), isNull);
-        });
+      expect(find.text(AppMessages.supplierAdded), findsOneWidget);
+      expect(find.text(name), findsOneWidget);
+      expect(formState(tester).supplier?.name, name);
+      expect(tester.takeException(), isNull);
+    });
 
-    testWidgets('resetForm (μετά από save) → το πεδίο προμηθευτή αδειάζει',
-            (tester) async {
-          final db = inMemoryDb();
-          addTearDown(db.close);
-          await SupplierDao(db).insert(name: 'Μάρκος');
-          await pumpAt(tester, const Size(800, 600), db: db);
+    testWidgets('resetForm (μετά από save) → το πεδίο προμηθευτή αδειάζει', (
+      tester,
+    ) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await SupplierDao(db).insert(name: 'Μάρκος');
+      await pumpAt(tester, const Size(800, 600), db: db);
 
-          await tester.enterText(find.byType(TextField), 'μάρκος');
-          await settleSearch(tester);
-          await tester.tap(find.text('Μάρκος'));
-          await tester.pumpAndSettle();
-          expect(formState(tester).supplier?.name, 'Μάρκος');
-          expect(find.text('Μάρκος'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'μάρκος');
+      await settleSearch(tester);
+      await tester.tap(find.text('Μάρκος'));
+      await tester.pumpAndSettle();
+      expect(formState(tester).supplier?.name, 'Μάρκος');
+      expect(find.text('Μάρκος'), findsOneWidget);
 
-          ProviderScope.containerOf(tester.element(find.byType(ReceiptHeaderSection)))
-              .read(receiptFormControllerProvider.notifier)
-              .resetForm();
-          await tester.pumpAndSettle();
+      ProviderScope.containerOf(
+        tester.element(find.byType(ReceiptHeaderSection)),
+      ).read(receiptFormControllerProvider.notifier).resetForm();
+      await tester.pumpAndSettle();
 
-          expect(formState(tester).supplier, isNull);
-          expect(find.text('Μάρκος'), findsNothing);
-          expect(find.text(AppStrings.supplierSearchHint), findsOneWidget);
-          expect(tester.takeException(), isNull);
-        });
-    testWidgets('«+» με υπάρχοντα → supplierExists (soft dup-check)',
-            (tester) async {
-          final db = inMemoryDb();
-          addTearDown(db.close);
-          await SupplierDao(db).insert(name: 'Μάρκος');
-          await pumpAt(tester, const Size(800, 600), db: db);
+      expect(formState(tester).supplier, isNull);
+      expect(find.text('Μάρκος'), findsNothing);
+      expect(find.text(AppStrings.supplierSearchHint), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+    testWidgets('«+» με υπάρχοντα → supplierExists (soft dup-check)', (
+      tester,
+    ) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await SupplierDao(db).insert(name: 'Μάρκος');
+      await pumpAt(tester, const Size(800, 600), db: db);
 
-          // Το «Μάρκος» δίνει BOTH result row ΚΑΙ «+» — tap στη «+» σκόπιμα.
-          await tester.enterText(find.byType(TextField), 'Μάρκος');
-          await settleSearch(tester);
+      // Το «Μάρκος» δίνει BOTH result row ΚΑΙ «+» — tap στη «+» σκόπιμα.
+      await tester.enterText(find.byType(TextField), 'Μάρκος');
+      await settleSearch(tester);
 
-          final createRow = find.text('${AppStrings.addNewSupplier} "Μάρκος"');
-          expect(find.text('Μάρκος'), findsWidgets,
-              reason: 'Result row + «+» row μαζί στο overlay');
-          await tester.tap(createRow);
-          await tester.pumpAndSettle();
+      final createRow = find.text('${AppStrings.addNewSupplier} "Μάρκος"');
+      expect(
+        find.text('Μάρκος'),
+        findsWidgets,
+        reason: 'Result row + «+» row μαζί στο overlay',
+      );
+      await tester.tap(createRow);
+      await tester.pumpAndSettle();
 
-          expect(find.text(AppMessages.supplierExists), findsOneWidget);
-          expect(formState(tester).supplier?.name, 'Μάρκος');
-          expect(tester.takeException(), isNull);
-        });
+      expect(find.text(AppMessages.supplierExists), findsOneWidget);
+      expect(formState(tester).supplier?.name, 'Μάρκος');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('πληκτρολόγηση πάνω στον επιλεγμένο προμηθευτή → '
+        'σβήνεται από τη φόρμα + το πεδίο κρατά το κείμενο (onCleared)', (
+      tester,
+    ) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await SupplierDao(db).insert(name: 'Μάρκος');
+      await pumpAt(tester, const Size(800, 600), db: db);
+
+      await tester.enterText(find.byType(TextField), 'μάρκος');
+      await settleSearch(tester);
+      await tester.tap(find.text('Μάρκος'));
+      await tester.pumpAndSettle();
+      expect(formState(tester).supplier?.name, 'Μάρκος');
+
+      // Νέοι χαρακτήρες πάνω στον επιλεγμένο → onCleared (αποεπιλογή, §2.4.1).
+      await tester.enterText(find.byType(TextField), 'Μάρκοςx');
+      await settleSearch(tester);
+
+      // Η φόρμα χάνει τον προμηθευτή (αποθήκευση ανενεργή μέχρι νέα επιλογή)
+      // ΚΑΙ το πεδίο ΚΡΑΤΑ ό,τι έγραψε ο χρήστης (κανένα epoch — το flag).
+      expect(formState(tester).supplier, isNull);
+      final text = tester
+          .widget<TextField>(find.byType(TextField))
+          .controller!
+          .text;
+      expect(text, 'Μάρκοςx');
+      expect(tester.takeException(), isNull);
+
+      // Edge: μετά την αποεπιλογή, νέα επιλογή λειτουργεί κανονικά.
+      await tester.enterText(find.byType(TextField), 'μάρκος');
+      await settleSearch(tester);
+      await tester.tap(find.text('Μάρκος'));
+      await tester.pumpAndSettle();
+      expect(formState(tester).supplier?.name, 'Μάρκος');
+      expect(find.text('Μάρκος'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
 
     // ─── Validation ονόματος (Βήμα 6ε) ─────────────────────────────────────────
     testWidgets('HB3: «+» με όνομα > maxItemNameLength → nameTooLong, '
@@ -246,8 +308,10 @@ void main() {
       final db = inMemoryDb();
       addTearDown(db.close);
       await pumpAt(tester, const Size(800, 600), db: db);
-      final tooLong =
-      List.filled(AppConstants.maxItemNameLength + 1, 'α').join();
+      final tooLong = List.filled(
+        AppConstants.maxItemNameLength + 1,
+        'α',
+      ).join();
 
       await tester.enterText(find.byType(TextField), tooLong);
       await settleSearch(tester);
@@ -260,49 +324,58 @@ void main() {
         tester.element(find.byType(ReceiptHeaderSection)),
       );
       final all = await tester.runAsync(
-            () => container.read(supplierRepositoryProvider).watchAll().first,
+        () => container.read(supplierRepositoryProvider).watchAll().first,
       );
       expect(all, isEmpty, reason: 'Καμία εγγραφή στη βάση');
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('HB4: μετά την απόρριψη το πεδίο κρατά ό,τι έγραψε ο χρήστης',
-            (tester) async {
-          final db = inMemoryDb();
-          addTearDown(db.close);
-          await pumpAt(tester, const Size(800, 600), db: db);
-          final tooLong =
-          List.filled(AppConstants.maxItemNameLength + 1, 'α').join();
+    testWidgets('HB4: μετά την απόρριψη το πεδίο κρατά ό,τι έγραψε ο χρήστης', (
+      tester,
+    ) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await pumpAt(tester, const Size(800, 600), db: db);
+      final tooLong = List.filled(
+        AppConstants.maxItemNameLength + 1,
+        'α',
+      ).join();
 
-          await tester.enterText(find.byType(TextField), tooLong);
-          await settleSearch(tester);
-          await tester.tap(find.text('${AppStrings.addNewSupplier} "$tooLong"'));
-          await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), tooLong);
+      await settleSearch(tester);
+      await tester.tap(find.text('${AppStrings.addNewSupplier} "$tooLong"'));
+      await tester.pumpAndSettle();
 
-          final text =
-              tester.widget<TextField>(find.byType(TextField)).controller!.text;
-          expect(text, isNot(contains('Instance of')),
-              reason: 'Το RawAutocomplete δεν πρέπει να γράψει toString()');
-          expect(text, tooLong);
-          expect(tester.takeException(), isNull);
-        });
+      final text = tester
+          .widget<TextField>(find.byType(TextField))
+          .controller!
+          .text;
+      expect(
+        text,
+        isNot(contains('Instance of')),
+        reason: 'Το RawAutocomplete δεν πρέπει να γράψει toString()',
+      );
+      expect(text, tooLong);
+      expect(tester.takeException(), isNull);
+    });
 
-    testWidgets('HB5: «+» με όνομα ακριβώς maxItemNameLength → δημιουργείται',
-            (tester) async {
-          final db = inMemoryDb();
-          addTearDown(db.close);
-          await pumpAt(tester, const Size(800, 600), db: db);
-          final exact = List.filled(AppConstants.maxItemNameLength, 'α').join();
+    testWidgets('HB5: «+» με όνομα ακριβώς maxItemNameLength → δημιουργείται', (
+      tester,
+    ) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await pumpAt(tester, const Size(800, 600), db: db);
+      final exact = List.filled(AppConstants.maxItemNameLength, 'α').join();
 
-          await tester.enterText(find.byType(TextField), exact);
-          await settleSearch(tester);
-          await tester.tap(find.text('${AppStrings.addNewSupplier} "$exact"'));
-          await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), exact);
+      await settleSearch(tester);
+      await tester.tap(find.text('${AppStrings.addNewSupplier} "$exact"'));
+      await tester.pumpAndSettle();
 
-          expect(find.text(AppMessages.supplierAdded), findsOneWidget);
-          expect(formState(tester).supplier?.name, exact);
-          expect(tester.takeException(), isNull);
-        });
+      expect(find.text(AppMessages.supplierAdded), findsOneWidget);
+      expect(formState(tester).supplier?.name, exact);
+      expect(tester.takeException(), isNull);
+    });
 
     // ─── Responsive §1.4 — κανένα overflow ─────────────────────────────────────
     testWidgets('mobile (320×568) — κανένα overflow', (tester) async {
@@ -324,8 +397,9 @@ void main() {
     });
 
     // ─── Dark mode §1.5 ───────────────────────────────────────────────────────
-    testWidgets('dark mode: ημερομηνία + πεδίο προμηθευτή χωρίς exception',
-        (tester) async {
+    testWidgets('dark mode: ημερομηνία + πεδίο προμηθευτή χωρίς exception', (
+      tester,
+    ) async {
       await pumpAt(tester, const Size(800, 600), theme: AppTheme.dark);
 
       expect(find.text(mediumNow(tester)), findsOneWidget);

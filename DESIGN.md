@@ -338,7 +338,12 @@ presentation/settings/
   `initialValue` (μόνο εμφάνιση, ΔΕΝ καλεί `onSelected`, εφαρμόζεται όσο ο
   χρήστης δεν έχει επιλέξει) · `onCleared` (fire-once όταν επιλογή/προεπιλογή
   παύει να ισχύει από επεξεργασία κειμένου· ο καλών μηδενίζει το δικό του
-  state). Χρήση: Unit dropdown στο `unit_quantity_price_section.dart`.
+  state). Χρήση: Unit dropdown στο `unit_quantity_price_section.dart` · και
+  στον προμηθευτή (`receipt_header_section.dart`, 22-09-2026): νέα
+  πληκτρολόγηση πάνω στον επιλεγμένο τον **αποεπιλέγει** από τη φόρμα
+  (`setSupplier(null)`) — το «Αποθήκευση Απόδειξης» μένει ανενεργό έως νέα
+  επιλογή · το τοπικό flag (για αυτή τη χρήση) αποτρέπει το `ref.listen`
+  epoch ώστε το πεδίο να κρατήσει το κείμενο του χρήστη.
 - **Κείμενο πεδίου μετά την επιλογή (Βήμα 6ε)**: το `RawAutocomplete` γράφει
   στο πεδίο το `displayStringForOption(επιλογή)` — default `toString()` της
   γραμμής («Instance of '_CreateEntry<…>'»), που έμενε στο πεδίο όταν το
