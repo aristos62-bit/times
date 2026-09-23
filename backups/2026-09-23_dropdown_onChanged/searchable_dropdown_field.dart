@@ -22,8 +22,8 @@
 ///     ΕΛΕΓΧΟΜΕΝΗ αλλαγή τιμής του controller (`_refreshOptions`, append/restore
 ///     κενού) ώστε ο RawAutocomplete να ξανατρέξει τον builder και να δείξει
 ///     τις φρέσκες γραμμές.
-///   * Εσωτερικός sealed wrapper `_Entry<T>` + render `_buildEntryTile` (part
-///     αρχείο `searchable_dropdown_entry.dart`): result rows + «+» row.
+///   * Εσωτερικός sealed wrapper `_Entry<T>` (part αρχείο
+///     `searchable_dropdown_entry.dart`): result rows + «+» row.
 ///   * «+» (δημιουργία) εμφανίζεται ΠΑΝΤΑ στο τέλος της λίστας όταν
 ///     `query.isNotEmpty` ΚΑΙ έχει οριστεί `createLabel` — ορατό ακόμα και
 ///     με 0 αποτελέσματα (wrapper κρατά τη λίστα μη-κενή). Busy-flag του «+»
@@ -81,7 +81,6 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
     this.allOptionsProvider,
     this.initialValue,
     this.onCleared,
-    this.onChanged,
   }) : assert(
           !showAllWhenEmpty || allOptionsProvider != null,
           'showAllWhenEmpty == true απαιτεί allOptionsProvider',
@@ -146,14 +145,6 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
   /// κρατά παλιά τιμή. Ξανακαλείται μόνο μετά από νέα επιλογή (Β5ε-1).
   final VoidCallback? onCleared;
 
-  /// Καλείται σε ΚΑΘΕ αλλαγή κειμένου από τον ΧΡΗΣΤΗ (πληκτρολόγηση/σβήσιμο)
-  /// με το τρέχον value. Διαφορετικό από [onCleared]: εκείνος είναι fire-once
-  /// (χαμένη επιλογή) — αυτός είναι κάθε keystroke. Χρήση: ο καλών καθαρίζει
-  /// inline μηνύματα που έμειναν από προηγούμενη αποτυχημένη δράση (π.χ.
-  /// `unitRequired`, `nameExists`). ΔΕΝ καλείται σε programmatic αλλαγές
-  /// (initialValue, refresh overlay, label μετά από επιλογή/δημιουργία).
-  final ValueChanged<String>? onChanged;
-
   @override
   ConsumerState<SearchableDropdownField<T>> createState() =>
       _SearchableDropdownFieldState<T>();
@@ -183,23 +174,6 @@ class _SearchableDropdownFieldState<T>
   /// δεδομένων (loading → data) χωρίς νέα πληκτρολόγηση.
   List<T> _lastResults = const [];
 
-  /// Guard «πραγματικής πληκτρολόγησης»: καταστέλλει τον [onChanged] όταν η
-  /// αλλαγή κειμένου είναι programmatic (prefill / refresh / label μετά από
-  /// επιλογή ή «+») — ο καλών ειδοποιείται ΜΟΝΟ για keystrokes του χρήστη.
-  bool _suppressOnChanged = false;
-
-  /// Γράφει στον controller χωρίς να πυροδοτήσει τον [onChanged]. Όλες οι
-  /// εσωτερικές γραφές περνούν από εδώ. try/finally: εγγυάται επαναφορά του
-  /// flag ακόμα κι αν ο controller πετάξει (ασφάλεια στο lifecycle).
-  void _writeSilently(TextEditingValue value) {
-    _suppressOnChanged = true;
-    try {
-      _controller.value = value;
-    } finally {
-      _suppressOnChanged = false;
-    }
-  }
-
   @override
   void initState() {
     super.initState();
@@ -228,10 +202,10 @@ class _SearchableDropdownFieldState<T>
     if (value == null) return;
     final label = widget.labelOf(value);
     _selectedLabel = label;
-    _writeSilently(TextEditingValue(
+    _controller.value = TextEditingValue(
       text: label,
       selection: TextSelection.collapsed(offset: label.length),
-    ));
+    );
   }
 
   /// Focus listener — ΜΟΝΟ για show-all (Β5β): σε εστίαση ξανατρέχει η build
@@ -332,22 +306,20 @@ class _SearchableDropdownFieldState<T>
     // (Β5β): το «σπρώξιμο» με κενό θέλει να εμφανιστούν ΟΛΕΣ οι επιλογές.
     if (text.isEmpty && !widget.showAllWhenEmpty) return;
     final base = _controller.value;
-    _writeSilently(TextEditingValue(
+    _controller.value = TextEditingValue(
       text: '$text ',
       selection: TextSelection.collapsed(offset: text.length + 1),
-    ));
-    _writeSilently(base);
+    );
+    _controller.value = base;
   }
 
   /// Πληκτρολόγηση → debounce → update του `_query` (η αναζήτηση ξεκινά
   /// μετά το delay, μόνο η ΤΕΛΕΥΤΑΙΑ ενεργοποίηση «μετράει»). Μετά το
-  /// setState, reflex για το overlay (βλ. `_refreshOptions`). Ο [onChanged]
-  /// ειδοποιείται ΕΔΩ, ΜΟΝΟ για keystrokes (guard `_suppressOnChanged`).
+  /// setState, reflex για το overlay (βλ. `_refreshOptions`).
   void _onChanged(String value) {
     final lost = _selectedLabel != null && value != _selectedLabel;
     if (value != _selectedLabel) _selectedLabel = null;
     if (lost) widget.onCleared?.call(); // fire-once (Β5ε-1)
-    if (!_suppressOnChanged) widget.onChanged?.call(value);
     _debouncer.run(() {
       if (!mounted) return;
       setState(() => _query = value.trim());
@@ -375,10 +347,10 @@ class _SearchableDropdownFieldState<T>
     final label = widget.labelOf(value);
     _selectedLabel = label;
     setState(() => _query = '');
-    _writeSilently(TextEditingValue(
+    _controller.value = TextEditingValue(
       text: label,
       selection: TextSelection.collapsed(offset: label.length),
-    ));
+    );
     widget.onSelected?.call(value);
   }
 
@@ -397,10 +369,10 @@ class _SearchableDropdownFieldState<T>
         final label = widget.labelOf(created);
         _selectedLabel = label;
         setState(() => _query = '');
-        _writeSilently(TextEditingValue(
+        _controller.value = TextEditingValue(
           text: label,
           selection: TextSelection.collapsed(offset: label.length),
-        ));
+        );
       }
     } finally {
       if (mounted) setState(() => _isCreating = false);
@@ -474,15 +446,7 @@ class _SearchableDropdownFieldState<T>
                 padding: EdgeInsets.zero,
                 children: [
                   for (final entry in options)
-                    _buildEntryTile(
-                      context,
-                      entry,
-                      onSelected,
-                      resultLeadingIcon: widget.resultLeadingIcon,
-                      labelOf: widget.labelOf,
-                      createLabel: widget.createLabel,
-                      isCreating: _isCreating,
-                    ),
+                    _buildEntryTile(context, entry, onSelected),
                 ],
               ),
             ),
@@ -492,6 +456,37 @@ class _SearchableDropdownFieldState<T>
     );
   }
 
-  /// Γραμμές overlay: `_buildEntryTile` ζει στο part
-  /// `searchable_dropdown_entry.dart` (κανόνας 7 · <500 γρ.).
+  /// Μία γραμμή του overlay (result ή «+»). Accessibility §1.6: ListTile
+  /// συνθέτει το semantic label του από title (label του αποτελέσματος /
+  /// «Νέος προμηθευτής "x"») + onTap — δεν χρειάζεται επιπλέον Semantics.
+  Widget _buildEntryTile(
+    BuildContext context,
+    _Entry<T> entry,
+    ValueChanged<_Entry<T>> onSelected,
+  ) {
+    return switch (entry) {
+      _ResultEntry<T>(value: final value) => ListTile(
+          dense: true,
+          leading: widget.resultLeadingIcon,
+          title: Text(widget.labelOf(value)),
+          onTap: () => onSelected(entry),
+        ),
+      _CreateEntry<T>(query: final query) => ListTile(
+          dense: true,
+          leading: const Icon(Icons.add_circle_outline),
+          title: Text(widget.createLabel!(query)),
+          trailing: _isCreating
+              ? SizedBox(
+                  width: AppConstants.smallSpinnerSize,
+                  height: AppConstants.smallSpinnerSize,
+                  child: const CircularProgressIndicator(
+                    strokeWidth: AppConstants.spinnerStrokeWidth,
+                  ),
+                )
+              : null,
+          onTap: () => onSelected(entry),
+          enabled: !_isCreating,
+        ),
+    };
+  }
 }

@@ -338,12 +338,7 @@ presentation/settings/
   `initialValue` (μόνο εμφάνιση, ΔΕΝ καλεί `onSelected`, εφαρμόζεται όσο ο
   χρήστης δεν έχει επιλέξει) · `onCleared` (fire-once όταν επιλογή/προεπιλογή
   παύει να ισχύει από επεξεργασία κειμένου· ο καλών μηδενίζει το δικό του
-  state) · `onChanged` (Βήμα 21): ΚΑΘΕ keystroke με το τρέχον value — ο καλών
-  καθαρίζει inline μηνύματα που έμειναν από αποτυχημένη δράση (π.χ. `nameExists`,
-  `unitRequired`). ΔΕΝ πυροδοτείται από programmatic αλλαγές (prefill, refresh
-  overlay, label μετά από επιλογή/«+»): guard `_suppressOnChanged` στο `_onChanged`
-  + όλες οι εσωτερικές γραφές περνούν από τον helper `_writeSilently`. Χρήση:
-  Unit dropdown στο `unit_quantity_price_section.dart` · και
+  state). Χρήση: Unit dropdown στο `unit_quantity_price_section.dart` · και
   στον προμηθευτή (`receipt_header_section.dart`, 22-09-2026): νέα
   πληκτρολόγηση πάνω στον επιλεγμένο τον **αποεπιλέγει** από τη φόρμα
   (`setSupplier(null)`) — το «Αποθήκευση Απόδειξης» μένει ανενεργό έως νέα
@@ -473,4 +468,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε σε **post-closure της Φάσης 3 — Βήμα 21 (προαιρετικό `onChanged` στο `SearchableDropdownField` — από τα «Ανοιχτά») ΟΛΟΚΛΗΡΩΘΗΚΕ** (23-09-2026): νέα παράμετρος `ValueChanged<String>? onChanged` που καλείται **ΜΟΝΟ σε πραγματική πληκτρολόγηση** (guard `_suppressOnChanged` + helper `_writeSilently` για prefill/refresh/label μετά από επιλογή/«+» — όλες οι εσωτερικές γραφές περνούν από αυτόν) · micro-split `_buildEntryTile` στο part (κύριο αρχείο 497 γρ., <500) · καταναλωτές: dialog «+» (καθαρίζει `_categoryError`/`_subCategoryError` ήδη κατά την πληκτρολόγηση της διόρθωσης) + unit section (`_unitTyping` κρύβει το hint `unitRequired`). Πλευρικό κέρδος: μετά από επιλογή/«+» δεν τρέχει πλέον αχρείαστο debounced search με το label. Tests **730/730** ✓ (+6: T1-T4 · Z9 · V13)· `flutter analyze` **No issues** ✓ · backup `backups/2026-09-23_dropdown_onChanged/`. **Επόμενο**: **Φάση 4 (Ρυθμίσεις)**. Ανοιχτά (χωρίς προγραμματισμένο Βήμα): housekeeping (split test αρχείων >500 γρ. αν χρειαστεί) · web exit-confirm (προαιρετικά αργότερα). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.
+Είμαστε σε **post-closure της Φάσης 3 — Exit-confirm (§2.2 «Ημιτελής καταχώρηση») ΟΛΟΚΛΗΡΩΘΗΚΕ**: `ConfirmDialog` (νέο shared widget §2.4 — `showConfirmDialog` → `Future<bool?>`, SPoT defaults, `isDestructive`) + `PopScope` στην PriceEntryPage (ConsumerStatefulWidget· `canPop = _allowPop || !hasDrafts`· `_dialogOpen` guard· `ref.listen` σβήνει την «άδεια εξόδου» σε νέο draft) · «Ναι» → `resetForm` + `clearSelection` (καθαρή φόρμα) + άδεια εξόδου **χωρίς ρητό pop** (η σελίδα είναι η μόνη route της branch — go_router assert)· desktop X/Alt+F4 και web-back εκτός ελέγχου (τεκμηριωμένο όριο). Tests **724/724** ✓ (+13: confirm_dialog 8 + exit-confirm 5 με πραγματικό router)· `flutter analyze` **No issues** ✓ · backup `backups/2026-09-22_exit_confirm/`. **Επόμενο**: **Φάση 4 (Ρυθμίσεις)**. Ανοιχτά (χωρίς προγραμματισμένο Βήμα): housekeeping (split test αρχείων >500 γρ.) · προαιρετικό `onChanged` στο `SearchableDropdownField` · web exit-confirm (προαιρετικά αργότερα). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.

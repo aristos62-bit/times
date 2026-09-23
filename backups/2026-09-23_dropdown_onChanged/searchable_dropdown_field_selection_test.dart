@@ -1,5 +1,5 @@
-/// Widget tests — `SearchableDropdownField`: `initialValue` + `onCleared` +
-/// `onChanged` (Φάση 3, Βήμα 5ε-1 / Βήμα 21 · §2.4). Pure family χωρίς DB.
+/// Widget tests — `SearchableDropdownField`: `initialValue` + `onCleared`
+/// (Φάση 3, Βήμα 5ε-1 · §2.4). Pure family χωρίς DB.
 library;
 
 import 'package:flutter/material.dart';
@@ -20,7 +20,6 @@ void main() {
         String? initialValue,
         VoidCallback? onCleared,
         ValueChanged<String>? onSelected,
-        ValueChanged<String>? onChanged,
       }) async {
     tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1.0;
@@ -38,7 +37,6 @@ void main() {
               initialValue: initialValue,
               onCleared: onCleared,
               onSelected: onSelected,
-              onChanged: onChanged,
             ),
           ),
         ),
@@ -139,61 +137,6 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Μ');
       await settleSearch(tester);
       expect(cleared, 2, reason: 'Νέα επιλογή → το callback οπλίζει ξανά');
-      expect(tester.takeException(), isNull);
-    });
-  });
-
-  group('onChanged (Βήμα 21 · guard πληκτρολόγησης)', () {
-    testWidgets('κάθε keystroke → onChanged με το τρέχον value',
-        (tester) async {
-      final changed = <String>[];
-      await pumpField(tester, onChanged: changed.add);
-      await tester.enterText(find.byType(TextField), 'Μ');
-      await tester.enterText(find.byType(TextField), 'Μα');
-      await tester.enterText(find.byType(TextField), 'Μαρ');
-      await settleSearch(tester);
-      expect(changed, ['Μ', 'Μα', 'Μαρ']);
-    });
-
-    testWidgets('guard: refresh/άφιξη δεδομένων ΔΕΝ πυροδοτούν onChanged',
-        (tester) async {
-      final changed = <String>[];
-      await pumpField(tester, onChanged: changed.add);
-      await tester.enterText(find.byType(TextField), 'Μαρ');
-      await settleSearch(tester); // debounce + άφιξη δεδομένων + refresh
-      expect(changed, ['Μαρ'],
-          reason: 'Οι programmatic αλλαγές (append/restore) δεν «μετράνε»');
-      await tester.enterText(find.byType(TextField), 'Μαρκ');
-      await settleSearch(tester);
-      expect(changed, ['Μαρ', 'Μαρκ']);
-    });
-
-    testWidgets('prefill (initialValue) → καθόλου onChanged μέχρι typing',
-        (tester) async {
-      final changed = <String>[];
-      await pumpField(
-        tester,
-        initialValue: 'Κιλό',
-        onChanged: changed.add,
-      );
-      expect(changed, isEmpty,
-          reason: 'Η αρχική γραφή του prefill είναι programmatic');
-      await tester.enterText(find.byType(TextField), 'Κιλ');
-      await settleSearch(tester);
-      expect(changed, ['Κιλ']);
-    });
-
-    testWidgets('επιλογή από overlay → ΔΕΝ καλεί onChanged (label programmatic)',
-        (tester) async {
-      final changed = <String>[];
-      await pumpField(tester, onChanged: changed.add);
-      await tester.enterText(find.byType(TextField), 'Μαρ');
-      await settleSearch(tester);
-      expect(changed, ['Μαρ']);
-      await tester.tap(row('Μαρ'));
-      await tester.pumpAndSettle();
-      expect(changed, ['Μαρ'],
-          reason: 'Το label μετά την επιλογή δεν είναι πληκτρολόγηση');
       expect(tester.takeException(), isNull);
     });
   });

@@ -2,8 +2,7 @@
 /// (§2.2 · Φάση 3 Βήμα 6δ). Νέο αρχείο (το section test έχει ήδη 359 γρ.).
 ///
 /// Καλύπτει: σφάλματα τιμής/ποσότητας (0, πάνω από όριο) · καμία ειδοποίηση
-/// σε κενό πεδίο ή αριθμό «υπό πληκτρολόγηση» («5,») · hint μονάδας +
-/// απόκρυψή του με πληκτρολόγηση (Βήμα 21) ·
+/// σε κενό πεδίο ή αριθμό «υπό πληκτρολόγηση» («5,») · hint μονάδας ·
 /// `unitAllowsDecimal` στη draft γραμμή · περικοπή + σφάλμα · responsive
 /// (3 μεγέθη) και dark theme χωρίς overflow. Πραγματική in-memory Drift βάση
 /// (μοτίβο Βημάτων 4/5).
@@ -321,31 +320,6 @@ void main() {
       expect(find.text(AppStrings.quantityTruncatedForUnit), findsOneWidget);
       expect(find.text(AppErrors.quantityMustBePositive), findsOneWidget);
       expect(addEnabled(tester), isFalse);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('V13: χωρίς μονάδα + τιμή → unitRequired · πληκτρολόγηση '
-        'στο unit → φεύγει χωρίς επιλογή (Βήμα 21)', (tester) async {
-      final db = inMemoryDb();
-      addTearDown(db.close);
-      final seeded = await seed(db, withDefaultUnit: false);
-      await pumpAt(tester, seeded.item, db);
-
-      await enter(tester, AppStrings.fieldPrice, '2,50');
-      expect(find.text(AppErrors.unitRequired), findsOneWidget);
-      expect(addEnabled(tester), isFalse);
-
-      // Μόνο πληκτρολόγηση στο unit πεδίο — χωρίς επιλογή μονάδας.
-      await tester.enterText(
-        find.byWidget(fieldByLabel(tester, AppStrings.fieldUnit)),
-        'τ',
-      );
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pumpAndSettle();
-
-      expect(find.text(AppErrors.unitRequired), findsNothing);
-      expect(addEnabled(tester), isFalse,
-          reason: 'Καμία μονάδα επιλεγμένη — το Add παραμένει ανενεργό');
       expect(tester.takeException(), isNull);
     });
   });

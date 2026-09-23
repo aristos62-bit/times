@@ -3,8 +3,7 @@
 /// new_item_flow_dialog_test.dart έχει ήδη 380 γραμμές.
 ///
 /// Καλύπτει: όνομα > maxItemNameLength (nameTooLong) · διπλότυπο (nameExists)
-/// · σβήσιμο του μηνύματος σε επιλογή / επόμενη επιτυχία / πληκτρολόγηση
-/// (Βήμα 21) · υποκατηγορία ·
+/// · σβήσιμο του μηνύματος σε επιλογή / επόμενη επιτυχία · υποκατηγορία ·
 /// responsive (320×568) και dark theme. Πραγματική in-memory Drift βάση.
 /// Προϋπόθεση: το fix του `SearchableDropdownField` (displayStringForOption,
 /// Βήμα 6ε) — το πεδίο κρατά το query μετά από απόρριψη του «+».
@@ -259,24 +258,5 @@ void main() {
           expect(find.text(AppErrors.nameTooLong), findsOneWidget);
           expect(tester.takeException(), isNull);
         });
-
-    testWidgets('Z9: μήνυμα nameExists → η πληκτρολόγηση της διόρθωσης το '
-        'σβήνει χωρίς επιλογή/δημιουργία (Βήμα 21)', (tester) async {
-      final db = inMemoryDb();
-      addTearDown(db.close);
-      await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
-      await openDialog(tester, db);
-      await typeInNthField(tester, 'τροφιμα', 0);
-      await tapCreate(tester, AppStrings.addNewCategory, 'τροφιμα');
-      expect(find.text(AppErrors.nameExists), findsOneWidget);
-
-      // Μόνο πληκτρολόγηση — ούτε «+» ούτε επιλογή.
-      await typeInNthField(tester, 'τροφιμα2', 0);
-
-      expect(find.text(AppErrors.nameExists), findsNothing);
-      expect(find.byType(SearchableDropdownField<SubCategory>), findsNothing,
-          reason: 'Καμία δημιουργία/επιλογή — μόνο καθαρισμός του μηνύματος');
-      expect(tester.takeException(), isNull);
-    });
   });
 }

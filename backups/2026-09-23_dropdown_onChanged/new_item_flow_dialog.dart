@@ -15,8 +15,7 @@
 ///     Άκυρο όνομα ή διπλότυπο στο «+» (Βήμα 6ζ): ΚΑΜΙΑ δημιουργία και
 ///     inline μήνυμα κάτω από το πεδίο του βήματος (`nameRequired`/
 ///     `nameTooLong`/`nameExists`) — όχι snackbar. Σβήνει σε επιλογή ή σε
-///     επόμενη επιτυχημένη δημιουργία, καθώς και ήδη κατά την πληκτρολόγηση
-///     της διόρθωσης (onChanged · Βήμα 21).
+///     επόμενη επιτυχημένη δημιουργία.
 ///   * Το feedback (SnackBar) γίνεται πάντα ΜΕΤΑ το pop από τον καλούντα
 ///     (ScaffoldMessenger caveat — αλλιώς το snackbar «κρύβεται» πίσω από
 ///     το dialog overlay). Το AppFeedback καλείται ΜΟΝΟ εκεί.
@@ -220,7 +219,6 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
       labelOf: (category) => category.name,
       createLabel: (query) => '${AppStrings.addNewCategory} "$query"',
       onCreate: _createCategory,
-      onChanged: (_) => setState(() => _categoryError = null),
       onSelected: (category) => setState(() {
         _category = category;
         _categoryError = null;
@@ -242,7 +240,6 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
       labelOf: (sub) => sub.name,
       createLabel: (query) => '${AppStrings.addNewSubCategory} "$query"',
       onCreate: _createSubCategory,
-      onChanged: (_) => setState(() => _subCategoryError = null),
       onSelected: (sub) => setState(() {
         _subCategory = sub;
         _subCategoryError = null;

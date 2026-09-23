@@ -27,8 +27,7 @@
 /// Inline σφάλμα (`errorText` των fields) ΜΟΝΟ σε μη-κενή, ολοκληρωμένη
 /// είσοδο: το κενό πεδίο και ο αριθμός «υπό πληκτρολόγηση» («5,») δεν
 /// δείχνουν σφάλμα (το Add μένει απλώς ανενεργό). Hint μονάδας όταν έχει
-/// ήδη γραφτεί τιμή χωρίς μονάδα — κρύβεται μόλις αρχίσει πληκτρολόγηση στο
-/// unit dropdown (onChanged · Βήμα 21).
+/// ήδη γραφτεί τιμή χωρίς μονάδα.
 library;
 
 import 'package:flutter/material.dart';
@@ -71,11 +70,6 @@ class _UnitQuantityPriceSectionState
 
   /// Inline ειδοποίηση περικοπής (§2.2:218) — `null` = καμία.
   String? _quantityNotice;
-
-  /// Κρύβει το hint `unitRequired` μόλις ο χρήστης πληκτρολογήσει στο unit
-  /// dropdown (Βήμα 21) — η σύσταση εξυπηρετήθηκε. Δεν ξανασβήνει: φρέσκια
-  /// κατάσταση ανά είδος μέσω `ValueKey(item.id)` (Δ8).
-  bool _unitTyping = false;
 
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
@@ -235,9 +229,8 @@ class _UnitQuantityPriceSectionState
     final price = _priceCheck();
     final canAdd =
         _unit != null && quantity.value != null && price.value != null;
-    // Hint μονάδας: μόνο όταν ο χρήστης έχει ήδη αρχίσει να γράφει τιμή ΚΑΙ
-    // δεν έχει αρχίσει να πληκτρολογεί στο unit dropdown (Βήμα 21).
-    final unitHint = !_unitTyping && _priceController.text.isNotEmpty
+    // Hint μονάδας: μόνο όταν ο χρήστης έχει ήδη αρχίσει να γράφει τιμή.
+    final unitHint = _priceController.text.isNotEmpty
         ? ReceiptValidator.validateUnit(_unit != null)
         : null;
 
@@ -258,8 +251,6 @@ class _UnitQuantityPriceSectionState
               onSelected: _onUnitSelected,
               // Β5ε-1: σβήσιμο/αλλαγή κειμένου → μονάδα null (Add ανενεργό).
               onCleared: () => setState(() => _unit = null),
-              // Βήμα 21: πληκτρολόγηση → κρύβεται το hint unitRequired.
-              onChanged: (_) => setState(() => _unitTyping = true),
               showAllWhenEmpty: true,
               allOptionsProvider: () => unitsStreamProvider,
               initialValue: _unit,
