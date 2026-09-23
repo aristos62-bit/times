@@ -255,22 +255,19 @@ ITEM_SELECTED ──▶ εμφάνιση Unit dropdown (προεπιλογή: It
 ```
 presentation/settings/
 ├── settings_page.dart
-├── controllers/                              (Βήματα 4–5 · το Βήμα 1 ΔΕΝ έχει controller — Q1)
+├── controllers/
+│   ├── theme_controller.dart
 │   ├── category_management_controller.dart
 │   └── backup_restore_controller.dart
-├── state/settings_state.dart                 (Βήματα 4–5)
+├── state/settings_state.dart
 └── widgets/
-    ├── theme_mode_selector.dart              (Βήμα 1 ✓)
+    ├── theme_mode_selector.dart
     ├── category_tree_editor.dart      -- λίστα Κατηγορία▸Υποκατηγορία με edit/delete εικονίδια
     └── backup_restore_section.dart
 ```
 
-**Θέμα Βήματος 1 (Q1)** — `data/providers/settings_providers.dart`
-(`themeModeProvider` + `settingsRepositoryProvider` + `sharedPreferencesProvider`):
-σύγχρονο read, αληθινό zero flash (review fix 23-09, Q3 αναθεωρήθηκε με ΟΚ).
-
 **Providers / λογική**
-- `themeModeProvider` (Notifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` (`ConsumerWidget`) για `MaterialApp.router.themeMode`. SPoT: key `AppConstants.themeModeKey`, default `AppTheme.defaultMode` (system), labels `AppStrings` (τίτλος/Φωτεινό/Σκοτεινό/Αυτόματο). Sync read (review fix 23-09 — Q3 αναθεωρήθηκε με ΟΚ χρήστη).
+- `themeModeProvider` (Notifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` (`ConsumerWidget`) για `MaterialApp.router.themeMode`. SPoT: key `AppConstants.themeModeKey`, default `AppTheme.defaultMode` (system), labels `AppStrings` (τίτλος/Φωτεινό/Σκοτεινό/Αυτόματο).
 - `categoryTreeStreamProvider` (StreamProvider) → live λίστα Κατηγοριών με nested Υποκατηγορίες.
 - `canDeleteCategoryProvider` / `canDeleteSubCategoryProvider` (`FutureProvider.family<bool, int>`) → **προ-έλεγχος** (μετράει συνδεδεμένα Items/ReceiptLines) πριν καν εμφανιστεί ενεργό το εικονίδιο διαγραφής.
 - Scope CRUD: **ΜΟΝΟ Κατηγορίες/Υποκατηγορίες** — το cascade καθαρίζει orphan Items σε transaction ως side-effect, χωρίς νέο UI ειδών. Το FK `RESTRICT` του §3 παραμένει· οι count/cascade queries ζουν στα **DAOs** (repos = error-mapping μόνο).
@@ -458,7 +455,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 **Βήμα-βήμα (6) — σειρά υλοποίησης (κλειδώθηκε 23-09-2026)**:
 
-1. **Theme persistence** (Light/Dark/Auto): `themeModeProvider` → **Notifier** πάνω σε `SettingsRepository` (SharedPreferences, SPoT keys §2.3) · `main.dart` γίνεται `ConsumerWidget` με `ref.watch(themeModeProvider)` → `MaterialApp.router.themeMode` (§2.3). **ΟΛΟΚΛΗΡΩΘΗΚΕ 23-09** ✓ (sync read · 762/762 · analyze καθαρό).
+1. **Theme persistence** (Light/Dark/Auto): `themeModeProvider` → **Notifier** πάνω σε `SettingsRepository` (SharedPreferences, SPoT keys §2.3) · `main.dart` γίνεται `ConsumerWidget` με `ref.watch(themeModeProvider)` → `MaterialApp.router.themeMode` (§2.3).
 2. **DAO counts + cascade guards** (Βήμα 2): `count*ByCategoryId`/`canDelete*Queries` στα **DAOs** (§2.0.5), όχι στα Repositories (repos = error-mapping μόνο, §2.0.5:441 μοναδική εξαίρεση search).
 3. **Providers ελέγχου**: `canDeleteCategoryProvider`/`canDeleteSubCategoryProvider` (`FutureProvider.family<bool,int>`, §2.3:272) — προ-έλεγχος πριν ενεργό delete icon, tooltip «περιέχει X είδη» όταν blocked (§2.3:275).
 4. **SettingsPage + category tree editor** (Βήμα 4): CRUD Κατηγοριών/Υποκατηγοριών μόνο (§2.3 · cascade-delete Items side-effect, **όχι** νέο UI ειδών) · reuse ConfirmDialog (isDestructive) + NameValidator + AppFeedback + shared widgets (§2.4).
@@ -481,4 +478,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε σε **Φάση 4 — Βήμα 0 (Σχέδιο & Τεκμηρίωση) ΟΛΟΚΛΗΡΩΘΗΚΕ** (23-09-2026, κλειδωμένες αποφάσεις Α/Β/Γ/Δ + σειρά 6 βημάτων §4). Φάση 3 κλειστή (730/730, Βήμα 21 onChanged): νέα παράμετρος `ValueChanged<String>? onChanged` που καλείται **ΜΟΝΟ σε πραγματική πληκτρολόγηση** (guard `_suppressOnChanged` + helper `_writeSilently` για prefill/refresh/label μετά από επιλογή/«+» — όλες οι εσωτερικές γραφές περνούν από αυτόν) · micro-split `_buildEntryTile` στο part (κύριο αρχείο 497 γρ., <500) · καταναλωτές: dialog «+» (καθαρίζει `_categoryError`/`_subCategoryError` ήδη κατά την πληκτρολόγηση της διόρθωσης) + unit section (`_unitTyping` κρύβει το hint `unitRequired`). Πλευρικό κέρδος: μετά από επιλογή/«+» δεν τρέχει πλέον αχρείαστο debounced search με το label. Tests **730/730** ✓ (+6: T1-T4 · Z9 · V13)· `flutter analyze` **No issues** ✓ · backup `backups/2026-09-23_dropdown_onChanged/`. **Φάση 4 Βήμα 1 — Theme persistence ΟΛΟΚΛΗΡΩΘΗΚΕ** 23-09 (sync read + review fixes · 762/762 ✓ · analyze καθαρό · backup `backups/2026-09-23_fase4_b1_review/`). **Επόμενο**: **Φάση 4 Βήμα 2** (μόνο με ρητό OK). Ανοιχτά (χωρίς προγραμματισμένο Βήμα): housekeeping (split test αρχείων >500 γρ. αν χρειαστεί) · web exit-confirm (προαιρετικά αργότερα). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.
+Είμαστε σε **Φάση 4 — Βήμα 0 (Σχέδιο & Τεκμηρίωση) ΟΛΟΚΛΗΡΩΘΗΚΕ** (23-09-2026, κλειδωμένες αποφάσεις Α/Β/Γ/Δ + σειρά 6 βημάτων §4). Φάση 3 κλειστή (730/730, Βήμα 21 onChanged): νέα παράμετρος `ValueChanged<String>? onChanged` που καλείται **ΜΟΝΟ σε πραγματική πληκτρολόγηση** (guard `_suppressOnChanged` + helper `_writeSilently` για prefill/refresh/label μετά από επιλογή/«+» — όλες οι εσωτερικές γραφές περνούν από αυτόν) · micro-split `_buildEntryTile` στο part (κύριο αρχείο 497 γρ., <500) · καταναλωτές: dialog «+» (καθαρίζει `_categoryError`/`_subCategoryError` ήδη κατά την πληκτρολόγηση της διόρθωσης) + unit section (`_unitTyping` κρύβει το hint `unitRequired`). Πλευρικό κέρδος: μετά από επιλογή/«+» δεν τρέχει πλέον αχρείαστο debounced search με το label. Tests **730/730** ✓ (+6: T1-T4 · Z9 · V13)· `flutter analyze` **No issues** ✓ · backup `backups/2026-09-23_dropdown_onChanged/`. **Επόμενο**: **Φάση 4 Βήμα 1 — Theme persistence** (μόνο με ρητό OK). Ανοιχτά (χωρίς προγραμματισμένο Βήμα): housekeeping (split test αρχείων >500 γρ. αν χρειαστεί) · web exit-confirm (προαιρετικά αργότερα). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.

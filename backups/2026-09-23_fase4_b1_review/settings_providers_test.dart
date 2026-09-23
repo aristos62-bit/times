@@ -1,10 +1,11 @@
 /// Unit tests — settings_providers.dart (Φάση 4, Βήμα 1 · DESIGN §2.3).
 ///
 /// `ProviderContainer.test()` (Riverpod 3.x) + override των SharedPreferences
-/// (πρότυπο database_providers_test). Το read είναι σύγχρονο (review fix
-/// 23-09) — το persisted mode είναι ορατό στο πρώτο read· το
-/// `pumpEventQueue()` χρειάζεται μόνο για το async save.
+/// (πρότυπο database_providers_test). Το async load ολοκληρώνεται με το
+/// τυποποιημένο `pumpEventQueue()` (flutter_test) — κανένα sleep.
 library;
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,20 +31,16 @@ void main() {
 
   group('themeModeProvider', () {
     // ─── Χαρούμενη ροή ───────────────────────────────────────────────────────
-    test('αρχική κατάσταση = persisted αμέσως (sync read, zero flash)',
-        () async {
-      await prefs.setString(AppConstants.themeModeKey, 'dark');
-      // Χωρίς pumpEventQueue — το πρώτο read βλέπει ήδη το persisted.
-      expect(container().read(themeModeProvider), ThemeMode.dark);
-    });
-
-    test('χωρίς τιμή → default αμέσως', () {
+    test('αρχική κατάσταση = default πριν ολοκληρωθεί το load', () {
       expect(container().read(themeModeProvider), AppTheme.defaultMode);
     });
 
-    test('persisted mode ορατό χωρίς αναμονή (SEED dark)', () async {
+    test('μετά το load = persisted mode (SEED dark)', () async {
       await prefs.setString(AppConstants.themeModeKey, 'dark');
-      expect(container().read(themeModeProvider), ThemeMode.dark);
+      final c = container();
+      expect(c.read(themeModeProvider), AppTheme.defaultMode);
+      await pumpEventQueue();
+      expect(c.read(themeModeProvider), ThemeMode.dark);
     });
 
     test('setMode αλλάζει state και το persists στο prefs', () async {
@@ -57,7 +54,8 @@ void main() {
     test('setMode με το ήδη επιλεγμένο mode → no-op (equality gate, χωρίς '
         'overwrite)', () async {
       await prefs.setString(AppConstants.themeModeKey, 'dark');
-      final c = container(); // state = dark αμέσως (sync read)
+      final c = container();
+      await pumpEventQueue(); // load ολοκληρώνεται (state = dark)
       c.read(themeModeProvider.notifier).setMode(ThemeMode.dark);
       expect(c.read(themeModeProvider), ThemeMode.dark);
       expect(prefs.getString(AppConstants.themeModeKey), 'dark');
@@ -87,28 +85,36 @@ void main() {
       expect(c.read(themeModeProvider), ThemeMode.dark);
     });
 
-    test('read αποτυχία → default αμέσως + ο χρήστης διαλέγει κανονικά', () {
+    test('load αποτυχία → default + ο χρήστης μπορεί κανονικά να διαλέξει',
+        () async {
       final c = ProviderContainer.test(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
           settingsRepositoryProvider.overrideWithValue(FailingRepository()),
         ],
       );
-      // Το sync throw πιάνεται στο build() → default, κανένα crash.
+      await pumpEventQueue();
       expect(c.read(themeModeProvider), AppTheme.defaultMode);
       c.read(themeModeProvider.notifier).setMode(ThemeMode.light);
       expect(c.read(themeModeProvider), ThemeMode.light);
     });
 
-    test('sync read: καμία async «τρύπα» — setMode αμέσως μετά το read',
+    test('race: ο χρήστης επιλέγει ΠΡΙΝ τελειώσει το load → η επιλογή κερδίζει',
         () async {
-      await prefs.setString(AppConstants.themeModeKey, 'dark');
-      final c = container();
-      expect(c.read(themeModeProvider), ThemeMode.dark);
+      final slow = SlowRepository();
+      final c = ProviderContainer.test(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          settingsRepositoryProvider.overrideWithValue(slow),
+        ],
+      );
+      expect(c.read(themeModeProvider), AppTheme.defaultMode);
       c.read(themeModeProvider.notifier).setMode(ThemeMode.light);
       expect(c.read(themeModeProvider), ThemeMode.light);
+      slow.completeLoad(ThemeMode.dark); // το (αργοπορημένο) persisted = dark
       await pumpEventQueue();
-      expect(prefs.getString(AppConstants.themeModeKey), 'light');
+      // Το _userChanged guard κρατά την επιλογή του χρήστη.
+      expect(c.read(themeModeProvider), ThemeMode.light);
     });
   });
 
@@ -123,12 +129,26 @@ void main() {
   });
 }
 
-/// Fake repository — κάθε λειτουργία ρίχνει (read & save fail).
+/// Fake repository — κάθε λειτουργία ρίχνει (load & save fail).
 class FailingRepository implements SettingsRepository {
   @override
-  ThemeMode readThemeMode() => throw UnimplementedError('read fail');
+  Future<ThemeMode> loadThemeMode() => throw UnimplementedError('load fail');
 
   @override
   Future<void> saveThemeMode(ThemeMode mode) =>
       throw UnimplementedError('save fail');
+}
+
+/// Fake repository — το load κρατιέται ανεκπλήρωτο μέχρι να το «αφήσουμε»
+/// (προσομοίωση αργού persisted load + race με την επιλογή του χρήστη).
+class SlowRepository implements SettingsRepository {
+  final Completer<ThemeMode> _load = Completer<ThemeMode>();
+
+  void completeLoad(ThemeMode mode) => _load.complete(mode);
+
+  @override
+  Future<ThemeMode> loadThemeMode() => _load.future;
+
+  @override
+  Future<void> saveThemeMode(ThemeMode mode) async {}
 }

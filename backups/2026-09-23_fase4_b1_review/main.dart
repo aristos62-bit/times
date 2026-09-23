@@ -12,20 +12,20 @@ import 'core/theme/app_theme.dart';
 import 'data/providers/settings_providers.dart';
 
 Future<void> main() async {
-  // Φάση 4, Βήμα 1 (Q4) + review fix (sync read, Q3 αναθεωρήθηκε): προφόρτωση
-  // των SharedPreferences ΠΡΙΝ το runApp + σύγχρονο memory-read στο build —
-  // το persisted ThemeMode είναι ορατό στο πρώτο frame (αληθινό μηδέν flash).
+  // Φάση 4, Βήμα 1 (Q4): προφόρτωση των SharedPreferences ΠΡΙΝ το runApp —
+  // το ThemeMode είναι γνωστό πριν το πρώτο frame (μηδέν flash) και ο
+  // themeModeProvider διαβάζει memory-read (κανένα platform channel στο build).
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
 
+  // Dev-facing init log — εφαρμογή ξεκίνησε (tag UI, §1.7).
+  AppLogger.info(LogTag.ui, 'Εφαρμογή «Τιμές» ξεκίνησε');
   runApp(ProviderScope(
     // Το prefs δίνεται με injection (pattern database tests) — ο provider
     // ρίχνει σκόπιμα UnimplementedError χωρίς override (settings_providers).
     overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
     child: const TimesApp(),
   ));
-  // Dev-facing init log — μετά το runApp (review fix 23-09, §1.7).
-  AppLogger.info(LogTag.ui, 'Εφαρμογή «Τιμές» ξεκίνησε');
 }
 
 /// Ρίζα της εφαρμογής — `ProviderScope` φορτώνει το Riverpod DI δέντρο

@@ -24,23 +24,26 @@ final class SettingsRepositoryImpl implements SettingsRepository {
 
   final SharedPreferences _prefs;
 
-  /// Το read είναι memory-read (προφορτωμένα prefs) → σύγχρονο, ορατό στο
-  /// πρώτο frame (review fix 23-09: το προηγούμενο `Future.value` άφηνε 1
-  /// frame με default — το «μηδέν flash» δεν ίσχυε).
+  /// Το load είναι memory-read (προφορτωμένα prefs) → ολοκληρώνεται σε
+  /// microtask πριν το πρώτο frame — κανένα ορατό «φλας» στην εκκίνηση.
   @override
-  ThemeMode readThemeMode() =>
-      _fromString(_prefs.getString(AppConstants.themeModeKey));
+  Future<ThemeMode> loadThemeMode() =>
+      Future.value(_fromString(_prefs.getString(AppConstants.themeModeKey)));
 
   @override
   Future<void> saveThemeMode(ThemeMode mode) async {
     await _prefs.setString(AppConstants.themeModeKey, mode.name);
   }
 
-  /// SPoT mapping (§2.3:270): γράφουμε `mode.name` και διαβάζουμε από τον
-  /// ίδιο πίνακα (`asNameMap`) — καμία διπλή αναπαράσταση κωδικών (review
-  /// fix 23-09). Τα Ελληνικά labels είναι ξεχωριστά στο AppStrings.
-  /// Κάθε άλλη/κενή τιμή (π.χ. από παλιά έκδοση ή corrupt prefs) →
-  /// `AppTheme.defaultMode` (SPoT default, όχι hardcoded system).
-  static ThemeMode _fromString(String? raw) =>
-      ThemeMode.values.asNameMap()[raw] ?? AppTheme.defaultMode;
+  /// SPoT mapping (§2.3:270): αποθηκεύονται οι σταθεροί κωδικοί του enum
+  /// (`mode.name`: 'light'/'dark'/'system') — τα Ελληνικά labels είναι ξεχωριστά
+  /// στο AppStrings. Κάθε άλλη/κενή τιμή (π.χ. από παλιά έκδοση ή corrupt
+  /// prefs) → `AppTheme.defaultMode` (SPoT default, όχι hardcoded system) —
+  /// το billing της αποτυχίας γίνεται στον controller (log, tag UI).
+  static ThemeMode _fromString(String? raw) => switch (raw) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        'system' => ThemeMode.system,
+        _ => AppTheme.defaultMode,
+      };
 }

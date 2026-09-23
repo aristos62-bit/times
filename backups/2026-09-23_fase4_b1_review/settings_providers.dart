@@ -48,24 +48,34 @@ final themeModeProvider = NotifierProvider<ThemeModeController, ThemeMode>(
 
 /// Controller του θέματος — **plain Notifier** (§2.0.1· κλειδωμένη απόφαση Β0):
 /// το state είναι σύγχρονο (`ThemeMode` επιστρέφεται άμεσα, κανένα loading
-/// flash)· το read είναι memory-read (Q4) → το persisted mode είναι ορατό στο
-/// ΠΡΩΤΟ frame (review fix 23-09: το προηγούμενο async load άφηνε 1 frame με
-/// default). Μόνο το save είναι async (unawaited, δική του μεταχείριση
-/// σφαλμάτων). Equality gate + logging (πρότυπο `ReceiptFormController`).
+/// flash)· τα async actions (load/save πάνω στα prefs) σημειώνονται ως
+/// unawaited με δική τους μεταχείριση σφαλμάτων. Equality gate + logging
+/// (πρότυπο `ReceiptFormController`).
 class ThemeModeController extends Notifier<ThemeMode> {
-  /// Σύγχρονο read (Q3 αναθεωρήθηκε με ΟΚ χρήστη 23-09): τα prefs είναι
-  /// προφορτωμένα στη μνήμη (Q4) → το persisted mode επιστρέφεται άμεσα,
-  /// ορατό στο πρώτο frame (αληθινό zero flash — χωρίς async κενό δεν
-  /// υπάρχει race, ο `_userChanged` guard δεν χρειάζεται πια). Σφάλμα →
-  /// default + log (κανένα crash). Default = `AppTheme.defaultMode`
-  /// (system, SPoT §1.5).
+  /// Έχει ήδη επιλέξει ο χρήστης; Αν ναι, το (αργοπορημένο) async load
+  /// ΔΕΝ σβήνει την επιλογή του (race guard — «η επιλογή του χρήστη κερδίζει»).
+  bool _userChanged = false;
+
+  /// Default = `AppTheme.defaultMode` (system, SPoT §1.5). Το persisted mode
+  /// εφαρμόζεται σε microtask πριν το πρώτο frame (προφορτωμένα prefs, Q4)
+  /// → κανένα ορατό «φλας» στην εκκίνηση.
   @override
   ThemeMode build() {
+    _loadInitial();
+    return AppTheme.defaultMode;
+  }
+
+  /// Φορτώνει το persisted mode ΜΙΑ φορά. Σφάλμα → default + log (κανένα
+  /// crash). Παραλείπεται αν ο χρήστης επέλεξε ήδη (_userChanged) ή ο
+  /// provider διαλύθηκε (ref.mounted, pattern §2.2).
+  Future<void> _loadInitial() async {
     try {
-      return ref.read(settingsRepositoryProvider).readThemeMode();
+      final persisted =
+          await ref.read(settingsRepositoryProvider).loadThemeMode();
+      if (!ref.mounted || _userChanged) return;
+      state = persisted;
     } catch (e, s) {
-      AppLogger.error(LogTag.ui, 'Ανάγνωση θέματος απέτυχε — χρήση default', e, s);
-      return AppTheme.defaultMode;
+      AppLogger.error(LogTag.ui, 'Φόρτωση θέματος απέτυχε — χρήση default', e, s);
     }
   }
 
@@ -75,13 +85,13 @@ class ThemeModeController extends Notifier<ThemeMode> {
   /// snackbar, κανένα νέο AppErrors· απόφαση Β1).
   void setMode(ThemeMode mode) {
     if (mode == state) return;
+    _userChanged = true;
     state = mode;
     AppLogger.info(LogTag.ui, 'Θέμα: ${mode.name}');
     unawaited(_save(mode));
   }
 
   Future<void> _save(ThemeMode mode) async {
-    if (!ref.mounted) return;
     try {
       await ref.read(settingsRepositoryProvider).saveThemeMode(mode);
     } catch (e, s) {

@@ -25,26 +25,26 @@ void main() {
   SettingsRepositoryImpl newRepo() => SettingsRepositoryImpl(prefs);
 
   group('SettingsRepositoryImpl', () {
-    // ─── readThemeMode (sync) ────────────────────────────────────────────────
-    test('χωρίς τιμή → AppTheme.defaultMode (§2.3:270)', () {
-      expect(newRepo().readThemeMode(), AppTheme.defaultMode);
+    // ─── loadThemeMode ───────────────────────────────────────────────────────
+    test('χωρίς τιμή → AppTheme.defaultMode (§2.3:270)', () async {
+      expect(await newRepo().loadThemeMode(), AppTheme.defaultMode);
     });
 
     test('κενή τιμή → AppTheme.defaultMode', () async {
       await prefs.setString(AppConstants.themeModeKey, '');
-      expect(newRepo().readThemeMode(), AppTheme.defaultMode);
+      expect(await newRepo().loadThemeMode(), AppTheme.defaultMode);
     });
 
     test('άγνωστη τιμή (π.χ. από παλιά έκδοση) → AppTheme.defaultMode', () async {
       await prefs.setString(AppConstants.themeModeKey, 'sepia');
-      expect(newRepo().readThemeMode(), AppTheme.defaultMode);
+      expect(await newRepo().loadThemeMode(), AppTheme.defaultMode);
     });
 
     for (final mode in ThemeMode.values) {
       test('round-trip: `${mode.name}` αποθηκεύεται και διαβάζεται', () async {
         final repo = newRepo();
         await repo.saveThemeMode(mode);
-        expect(repo.readThemeMode(), mode);
+        expect(await repo.loadThemeMode(), mode);
       });
     }
 
@@ -53,7 +53,7 @@ void main() {
       final repo = newRepo();
       await repo.saveThemeMode(ThemeMode.light);
       await repo.saveThemeMode(ThemeMode.dark);
-      expect(repo.readThemeMode(), ThemeMode.dark);
+      expect(await repo.loadThemeMode(), ThemeMode.dark);
     });
 
     test('γράφει στον SPoT key AppConstants.themeModeKey', () async {

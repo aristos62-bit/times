@@ -21,9 +21,6 @@ void main() {
     ValueChanged<ThemeMode>? onChanged,
     ThemeData? theme,
     Size size = const Size(800, 600),
-    // Κλίμακα κειμένου (review fix 23-09): το MediaQuery παρακάτω την
-    // ορίζει ρητά, οπότε η platform τιμή θα σκεπαζόταν — περνάει από εδώ.
-    TextScaler textScaler = TextScaler.noScaling,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -33,7 +30,7 @@ void main() {
       MaterialApp(
         theme: theme,
         home: MediaQuery(
-          data: MediaQueryData(size: size, textScaler: textScaler),
+          data: MediaQueryData(size: size),
           child: Scaffold(
             body: Center(
               child: ThemeModeSelector(
@@ -103,14 +100,6 @@ void main() {
         expect(tester.takeException(), isNull,
             reason: 'overflow/σφάλμα σε $size');
       }
-    });
-
-    testWidgets('320px + textScaler 2.0 — κανένα overflow', (tester) async {
-      await pumpSelector(tester,
-          size: const Size(320, 568),
-          textScaler: const TextScaler.linear(2.0));
-      expect(tester.takeException(), isNull,
-          reason: 'overflow με μεγάλο κείμενο στα 320px');
     });
 
     // ─── Dark (§1.5, πρότυπο V12) ────────────────────────────────────────────
