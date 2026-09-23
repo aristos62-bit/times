@@ -1,7 +1,8 @@
 /// DAO για τον πίνακα `sub_categories` — Φάση 1, Βήμα 2 (§3, §4.1 DESIGN).
 ///
 /// Ομαδοποιημένες ανά category (watchByCategoryId) + πλήρης λίστα
-/// αλφαβητικά. Όλα τα σφάλματα: log (tag DB) + raw rethrow (BaseDao);
+/// αλφαβητικά + counts/cascade (Φάση 4, Βήμα 2 · §2.3). Όλα τα σφάλματα:
+/// log (tag DB) + raw rethrow (BaseDao);
 /// mapping σε AppException στο Repository (Φάση 2).
 library;
 
@@ -73,5 +74,71 @@ class SubCategoryDao extends BaseDao {
               .go();
           return rows > 0;
         },
+      );
+
+  /// Μετράει τα είδη της υποκατηγορίας — Φάση 4, Βήμα 2 (§2.3).
+  ///
+  /// Χρήση (Βήμα 4): ο αριθμός στο confirm του cascade («θα σβηστούν Ν είδη»)
+  /// και στο tooltip όταν η διαγραφή είναι μπλοκαρισμένη. Άθροιση στο SQL
+  /// (§2.1) με typed drift API (τα ονόματα ελέγχονται στο compile time).
+  /// Σημ.: το `items.sub_category_id` δεν έχει index (οι FK στήλες δεν
+  /// παίρνουν αυτόματα στο SQLite) — αμελητέο για τον όγκο καταλόγου,
+  /// χωρίς migration.
+  Future<int> countItemsBySubCategoryId(int subCategoryId) => guard(
+        'Μέτρηση ειδών υποκατηγορίας',
+        () async {
+          final countExp = db.items.id.count();
+          final query = db.selectOnly(db.items)
+            ..addColumns([countExp])
+            ..where(db.items.subCategoryId.equals(subCategoryId));
+          final row = await query.getSingle();
+          return row.read(countExp) ?? 0;
+        },
+      );
+
+  /// Μετράει τα είδη της υποκατηγορίας με τουλάχιστον μία γραμμή απόδειξης —
+  /// Φάση 4, Βήμα 2 (§2.3, εύρημα Α2).
+  ///
+  /// Χρήση (Βήμα 3/4): πύλη διαγραφής — `0` = καθαρή (επιτρέπεται cascade),
+  /// `>0` = μπλοκαρισμένη (greyed-out + tooltip «Χ είδη έχουν καταχωρημένες
+  /// τιμές»). COUNT(DISTINCT items.id) πάνω σε join με τις γραμμές, ώστε
+  /// ένα είδος με πολλές γραμμές να μετριέται μία φορά.
+  Future<int> countItemsInUseBySubCategoryId(int subCategoryId) => guard(
+        'Μέτρηση χρησιμοποιούμενων ειδών υποκατηγορίας',
+        () async {
+          final countExp = db.items.id.count(distinct: true);
+          final query = db.selectOnly(db.items)
+            ..addColumns([countExp])
+            ..join([
+              innerJoin(
+                db.receiptLines,
+                db.receiptLines.itemId.equalsExp(db.items.id),
+              ),
+            ])
+            ..where(db.items.subCategoryId.equals(subCategoryId));
+          final row = await query.getSingle();
+          return row.read(countExp) ?? 0;
+        },
+      );
+
+  /// Διαγράφει την υποκατηγορία με τα ορφανά είδη της — Φάση 4, Βήμα 2
+  /// (§2.3, αποφάσεις Α/Γ).
+  ///
+  /// Καλείται ΜΟΝΟ όταν `countItemsInUseBySubCategoryId == 0` (καθαρή) — ο
+  /// έλεγχος γίνεται στον provider (Βήμα 3), όχι εδώ. Αν παρόλα αυτά
+  /// υπάρχουν γραμμές, το RESTRICT ρίχνει raw σφάλμα και το transaction
+  /// κάνει rollback (τίποτα δεν σβήνεται). Σειρά: είδη → υποκατηγορία, όλα
+  /// σε ΕΝΑ transaction. Επιστρέφει true αν έσβησε, false αν δεν υπήρχε.
+  Future<bool> deleteWithContents(int subCategoryId) => guard(
+        'Διαγραφή υποκατηγορίας με περιεχόμενα',
+        () => db.transaction(() async {
+          await (db.delete(db.items)
+                ..where((t) => t.subCategoryId.equals(subCategoryId)))
+              .go();
+          final rows = await (db.delete(db.subCategories)
+                ..where((t) => t.id.equals(subCategoryId)))
+              .go();
+          return rows > 0;
+        }),
       );
 }
