@@ -267,19 +267,19 @@ presentation/settings/
 ```
 
 **Providers / λογική**
-- `themeModeProvider` (Notifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` για `MaterialApp.themeMode`.
+- `themeModeProvider` (Notifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` (`ConsumerWidget`) για `MaterialApp.router.themeMode`. SPoT: key `AppConstants.themeModeKey`, default `AppTheme.defaultMode` (system), labels `AppStrings` (τίτλος/Φωτεινό/Σκοτεινό/Αυτόματο).
 - `categoryTreeStreamProvider` (StreamProvider) → live λίστα Κατηγοριών με nested Υποκατηγορίες.
 - `canDeleteCategoryProvider` / `canDeleteSubCategoryProvider` (`FutureProvider.family<bool, int>`) → **προ-έλεγχος** (μετράει συνδεδεμένα Items/ReceiptLines) πριν καν εμφανιστεί ενεργό το εικονίδιο διαγραφής.
+- Scope CRUD: **ΜΟΝΟ Κατηγορίες/Υποκατηγορίες** — το cascade καθαρίζει orphan Items σε transaction ως side-effect, χωρίς νέο UI ειδών. Το FK `RESTRICT` του §3 παραμένει· οι count/cascade queries ζουν στα **DAOs** (repos = error-mapping μόνο).
 
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
-- Το κουμπί διαγραφής **δεν** εμφανίζεται απλά "με error μετά το tap" — είναι **greyed-out με tooltip** ("Δεν μπορεί να διαγραφεί: περιέχει X είδη") όταν `canDelete == false`. Αυτό αποτρέπει frustration-click και ταιριάζει με τη γενική αρχή §1.4 (καμία απρόβλεπτη συμπεριφορά).
+- Το κουμπί διαγραφής **δεν** εμφανίζεται απλά "με error μετά το tap" — είναι **greyed-out με tooltip** (`AppMessages.itemCountTooltip(count)`) όταν `canDelete == false` (§1.4).
 - Edit ονόματος Κατηγορίας/Υποκατηγορίας περνάει από τον **ίδιο** case-insensitive duplicate-check validator με τη Φάση 3 (κοινό `domain/validators/name_validator.dart` — SPoT, όχι διπλή υλοποίηση).
 
-**Backup/Restore — αναλυτική ροή**
-1. **Export**: tap → `file_picker` save dialog, προτεινόμενο filename από `AppConstants.backupFileNamePattern` + τρέχον timestamp → εγγραφή αντιγράφου της SQLite βάσης → `AppFeedback.showSuccess`.
-2. **Restore**: tap → επιλογή αρχείου → **validation αρχείου** πριν από οτιδήποτε άλλο (έλεγχος SQLite header magic bytes + ύπαρξη αναμενόμενων πινάκων) → αν άκυρο, error χωρίς καμία αλλαγή στην τρέχουσα βάση.
-3. Αν το αρχείο είναι έγκυρο → **υποχρεωτικό αυτόματο backup** της *τρέχουσας* βάσης πριν γίνει η αντικατάσταση (safety net, §1.9 / §2.3 προηγούμενη απόφαση).
-4. Επιβεβαιωτικό dialog με ρητή προειδοποίηση αντικατάστασης δεδομένων → OK → αντικατάσταση αρχείου βάσης → **restart των Riverpod providers** (`ref.invalidate` στο root ή πλήρες app restart) ώστε όλο το UI να διαβάσει τα νέα δεδομένα — όχι μόνο αντικατάσταση αρχείου χωρίς ανανέωση state (κλασικό λάθος: το UI δείχνει "παλιά" δεδομένα από cached providers μετά το restore).
+**Backup/Restore — αναλυτική ροή (κλειδωμένη 23-09-2026)**
+1. **Export**: tap → `file_picker` save dialog, προτεινόμενο filename από `AppConstants.backupFileNamePattern` + timestamp → snapshot μέσω `VACUUM INTO 'path'` (WAL-safe) → `AppFeedback.showSuccess`. ΠΟΤΕ γραφή στο `backups/` του project (μόνο αρχεία βημάτων).
+2. **Restore**: tap → επιλογή αρχείου → **validation ΠΡΙΝ από οτιδήποτε** (SQLite header magic + αναμενόμενοι πίνακες) → αν άκυρο, error χωρίς αλλαγή.
+3. Αν έγκυρο → **confirm dialog** με ρητή προειδοποίηση αντικατάστασης → OK → **υποχρεωτικό auto-backup** τρέχουσας βάσης (safety net §1.9) → `closeSafely()` (idempotent) → αντικατάσταση αρχείου → **restart providers** (`ref.invalidate(appDatabaseProvider)`) ώστε όλο το UI να διαβάσει τα νέα δεδομένα.
 
 ---
 
@@ -452,10 +452,15 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 9. **Exit-confirm §2.2 — ΟΛΟΚΛΗΡΩΘΗΚΕ (22-09-2026).** `ConfirmDialog` (shared §2.4) + `PopScope` στην PriceEntryPage (βλ. §2.2:244). Tests **724/724** ✓ (+13) · analyze καθαρό.
 
 ### Φάση 4 — Ρυθμίσεις
-1. Theme switcher (Light/Dark/Auto) με persistence.
-2. CRUD Κατηγοριών/Υποκατηγοριών με έλεγχο δυνατότητας διαγραφής.
-3. Backup export (.db/JSON) και Restore import με validation.
-4. Tests.
+
+**Βήμα-βήμα (6) — σειρά υλοποίησης (κλειδώθηκε 23-09-2026)**:
+
+1. **Theme persistence** (Light/Dark/Auto): `themeModeProvider` → **Notifier** πάνω σε `SettingsRepository` (SharedPreferences, SPoT keys §2.3) · `main.dart` γίνεται `ConsumerWidget` με `ref.watch(themeModeProvider)` → `MaterialApp.router.themeMode` (§2.3).
+2. **DAO counts + cascade guards** (Βήμα 2): `count*ByCategoryId`/`canDelete*Queries` στα **DAOs** (§2.0.5), όχι στα Repositories (repos = error-mapping μόνο, §2.0.5:441 μοναδική εξαίρεση search).
+3. **Providers ελέγχου**: `canDeleteCategoryProvider`/`canDeleteSubCategoryProvider` (`FutureProvider.family<bool,int>`, §2.3:272) — προ-έλεγχος πριν ενεργό delete icon, tooltip «περιέχει X είδη» όταν blocked (§2.3:275).
+4. **SettingsPage + category tree editor** (Βήμα 4): CRUD Κατηγοριών/Υποκατηγοριών μόνο (§2.3 · cascade-delete Items side-effect, **όχι** νέο UI ειδών) · reuse ConfirmDialog (isDestructive) + NameValidator + AppFeedback + shared widgets (§2.4).
+5. **BackupService + UI** (Βήμα 5): Export = `VACUUM INTO 'path'` (snapshot WAL-safe, §2.3) · file_picker save dialog (§2.3) · Restore = validate → **confirm → auto-backup** → `closeSafely()` (idempotent, §2.3) → replace → **restart providers** (`ref.invalidate(appDatabaseProvider)`, §2.3).
+6. **Housekeeping** (Βήμα 6): splits >500 γρ. (κανόνας 7) · oldsessions.md update (1 κεφάλαιο) · backups recap · `flutter analyze` + full tests.
 
 ### Φάση 5 — Κεντρική Σελίδα (Στατιστικά & Γραφήματα)
 1. Domain service για υπολογισμούς (μέση τιμή ανά περίοδο, εξέλιξη τιμής είδους, σύγκριση προμηθευτών).
@@ -473,4 +478,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε σε **post-closure της Φάσης 3 — Βήμα 21 (προαιρετικό `onChanged` στο `SearchableDropdownField` — από τα «Ανοιχτά») ΟΛΟΚΛΗΡΩΘΗΚΕ** (23-09-2026): νέα παράμετρος `ValueChanged<String>? onChanged` που καλείται **ΜΟΝΟ σε πραγματική πληκτρολόγηση** (guard `_suppressOnChanged` + helper `_writeSilently` για prefill/refresh/label μετά από επιλογή/«+» — όλες οι εσωτερικές γραφές περνούν από αυτόν) · micro-split `_buildEntryTile` στο part (κύριο αρχείο 497 γρ., <500) · καταναλωτές: dialog «+» (καθαρίζει `_categoryError`/`_subCategoryError` ήδη κατά την πληκτρολόγηση της διόρθωσης) + unit section (`_unitTyping` κρύβει το hint `unitRequired`). Πλευρικό κέρδος: μετά από επιλογή/«+» δεν τρέχει πλέον αχρείαστο debounced search με το label. Tests **730/730** ✓ (+6: T1-T4 · Z9 · V13)· `flutter analyze` **No issues** ✓ · backup `backups/2026-09-23_dropdown_onChanged/`. **Επόμενο**: **Φάση 4 (Ρυθμίσεις)**. Ανοιχτά (χωρίς προγραμματισμένο Βήμα): housekeeping (split test αρχείων >500 γρ. αν χρειαστεί) · web exit-confirm (προαιρετικά αργότερα). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.
+Είμαστε σε **Φάση 4 — Βήμα 0 (Σχέδιο & Τεκμηρίωση) ΟΛΟΚΛΗΡΩΘΗΚΕ** (23-09-2026, κλειδωμένες αποφάσεις Α/Β/Γ/Δ + σειρά 6 βημάτων §4). Φάση 3 κλειστή (730/730, Βήμα 21 onChanged): νέα παράμετρος `ValueChanged<String>? onChanged` που καλείται **ΜΟΝΟ σε πραγματική πληκτρολόγηση** (guard `_suppressOnChanged` + helper `_writeSilently` για prefill/refresh/label μετά από επιλογή/«+» — όλες οι εσωτερικές γραφές περνούν από αυτόν) · micro-split `_buildEntryTile` στο part (κύριο αρχείο 497 γρ., <500) · καταναλωτές: dialog «+» (καθαρίζει `_categoryError`/`_subCategoryError` ήδη κατά την πληκτρολόγηση της διόρθωσης) + unit section (`_unitTyping` κρύβει το hint `unitRequired`). Πλευρικό κέρδος: μετά από επιλογή/«+» δεν τρέχει πλέον αχρείαστο debounced search με το label. Tests **730/730** ✓ (+6: T1-T4 · Z9 · V13)· `flutter analyze` **No issues** ✓ · backup `backups/2026-09-23_dropdown_onChanged/`. **Επόμενο**: **Φάση 4 Βήμα 1 — Theme persistence** (μόνο με ρητό OK). Ανοιχτά (χωρίς προγραμματισμένο Βήμα): housekeeping (split test αρχείων >500 γρ. αν χρειαστεί) · web exit-confirm (προαιρετικά αργότερα). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.
