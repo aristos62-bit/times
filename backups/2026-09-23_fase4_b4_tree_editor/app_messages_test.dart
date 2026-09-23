@@ -78,43 +78,6 @@ void main() {
       );
     });
 
-    // ─── Categories CRUD (§2.3 · Φάση 4 Βήμα 4) ─────────────────────────────
-    test('categoryAdded/Updated/Deleted (§2.3 · Βήμα 4)', () {
-      expect(AppMessages.categoryAdded, 'Η κατηγορία προστέθηκε');
-      expect(AppMessages.categoryUpdated, 'Η κατηγορία ενημερώθηκε');
-      expect(AppMessages.categoryDeleted, 'Η κατηγορία διαγράφηκε');
-    });
-
-    test('subCategoryAdded/Updated/Deleted (§2.3 · Βήμα 4)', () {
-      expect(AppMessages.subCategoryAdded, 'Η υποκατηγορία προστέθηκε');
-      expect(AppMessages.subCategoryUpdated, 'Η υποκατηγορία ενημερώθηκε');
-      expect(AppMessages.subCategoryDeleted, 'Η υποκατηγορία διαγράφηκε');
-    });
-
-    test('itemsInUseTooltip — διακριτό από itemCountTooltip (Α2-1 · Βήμα 4)',
-        () {
-      expect(
-        AppMessages.itemsInUseTooltip(3),
-        'Δεν μπορεί να διαγραφεί: 3 είδη έχουν καταχωρημένες τιμές',
-      );
-      expect(
-        AppMessages.itemsInUseTooltip(3) == AppMessages.itemCountTooltip(3),
-        isFalse,
-      );
-    });
-
-    test('deleteCategoryConfirm/deleteSubCategoryConfirm (§2.3 · Βήμα 4)', () {
-      expect(
-        AppMessages.deleteCategoryConfirm('ΤΡΟΦΙΜΑ', 2),
-        'Διαγραφή κατηγορίας "ΤΡΟΦΙΜΑ" με 2 είδη; Τα είδη θα διαγραφούν.',
-      );
-      expect(
-        AppMessages.deleteSubCategoryConfirm('Γαλακτοκομικά', 1),
-        'Διαγραφή υποκατηγορίας "Γαλακτοκομικά" με 1 είδη; '
-        'Τα είδη θα διαγραφούν.',
-      );
-    });
-
     // ─── Dynamic tooltips (§2.3.252) ────────────────────────────────────────
     test('itemCountTooltip(0) — edge case (§2.3.252)', () {
       expect(
@@ -159,10 +122,4 @@ const List<String> _allConstStrings = [
   AppMessages.confirmDialogConfirm,
   AppMessages.confirmDialogCancel,
   AppMessages.exitUnsavedConfirm,
-  AppMessages.categoryAdded,
-  AppMessages.categoryUpdated,
-  AppMessages.categoryDeleted,
-  AppMessages.subCategoryAdded,
-  AppMessages.subCategoryUpdated,
-  AppMessages.subCategoryDeleted,
 ];

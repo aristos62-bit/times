@@ -33,16 +33,4 @@ abstract interface class SubCategoryRepository {
   /// `SubCategoryDao.countItemsInUseBySubCategoryId` με mapping σε
   /// `DataLoadException` (καταναλωτής: `canDeleteSubCategoryProvider`).
   Future<int> countItemsInUse(int subCategoryId);
-
-  /// Μετράει ΟΛΑ τα είδη της υποκατηγορίας — Φάση 4, Βήμα 4 (§2.3):
-  /// αριθμός στο cascade confirm («θα σβηστούν Ν είδη»). Passthrough του
-  /// `SubCategoryDao.countItemsBySubCategoryId` με mapping σε
-  /// `DataLoadException`.
-  Future<int> countItems(int subCategoryId);
-
-  /// Διαγράφει την υποκατηγορία με τα ορφανά είδη της σε ένα transaction —
-  /// Φάση 4, Βήμα 4 (§2.3, αποφάσεις Α/Γ). Καλείται ΜΟΝΟ όταν
-  /// `countItemsInUse == 0` (πύλη `canDelete*Provider`). Passthrough του
-  /// `SubCategoryDao.deleteWithContents`.
-  Future<bool> deleteWithContents(int subCategoryId);
 }

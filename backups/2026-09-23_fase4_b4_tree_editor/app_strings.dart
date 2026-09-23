@@ -106,21 +106,4 @@ abstract final class AppStrings {
   static const String themeModeDark = 'Σκοτεινό';
   /// Επιλογή θέματος: Αυτόματο (ThemeMode.system, §2.3:270).
   static const String themeModeSystem = 'Αυτόματο';
-
-  // ─── Categories section (§2.3 · Φάση 4 Βήμα 4) ──────────────────────────
-  /// Τίτλος του section «Κατηγορίες» στη σελίδα ρυθμίσεων (§2.3 · Βήμα 4).
-  static const String titleCategoriesSection = 'Κατηγορίες';
-  /// Κενή κατάσταση του δέντρου κατηγοριών (§2.3 · Βήμα 4).
-  static const String categoriesEmpty = 'Δεν υπάρχουν κατηγορίες ακόμα';
-  /// Tooltip/semantics του κουμπιού επεξεργασίας κατηγορίας/υποκατηγορίας
-  /// (§2.3 · Βήμα 4).
-  static const String editAction = 'Επεξεργασία';
-  /// Tooltip/semantics του κουμπιού διαγραφής κατηγορίας/υποκατηγορίας
-  /// (§2.3 · Βήμα 4).
-  static const String deleteAction = 'Διαγραφή';
-  /// Tooltip/semantics του κουμπιού ανανέωσης των ελέγχων διαγραφής
-  /// (§2.3 · Βήμα 4 — οι `canDelete*` είναι one-shot, μπαγιατεύουν).
-  static const String refreshAction = 'Ανανέωση';
-  /// Label κουμπιού αποθήκευσης σε dialogs επεξεργασίας (§2.3 · Βήμα 4).
-  static const String saveAction = 'Αποθήκευση';
 }

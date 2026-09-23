@@ -19,6 +19,7 @@ import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/logging/app_logger.dart';
 import 'package:times/core/router/app_router.dart';
 import 'package:times/core/router/app_routes.dart';
+import 'package:times/data/models/category_tree_node.dart';
 import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/providers/settings_providers.dart';
 import 'package:times/data/providers/stream_providers.dart';
@@ -47,7 +48,8 @@ void main() {
 
   /// Overrides για κάθε pump: Βήμα 7 — η PriceEntryPage περιέχει τη λίστα
   /// πρόσφατων (`recentReceiptsStreamProvider`) → κενή ροή (hermetic: τα
-  /// router tests ΔΕΝ ανοίγουν πραγματική βάση, §2.0.1).
+  /// router tests ΔΕΝ ανοίγουν πραγματική βάση, §2.0.1). Βήμα 4 — η
+  /// SettingsPage βλέπει το δέντρο (`categoryTreeStreamProvider`) → κενή ροή.
   // NOTE(Riverpod 3.4.3): το `Override` δεν εξάγεται από το flutter_riverpod —
   // η λίστα δηλώνεται inline ώστε το infer του `ProviderScope(overrides:)`.
   /// Πρότυπο pump helper — κενή recent stream + prefs override (Φάση 4 Β1:
@@ -58,6 +60,9 @@ void main() {
         overrides: [
           recentReceiptsStreamProvider.overrideWith(
             (ref) => Stream.value(const <ReceiptSummary>[]),
+          ),
+          categoryTreeStreamProvider.overrideWith(
+            (ref) => Stream.value(const <CategoryTreeNode>[]),
           ),
           sharedPreferencesProvider.overrideWithValue(prefs),
         ],
@@ -85,6 +90,9 @@ void main() {
           overrides: [
             recentReceiptsStreamProvider.overrideWith(
               (ref) => Stream.value(const <ReceiptSummary>[]),
+            ),
+            categoryTreeStreamProvider.overrideWith(
+              (ref) => Stream.value(const <CategoryTreeNode>[]),
             ),
             // Στον launch χτίζεται και η SettingsPage (IndexedStack) →
             // themeModeProvider λύνεται με mock prefs (§2.0.1 · Βήμα 1).
@@ -146,6 +154,9 @@ void main() {
           overrides: [
             recentReceiptsStreamProvider.overrideWith(
               (ref) => Stream.value(const <ReceiptSummary>[]),
+            ),
+            categoryTreeStreamProvider.overrideWith(
+              (ref) => Stream.value(const <CategoryTreeNode>[]),
             ),
             // IndexedStack §2.2:222 — η SettingsPage χτίζεται πάντα → prefs
             // override (Βήμα 1 · profeta database tests).

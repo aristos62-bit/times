@@ -14,33 +14,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/theme/app_theme.dart';
-import 'package:times/data/local/app_database.dart';
-import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/providers/settings_providers.dart';
 import 'package:times/presentation/settings/settings_page.dart';
 
-import '../../data/local/helpers/in_memory_db.dart';
-
 void main() {
   late SharedPreferences prefs;
-  late AppDatabase db;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
-    db = inMemoryDb();
   });
-
-  tearDown(() async => await db.close());
 
   Widget wrap(Size size, {ThemeData? theme}) {
     return ProviderScope(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        // Βήμα 4: το section «Κατηγορίες» βλέπει DB providers (tree) —
-        // in-memory βάση, όχι real file (Α1 εξέλιξη).
-        appDatabaseProvider.overrideWithValue(db),
-      ],
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
       child: MaterialApp(
         theme: theme,
         home: MediaQuery(
@@ -107,36 +94,6 @@ void main() {
     testWidgets('dark: η σελίδα αποδίδεται σωστά', (tester) async {
       await pumpAt(tester, const Size(800, 600), theme: AppTheme.dark);
       expect(find.text(AppStrings.titleThemeSection), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    // ─── Categories section (§2.3 · Φάση 4 Βήμα 4) ───────────────────────────
-    testWidgets('εμφανίζει section «Κατηγορίες» με κενό δέντρο', (tester) async {
-      await pumpAt(tester, const Size(800, 600));
-      expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
-      expect(find.text(AppStrings.categoriesEmpty), findsOneWidget);
-      expect(find.text(AppStrings.addNewCategory), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('δέντρο με δεδομένα: κατηγορία + υποκατηγορία', (tester) async {
-      // Η βάση είναι κενή (skipSeed=true) — insert 1 κατηγορίας + 1 υποκατ.
-      final catId = await db
-          .into(db.categories)
-          .insert(CategoriesCompanion.insert(name: 'ΤΡΟΦΙΜΑ'));
-      await db
-          .into(db.subCategories)
-          .insert(SubCategoriesCompanion.insert(categoryId: catId, name: 'Γάλα'));
-      await pumpAt(tester, const Size(800, 600));
-      expect(find.text('ΤΡΟΦΙΜΑ'), findsOneWidget);
-      expect(find.text(AppStrings.categoriesEmpty), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('dark: το section «Κατηγορίες» αποδίδεται σωστά',
-        (tester) async {
-      await pumpAt(tester, const Size(800, 600), theme: AppTheme.dark);
-      expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

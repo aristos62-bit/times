@@ -33,15 +33,4 @@ abstract interface class CategoryRepository {
   /// `CategoryDao.countItemsInUseByCategoryId` με mapping σε
   /// `DataLoadException` (καταναλωτής: `canDeleteCategoryProvider`).
   Future<int> countItemsInUse(int categoryId);
-
-  /// Μετράει ΟΛΑ τα είδη της κατηγορίας — Φάση 4, Βήμα 4 (§2.3):
-  /// αριθμός στο cascade confirm («θα σβηστούν Ν είδη»). Passthrough του
-  /// `CategoryDao.countItemsByCategoryId` με mapping σε `DataLoadException`.
-  Future<int> countItems(int categoryId);
-
-  /// Διαγράφει την κατηγορία με όλο το περιεχόμενό της (υποκατηγορίες +
-  /// ορφανά είδη) σε ένα transaction — Φάση 4, Βήμα 4 (§2.3, αποφάσεις Α/Γ).
-  /// Καλείται ΜΟΝΟ όταν `countItemsInUse == 0` (πύλη `canDelete*Provider`).
-  /// Passthrough του `CategoryDao.deleteWithContents`.
-  Future<bool> deleteWithContents(int categoryId);
 }

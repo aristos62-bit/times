@@ -168,17 +168,6 @@ final canDeleteCategoryProvider = FutureProvider.family<bool, int>(
       0,
 );
 
-/// Πλήθος ειδών της κατηγορίας με ≥1 γραμμή απόδειξης — Φάση 4, Βήμα 4
-/// (§2.3): αριθμός στο blocked tooltip (`AppMessages.itemsInUseTooltip`).
-/// Sibling του `canDeleteCategoryProvider` (ίδιο repo call, `int` αντί
-/// `bool`) — το bool δεν φτάνει για tooltip με πλήθος. Invalidate μαζί με
-/// το canDelete (κουμπί ανανέωσης του tree editor + μετά από delete).
-/// NON-autoDispose.
-final inUseCountCategoryProvider = FutureProvider.family<int, int>(
-  (ref, categoryId) =>
-      ref.watch(categoryRepositoryProvider).countItemsInUse(categoryId),
-);
-
 /// Προ-έλεγχος διαγραφής υποκατηγορίας — συμμετρικό με το κατηγορίας.
 /// Καταναλώνει το `SubCategoryRepository.countItemsInUse` (Βήμα 3).
 final canDeleteSubCategoryProvider = FutureProvider.family<bool, int>(
@@ -187,13 +176,4 @@ final canDeleteSubCategoryProvider = FutureProvider.family<bool, int>(
             subCategoryId,
           ) ==
       0,
-);
-
-/// Πλήθος ειδών της υποκατηγορίας με ≥1 γραμμή απόδειξης — Φάση 4,
-/// Βήμα 4 (§2.3): αριθμός στο blocked tooltip. Sibling του
-/// `canDeleteSubCategoryProvider`, συμμετρικό με το κατηγορίας.
-/// NON-autoDispose.
-final inUseCountSubCategoryProvider = FutureProvider.family<int, int>(
-  (ref, subCategoryId) =>
-      ref.watch(subCategoryRepositoryProvider).countItemsInUse(subCategoryId),
 );

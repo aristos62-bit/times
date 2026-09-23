@@ -66,38 +66,4 @@ abstract final class AppMessages {
   /// pattern αλλά είναι απαραίτητο για δυναμικό περιεχόμενο.
   static String itemCountTooltip(int count) =>
       'Δεν μπορεί να διαγραφεί: περιέχει $count είδη';
-
-  // ─── Categories CRUD (§2.3 · Φάση 4 Βήμα 4) ─────────────────────────────
-  /// Κατηγορία δημιουργήθηκε από τον tree editor (§2.3 · Βήμα 4).
-  static const String categoryAdded = 'Η κατηγορία προστέθηκε';
-
-  /// Το όνομα κατηγορίας ενημερώθηκε (§2.3 · Βήμα 4).
-  static const String categoryUpdated = 'Η κατηγορία ενημερώθηκε';
-
-  /// Κατηγορία διαγράφηκε (cascade, §2.3 · Βήμα 4).
-  static const String categoryDeleted = 'Η κατηγορία διαγράφηκε';
-
-  /// Υποκατηγορία δημιουργήθηκε (§2.3 · Βήμα 4).
-  static const String subCategoryAdded = 'Η υποκατηγορία προστέθηκε';
-
-  /// Το όνομα υποκατηγορίας ενημερώθηκε (§2.3 · Βήμα 4).
-  static const String subCategoryUpdated = 'Η υποκατηγορία ενημερώθηκε';
-
-  /// Υποκατηγορία διαγράφηκε (cascade, §2.3 · Βήμα 4).
-  static const String subCategoryDeleted = 'Η υποκατηγορία διαγράφηκε';
-
-  // ─── Blocked delete + cascade confirm (§2.3 · Βήμα 4, διόρθωση Α2-1) ────
-  /// Blocked tooltip: Χ είδη έχουν καταχωρημένες τιμές. Διακριτό από το
-  /// `itemCountTooltip` («περιέχει») — η πύλη μετράει είδη σε χρήση
-  /// (DISTINCT με ≥1 γραμμή), όχι σύνολο.
-  static String itemsInUseTooltip(int count) =>
-      'Δεν μπορεί να διαγραφεί: $count είδη έχουν καταχωρημένες τιμές';
-
-  /// Cascade confirm διαγραφής κατηγορίας με [count] είδη (§2.3 · Βήμα 4).
-  static String deleteCategoryConfirm(String name, int count) =>
-      'Διαγραφή κατηγορίας "$name" με $count είδη; Τα είδη θα διαγραφούν.';
-
-  /// Cascade confirm διαγραφής υποκατηγορίας με [count] είδη (§2.3 · Βήμα 4).
-  static String deleteSubCategoryConfirm(String name, int count) =>
-      'Διαγραφή υποκατηγορίας "$name" με $count είδη; Τα είδη θα διαγραφούν.';
 }

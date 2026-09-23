@@ -55,12 +55,4 @@ final class CategoryRepositoryImpl implements CategoryRepository {
   @override
   Future<int> countItemsInUse(int categoryId) =>
       _guard(() => _dao.countItemsInUseByCategoryId(categoryId));
-
-  @override
-  Future<int> countItems(int categoryId) =>
-      _guard(() => _dao.countItemsByCategoryId(categoryId));
-
-  @override
-  Future<bool> deleteWithContents(int categoryId) =>
-      _guard(() => _dao.deleteWithContents(categoryId));
 }

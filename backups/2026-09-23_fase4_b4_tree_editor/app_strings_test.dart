@@ -141,22 +141,6 @@ void main() {
       expect(AppStrings.themeModeSystem, 'Αυτόματο');
     });
 
-    // ─── Categories section (§2.3 · Φάση 4 Βήμα 4) ───────────────────────────
-    test('titleCategoriesSection = «Κατηγορίες» + empty (§2.3 · Βήμα 4)', () {
-      expect(AppStrings.titleCategoriesSection, 'Κατηγορίες');
-      expect(
-        AppStrings.categoriesEmpty,
-        'Δεν υπάρχουν κατηγορίες ακόμα',
-      );
-    });
-
-    test('edit/delete/refresh/save actions (§2.3 · Βήμα 4)', () {
-      expect(AppStrings.editAction, 'Επεξεργασία');
-      expect(AppStrings.deleteAction, 'Διαγραφή');
-      expect(AppStrings.refreshAction, 'Ανανέωση');
-      expect(AppStrings.saveAction, 'Αποθήκευση');
-    });
-
     // ─── Καθολικές εγγυήσεις (όλα τα strings) ────────────────────────────────
     test('κανένα string μη-κενό, χωρίς whitespace στα άκρα, χωρίς αλλαγή γραμμής', () {
       for (final text in _allStrings) {
@@ -219,10 +203,4 @@ const List<String> _allStrings = [
   AppStrings.themeModeLight,
   AppStrings.themeModeDark,
   AppStrings.themeModeSystem,
-  AppStrings.titleCategoriesSection,
-  AppStrings.categoriesEmpty,
-  AppStrings.editAction,
-  AppStrings.deleteAction,
-  AppStrings.refreshAction,
-  AppStrings.saveAction,
 ];
