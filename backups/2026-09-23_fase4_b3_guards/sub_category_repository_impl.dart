@@ -53,8 +53,4 @@ final class SubCategoryRepositoryImpl implements SubCategoryRepository {
 
   @override
   Future<bool> deleteById(int id) => _guard(() => _dao.deleteById(id));
-
-  @override
-  Future<int> countItemsInUse(int subCategoryId) =>
-      _guard(() => _dao.countItemsInUseBySubCategoryId(subCategoryId));
 }

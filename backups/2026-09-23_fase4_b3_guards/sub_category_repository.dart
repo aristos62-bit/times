@@ -27,10 +27,4 @@ abstract interface class SubCategoryRepository {
 
   /// Διαγραφή. RESTRICT (FK): αποτυγχάνει αν υπάρχουν items.
   Future<bool> deleteById(int id);
-
-  /// Μετράει τα είδη της υποκατηγορίας με ≥1 γραμμή απόδειξης — Φάση 4,
-  /// Βήμα 3 (§2.3:275): πύλη διαγραφής (`0` = καθαρή). Passthrough του
-  /// `SubCategoryDao.countItemsInUseBySubCategoryId` με mapping σε
-  /// `DataLoadException` (καταναλωτής: `canDeleteSubCategoryProvider`).
-  Future<int> countItemsInUse(int subCategoryId);
 }

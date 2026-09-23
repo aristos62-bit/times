@@ -1,6 +1,10 @@
-/// Riverpod providers των ρυθμίσεων — Φάση 4, Βήμα 1 (DESIGN §2.3).
+/// Riverpod providers των ρυθμίσεων — Φάση 4, Βήματα 1+3 (DESIGN §2.3).
 ///
-/// Αλυσίδα: `SharedPreferences → SettingsRepository → themeModeProvider`.
+/// Αλυσίδες:
+///   * `SharedPreferences → SettingsRepository → themeModeProvider` (Βήμα 1).
+///   * `AppDatabase → Category/SubCategoryRepository → categoryTreeStreamProvider`
+///     + `canDelete*Provider` (Βήμα 3 · §2.3:274-275): προ-έλεγχος διαγραφής
+///     και ζωντανό δένδρο για τον tree editor του Βήματος 4.
 /// Όλα NON-autoDispose (singletons, ζωή εφαρμογής — πρότυπο database_providers).
 ///
 /// Το `SharedPreferences` ΔΙΝΕΤΑΙ ΠΑΝΤΑ με override:
@@ -20,8 +24,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../../core/theme/app_theme.dart';
+import '../models/category_tree_node.dart';
 import '../repositories/settings_repository.dart';
 import '../repositories/settings_repository_impl.dart';
+import 'database_providers.dart';
+import 'stream_providers.dart';
 
 /// Το προφορτωμένο `SharedPreferences` — σύγχρονο (όχι FutureProvider):
 /// ο `settingsRepositoryProvider` μένει `Provider` singleton (§2.0.2
@@ -89,3 +96,84 @@ class ThemeModeController extends Notifier<ThemeMode> {
     }
   }
 }
+
+// ─── Βήμα 3 — Providers ελέγχου (DESIGN §2.3:274-275 · §4:463) ───────────────
+
+/// Ζωντανό δέντρο «Κατηγορία ▸ Υποκατηγορίες» για τον tree editor (Βήμα 4).
+///
+/// Σύνθεση in-memory πάνω στα ήδη-φορτωμένα `categoryStreamProvider` +
+/// `subCategoriesStreamProvider` — ΚΑΝΕΝΑ νέο DB query (§3: μικρές λίστες).
+/// Κάθε εκπομπή upstream ξανατρέχει το body και δίνει νέο single-value
+/// stream (`Stream.value` — precedent `categorySearchProvider`): τα δεδομένα
+/// ανανεώνονται χωρίς νέο subscription. Όσο κάποιο upstream φορτώνει,
+/// επιστρέφεται `Stream.empty()` (μένει σε loading — σκόπιμα, όχι `[]` που
+/// θα έδειχνε ψευδώς άδειο δέντρο).
+///
+/// Προτεραιότητα σφάλματος (εύρημα Βήματος 3 — Riverpod 3 retry): σε
+/// αποτυχία το upstream μένει `AsyncLoading` με συνημμένο σφάλμα (το
+/// Riverpod ξαναπροσπαθεί αυτόματα) και το σκέτο `.when` θα έπαιρνε το
+/// `loading` branch → `Stream.empty()` → το δέντρο θα έμενε loading ΓΙΑ
+/// ΠΑΝΤΑ σε μόνιμη βλάβη. Γι' αυτό το `hasError` (χωρίς τιμή) προηγείται
+/// με `Stream.error` (ήδη-mapαρισμένο `DataLoadException` — προβολή στο
+/// Βήμα 4 με `AsyncValue.when`: `AppErrors.loadDataFailed` + Επανάληψη).
+/// Χωρίς logging εδώ (τα σφάλματα λογκάρονται μία φορά στον DAO guard).
+/// NON-autoDispose (σύμβαση DI δέντρου).
+final categoryTreeStreamProvider = StreamProvider<List<CategoryTreeNode>>(
+  (ref) {
+    final categories = ref.watch(categoryStreamProvider);
+    final subs = ref.watch(subCategoriesStreamProvider);
+    if (categories.hasError && !categories.hasValue) {
+      return Stream.error(categories.error!, categories.stackTrace);
+    }
+    if (subs.hasError && !subs.hasValue) {
+      return Stream.error(subs.error!, subs.stackTrace);
+    }
+    return categories.when(
+      data: (cats) => subs.when(
+        data: (subList) => Stream.value([
+          for (final cat in cats)
+            (
+              category: cat,
+              subCategories: [
+                for (final sub in subList)
+                  if (sub.categoryId == cat.id) sub,
+              ],
+            ),
+        ]),
+        loading: () => const Stream.empty(),
+        error: (e, s) => Stream.error(e, s),
+      ),
+      loading: () => const Stream.empty(),
+      error: (e, s) => Stream.error(e, s),
+    );
+  },
+);
+
+/// Προ-έλεγχος διαγραφής κατηγορίας (DESIGN §2.3:275 · §4:463).
+///
+/// `true` = καθαρή (`countItemsInUse == 0`, επιτρέπεται cascade) ·
+/// `false` = μπλοκαρισμένη (greyed-out + tooltip στο Βήμα 4). Πρώτοι
+/// `FutureProvider` της εφαρμογής — καμία νέα dependency, `.family`
+/// ανάλογο των `StreamProvider.family`. Σφάλμα → `DataLoadException`
+/// (repository mapping). Προσοχή (lifecycle): one-shot τιμή ανά id — μετά
+/// από CRUD που αγγίζει είδη/γραμμές, το Βήμα 4 κάνει
+/// `ref.invalidate(canDeleteCategoryProvider(id))` (συμβόλαιο Βήματος 4).
+/// Σημ. tests (εύρημα Βήματος 3): το Riverpod 3 ξαναπροσπαθεί αυτόματα τα
+/// αποτυχημένα futures (retry) — τα error-path tests ακούν με
+/// listen+completer (`hasError`), ποτέ `.future`+throwsA (δεν ολοκληρώνεται).
+/// NON-autoDispose (σύμβαση DI δέντρου — τα ids είναι λίγα).
+final canDeleteCategoryProvider = FutureProvider.family<bool, int>(
+  (ref, categoryId) async =>
+      await ref.watch(categoryRepositoryProvider).countItemsInUse(categoryId) ==
+      0,
+);
+
+/// Προ-έλεγχος διαγραφής υποκατηγορίας — συμμετρικό με το κατηγορίας.
+/// Καταναλώνει το `SubCategoryRepository.countItemsInUse` (Βήμα 3).
+final canDeleteSubCategoryProvider = FutureProvider.family<bool, int>(
+  (ref, subCategoryId) async =>
+      await ref.watch(subCategoryRepositoryProvider).countItemsInUse(
+            subCategoryId,
+          ) ==
+      0,
+);
