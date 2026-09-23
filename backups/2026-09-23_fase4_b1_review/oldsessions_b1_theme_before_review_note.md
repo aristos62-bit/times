@@ -57,23 +57,6 @@ DESIGN §2.3:270 + §4:458. Εκτός scope: CRUD και backup/restore (επό
   `addTearDown(handle.dispose)` έρχεται αργά (επιβεβαιώθηκε και στο κεφ. 17).
 - `flutter analyze` No issues ✓ · `flutter test` **760/760** ✓.
 
-## 6. Review fixes (Πακέτο Α, 23-09-2026 — commit `713bc71`)
-
-Ανεξάρτητος έλεγχος βρήκε 5 θέματα· υλοποιήθηκε το Πακέτο Α με ΟΚ χρήστη
-(ξεκλείδωμα Q3):
-
-- **Sync read (Q3):** `readThemeMode()` σύγχρονο + `build()` επιστρέφει το
-  persisted αμέσως (αληθινό zero flash)· διαγράφηκαν `_loadInitial` +
-  `_userChanged`· read-fail → default + log· tests ξαναγραμμένα (χωρίς
-  `pumpEventQueue` στο read).
-- **DESIGN.md:** δέντρο §2.3 (Βήμα 1 → `data/providers/`, Q1) + §2.3:270 +
-  §4:458 + γραμμή 481 (Βήμα 1 ΟΛΟΚΛΗΡΩΘΗΚΕ, επόμενο Βήμα 2).
-- **asNameMap:** τέλος η διπλή αναπαράσταση κωδικών.
-- **textScaler 2.0 στα 320px:** νέο test — περνά, κανένα overflow.
-- **Ψιλά:** τελικά newlines · `ref.mounted` στο `_save` · log μετά το `runApp`.
-- **762/762** ✓ (+2: textScaler + sync-immediate, −1 race test) · analyze
-  καθαρό · backup `backups/2026-09-23_fase4_b1_review/` (8 αρχεία).
-
-## 7. Επόμενο
+## 6. Επόμενο
 
 Βήμα 2 — CRUD Κατηγοριών/Υποκατηγοριών (σειρά Βήματος 0).
