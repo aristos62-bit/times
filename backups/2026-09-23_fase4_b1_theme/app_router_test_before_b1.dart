@@ -13,14 +13,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/logging/app_logger.dart';
 import 'package:times/core/router/app_router.dart';
 import 'package:times/core/router/app_routes.dart';
 import 'package:times/data/models/receipt_summary.dart';
-import 'package:times/data/providers/settings_providers.dart';
 import 'package:times/data/providers/stream_providers.dart';
 import 'package:times/presentation/home/home_page.dart';
 import 'package:times/presentation/price_entry/price_entry_page.dart';
@@ -35,23 +33,11 @@ void main() {
   // Επαναφορά sink μετά από κάθε test — το NAV test το ορίζει δικό του.
   tearDown(AppLogger.resetTestSink);
 
-  // Φάση 4, Βήμα 1: η SettingsPage (ConsumerWidget) χτίζεται σε κάθε pump
-  // (IndexedStack — όλες οι branches ζωντανές) → SharedPreferences mock
-  // + override, ώστε ο themeModeProvider να λύνεται (χωρίς πραγματική βάση).
-  late SharedPreferences prefs;
-
-  setUp(() async {
-    SharedPreferences.setMockInitialValues({});
-    prefs = await SharedPreferences.getInstance();
-  });
-
   /// Overrides για κάθε pump: Βήμα 7 — η PriceEntryPage περιέχει τη λίστα
   /// πρόσφατων (`recentReceiptsStreamProvider`) → κενή ροή (hermetic: τα
   /// router tests ΔΕΝ ανοίγουν πραγματική βάση, §2.0.1).
   // NOTE(Riverpod 3.4.3): το `Override` δεν εξάγεται από το flutter_riverpod —
   // η λίστα δηλώνεται inline ώστε το infer του `ProviderScope(overrides:)`.
-  /// Πρότυπο pump helper — κενή recent stream + prefs override (Φάση 4 Β1:
-  /// η SettingsPage χτίζεται στο launch λόγω IndexedStack §2.2:222).
   Future<void> pumpApp(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -59,7 +45,6 @@ void main() {
           recentReceiptsStreamProvider.overrideWith(
             (ref) => Stream.value(const <ReceiptSummary>[]),
           ),
-          sharedPreferencesProvider.overrideWithValue(prefs),
         ],
         child: MaterialApp.router(routerConfig: buildAppRouter()),
       ),
@@ -86,9 +71,6 @@ void main() {
             recentReceiptsStreamProvider.overrideWith(
               (ref) => Stream.value(const <ReceiptSummary>[]),
             ),
-            // Στον launch χτίζεται και η SettingsPage (IndexedStack) →
-            // themeModeProvider λύνεται με mock prefs (§2.0.1 · Βήμα 1).
-            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: MaterialApp.router(routerConfig: router),
         ),
@@ -147,9 +129,6 @@ void main() {
             recentReceiptsStreamProvider.overrideWith(
               (ref) => Stream.value(const <ReceiptSummary>[]),
             ),
-            // IndexedStack §2.2:222 — η SettingsPage χτίζεται πάντα → prefs
-            // override (Βήμα 1 · profeta database tests).
-            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: MaterialApp.router(routerConfig: buildAppRouter()),
         ),

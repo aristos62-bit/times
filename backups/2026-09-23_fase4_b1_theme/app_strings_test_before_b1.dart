@@ -132,13 +132,13 @@ void main() {
       expect(AppStrings.newItemNextStep, 'Επόμενο');
     });
 
-    // ─── Settings (§2.3 · Φάση 4 Βήμα 1) ─────────────────────────────────────
-    test('titleSettings = «Ρυθμίσεις» + section «Θέμα» + 3 labels (§2.3:270)', () {
+    // ─── Settings (§2.3) ─────────────────────────────────────────────────────
+    test('titleSettings = «Ρυθμίσεις» + placeholder (§2.3)', () {
       expect(AppStrings.titleSettings, 'Ρυθμίσεις');
-      expect(AppStrings.titleThemeSection, 'Θέμα');
-      expect(AppStrings.themeModeLight, 'Φωτεινό');
-      expect(AppStrings.themeModeDark, 'Σκοτεινό');
-      expect(AppStrings.themeModeSystem, 'Αυτόματο');
+      expect(
+        AppStrings.settingsComingSoon,
+        'Οι ρυθμίσεις θα είναι διαθέσιμες σύντομα',
+      );
     });
 
     // ─── Καθολικές εγγυήσεις (όλα τα strings) ────────────────────────────────
@@ -199,8 +199,5 @@ const List<String> _allStrings = [
   AppStrings.newItemNextStep,
   AppStrings.newItemSave,
   AppStrings.titleSettings,
-  AppStrings.titleThemeSection,
-  AppStrings.themeModeLight,
-  AppStrings.themeModeDark,
-  AppStrings.themeModeSystem,
+  AppStrings.settingsComingSoon,
 ];

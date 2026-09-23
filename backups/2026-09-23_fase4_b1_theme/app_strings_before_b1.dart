@@ -98,12 +98,7 @@ abstract final class AppStrings {
   // ─── Settings (§2.3) ──────────────────────────────────────────────────────
   /// Τίτλος AppBar στη σελίδα ρυθμίσεων.
   static const String titleSettings = 'Ρυθμίσεις';
-  /// Τίτλος του section «Θέμα» στη σελίδα ρυθμίσεων (§2.3 · Φάση 4 Βήμα 1).
-  static const String titleThemeSection = 'Θέμα';
-  /// Επιλογή θέματος: Φωτεινό (ThemeMode.light, §2.3:270).
-  static const String themeModeLight = 'Φωτεινό';
-  /// Επιλογή θέματος: Σκοτεινό (ThemeMode.dark, §2.3:270).
-  static const String themeModeDark = 'Σκοτεινό';
-  /// Επιλογή θέματος: Αυτόματο (ThemeMode.system, §2.3:270).
-  static const String themeModeSystem = 'Αυτόματο';
+  /// Placeholder text στη σελίδα ρυθμίσεων (μέχρι Φάση 4).
+  static const String settingsComingSoon =
+      'Οι ρυθμίσεις θα είναι διαθέσιμες σύντομα';
 }

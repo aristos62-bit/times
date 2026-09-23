@@ -133,12 +133,6 @@ abstract final class AppConstants {
   // DESIGN) σε στενές οθόνες / μεγάλα fonts / ασυνήθιστα μακρά μηνύματα.
   static const int maxFeedbackLines = 3;
 
-  // ─── Theme (§2.3 DESIGN · Φάση 4 Βήμα 1) ─────────────────────────────────
-  // Key της SharedPreferences όπου αποθηκεύεται το επιλεγμένο ThemeMode
-  // (Light/Dark/Auto). Οι αποθηκευμένες τιμές είναι οι κωδικοί του enum
-  // (mode.name) — SEE settings_repository_impl (SPoT mapping, §2.3:270).
-  static const String themeModeKey = 'theme_mode';
-
   // ─── Backup (§2.3 DESIGN) ──────────────────────────────────────────────────
   // Pattern ονομασίας αρχείων backup — βλ. DESIGN.md §2.3.
   // Χρησιμοποιεί το πρότυπο ημερομηνίας (yyyy=έτος, MM=μήνας, dd=ημέρα,

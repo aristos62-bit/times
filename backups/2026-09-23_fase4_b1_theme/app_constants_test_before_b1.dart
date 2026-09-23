@@ -219,11 +219,6 @@ void main() {
       expect(AppConstants.backupFileNamePattern, 'times_backup_yyyyMMdd_HHmmss');
     });
 
-    // ─── Theme (§2.3:270 · Φάση 4 Βήμα 1) ────────────────────────────────────
-    test('themeModeKey = «theme_mode» (§2.3:270 — SPoT key SharedPreferences)', () {
-      expect(AppConstants.themeModeKey, 'theme_mode');
-    });
-
     test('backupFileNamePattern — φέρνει τα απαραίτητα τμήματα ημερομηνίας/ώρας', () {
       final p = AppConstants.backupFileNamePattern;
       expect(p, contains('times_backup_'));
@@ -250,5 +245,4 @@ void main() {
 /// Χρησιμοποιείται μόνο από τον καθολικό έλεγχο ποιότητας.
 const List<String> _allConstStrings = [
   AppConstants.backupFileNamePattern,
-  AppConstants.themeModeKey,
 ];
