@@ -111,34 +111,8 @@ void main() {
     });
 
     // ─── Categories section (§2.3 · Φάση 4 Βήμα 4) ───────────────────────────
-    testWidgets('sections «Κατηγορίες»/«Προμηθευτές» κλειστά by default',
-        (tester) async {
-      await pumpAt(tester, const Size(800, 600));
-      expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
-      expect(find.text(AppStrings.titleSuppliersSection), findsOneWidget);
-      expect(find.byType(ExpansionTile), findsNWidgets(2));
-      // Περιεχόμενο κρυμμένο μέχρι tap (collapsible 24-09-2026).
-      expect(find.text(AppStrings.categoriesEmpty), findsNothing);
-      expect(find.text(AppStrings.suppliersEmpty), findsNothing);
-      expect(find.text(AppStrings.addNewCategory), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('expand → περιεχόμενο → collapse (round-trip)', (tester) async {
-      await pumpAt(tester, const Size(800, 600));
-      await tester.tap(find.text(AppStrings.titleCategoriesSection));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.categoriesEmpty), findsOneWidget);
-      await tester.tap(find.text(AppStrings.titleCategoriesSection));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.categoriesEmpty), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
     testWidgets('εμφανίζει section «Κατηγορίες» με κενό δέντρο', (tester) async {
       await pumpAt(tester, const Size(800, 600));
-      await tester.tap(find.text(AppStrings.titleCategoriesSection));
-      await tester.pumpAndSettle();
       expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
       expect(find.text(AppStrings.categoriesEmpty), findsOneWidget);
       expect(find.text(AppStrings.addNewCategory), findsOneWidget);
@@ -154,8 +128,6 @@ void main() {
           .into(db.subCategories)
           .insert(SubCategoriesCompanion.insert(categoryId: catId, name: 'Γάλα'));
       await pumpAt(tester, const Size(800, 600));
-      await tester.tap(find.text(AppStrings.titleCategoriesSection));
-      await tester.pumpAndSettle();
       expect(find.text('ΤΡΟΦΙΜΑ'), findsOneWidget);
       expect(find.text(AppStrings.categoriesEmpty), findsNothing);
       expect(tester.takeException(), isNull);

@@ -50,7 +50,6 @@
 | 30 | [Ρυθμίσεις: CRUD προμηθευτών](oldsessions/2026-09-24_supplier_crud.md) | 24-09-2026 | Κλειστό | `countBySupplierId` + 2 families + controller + editor + section · SPoT +6 · controller 18 + editor 13 + SPoT 4 · fakes/overrides · **897/897** ✓ (+35) · analyze καθαρό |
 | 31 | [Editors: rename-fix, shared, docs-cleanup](oldsessions/2026-09-24_editor_fixes.md) | 24-09-2026 | Κλειστό | exact-match rename + self-clash + keys/βέλος + 2 shared + dialog label + νεκρό tooltip out · editor 422→366 · **896/896** ✓ (−3+2) · analyze καθαρό |
 | 32 | [Φάση 3 — post-closure: επεξεργασία + διαγραφή απόδειξης](oldsessions/2026-09-24_receipt_edit_delete.md) | 24-09-2026 | Κλειστό | Μολύβι (editingId, φόρτωση στη φόρμα) + κόκκινος κάδος (confirm, CASCADE) στη λίστα · `updateReceiptWithLines` (repo transaction) · ευρήματα Ε1–Ε3 (isSaving catch-all, drift-export, watch-FakeAsync→getLines) · **924/924** ✓ (+28) · analyze καθαρό |
-| 33 | [Ρυθμίσεις: collapsible sections](oldsessions/2026-09-24_settings_expandable.md) | 24-09-2026 | Κλειστό | «Κατηγορίες»/«Προμηθευτές» κλειστά by default (`ExpansionTile`) · 2 updates + 2 νέα tests · **926/926** ✓ (+2) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
