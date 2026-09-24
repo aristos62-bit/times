@@ -65,6 +65,11 @@ void main() {
       expect(AppStrings.currencySymbol, '€');
     });
 
+    test('συνολική τιμή — διακόπτης + label συνόλου (§2.2 · 24-09-2026)', () {
+      expect(AppStrings.priceTotalMode, 'Συνολική τιμή');
+      expect(AppStrings.lineTotalLabel, 'σύνολο');
+    });
+
     test('draft lines — τίτλος + κενή κατάσταση + αφαίρεση (§2.2)', () {
       expect(AppStrings.draftLinesTitle, 'Γραμμές απόδειξης');
       expect(AppStrings.draftLinesEmpty, 'Δεν υπάρχουν γραμμές ακόμα');
@@ -157,6 +162,12 @@ void main() {
       expect(AppStrings.saveAction, 'Αποθήκευση');
     });
 
+    // ─── Suppliers section (§2.3 · CRUD 24-09-2026) ──────────────────────────
+    test('titleSuppliersSection + suppliersEmpty (§2.3)', () {
+      expect(AppStrings.titleSuppliersSection, 'Προμηθευτές');
+      expect(AppStrings.suppliersEmpty, 'Δεν υπάρχουν προμηθευτές ακόμα');
+    });
+
     // ─── Καθολικές εγγυήσεις (όλα τα strings) ────────────────────────────────
     test('κανένα string μη-κενό, χωρίς whitespace στα άκρα, χωρίς αλλαγή γραμμής', () {
       for (final text in _allStrings) {
@@ -190,6 +201,8 @@ const List<String> _allStrings = [
   AppStrings.fieldSupplier,
   AppStrings.fieldQuantity,
   AppStrings.fieldPrice,
+  AppStrings.priceTotalMode,
+  AppStrings.lineTotalLabel,
   AppStrings.fieldUnit,
   AppStrings.unitSearchHint,
   AppStrings.currencySymbol,
@@ -225,4 +238,6 @@ const List<String> _allStrings = [
   AppStrings.deleteAction,
   AppStrings.refreshAction,
   AppStrings.saveAction,
+  AppStrings.titleSuppliersSection,
+  AppStrings.suppliersEmpty,
 ];

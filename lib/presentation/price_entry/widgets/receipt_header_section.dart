@@ -5,9 +5,9 @@
 /// ημερομηνία· η ΜΟΝΗ repo πρόσβαση είναι η inline δημιουργία προμηθευτή
 /// («+») — user action, επιτρεπτή (§2.0.1). Το feedback (SnackBar) γίνεται
 /// μόνο από εδώ μέσω AppFeedback (SPoT app_messages/app_errors).
-/// Αποεπιλογή προμηθευτή: νέα πληκτρολόγηση πάνω στον επιλεγμένο τον
-/// μηδενίζει από τη φόρμα (`onCleared`, §2.4.1) και ενεργοποιεί ξανά την
-/// αναζήτηση — το «Αποθήκευση Απόδειξης» μένει ανενεργό μέχρι νέα επιλογή.
+/// Κλείδωμα προμηθευτή (όπως είδος, §2.4): μετά επιλογή το dropdown
+/// αντικαθίσταται από locked banner (ListTile + «Αλλαγή») μέχρι καθαρισμό
+/// φόρμας (save/reset/exit-Ναι) ή χειροκίνητη «Αλλαγή».
 library;
 
 import 'package:flutter/material.dart';
@@ -38,16 +38,10 @@ class ReceiptHeaderSection extends ConsumerStatefulWidget {
 
 class _ReceiptHeaderSectionState extends ConsumerState<ReceiptHeaderSection> {
   /// «Γενιά» του πεδίου προμηθευτή. Αυξάνεται όταν ο προμηθευτής της φόρμας
-  /// γίνει null μετά από τιμή (resetForm μετά από save, §2.2:212), ώστε το
-  /// πεδίο να αναδημιουργηθεί άδειο — το SearchableDropdownField δεν
-  /// υποστηρίζει εξωτερικό καθάρισμα.
+  /// γίνει null μετά από τιμή (resetForm μετά από save, §2.2:212, ή
+  /// χειροκίνητη «Αλλαγή»), ώστε το πεδίο να αναδημιουργηθεί άδειο — το
+  /// SearchableDropdownField δεν υποστηρίζει εξωτερικό καθάρισμα.
   int _supplierFieldEpoch = 0;
-
-  /// Αποεπιλογή από το ίδιο το πεδίο (onCleared μέσω πληκτρολόγησης). Όταν
-  /// true, ο `ref.listen` ΔΕΝ αυξάνει το epoch — το SearchableDropdownField
-  /// διαχειρίζεται μόνο του το κείμενό του (το resetForm εξακολουθεί να κάνει
-  /// epoch κανονικά). Καταναλώνεται στο πρώτο null-transition.
-  bool _clearedFromEdit = false;
 
   Future<void> _pickDate(BuildContext context, WidgetRef ref) async {
     final current = ref.read(receiptFormControllerProvider).date;
@@ -101,24 +95,19 @@ class _ReceiptHeaderSectionState extends ConsumerState<ReceiptHeaderSection> {
 
   @override
   Widget build(BuildContext context) {
-    // Καθάρισμα πεδίου προμηθευτή όταν η φόρμα μηδενίζεται (§2.2:212).
+    // Καθάρισμα πεδίου προμηθευτή όταν η φόρμα μηδενίζεται (§2.2:212) ή
+    // πατιέται «Αλλαγή» — το dropdown ξαναχτίζεται άδειο (νέο epoch).
     ref.listen<Supplier?>(
       receiptFormControllerProvider.select((s) => s.supplier),
       (previous, next) {
         if (previous != null && next == null) {
-          if (_clearedFromEdit) {
-            // Αποεπιλογή από πληκτρολόγηση στο ίδιο το πεδίο (onCleared): το
-            // SearchableDropdownField διαχειρίζεται το κείμενό του — ΚΑΝΕΝΑ
-            // epoch (το πεδίο δεν πρέπει να αδειάσει). Το resetForm μετά από
-            // save εξακολουθεί να κάνει epoch κανονικά.
-            _clearedFromEdit = false;
-            return;
-          }
           setState(() => _supplierFieldEpoch++);
         }
       },
     );
-    final date = ref.watch(receiptFormControllerProvider).date;
+    final form = ref.watch(receiptFormControllerProvider);
+    final date = form.date;
+    final supplier = form.supplier;
     final formatted = MaterialLocalizations.of(context).formatMediumDate(date);
 
     return Card(
@@ -142,31 +131,41 @@ class _ReceiptHeaderSectionState extends ConsumerState<ReceiptHeaderSection> {
               AppConstants.spacingL,
               AppConstants.spacingL,
             ),
-            child: SearchableDropdownField<Supplier>(
-              key: ValueKey(_supplierFieldEpoch),
-              labelText: AppStrings.fieldSupplier,
-              hintText: AppStrings.supplierSearchHint,
-              searchProvider: supplierSearchProvider.call,
-              labelOf: (supplier) => supplier.name,
-              // «+» ΠΑΝΤΑ τοποθετείται στην ουρά της λίστας όταν υπάρχει
-              // query — ορατό ακόμα με 0 αποτελέσματα (απόφαση χρήστη §2.4).
-              createLabel: (query) => '${AppStrings.addNewSupplier} "$query"',
-              onSelected: (supplier) => ref
-                  .read(receiptFormControllerProvider.notifier)
-                  .setSupplier(supplier),
-              // Αποεπιλογή με πληκτρολόγηση (§2.4.1 · φάση-3 closure fix):
-              // νέα επεξεργασία πάνω στον επιλεγμένο μηδενίζει τον προμηθευτή
-              // της φόρμας → το «Αποθήκευση Απόδειξης» μένει ανενεργό μέχρι
-              // νέα επιλογή (hint supplierRequired, §2.2). Το flag αποτρέπει
-              // το epoch ώστε το πεδίο να κρατήσει το κείμενο του χρήστη.
-              onCleared: () {
-                _clearedFromEdit = true;
-                ref
-                    .read(receiptFormControllerProvider.notifier)
-                    .setSupplier(null);
-              },
-              onCreate: (name) => _createSupplier(context, ref, name),
-            ),
+            // Κλείδωμα προμηθευτή (όπως είδος §2.4): επιλεγμένος →
+            // locked banner (ListTile + «Αλλαγή», reuse `changeItem`)·
+            // κανένας → live search dropdown. Το dropdown υπάρχει ΜΟΝΟ
+            // χωρίς επιλογή, άρα το `onCleared` είναι νεκρό και αφαιρέθηκε.
+            child: supplier != null
+                ? ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.check_circle_outline),
+                    title: Text(
+                      supplier.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: TextButton(
+                      onPressed: () => ref
+                          .read(receiptFormControllerProvider.notifier)
+                          .setSupplier(null),
+                      child: const Text(AppStrings.changeItem),
+                    ),
+                  )
+                : SearchableDropdownField<Supplier>(
+                    key: ValueKey(_supplierFieldEpoch),
+                    labelText: AppStrings.fieldSupplier,
+                    hintText: AppStrings.supplierSearchHint,
+                    searchProvider: supplierSearchProvider.call,
+                    labelOf: (s) => s.name,
+                    // «+» ΠΑΝΤΑ στην ουρά όταν υπάρχει query — ορατό ακόμα
+                    // με 0 αποτελέσματα (απόφαση χρήστη §2.4).
+                    createLabel: (query) =>
+                        '${AppStrings.addNewSupplier} "$query"',
+                    onSelected: (s) => ref
+                        .read(receiptFormControllerProvider.notifier)
+                        .setSupplier(s),
+                    onCreate: (name) => _createSupplier(context, ref, name),
+                  ),
           ),
         ],
       ),

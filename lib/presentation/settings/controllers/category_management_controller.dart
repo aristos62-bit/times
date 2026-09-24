@@ -77,8 +77,9 @@ class CategoryManagementController extends Notifier<SettingsState> {
         return (ok: true, error: null);
       });
 
-  /// Μετονομάζει κατηγορία. Ίδιο normalized με τον εαυτό → no-op επιτυχία
-  /// (χωρίς write). Dup προς αδελφό → `nameExists`. Ανύπαρκτο id →
+  /// Μετονομάζει κατηγορία. Ακριβώς ίδιο κείμενο → no-op επιτυχία
+  /// (χωρίς write)· αλλαγή μόνο πεζών/τόνων ΓΡΑΦΕΤΑΙ (24-09-2026 — τα seed
+  /// είναι κεφαλαία). Dup προς αδελφό → `nameExists`. Ανύπαρκτο id →
   /// `loadDataFailed` (το δέντρο ανανεώθηκε ενδιάμεσα — race §2.3).
   Future<({bool ok, String? error})> renameCategory(int id, String name) =>
       _guarded(() async {
@@ -92,8 +93,8 @@ class CategoryManagementController extends Notifier<SettingsState> {
         if (current == null) {
           return (ok: false, error: AppErrors.loadDataFailed);
         }
-        if (NameValidator.isDuplicate(trimmed, [current.name])) {
-          return (ok: true, error: null); // no-op — κανένα write
+        if (trimmed == current.name) {
+          return (ok: true, error: null); // no-op — ακριβώς ίδιο κείμενο
         }
         final existing = await repo.watchAll().first;
         if (NameValidator.isDuplicate(
@@ -160,7 +161,8 @@ class CategoryManagementController extends Notifier<SettingsState> {
   });
 
   /// Μετονομάζει υποκατηγορία (χωρίς αλλαγή κατηγορίας — καμία μετακίνηση,
-  /// εκτός scope Βήματος 4). Dup-check εντός της ίδιας κατηγορίας.
+  /// εκτός scope Βήματος 4). Ακριβώς ίδιο κείμενο → no-op (24-09-2026).
+  /// Dup-check εντός της ίδιας κατηγορίας.
   Future<({bool ok, String? error})> renameSubCategory(int id, String name) =>
       _guarded(() async {
         final trimmed = name.trim();
@@ -173,8 +175,8 @@ class CategoryManagementController extends Notifier<SettingsState> {
         if (current == null) {
           return (ok: false, error: AppErrors.loadDataFailed);
         }
-        if (NameValidator.isDuplicate(trimmed, [current.name])) {
-          return (ok: true, error: null); // no-op — κανένα write
+        if (trimmed == current.name) {
+          return (ok: true, error: null); // no-op — ακριβώς ίδιο κείμενο
         }
         final siblings = await repo
             .watchByCategoryId(current.categoryId)

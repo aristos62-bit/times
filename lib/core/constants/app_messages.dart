@@ -26,8 +26,8 @@ abstract final class AppMessages {
   static const String itemExists = 'Το είδος υπάρχει ήδη';
 
   // ─── Dynamic item search (§2.4 · Φάση 3 Βήμα 4) ────────────────────────────
-  /// Η μόνη method (μη-const) για δυναμικό περιεχόμενο — ίδιο pattern με
-  /// `itemCountTooltip`: μήνυμα «δεν βρέθηκε» με το πληκτρολογημένο query.
+  /// Η μόνη method (μη-const) για δυναμικό περιεχόμενο στο section αναζήτησης:
+  /// μήνυμα «δεν βρέθηκε» με το πληκτρολογημένο query.
   static String itemNotFound(String query) => 'Δεν βρέθηκε είδος "$query"';
 
   // ─── Όριο καλαθιού (§2.2 · Φάση 3 Βήμα 5ε-2) ──────────────────────────────
@@ -60,14 +60,11 @@ abstract final class AppMessages {
   static const String exitUnsavedConfirm =
       'Έχετε μη αποθηκευμένες γραμμές. Έξοδος χωρίς αποθήκευση;';
 
-  // ─── Dynamic tooltips (§2.3.252) ──────────────────────────────────────────
-  /// §2.3.252: "Δεν μπορεί να διαγραφεί: περιέχει X είδη".
-  /// Η μόνη method στο class (όχι const) — παραβιάζει το static const String
-  /// pattern αλλά είναι απαραίτητο για δυναμικό περιεχόμενο.
-  static String itemCountTooltip(int count) =>
-      'Δεν μπορεί να διαγραφεί: περιέχει $count είδη';
-
   // ─── Categories CRUD (§2.3 · Φάση 4 Βήμα 4) ─────────────────────────────
+  /// Blocked tooltip: Χ είδη έχουν καταχωρημένες τιμές (§2.3:288 — η πύλη
+  /// μετράει είδη σε χρήση, DISTINCT με ≥1 γραμμή, όχι σύνολο).
+  static String itemsInUseTooltip(int count) =>
+      'Δεν μπορεί να διαγραφεί: $count είδη έχουν καταχωρημένες τιμές';
   /// Κατηγορία δημιουργήθηκε από τον tree editor (§2.3 · Βήμα 4).
   static const String categoryAdded = 'Η κατηγορία προστέθηκε';
 
@@ -87,12 +84,6 @@ abstract final class AppMessages {
   static const String subCategoryDeleted = 'Η υποκατηγορία διαγράφηκε';
 
   // ─── Blocked delete + cascade confirm (§2.3 · Βήμα 4, διόρθωση Α2-1) ────
-  /// Blocked tooltip: Χ είδη έχουν καταχωρημένες τιμές. Διακριτό από το
-  /// `itemCountTooltip` («περιέχει») — η πύλη μετράει είδη σε χρήση
-  /// (DISTINCT με ≥1 γραμμή), όχι σύνολο.
-  static String itemsInUseTooltip(int count) =>
-      'Δεν μπορεί να διαγραφεί: $count είδη έχουν καταχωρημένες τιμές';
-
   /// Cascade confirm διαγραφής κατηγορίας με [count] είδη (§2.3 · Βήμα 4).
   static String deleteCategoryConfirm(String name, int count) =>
       'Διαγραφή κατηγορίας "$name" με $count είδη; Τα είδη θα διαγραφούν.';
@@ -100,4 +91,20 @@ abstract final class AppMessages {
   /// Cascade confirm διαγραφής υποκατηγορίας με [count] είδη (§2.3 · Βήμα 4).
   static String deleteSubCategoryConfirm(String name, int count) =>
       'Διαγραφή υποκατηγορίας "$name" με $count είδη; Τα είδη θα διαγραφούν.';
+
+  // ─── Suppliers CRUD (§2.3 · 24-09-2026) ───────────────────────────────────
+  /// Το όνομα προμηθευτή ενημερώθηκε (Ρυθμίσεις).
+  static const String supplierUpdated = 'Ο προμηθευτής ενημερώθηκε';
+
+  /// Προμηθευτής διαγράφηκε (Ρυθμίσεις — μόνο καθαρός, η πύλη εγγυάται
+  /// 0 αποδείξεις, RESTRICT §3).
+  static const String supplierDeleted = 'Ο προμηθευτής διαγράφηκε';
+
+  /// Confirm διαγραφής προμηθευτή (χωρίς cascade-διατύπωση — RESTRICT §3).
+  static String deleteSupplierConfirm(String name) =>
+      'Διαγραφή προμηθευτή "$name";';
+
+  /// Blocked tooltip: Ν αποδείξεις του προμηθευτή (§2.3).
+  static String supplierReceiptsTooltip(int count) =>
+      'Δεν μπορεί να διαγραφεί: $count αποδείξεις';
 }

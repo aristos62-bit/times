@@ -38,6 +38,14 @@ abstract final class AppStrings {
   static const String fieldSupplier = 'Προμηθευτής';
   static const String fieldQuantity = 'Ποσότητα';
   static const String fieldPrice = 'Τιμή';
+  /// Label του διακόπτη «Συνολική τιμή» στη φόρμα γραμμής (§2.2 · 24-09-2026):
+  /// ΟΝ = το πεδίο Τιμή είναι το σύνολο της ποσότητας (π.χ. 350 γρ = 12 €)·
+  /// OFF (default) = τιμή μονάδας. Ισχύει για όλες τις μονάδες.
+  static const String priceTotalMode = 'Συνολική τιμή';
+  /// Inline λέξη για το σύνολο γραμμής στο «καλάθι» (§2.2 · 24-09-2026):
+  /// εμφανίζεται ΜΟΝΟ σε γραμμές συνολικής τιμής
+  /// («0,35 κιλ · 34,29 € (σύνολο 12,00 €)»).
+  static const String lineTotalLabel = 'σύνολο';
   /// Label του πεδίου μονάδας (Unit dropdown, §2.2 · Βήμα 5γ). Το DESIGN δεν
   /// ορίζει ρητό label (απόφαση Φάσης 0) — «Μονάδα», συνεπές με τα υπόλοιπα
   /// field labels.
@@ -123,4 +131,10 @@ abstract final class AppStrings {
   static const String refreshAction = 'Ανανέωση';
   /// Label κουμπιού αποθήκευσης σε dialogs επεξεργασίας (§2.3 · Βήμα 4).
   static const String saveAction = 'Αποθήκευση';
+
+  // ─── Suppliers section (§2.3 · CRUD προμηθευτών 24-09-2026) ───────────────
+  /// Τίτλος του section «Προμηθευτές» στη σελίδα ρυθμίσεων (§2.3).
+  static const String titleSuppliersSection = 'Προμηθευτές';
+  /// Κενή κατάσταση της λίστας προμηθευτών (§2.3).
+  static const String suppliersEmpty = 'Δεν υπάρχουν προμηθευτές ακόμα';
 }

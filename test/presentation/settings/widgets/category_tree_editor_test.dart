@@ -139,14 +139,10 @@ void main() {
       await seedLineInUse(itemId);
       await pumpEditor(tester);
 
-      // Το tooltip της μπλοκαρισμένης φέρει το in-use πλήθος (όχι «περιέχει»).
+      // Το tooltip της μπλοκαρισμένης φέρει το in-use πλήθος.
       expect(
         find.byTooltip(AppMessages.itemsInUseTooltip(1)),
         findsOneWidget,
-      );
-      expect(
-        find.byTooltip(AppMessages.itemCountTooltip(1)),
-        findsNothing,
       );
       // Tap στο ανενεργό → καμία ενέργεια, κανένα confirm.
       await tester.tap(find.byTooltip(AppMessages.itemsInUseTooltip(1)));

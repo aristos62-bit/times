@@ -120,5 +120,47 @@ void main() {
       expect(find.text('2,5 κιλ · 2,50 €'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('γραμμή συνολικής τιμής → «ποσότητα συντ. · τιμή € (σύνολο €)»',
+        (tester) async {
+      await tester.pumpWidget(wrap());
+      final container = containerOf(tester);
+      container.read(receiptFormControllerProvider.notifier).addDraftLine(
+            DraftReceiptLine(
+              itemId: 1,
+              unitId: 2,
+              quantity: 0.35,
+              priceCents: 3429,
+              itemName: 'Γάλα',
+              unitAbbreviation: 'κιλ',
+              enteredTotalCents: 1200,
+            ),
+          );
+      await tester.pumpAndSettle();
+
+      // Μοναδιαία + snapshot συνόλου (stored, χωρίς επαν-υπολογισμό).
+      expect(
+        find.text('0,35 κιλ · 34,29 € (${AppStrings.lineTotalLabel} 12,00 €)'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('γραμμή μοναδιαίας → χωρίς σύνολο (Δ2 preserved)',
+        (tester) async {
+      await tester.pumpWidget(wrap());
+      final container = containerOf(tester);
+      container.read(receiptFormControllerProvider.notifier).addDraftLine(
+            line(),
+          );
+      await tester.pumpAndSettle();
+
+      expect(find.text('2,5 κιλ · 2,50 €'), findsOneWidget);
+      expect(
+        find.textContaining(AppStrings.lineTotalLabel),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    });
   });
 }

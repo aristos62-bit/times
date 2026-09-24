@@ -263,8 +263,26 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('πληκτρολόγηση πάνω στον επιλεγμένο προμηθευτή → '
-        'σβήνεται από τη φόρμα + το πεδίο κρατά το κείμενο (onCleared)', (
+    testWidgets('επιλογή προμηθευτή → locked banner με «Αλλαγή», '
+        'χωρίς editable πεδίο (όπως είδος)', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await SupplierDao(db).insert(name: 'Μάρκος');
+      await pumpAt(tester, const Size(800, 600), db: db);
+
+      await tester.enterText(find.byType(TextField), 'μάρκος');
+      await settleSearch(tester);
+      await tester.tap(find.text('Μάρκος'));
+      await tester.pumpAndSettle();
+      expect(formState(tester).supplier?.name, 'Μάρκος');
+
+      // Locked banner (όπως είδος): όνομα + «Αλλαγή», κανένα TextField.
+      expect(find.text(AppStrings.changeItem), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('«Αλλαγή» → αποεπιλογή + άδειο πεδίο αναζήτησης', (
       tester,
     ) async {
       final db = inMemoryDb();
@@ -278,27 +296,47 @@ void main() {
       await tester.pumpAndSettle();
       expect(formState(tester).supplier?.name, 'Μάρκος');
 
-      // Νέοι χαρακτήρες πάνω στον επιλεγμένο → onCleared (αποεπιλογή, §2.4.1).
-      await tester.enterText(find.byType(TextField), 'Μάρκοςx');
-      await settleSearch(tester);
+      await tester.tap(find.text(AppStrings.changeItem));
+      await tester.pumpAndSettle();
 
       // Η φόρμα χάνει τον προμηθευτή (αποθήκευση ανενεργή μέχρι νέα επιλογή)
-      // ΚΑΙ το πεδίο ΚΡΑΤΑ ό,τι έγραψε ο χρήστης (κανένα epoch — το flag).
+      // και το dropdown ξαναχτίζεται άδειο (νέο epoch).
       expect(formState(tester).supplier, isNull);
+      expect(find.text(AppStrings.supplierSearchHint), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
       final text = tester
           .widget<TextField>(find.byType(TextField))
           .controller!
           .text;
-      expect(text, 'Μάρκοςx');
+      expect(text, isEmpty);
       expect(tester.takeException(), isNull);
 
-      // Edge: μετά την αποεπιλογή, νέα επιλογή λειτουργεί κανονικά.
+      // Edge: μετά την «Αλλαγή», νέα επιλογή λειτουργεί κανονικά + κλειδώνει.
       await tester.enterText(find.byType(TextField), 'μάρκος');
       await settleSearch(tester);
       await tester.tap(find.text('Μάρκος'));
       await tester.pumpAndSettle();
       expect(formState(tester).supplier?.name, 'Μάρκος');
-      expect(find.text('Μάρκος'), findsOneWidget);
+      expect(find.text(AppStrings.changeItem), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('«+» νέος προμηθευτής → κλειδώνει επίσης', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await pumpAt(tester, const Size(800, 600), db: db);
+
+      const name = 'Φούρνος Άρωμα';
+      await tester.enterText(find.byType(TextField), name);
+      await settleSearch(tester);
+      await tester.tap(find.text('${AppStrings.addNewSupplier} "$name"'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(AppMessages.supplierAdded), findsOneWidget);
+      expect(formState(tester).supplier?.name, name);
+      expect(find.text(AppStrings.changeItem), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
       expect(tester.takeException(), isNull);
     });
 

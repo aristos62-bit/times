@@ -35,8 +35,8 @@ const List<ItemSeed> seedItemsKatikidia = <ItemSeed>[
   // ── Περιποίηση & Αξεσουάρ Κατοικιδίων (10) ──────────────────────────────
   (name: 'Άμμος γάτας άργιλος', subCategoryName: 'Περιποίηση & Αξεσουάρ Κατοικιδίων', defaultUnitName: 'Κιλό'),
   (name: 'Άμμος γάτας silica', subCategoryName: 'Περιποίηση & Αξεσουάρ Κατοικιδίων', defaultUnitName: 'Κιλό'),
-  (name: 'Σαμπουάν σκύλου', subCategoryName: 'Περιποίηση & Αξεσουάρ Κατοικιδίων', defaultUnitName: 'Χιλιοστόλιτρο'),
-  (name: 'Σαμπουάν γάτας', subCategoryName: 'Περιποίηση & Αξεσουάρ Κατοικιδίων', defaultUnitName: 'Χιλιοστόλιτρο'),
+  (name: 'Σαμπουάν σκύλου', subCategoryName: 'Περιποίηση & Αξεσουάρ Κατοικιδίων', defaultUnitName: 'Λίτρο'),
+  (name: 'Σαμπουάν γάτας', subCategoryName: 'Περιποίηση & Αξεσουάρ Κατοικιδίων', defaultUnitName: 'Λίτρο'),
   (name: 'Βούρτσα σκύλου', subCategoryName: 'Περιποίηση & Αξεσουάρ Κατοικιδίων', defaultUnitName: 'Τεμάχιο'),
   (name: 'Βούρτσα γάτας', subCategoryName: 'Περιποίηση & Αξεσουάρ Κατοικιδίων', defaultUnitName: 'Τεμάχιο'),
   (name: 'Κολάρο σκύλου', subCategoryName: 'Περιποίηση & Αξεσουάρ Κατοικιδίων', defaultUnitName: 'Τεμάχιο'),

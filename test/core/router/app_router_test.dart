@@ -19,6 +19,7 @@ import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/logging/app_logger.dart';
 import 'package:times/core/router/app_router.dart';
 import 'package:times/core/router/app_routes.dart';
+import 'package:times/data/local/app_database.dart';
 import 'package:times/data/models/category_tree_node.dart';
 import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/providers/settings_providers.dart';
@@ -64,6 +65,11 @@ void main() {
           categoryTreeStreamProvider.overrideWith(
             (ref) => Stream.value(const <CategoryTreeNode>[]),
           ),
+          // CRUD προμηθευτών (24-09-2026): η section βλέπει suppliers
+          // stream — κενή ροή (hermetic, ίδιο idiom με το δέντρο).
+          suppliersStreamProvider.overrideWith(
+            (ref) => Stream.value(const <Supplier>[]),
+          ),
           sharedPreferencesProvider.overrideWithValue(prefs),
         ],
         child: MaterialApp.router(routerConfig: buildAppRouter()),
@@ -93,6 +99,10 @@ void main() {
             ),
             categoryTreeStreamProvider.overrideWith(
               (ref) => Stream.value(const <CategoryTreeNode>[]),
+            ),
+            // CRUD προμηθευτών (24-09-2026): κενή ροή (hermetic).
+            suppliersStreamProvider.overrideWith(
+              (ref) => Stream.value(const <Supplier>[]),
             ),
             // Στον launch χτίζεται και η SettingsPage (IndexedStack) →
             // themeModeProvider λύνεται με mock prefs (§2.0.1 · Βήμα 1).
@@ -157,6 +167,10 @@ void main() {
             ),
             categoryTreeStreamProvider.overrideWith(
               (ref) => Stream.value(const <CategoryTreeNode>[]),
+            ),
+            // CRUD προμηθευτών (24-09-2026): κενή ροή (hermetic).
+            suppliersStreamProvider.overrideWith(
+              (ref) => Stream.value(const <Supplier>[]),
             ),
             // IndexedStack §2.2:222 — η SettingsPage χτίζεται πάντα → prefs
             // override (Βήμα 1 · profeta database tests).

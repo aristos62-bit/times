@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/constants/app_strings.dart';
+import 'package:times/data/local/app_database.dart';
 import 'package:times/data/models/category_tree_node.dart';
 import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/providers/settings_providers.dart';
@@ -34,7 +35,7 @@ void main() {
 
   /// ProviderScope με overrides: λίστα πρόσφατων (κενή ροή) + δέντρο
   /// κατηγοριών (κενή ροή, Βήμα 4 — η SettingsPage βλέπει DB providers)
-  /// + prefs (Βήμα 1).
+  /// + λίστα προμηθευτών (κενή ροή, CRUD 24-09-2026) + prefs (Βήμα 1).
   ProviderScope scope() => ProviderScope(
         overrides: [
           recentReceiptsStreamProvider.overrideWith(
@@ -42,6 +43,9 @@ void main() {
           ),
           categoryTreeStreamProvider.overrideWith(
             (ref) => Stream.value(const <CategoryTreeNode>[]),
+          ),
+          suppliersStreamProvider.overrideWith(
+            (ref) => Stream.value(const <Supplier>[]),
           ),
           sharedPreferencesProvider.overrideWithValue(prefs),
         ],

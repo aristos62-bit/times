@@ -48,7 +48,7 @@ final List<ItemSeed> seedItems = <ItemSeed>[
 Future<void> runSeed(AppDatabase db) => db.transaction(() async {
   AppLogger.info(
     LogTag.db,
-    'Seed: ξεκίνημα (5 μονάδες, 9 κατηγορίες, 53 υποκατηγορίες, '
+    'Seed: ξεκίνημα (3 μονάδες, 9 κατηγορίες, 53 υποκατηγορίες, '
     '${seedItems.length} είδη)',
   );
 

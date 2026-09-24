@@ -9,16 +9,16 @@ import 'seed_types.dart';
 
 const List<ItemSeed> seedItemsPota = <ItemSeed>[
   // ── Καφές (10) ───────────────────────────────────────────────────────────
-  (name: 'Καφές φίλτρου κλασικός', subCategoryName: 'Καφές', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Καφές espresso κόκκοι', subCategoryName: 'Καφές', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Νες καφέ', subCategoryName: 'Καφές', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Καφές στιγμιαίος', subCategoryName: 'Καφές', defaultUnitName: 'Γραμμάριο'),
+  (name: 'Καφές φίλτρου κλασικός', subCategoryName: 'Καφές', defaultUnitName: 'Κιλό'),
+  (name: 'Καφές espresso κόκκοι', subCategoryName: 'Καφές', defaultUnitName: 'Κιλό'),
+  (name: 'Νες καφέ', subCategoryName: 'Καφές', defaultUnitName: 'Κιλό'),
+  (name: 'Καφές στιγμιαίος', subCategoryName: 'Καφές', defaultUnitName: 'Κιλό'),
   (name: 'Καψούλες espresso', subCategoryName: 'Καφές', defaultUnitName: 'Τεμάχιο'),
-  (name: 'Καφές decaf', subCategoryName: 'Καφές', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Φραπέ', subCategoryName: 'Καφές', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Καφές ελληνικός', subCategoryName: 'Καφές', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Cappuccino στιγμιαίο', subCategoryName: 'Καφές', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Latte στιγμιαίο', subCategoryName: 'Καφές', defaultUnitName: 'Γραμμάριο'),
+  (name: 'Καφές decaf', subCategoryName: 'Καφές', defaultUnitName: 'Κιλό'),
+  (name: 'Φραπέ', subCategoryName: 'Καφές', defaultUnitName: 'Κιλό'),
+  (name: 'Καφές ελληνικός', subCategoryName: 'Καφές', defaultUnitName: 'Κιλό'),
+  (name: 'Cappuccino στιγμιαίο', subCategoryName: 'Καφές', defaultUnitName: 'Κιλό'),
+  (name: 'Latte στιγμιαίο', subCategoryName: 'Καφές', defaultUnitName: 'Κιλό'),
 
   // ── Τσάι & Ροφήματα (10) ────────────────────────────────────────────────
   (name: 'Τσάι μαύρο', subCategoryName: 'Τσάι & Ροφήματα', defaultUnitName: 'Τεμάχιο'),
@@ -28,8 +28,8 @@ const List<ItemSeed> seedItemsPota = <ItemSeed>[
   (name: 'Τσάι φασκόμηλο', subCategoryName: 'Τσάι & Ροφήματα', defaultUnitName: 'Τεμάχιο'),
   (name: 'Τσάι τίλιο', subCategoryName: 'Τσάι & Ροφήματα', defaultUnitName: 'Τεμάχιο'),
   (name: 'Σοκολάτα ρόφημα', subCategoryName: 'Τσάι & Ροφήματα', defaultUnitName: 'Τεμάχιο'),
-  (name: 'Κακάο', subCategoryName: 'Τσάι & Ροφήματα', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Matcha', subCategoryName: 'Τσάι & Ροφήματα', defaultUnitName: 'Γραμμάριο'),
+  (name: 'Κακάο', subCategoryName: 'Τσάι & Ροφήματα', defaultUnitName: 'Κιλό'),
+  (name: 'Matcha', subCategoryName: 'Τσάι & Ροφήματα', defaultUnitName: 'Κιλό'),
   (name: 'Ρόφημα βανίλια', subCategoryName: 'Τσάι & Ροφήματα', defaultUnitName: 'Τεμάχιο'),
 
   // ── Αναψυκτικά (10) ─────────────────────────────────────────────────────

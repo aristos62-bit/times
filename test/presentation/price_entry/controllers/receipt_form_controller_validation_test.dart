@@ -330,6 +330,9 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
   @override
   Future<bool> deleteById(int id) => throw UnimplementedError();
   @override
+  Future<int> countBySupplierId(int supplierId) =>
+      throw UnimplementedError();
+  @override
   Stream<List<ReceiptLine>> watchLines(int receiptId) =>
       throw UnimplementedError();
 }

@@ -35,7 +35,7 @@ void main() {
       expect(await db.select(db.items).get(), isEmpty);
     });
 
-    test('seed εισάγει σωστό πλήθος εγγραφών (5/9/53/535)', () async {
+    test('seed εισάγει σωστό πλήθος εγγραφών (3/9/53/535)', () async {
       final db = inMemoryDb(skipSeed: false);
       addTearDown(db.close);
 
@@ -45,7 +45,7 @@ void main() {
       final subCategories = await db.select(db.subCategories).get();
       final items = await db.select(db.items).get();
 
-      expect(units.length, 5);
+      expect(units.length, 3);
       expect(categories.length, 9);
       expect(subCategories.length, 53);
       expect(items.length, 535);
@@ -170,7 +170,7 @@ void main() {
       // 1ο άνοιγμα: νέο DB → createAll + seed.
       final db1 = AppDatabase(executor: NativeDatabase(file), skipSeed: false);
       await db1.customSelect('SELECT 1').get();
-      expect(await db1.select(db1.units).get(), hasLength(5));
+      expect(await db1.select(db1.units).get(), hasLength(3));
       expect(await db1.select(db1.items).get(), hasLength(535));
       await db1.close();
 
@@ -179,7 +179,7 @@ void main() {
       addTearDown(db2.close);
       await db2.customSelect('SELECT 1').get();
 
-      expect(await db2.select(db2.units).get(), hasLength(5),
+      expect(await db2.select(db2.units).get(), hasLength(3),
           reason: 'Reopen χωρίς re-seed (units)');
       expect(await db2.select(db2.categories).get(), hasLength(9));
       expect(await db2.select(db2.subCategories).get(), hasLength(53));

@@ -197,3 +197,25 @@ final inUseCountSubCategoryProvider = FutureProvider.family<int, int>(
   (ref, subCategoryId) =>
       ref.watch(subCategoryRepositoryProvider).countItemsInUse(subCategoryId),
 );
+
+// ─── CRUD προμηθευτών — πύλη διαγραφής (§2.3 · 24-09-2026) ─────────────────
+
+/// Προ-έλεγχος διαγραφής προμηθευτή.
+///
+/// `true` = καθαρός (`countBySupplierId == 0`, RESTRICT δεν εμποδίζει) ·
+/// `false` = μπλοκαρισμένος (greyed-out + tooltip με πλήθος αποδείξεων).
+/// Family one-shot ανά id + invalidate μετά από delete (πατρόν Βήματος 4).
+/// NON-autoDispose.
+final canDeleteSupplierProvider = FutureProvider.family<bool, int>(
+  (ref, supplierId) async =>
+      await ref.watch(receiptRepositoryProvider).countBySupplierId(supplierId) ==
+      0,
+);
+
+/// Πλήθος αποδείξεων του προμηθευτή — sibling του `canDeleteSupplierProvider`
+/// (`int` για το blocked tooltip `supplierReceiptsTooltip`). Invalidate μαζί
+/// με το canDelete (κουμπί ανανέωσης + μετά από delete). NON-autoDispose.
+final receiptCountSupplierProvider = FutureProvider.family<int, int>(
+  (ref, supplierId) =>
+      ref.watch(receiptRepositoryProvider).countBySupplierId(supplierId),
+);

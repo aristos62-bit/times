@@ -3,8 +3,10 @@
 /// Διαβάζει ΜΟΝΟ το σύγχρονο `receiptFormControllerProvider.draftLines` —
 /// καμία DB πρόσβαση (οι γραμμές γράφονται ατομικά στο save, Βήμα 5δ).
 /// ΧΩΡΙΣ line totals ανά γραμμή (απόφαση Δ2 — τα σύνολα υπολογίζονται στο
-/// Βήμα 7, SPoT μαθηματικών το DAO). Κάθε γραμμή ανεξάρτητη — ίδιο είδος σε
-/// πολλές γραμμές ΕΠΙΤΡΕΠΕΤΑΙ (§2.2:237). Διαγραφή ανά γραμμή (index).
+/// Βήμα 7, SPoT μαθηματικών το DAO) — ΕΞΑΙΡΕΣΗ 24-09-2026: γραμμές «Συνολικής
+/// τιμής» δείχνουν το πληκτρολογημένο σύνολο (`enteredTotalCents` snapshot,
+/// χωρίς επαν-υπολογισμό) — «0,35 κιλ · 34,29 € (σύνολο 12,00 €)».
+/// Κάθε γραμμή ανεξάρτητη — ίδιο είδος σε πολλές γραμμές ΕΠΙΤΡΕΠΕΤΑΙ (§2.2:237). Διαγραφή ανά γραμμή (index).
 library;
 
 import 'package:flutter/material.dart';
@@ -22,17 +24,26 @@ class DraftLinesList extends ConsumerWidget {
   const DraftLinesList({super.key});
 
   /// Μία γραμμή: όνομα + «ποσότητα συντ. · τιμή €» + αφαίρεση.
+  /// Συνολική τιμή (24-09-2026): γραμμές με `enteredTotalCents` δείχνουν ΚΑΙ
+  /// το πληκτρολογημένο σύνολο (stored snapshot — κανένας επαν-υπολογισμός,
+  /// SPoT μαθηματικών το DAO).
   Widget _buildRow(
     BuildContext context,
     WidgetRef ref,
     DraftReceiptLine line,
     int index,
   ) {
-    final detail =
+    var detail =
         '${QuantityTextField.formatQuantity(line.quantity)} '
         '${line.unitAbbreviation} · '
         '${CurrencyTextField.formatCents(line.priceCents)} '
         '${AppStrings.currencySymbol}';
+    if (line.enteredTotalCents != null) {
+      detail +=
+          ' (${AppStrings.lineTotalLabel} '
+          '${CurrencyTextField.formatCents(line.enteredTotalCents!)} '
+          '${AppStrings.currencySymbol})';
+    }
     return ListTile(
       dense: true,
       contentPadding: EdgeInsets.zero,

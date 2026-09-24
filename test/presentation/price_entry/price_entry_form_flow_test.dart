@@ -169,8 +169,9 @@ void main() {
   Future<void> pickItem(WidgetTester tester, String name) async {
     await enterInField(tester, AppStrings.fieldItemName, name);
     await pickResult(tester, name);
-    // Banner επιλεγμένου είδους (§2.4) — η ενότητα μονάδας/τιμής φάνηκε.
-    expect(find.text(AppStrings.changeItem), findsOneWidget);
+    // Banner επιλεγμένου είδους (§2.4) + locked banner προμηθευτή (§2.2):
+    // 2× «Αλλαγή» (προμηθευτής κλειδωμένος από το pickSupplier).
+    expect(find.text(AppStrings.changeItem), findsNWidgets(2));
   }
 
   /// Εισαγωγή τιμής + «Προσθήκη γραμμής». Η μονάδα/ποσότητα είναι ήδη
@@ -362,6 +363,9 @@ class _BlockingReceiptRepo implements ReceiptRepository {
 
   @override
   Future<bool> deleteById(int id) => inner.deleteById(id);
+  @override
+  Future<int> countBySupplierId(int supplierId) =>
+      inner.countBySupplierId(supplierId);
 
   @override
   Stream<List<ReceiptLine>> watchLines(int receiptId) =>

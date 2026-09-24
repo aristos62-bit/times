@@ -29,6 +29,12 @@
 /// δείχνουν σφάλμα (το Add μένει απλώς ανενεργό). Hint μονάδας όταν έχει
 /// ήδη γραφτεί τιμή χωρίς μονάδα — κρύβεται μόλις αρχίσει πληκτρολόγηση στο
 /// unit dropdown (onChanged · Βήμα 21).
+///
+/// ΣΥΝΟΛΙΚΗ ΤΙΜΗ (24-09-2026): διακόπτης `_isTotal` — ΟΝ = το πεδίο Τιμή
+/// είναι το σύνολο της ποσότητας (π.χ. 0,350 κιλ = 12 €) και η μοναδιαία
+/// παράγεται `(total/quantity).round()` με guard 0/overflow (ίδια errors)·
+/// OFF (default) = τιμή μονάδας. Ισχύει για όλες τις μονάδες· lifecycle από
+/// το `ValueKey(item.id)` (φρέσκο ανά είδος, Δ8).
 library;
 
 import 'package:flutter/material.dart';
@@ -76,6 +82,13 @@ class _UnitQuantityPriceSectionState
   /// dropdown (Βήμα 21) — η σύσταση εξυπηρετήθηκε. Δεν ξανασβήνει: φρέσκια
   /// κατάσταση ανά είδος μέσω `ValueKey(item.id)` (Δ8).
   bool _unitTyping = false;
+
+  /// Λειτουργία συνολικής τιμής (24-09-2026): false (default) = το πεδίο
+  /// Τιμή είναι μοναδιαία· true = το πεδίο Τιμή είναι το σύνολο της
+  /// ποσότητας και η μοναδιαία παράγεται `(total/quantity).round()`.
+  /// Τοπικό state, φρέσκο ανά είδος μέσω `ValueKey(item.id)` (Δ8) —
+  /// κανένας νέος provider/controller.
+  bool _isTotal = false;
 
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
@@ -187,20 +200,37 @@ class _UnitQuantityPriceSectionState
   }
 
   /// «Προσθήκη γραμμής» → draft + επιστροφή search σε IDLE (§2.2:206).
+  /// Συνολική τιμή (24-09-2026): με `_isTotal` η μοναδιαία παράγεται
+  /// `(total/quantity).round()` με guard 0/overflow (ίδια errors — safety-net,
+  /// το UI το έχει ήδη αποκλείσει στο `canAdd`)· το πληκτρολογημένο σύνολο
+  /// φυλάσσεται ως `enteredTotalCents` snapshot για προβολή (χωρίς
+  /// επαν-υπολογισμό στο draft list).
   void _addLine() {
     final unit = _unit;
     final quantity = _quantityCheck().value;
-    final priceCents = _priceCheck().value;
-    if (unit == null || quantity == null || priceCents == null) return;
+    final entered = _priceCheck().value;
+    if (unit == null || quantity == null || entered == null) return;
+    final int unitPriceCents;
+    final int? enteredTotal;
+    if (!_isTotal) {
+      unitPriceCents = entered;
+      enteredTotal = null;
+    } else {
+      final derived = (entered / quantity).round();
+      if (ReceiptValidator.validatePriceCents(derived) != null) return;
+      unitPriceCents = derived;
+      enteredTotal = entered;
+    }
     ref.read(receiptFormControllerProvider.notifier).addDraftLine(
       DraftReceiptLine(
         itemId: widget.item.id,
         unitId: unit.id,
         quantity: quantity,
-        priceCents: priceCents,
+        priceCents: unitPriceCents,
         itemName: widget.item.name,
         unitAbbreviation: unit.abbreviation,
         unitAllowsDecimal: unit.allowsDecimal,
+        enteredTotalCents: enteredTotal,
       ),
     );
     // Το search field καθαρίζει (clear-on-drop fix) και επιστρέφει σε IDLE —
@@ -231,10 +261,37 @@ class _UnitQuantityPriceSectionState
       ),
     );
     // Βήμα 6δ: validation μέσω ReceiptValidator (SPoT) — value + inline error.
+    // Συνολική τιμή (24-09-2026): με `_isTotal` η μοναδιαία παράγεται
+    // `(total/quantity).round()` — τα ίδια `_quantityCheck`/`_priceCheck`
+    // (parse+validator) + guard παραγόμενης (0/overflow, ίδια errors).
+    // Διαίρεση ΜΟΝΟ με έγκυρη qty>0 (gated — ποτέ διαίρεση με μηδέν).
     final quantity = _quantityCheck();
-    final price = _priceCheck();
+    final entered = _priceCheck();
+    int? unitPriceCents;
+    String? priceError;
+    if (!_isTotal) {
+      unitPriceCents = entered.value;
+      priceError = entered.error;
+    } else {
+      final q = quantity.value;
+      final t = entered.value;
+      if (q == null || t == null) {
+        unitPriceCents = null;
+        priceError = entered.error;
+      } else {
+        final derived = (t / q).round();
+        final derivedError = ReceiptValidator.validatePriceCents(derived);
+        if (derivedError != null) {
+          unitPriceCents = null;
+          priceError = derivedError;
+        } else {
+          unitPriceCents = derived;
+          priceError = null;
+        }
+      }
+    }
     final canAdd =
-        _unit != null && quantity.value != null && price.value != null;
+        _unit != null && quantity.value != null && unitPriceCents != null;
     // Hint μονάδας: μόνο όταν ο χρήστης έχει ήδη αρχίσει να γράφει τιμή ΚΑΙ
     // δεν έχει αρχίσει να πληκτρολογεί στο unit dropdown (Βήμα 21).
     final unitHint = !_unitTyping && _priceController.text.isNotEmpty
@@ -304,10 +361,20 @@ class _UnitQuantityPriceSectionState
               controller: _priceController,
               labelText: AppStrings.fieldPrice,
               suffixText: AppStrings.currencySymbol,
-              errorText: price.error,
+              errorText: priceError,
               onChanged: (_) => setState(() {}),
               prefixIcon: const Icon(Icons.euro_outlined),
               textInputAction: TextInputAction.done,
+            ),
+            // Συνολική τιμή (24-09-2026, όλες οι μονάδες): ΟΝ = το πεδίο
+            // Τιμή είναι το σύνολο της ποσότητας· η μοναδιαία παράγεται.
+            // SwitchListTile (built-in semantics, theme/responsive δωρεάν).
+            SwitchListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              title: const Text(AppStrings.priceTotalMode),
+              value: _isTotal,
+              onChanged: (value) => setState(() => _isTotal = value),
             ),
             const SizedBox(height: AppConstants.spacingM),
             FilledButton.icon(

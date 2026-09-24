@@ -33,6 +33,10 @@ abstract interface class ReceiptRepository {
   /// Διαβάζει μία απόδειξη ή null αν δεν υπάρχει.
   Future<Receipt?> getById(int id);
 
+  /// Μετράει τις αποδείξεις ενός προμηθευτή — πύλη διαγραφής προμηθευτή
+  /// (§2.3 · 24-09-2026): `0` = καθαρός. Passthrough στο DAO (Βήμα 2).
+  Future<int> countBySupplierId(int supplierId);
+
   /// Εισάγει απόδειξη· επιστρέφει τον (αυτόματο) αριθμό = id.
   Future<int> insert({required DateTime date, required int supplierId});
 

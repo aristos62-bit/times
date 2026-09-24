@@ -9,16 +9,16 @@ import 'seed_types.dart';
 
 const List<ItemSeed> seedItemsBrefika = <ItemSeed>[
   // ── Βρεφικά Γάλατα (10) ─────────────────────────────────────────────────
-  (name: 'Βρεφικό γάλα 1ης ηλικίας (0-6 μηνών)', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Βρεφικό γάλα 2ης ηλικίας (6-12 μηνών)', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Βρεφικό γάλα 3ης ηλικίας (1-3 ετών)', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Βρεφικό γάλα 4ης ηλικίας (3+ ετών)', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Βρεφικό γάλα χωρίς λακτόζη', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Βρεφικό γάλα για δυσανεξία', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Βρεφικό γάλα βιολογικό', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Βρεφικό γάλα σε σκόνη', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Βρεφικό γάλα έτοιμο προς χρήση', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Χιλιοστόλιτρο'),
-  (name: 'Βρεφικό γάλα με DHA', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Γραμμάριο'),
+  (name: 'Βρεφικό γάλα 1ης ηλικίας (0-6 μηνών)', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Κιλό'),
+  (name: 'Βρεφικό γάλα 2ης ηλικίας (6-12 μηνών)', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Κιλό'),
+  (name: 'Βρεφικό γάλα 3ης ηλικίας (1-3 ετών)', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Κιλό'),
+  (name: 'Βρεφικό γάλα 4ης ηλικίας (3+ ετών)', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Κιλό'),
+  (name: 'Βρεφικό γάλα χωρίς λακτόζη', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Κιλό'),
+  (name: 'Βρεφικό γάλα για δυσανεξία', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Κιλό'),
+  (name: 'Βρεφικό γάλα βιολογικό', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Κιλό'),
+  (name: 'Βρεφικό γάλα σε σκόνη', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Κιλό'),
+  (name: 'Βρεφικό γάλα έτοιμο προς χρήση', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Λίτρο'),
+  (name: 'Βρεφικό γάλα με DHA', subCategoryName: 'Βρεφικά Γάλατα', defaultUnitName: 'Κιλό'),
 
   // ── Πάνες (10) ───────────────────────────────────────────────────────────
   (name: 'Πάνες Νο.1 (2-5 kg)', subCategoryName: 'Πάνες', defaultUnitName: 'Τεμάχιο'),
@@ -40,20 +40,20 @@ const List<ItemSeed> seedItemsBrefika = <ItemSeed>[
   (name: 'Μωρομάντηλα μικρή συσκευασία', subCategoryName: 'Μωρομάντηλα & Βρεφική Υγιεινή', defaultUnitName: 'Τεμάχιο'),
   (name: 'Μωρομάντηλα βιοδιασπώμενα', subCategoryName: 'Μωρομάντηλα & Βρεφική Υγιεινή', defaultUnitName: 'Τεμάχιο'),
   (name: 'Βρεφική κρέμα συγκάματος', subCategoryName: 'Μωρομάντηλα & Βρεφική Υγιεινή', defaultUnitName: 'Τεμάχιο'),
-  (name: 'Βρεφικό λάδι', subCategoryName: 'Μωρομάντηλα & Βρεφική Υγιεινή', defaultUnitName: 'Χιλιοστόλιτρο'),
-  (name: 'Βρεφικό σαμπουάν', subCategoryName: 'Μωρομάντηλα & Βρεφική Υγιεινή', defaultUnitName: 'Χιλιοστόλιτρο'),
-  (name: 'Βρεφικό αφρόλουτρο', subCategoryName: 'Μωρομάντηλα & Βρεφική Υγιεινή', defaultUnitName: 'Χιλιοστόλιτρο'),
+  (name: 'Βρεφικό λάδι', subCategoryName: 'Μωρομάντηλα & Βρεφική Υγιεινή', defaultUnitName: 'Λίτρο'),
+  (name: 'Βρεφικό σαμπουάν', subCategoryName: 'Μωρομάντηλα & Βρεφική Υγιεινή', defaultUnitName: 'Λίτρο'),
+  (name: 'Βρεφικό αφρόλουτρο', subCategoryName: 'Μωρομάντηλα & Βρεφική Υγιεινή', defaultUnitName: 'Λίτρο'),
 
   // ── Βρεφικές Τροφές (10) ────────────────────────────────────────────────
-  (name: 'Βρεφική κρέμα δημητριακών ρυζιού', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Βρεφική κρέμα δημητριακών βρώμης', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Γραμμάριο'),
-  (name: 'Βρεφική κρέμα δημητριακών σιταριού', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Γραμμάριο'),
+  (name: 'Βρεφική κρέμα δημητριακών ρυζιού', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Κιλό'),
+  (name: 'Βρεφική κρέμα δημητριακών βρώμης', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Κιλό'),
+  (name: 'Βρεφική κρέμα δημητριακών σιταριού', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Κιλό'),
   (name: 'Βρεφικό βαζάκι κοτόπουλο', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Τεμάχιο'),
   (name: 'Βρεφικό βαζάκι μοσχάρι', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Τεμάχιο'),
   (name: 'Βρεφικό βαζάκο λαχανικά', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Τεμάχιο'),
   (name: 'Βρεφικό βαζάκι φρούτα', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Τεμάχιο'),
   (name: 'Βρεφικό μπισκότο', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Τεμάχιο'),
-  (name: 'Βρεφικό χυλό', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Γραμμάριο'),
+  (name: 'Βρεφικό χυλό', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Κιλό'),
   (name: 'Βρεφικό γιαούρτι', subCategoryName: 'Βρεφικές Τροφές', defaultUnitName: 'Τεμάχιο'),
 
   // ── Βρεφικά Αξεσουάρ (10) ───────────────────────────────────────────────

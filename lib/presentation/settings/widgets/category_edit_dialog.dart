@@ -1,5 +1,5 @@
-/// Dialog δημιουργίας/μετονομασίας κατηγορίας/υποκατηγορίας (§2.3 DESIGN /
-/// Φάση 4 Βήμα 4).
+/// Dialog δημιουργίας/μετονομασίας κατηγορίας/υποκατηγορίας/προμηθευτή
+/// (§2.3 DESIGN / Φάση 4 Βήμα 4 · CRUD προμηθευτών 24-09-2026).
 ///
 /// Απλό dumb-stateful dialog (pattern βήματος ονόματος του
 /// `NewItemFlowDialog`): παίρνει τίτλο + αρχικό κείμενο, επιστρέφει το
@@ -21,7 +21,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_messages.dart';
 import '../../../domain/validators/name_validator.dart';
 
-/// Ανοίγει το dialog ονόματος κατηγορίας/υποκατηγορίας.
+/// Ανοίγει το dialog ονόματος κατηγορίας/υποκατηγορίας/προμηθευτή.
 ///
 /// Επιστρέφει το trimmed όνομα ή `null` (Ακύρωση/dismiss) — ο καλών μετράει
 /// μόνο το non-null (pattern `showConfirmDialog`).
@@ -30,6 +30,7 @@ Future<String?> showCategoryEditDialog(
   required String title,
   required String confirmLabel,
   String initialName = '',
+  String? labelText,
 }) {
   return showDialog<String>(
     context: context,
@@ -37,6 +38,7 @@ Future<String?> showCategoryEditDialog(
       title: title,
       confirmLabel: confirmLabel,
       initialName: initialName,
+      labelText: labelText,
     ),
   );
 }
@@ -49,6 +51,7 @@ class CategoryEditDialog extends StatefulWidget {
     required this.title,
     required this.confirmLabel,
     this.initialName = '',
+    this.labelText,
   });
 
   /// Τίτλος — πάντα SPoT από τον καλούντα.
@@ -59,6 +62,10 @@ class CategoryEditDialog extends StatefulWidget {
 
   /// Αρχικό κείμενο (μετονομασία) — κενό στη δημιουργία.
   final String initialName;
+
+  /// Label του πεδίου (semantics §1.6 — το ListTile δεν το καλύπτει εδώ) —
+  /// πάντα SPoT από τον καλούντα (`fieldCategory/fieldSubCategory/fieldSupplier`).
+  final String? labelText;
 
   @override
   State<CategoryEditDialog> createState() => _CategoryEditDialogState();
@@ -105,13 +112,13 @@ class _CategoryEditDialogState extends State<CategoryEditDialog> {
           child: TextField(
             controller: _controller,
             autofocus: true,
-            maxLength: AppConstants.maxItemNameLength,
             inputFormatters: [
               LengthLimitingTextInputFormatter(
                 AppConstants.maxItemNameLength,
               ),
             ],
             decoration: InputDecoration(
+              labelText: widget.labelText,
               border: const OutlineInputBorder(),
               errorText: _error,
               errorMaxLines: AppConstants.fieldErrorMaxLines,

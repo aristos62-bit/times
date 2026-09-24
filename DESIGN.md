@@ -46,7 +46,7 @@
    │   └── debug/       (debug_config)
    ├── data/
    │   ├── local/       (Drift database, tables, DAOs)
-   │   ├── models/      (κενό placeholder — ο ανοιχτός φάκελος για οντότητες · καμία Freezed: τα repos επιστρέφουν Drift data classes απευθείας, απόφαση Φάση 2 Βήμα 1)
+   │   ├── models/      (`category_tree_node.dart` record · κατά τα άλλα ο ανοιχτός φάκελος για οντότητες · καμία Freezed: τα repos επιστρέφουν Drift data classes απευθείας, απόφαση Φάση 2 Βήμα 1)
    │   ├── repositories/(abstract + implementation, μοναδικό σημείο πρόσβασης στη βάση)
    │   └── providers/   (Riverpod DI δέντρο + StreamProviders — η γέφυρα repos → UI)
    ├── domain/
@@ -56,7 +56,7 @@
    │   ├── home/        (Κεντρική: home_page, controllers/, state/, widgets/) — §2.1
    │   ├── price_entry/ (Εισαγωγή τιμών: price_entry_page, controllers/, state/, widgets/) — §2.2
    │   ├── settings/    (Ρυθμίσεις: settings_page, controllers/, state/, widgets/) — §2.3
-   │   └── shared/      (κοινά widgets: SearchableDropdownField, ConfirmDialog, AsyncValueView, ...) — §2.4
+   │   └── shared/      (κοινά widgets: SearchableDropdownField, ConfirmDialog, AsyncValueView, DeleteGateButton, controller_op_runner, ...) — §2.4
    └── main.dart
    ```
    - Το UI **δεν** μιλάει ποτέ απευθείας με τη βάση· περνάει πάντα από Repository → Riverpod Provider → Widget.
@@ -203,7 +203,9 @@ NEW_ITEM_FLOW: επιλογή Κατηγορίας [υπάρχουσα ▸ ή "+
              → (save Category/SubCategory/Item αν χρειάζεται) ──▶ ITEM_SELECTED
 ITEM_SELECTED ──▶ εμφάνιση Unit dropdown (προεπιλογή: Item.defaultUnitId αν υπάρχει)
              → Ποσότητα (input τύπου ανάλογα με Unit.allowsDecimal)
-             → Τιμή
+             → Τιμή (μοναδιαία — ή ΣΥΝΟΛΟ ποσότητας με τον διακόπτη
+               «Συνολική τιμή» 24-09-2026: η μοναδιαία παράγεται
+               `(total/quantity).round()`, ισχύει για όλες τις μονάδες)
              → "Προσθήκη γραμμής" ──▶ γραμμή μπαίνει στο draftLines[] της απόδειξης, το search field καθαρίζει και επιστρέφει σε IDLE (έτοιμο για επόμενο είδος)
 ```
 
@@ -222,7 +224,10 @@ ITEM_SELECTED ──▶ εμφάνιση Unit dropdown (προεπιλογή: It
 
 **Validation πριν την αποθήκευση (SPoT validators, `domain/validators/receipt_validator.dart`)**
 - Τουλάχιστον 1 γραμμή, όχι πάνω από `maxReceiptLines`.
-- `price > validationMinPrice`, `quantity > validationMinQuantity`.
+- `price > validationMinPrice`, `quantity > validationMinQuantity` — σε λειτουργία
+  «Συνολικής τιμής» (24-09-2026) ελέγχεται το πληκτρολογημένο σύνολο με τους
+  ίδιους κανόνες ΚΑΙ η παραγόμενη μοναδιαία `(total/quantity).round()` (guard
+  0/overflow, ίδια μηνύματα — π.χ. 99999,99 € / 0,001 → `priceTooLarge`).
 - Αν `Unit.allowsDecimal == false` → `quantity` πρέπει να είναι ακέραιος (απόρριψη 2.5 τεμάχια).
 - Όνομα νέας Κατηγορίας/Υποκατηγορίας/Είδους: όχι κενό, ≤ `maxItemNameLength`, **case-insensitive έλεγχος διπλότυπου** πριν την εισαγωγή (αποφυγή "Γάλα" και "γαλα" ως δύο διαφορετικές εγγραφές) — `domain/validators/name_validator.dart`.
 - **Υλοποίηση (Φάση 3, Βήμα 6)**: ο `ReceiptValidator` είναι καθαρός (static, χωρίς UI/DB/logging, εξαρτάται μόνο από `core/constants`, δουλεύει με primitives) και όπως ο `NameValidator` επιστρέφει `String?` — `null` = ΟΚ, αλλιώς SPoT μήνυμα (`AppErrors` ή `AppMessages.receiptLinesLimitReached`)· ΚΑΝΕΝΑ exception (δεν ορίστηκε `ValidationException`). API: `validateUnit` · `validatePriceCents` (σε ΛΕΠΤΑ, §3) · `validateQuantity(q, allowsDecimal:)` · `validateLine` (ποσότητα → τιμή) · `validateLineCount` · `validateReceipt(hasSupplier, lineCount)` (γραμμές → προμηθευτής) · `isIncompleteNumber(text)` (τελικός διαχωριστής → κανένα σφάλμα «υπό πληκτρολόγηση»). Δεν υπολογίζει `lineTotalCents` — SPoT του `ReceiptLineDao` (§3).
@@ -257,11 +262,13 @@ presentation/settings/
 ├── settings_page.dart
 ├── controllers/                              (Βήματα 4–5 · το Βήμα 1 ΔΕΝ έχει controller — Q1)
 │   ├── category_management_controller.dart
+│   ├── supplier_management_controller.dart   (CRUD προμηθευτών 24-09-2026)
 │   └── backup_restore_controller.dart
 ├── state/settings_state.dart                 (Βήματα 4–5)
 └── widgets/
     ├── theme_mode_selector.dart              (Βήμα 1 ✓)
     ├── category_tree_editor.dart      -- λίστα Κατηγορία▸Υποκατηγορία με edit/delete εικονίδια
+    ├── supplier_list_editor.dart      -- λίστα Προμηθευτών με edit/delete εικονίδια (24-09-2026)
     └── backup_restore_section.dart
 ```
 
@@ -272,12 +279,15 @@ presentation/settings/
 **Providers / λογική**
 - `themeModeProvider` (Notifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` (`ConsumerWidget`) για `MaterialApp.router.themeMode`. SPoT: key `AppConstants.themeModeKey`, default `AppTheme.defaultMode` (system), labels `AppStrings` (τίτλος/Φωτεινό/Σκοτεινό/Αυτόματο). Sync read (review fix 23-09 — Q3 αναθεωρήθηκε με ΟΚ χρήστη).
 - `categoryTreeStreamProvider` (StreamProvider) → live λίστα Κατηγοριών με nested Υποκατηγορίες.
+- `suppliersStreamProvider` (StreamProvider, Φάση 2) → live λίστα Προμηθευτών για τον supplier editor (24-09-2026, reuse — κανένα νέο query).
 - `canDeleteCategoryProvider` / `canDeleteSubCategoryProvider` (`FutureProvider.family<bool, int>`) → **προ-έλεγχος** (μετράει συνδεδεμένα Items/ReceiptLines) πριν καν εμφανιστεί ενεργό το εικονίδιο διαγραφής.
-- Scope CRUD: **ΜΟΝΟ Κατηγορίες/Υποκατηγορίες** — το cascade καθαρίζει orphan Items σε transaction ως side-effect, χωρίς νέο UI ειδών. Το FK `RESTRICT` του §3 παραμένει· οι count/cascade queries ζουν στα **DAOs** (repos = error-mapping μόνο).
+- `canDeleteSupplierProvider` / `receiptCountSupplierProvider` (`FutureProvider.family`, 24-09-2026) → προ-έλεγχος προμηθευτή (`countBySupplierId == 0`, RESTRICT §3).
+- Scope CRUD: **Κατηγορίες/Υποκατηγορίες (Βήμα 4) + Προμηθευτές (24-09-2026)** — το cascade καθαρίζει orphan Items σε transaction ως side-effect, χωρίς νέο UI ειδών. Οι προμηθευτές ΔΕΝ έχουν cascade (RESTRICT §3 — μόνο καθαροί διαγράφονται)· η μετονομασία τους φαίνεται αυτόματα στις αποδείξεις (join). Το FK `RESTRICT` του §3 παραμένει· οι count/cascade queries ζουν στα **DAOs** (repos = error-mapping μόνο).
 
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
-- Το κουμπί διαγραφής **δεν** εμφανίζεται απλά "με error μετά το tap" — είναι **greyed-out με tooltip** (`AppMessages.itemCountTooltip(count)`) όταν `canDelete == false` (§1.4).
-- Edit ονόματος Κατηγορίας/Υποκατηγορίας περνάει από τον **ίδιο** case-insensitive duplicate-check validator με τη Φάση 3 (κοινό `domain/validators/name_validator.dart` — SPoT, όχι διπλή υλοποίηση).
+- Το κουμπί διαγραφής **δεν** εμφανίζεται απλά "με error μετά το tap" — είναι **greyed-out με tooltip** (`AppMessages.itemsInUseTooltip(count)` / `supplierReceiptsTooltip(count)`) όταν `canDelete == false` (§1.4).
+- Edit ονόματος Κατηγορίας/Υποκατηγορίας/Προμηθευτή περνάει από τον **ίδιο** case-insensitive duplicate-check validator με τη Φάση 3 (κοινό `domain/validators/name_validator.dart` — SPoT, όχι διπλή υλοποίηση)· no-op ΜΟΝΟ σε ακριβώς ίδιο κείμενο (24-09-2026)· dumb `CategoryEditDialog` με SPoT `labelText` (§1.6).
+- `inUseCount*`/`receiptCount*` (int siblings για tooltip) + refresh ορατών πυλών (one-shot families, IndexedStack) — σκόπιμα one-shot αντί live watches (24-09-2026: 124 μόνιμες συνδρομές απορρίφθηκαν· staleness ακίνδυνο — defense στον controller).
 
 **Backup/Restore — αναλυτική ροή (κλειδωμένη 23-09-2026)**
 1. **Export**: tap → `file_picker` save dialog, προτεινόμενο filename από `AppConstants.backupFileNamePattern` + timestamp → snapshot μέσω `VACUUM INTO 'path'` (WAL-safe) → `AppFeedback.showSuccess`. ΠΟΤΕ γραφή στο `backups/` του project (μόνο αρχεία βημάτων).
@@ -292,6 +302,8 @@ presentation/settings/
 |---|---|---|
 | `SearchableDropdownField` | Γενικό dropdown με αναζήτηση + slot για "+" νέο | Προμηθευτής, Κατηγορία, Υποκατηγορία, Unit |
 | `ConfirmDialog` | Γενικό επιβεβαιωτικό — **ΥΛΟΠΟΙΗΘΗΚΕ**: `showConfirmDialog` → `Future<bool?>` (true/false/`null`=dismiss)· SPoT defaults («Επιβεβαίωση», «Ναι»/«Ακύρωση»)· `isDestructive` (error styling) για διαγραφές· responsive §1.4 | Διαγραφή, Restore, έξοδος με unsaved data |
+| `DeleteGateButton` | Κουμπί πύλης διαγραφής (§2.3:275 · 24-09-2026): ενεργό/greyed+tooltip/retry — dumb, ο γονέας περνά `AsyncValue`s | Tree editor, supplier editor |
+| `runControllerOp` | Helper controller-op → feedback (ok/success, error/snackbar, DB/`userMessage`) — SPoT του pattern (§2.3 editors) | Tree editor, supplier editor |
 | `AsyncValueView<T>` | Wrapper πάνω στο `AsyncValue.when` με ενιαία loading/error εμφάνιση | Όλες οι οθόνες με δεδομένα |
 | `CurrencyTextField` | Input formatter με `priceDecimalDigits`, εμφανίζει €, μετατρέπει σε cents στο submit · προαιρετικό `errorText` (Βήμα 6δ) | Τιμή στη Φάση 3 |
 | `QuantityTextField` | Input formatter με `quantityDecimalDigits` + δέχεται flag `allowsDecimal` · προαιρετικό `errorText` (Βήμα 6δ) | Ποσότητα στη Φάση 3 |
@@ -346,12 +358,18 @@ presentation/settings/
   `unitRequired`). ΔΕΝ πυροδοτείται από programmatic αλλαγές (prefill, refresh
   overlay, label μετά από επιλογή/«+»): guard `_suppressOnChanged` στο `_onChanged`
   + όλες οι εσωτερικές γραφές περνούν από τον helper `_writeSilently`. Χρήση:
-  Unit dropdown στο `unit_quantity_price_section.dart` · και
-  στον προμηθευτή (`receipt_header_section.dart`, 22-09-2026): νέα
-  πληκτρολόγηση πάνω στον επιλεγμένο τον **αποεπιλέγει** από τη φόρμα
-  (`setSupplier(null)`) — το «Αποθήκευση Απόδειξης» μένει ανενεργό έως νέα
-  επιλογή · το τοπικό flag (για αυτή τη χρήση) αποτρέπει το `ref.listen`
-  epoch ώστε το πεδίο να κρατήσει το κείμενο του χρήστη.
+  Unit dropdown στο `unit_quantity_price_section.dart` · και στους διαλόγους
+  «+» (Βήμα 21).
+- **Κλείδωμα προμηθευτή (24-09-2026, όπως είδος §2.4)**: στο
+  `ReceiptHeaderSection` ο επιλεγμένος προμηθευτής ΔΕΝ μένει σε editable
+  πεδίο — το dropdown αντικαθίσταται από locked banner (`ListTile` με όνομα,
+  maxLines 1 + ellipsis, + `TextButton` reuse `AppStrings.changeItem`).
+  «Αλλαγή» → `setSupplier(null)` + epoch (φρέσκο άδειο dropdown)· καθαρισμός
+  φόρμας (save/reset/exit-Ναι) ξεκλειδώνει αυτόματα. Το dropdown υπάρχει ΜΟΝΟ
+  χωρίς επιλογή, άρα το `onCleared` είναι νεκρό και αφαιρέθηκε από αυτό το
+  call-site (το param παραμένει για το unit section, Β5ε-1). CORRECTION: η
+  συμπεριφορά 22-09 (typing-αποεπιλογή με `_clearedFromEdit` flag) αποσύρθηκε —
+  βλ. κεφ. 27/24-09-2026.
 - **Κείμενο πεδίου μετά την επιλογή (Βήμα 6ε)**: το `RawAutocomplete` γράφει
   στο πεδίο το `displayStringForOption(επιλογή)` — default `toString()` της
   γραμμής («Instance of '_CreateEntry<…>'»), που έμενε στο πεδίο όταν το
@@ -396,9 +414,9 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
                  quantity [REAL], priceCents [INTEGER], lineTotalCents [INTEGER])
 ```
 - `receiptNumber`: χρησιμοποιείται το **internal `INTEGER PRIMARY KEY AUTOINCREMENT` id της απόδειξης**. Η εφαρμογή είναι προσωπική και όχι φορολογικό βιβλίο, άρα οι πιθανές "τρύπες" στην αρίθμηση μετά από διαγραφή δεν είναι πρόβλημα. Αυτή την απόφαση την ορίζουμε ρητά στη Φάση 1 (δεν χρειάζεται ξεχωριστό sequence table/counter).
-- **`priceCents`**: ακέραιος σε λεπτά (μέγεθος ×100, π.χ. 2,50€ → 250). Το χρήμα αποθηκεύεται **ποτέ** ως float — όλα τα αθροίσματα/στατιστικά γίνονται σε ακέραιους χωρίς floating-point σφάλματα.
+- **`priceCents`**: ακέραιος σε λεπτά (μέγεθος ×100, π.χ. 2,50€ → 250). Το χρήμα αποθηκεύεται **ποτέ** ως float — όλα τα αθροίσματα/στατιστικά γίνονται σε ακέραιους χωρίς floating-point σφάλματα. Σε γραμμές «Συνολικής τιμής» (24-09-2026) η μοναδιαία **παράγεται** `(totalCents/quantity).round()` στη φόρμα — η βάση δέχεται πάντα μοναδιαία (καμία migration, τα στατιστικά €/μονάδα δουλεύουν).
 - **`quantity`**: REAL — φυσικό μέγεθος (κιλά/λίτρα/τεμάχια), δεν εμφανίζεται ποτέ μόνο του σε λογιστικό άθροισμα.
-- **`lineTotalCents`**: INTEGER, υπολογισμένο **μία φορά** κατά το insert `(priceCents * quantity).round()` — **όχι** Drift generated column (παραμένει ελεγχόμενο, testable, ανεξάρτητο από SQLite float handling). Κάθε επόμενος υπολογισμός (Φάση 5: μέσος όρος, σύνολο μήνα, σύγκριση προμηθευτών) δουλεύει **μόνο** σε `SUM(lineTotalCents)`.
+- **`lineTotalCents`**: INTEGER, υπολογισμένο **μία φορά** κατά το insert `(priceCents * quantity).round()` — **όχι** Drift generated column (παραμένει ελεγχόμενο, testable, ανεξάρτητο από SQLite float handling). Κάθε επόμενος υπολογισμός (Φάση 5: μέσος όρος, σύνολο μήνα, σύγκριση προμηθευτών) δουλεύει **μόνο** σε `SUM(lineTotalCents)`. Το πληκτρολογημένο σύνολο φυλάσσεται ως `DraftReceiptLine.enteredTotalCents` snapshot (display-only στο draft list — εξαίρεση Δ2 μόνο για αυτές τις γραμμές)· το stored σύνολο μπορεί να διαφέρει ±1 λεπτό (στρογγυλοποίηση παραγόμενης).
 - **`Unit.allowsDecimal`**: flag που ορίζει αν μια μονάδα δέχεται κλασματική ποσότητα (π.χ. Τεμάχιο=false, Κιλό=true). Χρησιμοποιείται από τη φόρμα εισαγωγής (Φάση 3) για απόρριψη τιμών όπως «2.5 τεμάχια».
 - **Foreign key policy** (απόφαση, Φάση 1):
   - `ON DELETE RESTRICT` για Category/SubCategory/Item/Supplier/Unit (ώστε να μην διαγράφονται αν έχουν δεδομένα — υλοποιεί απευθείας τον κανόνα της §2.3).
@@ -427,7 +445,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 1. Ορισμός Drift tables (§3).
 2. DAOs με βασικά CRUD + streams.
 3. **Seed δεδομένων** — bootstrap **μία φορά** στο Drift `onCreate` (νέο DB file), μέσα σε **ένα transaction**· όχι σε κάθε launch.
-   - **Μονάδες μέτρησης** (Τεμάχιο/τεμ `allowsDecimal=false`, Κιλό/κιλ `true`, Λίτρο/λτ `true`, Γραμμάριο/γρ, Χιλιοστόλιτρο/χλτ κ.λπ.) ως Dart seed constants — κάθε μονάδα με `name`, `abbreviation`, `allowsDecimal` (§3). Όχι hardcoded στο UI.
+   - **Μονάδες μέτρησης** (Τεμάχιο/τεμ `allowsDecimal=false`, Κιλό/κιλ `true`, Λίτρο/λτ `true`) ως Dart seed constants — κάθε μονάδα με `name`, `abbreviation`, `allowsDecimal` (§3). Όχι hardcoded στο UI.
    - **Κατηγορίες / Υποκατηγορίες / Είδη**: πηγή-αναφορά το `supermarket_categories_v2.md` (root repo, 9 κατηγορίες / 53 υποκατηγορίες / 535 είδη). Τα δεδομένα μεταγράφονται σε Dart seed constants στο `lib/data/local/seed/` (**πολλά αρχεία**, rule 7 — ένα ανά κατηγορία)· καμία runtime ανάγνωση του .md.
      - Κάθε Item εγγράφεται με `normalizedName = GreekTextNormalizer.normalize(name)` (**υπάρχον** SPoT util, §3) + έλεγχο μήκους `≤ AppConstants.maxItemNameLength`· κάθε Category με `createdAt`.
      - Το .md δεν ορίζει μονάδα ανά είδος → στο seed ορίζεται **προτεινόμενη** `defaultUnitId` από τη φύση του προϊόντος με βάση το `Unit.allowsDecimal` (Τεμάχιο για μετρητά, Κιλό για ζυγιζόμενα, Λίτρο για υγρά) — είναι πρόταση, όχι δεσμευτική (§2.2 επιτρέπει αλλαγή ανά γραμμή).
@@ -461,7 +479,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 1. **Theme persistence** (Light/Dark/Auto): `themeModeProvider` → **Notifier** πάνω σε `SettingsRepository` (SharedPreferences, SPoT keys §2.3) · `main.dart` γίνεται `ConsumerWidget` με `ref.watch(themeModeProvider)` → `MaterialApp.router.themeMode` (§2.3). **ΟΛΟΚΛΗΡΩΘΗΚΕ 23-09** ✓ (sync read · 762/762 · analyze καθαρό).
 2. **DAO counts + cascade guards** (Βήμα 2 — ΟΛΟΚΛΗΡΩΘΗΚΕ 23-09-2026): `countItemsByCategoryId`/`countItemsInUseByCategoryId` (+`...BySubCategoryId`) και `deleteWithContents` στα **DAOs** (§2.0.5), όχι στα Repositories (repos = error-mapping μόνο, §2.0.5:441 μοναδική εξαίρεση search). `countItems*` = πλήθος ειδών (confirm cascade Βήματος 4) · `countItemsInUse*` = COUNT(DISTINCT items.id) με ≥1 γραμμή (πύλη: `0` = καθαρή, εύρημα Α2 — το tooltip «Χ είδη έχουν καταχωρημένες τιμές» είναι νέο string Βήματος 4). Typed drift API (selectOnly+join+count, compile-time ονόματα) · cascade με subquery `isInQuery` σε ένα transaction · RESTRICT παραμένει.
 3. **Providers ελέγχου**: `canDeleteCategoryProvider`/`canDeleteSubCategoryProvider` (`FutureProvider.family<bool,int>`, §2.3:272) — προ-έλεγχος πριν ενεργό delete icon, tooltip «περιέχει X είδη» όταν blocked (§2.3:275).
-4. **SettingsPage + category tree editor** (Βήμα 4): CRUD Κατηγοριών/Υποκατηγοριών μόνο (§2.3 · cascade-delete Items side-effect, **όχι** νέο UI ειδών) · reuse ConfirmDialog (isDestructive) + NameValidator + AppFeedback + shared widgets (§2.4).
+4. **SettingsPage + category tree editor** (Βήμα 4 — **ΟΛΟΚΛΗΡΩΘΗΚΕ 23-09** ✓): CRUD Κατηγοριών/Υποκατηγοριών (§2.3 · cascade-delete Items side-effect) · reuse ConfirmDialog (isDestructive) + NameValidator + AppFeedback + shared widgets (§2.4) · 853/853 ✓. **CRUD προμηθευτών (24-09-2026)** — section + controller + editor (§2.3, RESTRICT, πύλη) · 897/897 ✓. **Seed 3 μονάδες (24-09-2026)** — Τεμάχιο/Κιλό/Λίτρο. **Editor fixes (24-09-2026)** — exact-match rename, keys/βέλος, 2 shared, dialog label, docs-cleanup · 896/896 ✓.
 5. **BackupService + UI** (Βήμα 5): Export = `VACUUM INTO 'path'` (snapshot WAL-safe, §2.3) · file_picker save dialog (§2.3) · Restore = validate → **confirm → auto-backup** → `closeSafely()` (idempotent, §2.3) → replace → **restart providers** (`ref.invalidate(appDatabaseProvider)`, §2.3).
 6. **Housekeeping** (Βήμα 6): splits >500 γρ. (κανόνας 7) · oldsessions.md update (1 κεφάλαιο) · backups recap · `flutter analyze` + full tests.
 
@@ -481,4 +499,4 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ## 5. Επόμενο Βήμα
 
-Είμαστε σε **Φάση 4 — Βήμα 2 (DAO counts + cascade) ΟΛΟΚΛΗΡΩΘΗΚΕ** (23-09-2026, κλειδωμένες διορθώσεις Α2 + ονόματα §4). Φάση 3 κλειστή (730/730, Βήμα 21 onChanged): νέα παράμετρος `ValueChanged<String>? onChanged` που καλείται **ΜΟΝΟ σε πραγματική πληκτρολόγηση** (guard `_suppressOnChanged` + helper `_writeSilently` για prefill/refresh/label μετά από επιλογή/«+» — όλες οι εσωτερικές γραφές περνούν από αυτόν) · micro-split `_buildEntryTile` στο part (κύριο αρχείο 497 γρ., <500) · καταναλωτές: dialog «+» (καθαρίζει `_categoryError`/`_subCategoryError` ήδη κατά την πληκτρολόγηση της διόρθωσης) + unit section (`_unitTyping` κρύβει το hint `unitRequired`). Πλευρικό κέρδος: μετά από επιλογή/«+» δεν τρέχει πλέον αχρείαστο debounced search με το label. Tests **730/730** ✓ (+6: T1-T4 · Z9 · V13)· `flutter analyze` **No issues** ✓ · backup `backups/2026-09-23_dropdown_onChanged/`. **Φάση 4 Βήμα 1 — Theme persistence ΟΛΟΚΛΗΡΩΘΗΚΕ** 23-09 (sync read + review fixes · 762/762 ✓ · analyze καθαρό · backup `backups/2026-09-23_fase4_b1_review/`). **Φάση 4 Βήμα 2 — DAO counts + cascade ΟΛΟΚΛΗΡΩΘΗΚΕ** 23-09 (Α2: `countItems*` + `countItemsInUse*` + `deleteWithContents` στα DAOs, typed drift, subquery cascade · 782/782 ✓ · analyze καθαρό · backup `backups/2026-09-23_fase4_b2_counts_cascade/`). **Φάση 4 Βήμα 3 — Providers ελέγχου ΟΛΟΚΛΗΡΩΘΗΚΕ** 23-09 (repo passthrough `countItemsInUse` + `CategoryTreeNode` + `categoryTreeStreamProvider`/`canDeleteCategoryProvider`/`canDeleteSubCategoryProvider` στο settings_providers · ευρήματα: Riverpod 3 retry + tree hasError-priority · 805/805 ✓ · analyze καθαρό · backup `backups/2026-09-23_fase4_b3_guards/`). **Επόμενο**: **Φάση 4 Βήμα 5 — BackupService + UI** (μόνο με ρητό OK). Ανοιχτά (χωρίς προγραμματισμένο Βήμα): tooltip-σύγκρουση Α2-1 vs §2.3:279 (επίλυση Βήμα 4) · housekeeping (split test αρχείων >500 γρ. αν χρειαστεί) · web exit-confirm (προαιρετικά αργότερα). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.
+Είμαστε σε **Φάση 4 — Βήματα 1–4 ΟΛΟΚΛΗΡΩΜΕΝΑ** (23-09-2026) + post-closure fixes 24-09 (κλείδωμα προμηθευτή · συνολική τιμή · 3 μονάδες · CRUD προμηθευτών · editor fixes — 896/896 ✓, λεπτομέρειες oldsessions κεφ. 27–31). Φάση 3 κλειστή (730/730, Βήμα 21 onChanged): νέα παράμετρος `ValueChanged<String>? onChanged` που καλείται **ΜΟΝΟ σε πραγματική πληκτρολόγηση** (guard `_suppressOnChanged` + helper `_writeSilently` για prefill/refresh/label μετά από επιλογή/«+» — όλες οι εσωτερικές γραφές περνούν από αυτόν) · micro-split `_buildEntryTile` στο part (κύριο αρχείο 497 γρ., <500) · καταναλωτές: dialog «+» (καθαρίζει `_categoryError`/`_subCategoryError` ήδη κατά την πληκτρολόγηση της διόρθωσης) + unit section (`_unitTyping` κρύβει το hint `unitRequired`). Πλευρικό κέρδος: μετά από επιλογή/«+» δεν τρέχει πλέον αχρείαστο debounced search με το label. Tests **730/730** ✓ (+6: T1-T4 · Z9 · V13)· `flutter analyze` **No issues** ✓ · backup `backups/2026-09-23_dropdown_onChanged/`. **Φάση 4 Βήμα 1 — Theme persistence ΟΛΟΚΛΗΡΩΘΗΚΕ** 23-09 (sync read + review fixes · 762/762 ✓ · analyze καθαρό · backup `backups/2026-09-23_fase4_b1_review/`). **Φάση 4 Βήμα 2 — DAO counts + cascade ΟΛΟΚΛΗΡΩΘΗΚΕ** 23-09 (Α2: `countItems*` + `countItemsInUse*` + `deleteWithContents` στα DAOs, typed drift, subquery cascade · 782/782 ✓ · analyze καθαρό · backup `backups/2026-09-23_fase4_b2_counts_cascade/`). **Φάση 4 Βήμα 3 — Providers ελέγχου ΟΛΟΚΛΗΡΩΘΗΚΕ** 23-09 (repo passthrough `countItemsInUse` + `CategoryTreeNode` + `categoryTreeStreamProvider`/`canDeleteCategoryProvider`/`canDeleteSubCategoryProvider` στο settings_providers · ευρήματα: Riverpod 3 retry + tree hasError-priority · 805/805 ✓ · analyze καθαρό · backup `backups/2026-09-23_fase4_b3_guards/`). **Επόμενο**: **Φάση 4 Βήμα 5 — BackupService + UI** (μόνο με ρητό OK). Κλειστά ανοιχτά: tooltip-conflict Α2-1 vs §2.3 — **ΕΚΛΕΙΣΕ 24-09** (νεκρό `itemCountTooltip` διαγράφηκε) · housekeeping (split test αρχείων >500 γρ. αν χρειαστεί) · web exit-confirm (προαιρετικά αργότερα). Ο έλεγχος βρίσκεται σε κάθε Βήμα: το υποβήμα κλείνει μόνο με ρητό OK, tests + analyze πράσινα και ενημέρωση τεκμηρίωσης.

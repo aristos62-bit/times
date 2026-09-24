@@ -91,15 +91,10 @@ void main() {
       expect(AppMessages.subCategoryDeleted, 'Η υποκατηγορία διαγράφηκε');
     });
 
-    test('itemsInUseTooltip — διακριτό από itemCountTooltip (Α2-1 · Βήμα 4)',
-        () {
+    test('itemsInUseTooltip — πλήθος ειδών σε χρήση (Α2-1 · Βήμα 4)', () {
       expect(
         AppMessages.itemsInUseTooltip(3),
         'Δεν μπορεί να διαγραφεί: 3 είδη έχουν καταχωρημένες τιμές',
-      );
-      expect(
-        AppMessages.itemsInUseTooltip(3) == AppMessages.itemCountTooltip(3),
-        isFalse,
       );
     });
 
@@ -115,24 +110,24 @@ void main() {
       );
     });
 
-    // ─── Dynamic tooltips (§2.3.252) ────────────────────────────────────────
-    test('itemCountTooltip(0) — edge case (§2.3.252)', () {
+    // ─── Suppliers CRUD (§2.3 · 24-09-2026) ─────────────────────────────────
+    test('supplierUpdated/supplierDeleted (§2.3)', () {
+      expect(AppMessages.supplierUpdated, 'Ο προμηθευτής ενημερώθηκε');
+      expect(AppMessages.supplierDeleted, 'Ο προμηθευτής διαγράφηκε');
+    });
+
+    test('deleteSupplierConfirm — χωρίς cascade-διατύπωση (RESTRICT §3)', () {
       expect(
-        AppMessages.itemCountTooltip(0),
-        'Δεν μπορεί να διαγραφεί: περιέχει 0 είδη',
+        AppMessages.deleteSupplierConfirm('Μάρκος'),
+        'Διαγραφή προμηθευτή "Μάρκος";',
       );
     });
 
-    test('itemCountTooltip(5) — typical (§2.3.252)', () {
+    test('supplierReceiptsTooltip — πλήθος αποδείξεων (§2.3)', () {
       expect(
-        AppMessages.itemCountTooltip(5),
-        'Δεν μπορεί να διαγραφεί: περιέχει 5 είδη',
+        AppMessages.supplierReceiptsTooltip(2),
+        'Δεν μπορεί να διαγραφεί: 2 αποδείξεις',
       );
-    });
-
-    // ─── Pattern check ──────────────────────────────────────────────────────
-    test('itemCountTooltip είναι static method, επιστρέφει String', () {
-      expect(AppMessages.itemCountTooltip(1), isA<String>());
     });
 
     // ─── Καθολικός έλεγχος ποιότητας (ίδιο pattern με app_strings_test) ─────
@@ -165,4 +160,6 @@ const List<String> _allConstStrings = [
   AppMessages.subCategoryAdded,
   AppMessages.subCategoryUpdated,
   AppMessages.subCategoryDeleted,
+  AppMessages.supplierUpdated,
+  AppMessages.supplierDeleted,
 ];

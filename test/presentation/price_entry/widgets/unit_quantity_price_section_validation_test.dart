@@ -350,6 +350,95 @@ void main() {
     });
   });
 
+  group('UnitQuantityPriceSection — συνολική τιμή (24-09-2026)', () {
+    testWidgets('T1: 0,350 κιλ + σύνολο 12 € → μοναδιαία 3429 + snapshot',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db); // default = Κιλό
+      await pumpAt(tester, seeded.item, db);
+
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+      await enter(tester, AppStrings.fieldQuantity, '0,350');
+      await enter(tester, AppStrings.fieldPrice, '12');
+      await tester.tap(
+        find.widgetWithText(FilledButton, AppStrings.addReceiptLine),
+      );
+      await tester.pumpAndSettle();
+
+      final lines =
+          containerOf(tester).read(receiptFormControllerProvider).draftLines;
+      expect(lines, hasLength(1));
+      // 1200 / 0.35 = 3428.57 → 3429 μοναδιαία, snapshot το 1200.
+      // (Η προβολή συνόλου ελέγχεται στο draft_lines_list_test.)
+      expect(lines[0].priceCents, 3429);
+      expect(lines[0].enteredTotalCents, 1200);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('T2: toggle OFF (default) → μοναδιαία, χωρίς snapshot',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      expect(
+        tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isFalse,
+      );
+      await enter(tester, AppStrings.fieldPrice, '2,50');
+      await tester.tap(
+        find.widgetWithText(FilledButton, AppStrings.addReceiptLine),
+      );
+      await tester.pumpAndSettle();
+
+      final lines =
+          containerOf(tester).read(receiptFormControllerProvider).draftLines;
+      expect(lines, hasLength(1));
+      expect(lines[0].priceCents, 250);
+      expect(lines[0].enteredTotalCents, isNull);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('T3: παραγόμενη πάνω από το όριο → priceTooLarge + Add ανενεργό',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+      await enter(tester, AppStrings.fieldQuantity, '0,001');
+      await enter(tester, AppStrings.fieldPrice, '99999,99');
+
+      // 9999999 / 0.001 → υπέρβαση maxPriceCents.
+      expect(find.text(AppErrors.priceTooLarge), findsOneWidget);
+      expect(addEnabled(tester), isFalse);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('T4: παραγόμενη μηδενική → priceMustBePositive + Add ανενεργό',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+      await enter(tester, AppStrings.fieldQuantity, '1000000');
+      await enter(tester, AppStrings.fieldPrice, '0,01');
+
+      // 1 / 1000000 → round 0.
+      expect(find.text(AppErrors.priceMustBePositive), findsOneWidget);
+      expect(addEnabled(tester), isFalse);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
   group('UnitQuantityPriceSection — responsive + dark (Βήμα 6δ, §1.4)', () {
     for (final size in const [
       Size(320, 568),

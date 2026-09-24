@@ -27,34 +27,14 @@ import '../../../data/local/app_database.dart';
 import '../../../data/models/category_tree_node.dart';
 import '../../../data/providers/settings_providers.dart';
 import '../../shared/confirm_dialog.dart';
+import '../../shared/controller_op_runner.dart';
+import '../../shared/delete_gate_button.dart';
 import '../controllers/category_management_controller.dart';
 import 'category_edit_dialog.dart';
 
 /// Tree editor «Κατηγορία ▸ Υποκατηγορίες» με CRUD (§2.3 · Βήμα 4).
 class CategoryTreeEditor extends ConsumerWidget {
   const CategoryTreeEditor({super.key});
-
-  /// Κοινός δρόμος controller-op → feedback: ok→success· validation/dup
-  /// error→snackbar σφάλματος· DB (`DataLoadException`, λογκαρισμένο στον
-  /// DAO guard) → `userMessage` (pattern `_save` του save button).
-  Future<void> _runOp(
-    BuildContext context,
-    Future<({bool ok, String? error})> Function() op,
-    String successMessage,
-  ) async {
-    try {
-      final result = await op();
-      if (!context.mounted) return;
-      if (result.ok) {
-        AppFeedback.showSuccess(context, successMessage);
-      } else if (result.error != null) {
-        AppFeedback.showError(context, result.error!);
-      }
-    } on DataLoadException catch (e) {
-      if (!context.mounted) return;
-      AppFeedback.showError(context, e.userMessage);
-    }
-  }
 
   /// Προσθήκη κατηγορίας: dialog → controller → feedback (dup → snackbar
   /// `nameExists`, όπως το `supplierExists` του header §2.4).
@@ -63,9 +43,10 @@ class CategoryTreeEditor extends ConsumerWidget {
       context,
       title: AppStrings.addNewCategory,
       confirmLabel: AppStrings.newItemSave,
+      labelText: AppStrings.fieldCategory,
     );
     if (name == null || !context.mounted) return;
-    await _runOp(
+    await runControllerOp(
       context,
       () => ref
           .read(categoryManagementControllerProvider.notifier)
@@ -85,9 +66,10 @@ class CategoryTreeEditor extends ConsumerWidget {
       title: AppStrings.fieldCategory,
       confirmLabel: AppStrings.saveAction,
       initialName: category.name,
+      labelText: AppStrings.fieldCategory,
     );
     if (name == null || !context.mounted) return;
-    await _runOp(
+    await runControllerOp(
       context,
       () => ref
           .read(categoryManagementControllerProvider.notifier)
@@ -120,7 +102,7 @@ class CategoryTreeEditor extends ConsumerWidget {
       isDestructive: true,
     );
     if (confirmed != true || !context.mounted) return;
-    await _runOp(
+    await runControllerOp(
       context,
       () => controller.deleteCategory(category.id),
       AppMessages.categoryDeleted,
@@ -137,9 +119,10 @@ class CategoryTreeEditor extends ConsumerWidget {
       context,
       title: AppStrings.addNewSubCategory,
       confirmLabel: AppStrings.newItemSave,
+      labelText: AppStrings.fieldSubCategory,
     );
     if (name == null || !context.mounted) return;
-    await _runOp(
+    await runControllerOp(
       context,
       () => ref
           .read(categoryManagementControllerProvider.notifier)
@@ -159,9 +142,10 @@ class CategoryTreeEditor extends ConsumerWidget {
       title: AppStrings.fieldSubCategory,
       confirmLabel: AppStrings.saveAction,
       initialName: sub.name,
+      labelText: AppStrings.fieldSubCategory,
     );
     if (name == null || !context.mounted) return;
-    await _runOp(
+    await runControllerOp(
       context,
       () => ref
           .read(categoryManagementControllerProvider.notifier)
@@ -194,45 +178,10 @@ class CategoryTreeEditor extends ConsumerWidget {
       isDestructive: true,
     );
     if (confirmed != true || !context.mounted) return;
-    await _runOp(
+    await runControllerOp(
       context,
       () => controller.deleteSubCategory(sub.id),
       AppMessages.subCategoryDeleted,
-    );
-  }
-
-  /// Κουμπί διαγραφής με πύλη (§2.3:275): καθαρή → ενεργό· μπλοκαρισμένη →
-  /// greyed + tooltip με πλήθος· loading/error πύλης → ανενεργό (+tap retry
-  /// σε error). Ερώτηση Βήματος 4 (Q5).
-  Widget _deleteGate({
-    required AsyncValue<bool> canDelete,
-    required AsyncValue<int> inUse,
-    required VoidCallback? onDelete,
-    required VoidCallback onRetry,
-    required bool working,
-  }) {
-    final ok = canDelete.value;
-    if (ok == true) {
-      return IconButton(
-        icon: const Icon(Icons.delete_outline),
-        tooltip: AppStrings.deleteAction,
-        onPressed: working ? null : onDelete,
-      );
-    }
-    if (canDelete.hasError) {
-      return IconButton(
-        icon: const Icon(Icons.delete_outline),
-        tooltip: AppErrors.loadDataFailed,
-        onPressed: onRetry,
-      );
-    }
-    final count = inUse.value;
-    return IconButton(
-      icon: const Icon(Icons.delete_outline),
-      tooltip: ok == false && count != null
-          ? AppMessages.itemsInUseTooltip(count)
-          : AppStrings.deleteAction,
-      onPressed: null,
     );
   }
 
@@ -262,9 +211,10 @@ class CategoryTreeEditor extends ConsumerWidget {
                 ? null
                 : () => _renameSubCategory(context, ref, sub),
           ),
-          _deleteGate(
+          DeleteGateButton(
             canDelete: ref.watch(canDeleteSubCategoryProvider(sub.id)),
-            inUse: ref.watch(inUseCountSubCategoryProvider(sub.id)),
+            count: ref.watch(inUseCountSubCategoryProvider(sub.id)),
+            blockedTooltip: AppMessages.itemsInUseTooltip,
             onDelete: () => _deleteSubCategory(context, ref, sub),
             onRetry: () {
               ref.invalidate(canDeleteSubCategoryProvider(sub.id));
@@ -279,6 +229,11 @@ class CategoryTreeEditor extends ConsumerWidget {
 
   /// Κόμβος κατηγορίας: ExpansionTile (tap τίτλου = expand) + edit/διαγραφή
   /// στο trailing + παιδιά υποκατηγορίες + κουμπί «+» υποκατηγορίας.
+  /// `ValueKey` ανά κατηγορία (24-09-2026): το expand state ακολουθεί την
+  /// οντότητα, όχι τη θέση (μετονομασία αλλάζει την αλφαβητική σειρά)·
+  /// `controlAffinity: leading` ΧΩΡΙΣ `leading` icon — το SDK δείχνει το βέλος
+  /// ΜΟΝΟ όταν δεν δίνεται leading (`leading ?? arrow`), και το trailing με
+  /// τα actions θα το έκρυβε (δεν φαινόταν ότι ανοίγει).
   Widget _categoryTile(
     BuildContext context,
     WidgetRef ref,
@@ -287,7 +242,8 @@ class CategoryTreeEditor extends ConsumerWidget {
   ) {
     final category = node.category;
     return ExpansionTile(
-      leading: const Icon(Icons.category_outlined),
+      key: ValueKey(category.id),
+      controlAffinity: ListTileControlAffinity.leading,
       title: Text(
         category.name,
         maxLines: 1,
@@ -303,9 +259,10 @@ class CategoryTreeEditor extends ConsumerWidget {
                 ? null
                 : () => _renameCategory(context, ref, category),
           ),
-          _deleteGate(
+          DeleteGateButton(
             canDelete: ref.watch(canDeleteCategoryProvider(category.id)),
-            inUse: ref.watch(inUseCountCategoryProvider(category.id)),
+            count: ref.watch(inUseCountCategoryProvider(category.id)),
+            blockedTooltip: AppMessages.itemsInUseTooltip,
             onDelete: () => _deleteCategory(context, ref, category),
             onRetry: () {
               ref.invalidate(canDeleteCategoryProvider(category.id));

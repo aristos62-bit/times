@@ -15,10 +15,12 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../data/providers/settings_providers.dart';
 import 'widgets/category_tree_editor.dart';
+import 'widgets/supplier_list_editor.dart';
 import 'widgets/theme_mode_selector.dart';
 
 /// Σελίδα ρυθμίσεων (§2.3) — section «Θέμα» (Βήμα 1) + section «Κατηγορίες»
-/// με tree editor (Βήμα 4). Το Backup section έρχεται στο Βήμα 5.
+/// με tree editor (Βήμα 4) + section «Προμηθευτές» (CRUD 24-09-2026).
+/// Το Backup section έρχεται στο Βήμα 5.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -68,7 +70,26 @@ class SettingsPage extends ConsumerWidget {
                   const SizedBox(height: AppConstants.spacingM),
                   // Tree editor (§2.3 · Βήμα 4): ζωντανό δέντρο + CRUD με
                   // πύλη διαγραφής — βλέπει DB providers (όχι μόνο prefs).
-                  CategoryTreeEditor(),
+                  const CategoryTreeEditor(),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingL),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(AppConstants.spacingL),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    AppStrings.titleSuppliersSection,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppConstants.spacingM),
+                  // Supplier editor (§2.3 · CRUD 24-09-2026): ζωντανή λίστα
+                  // + CRUD με πύλη διαγραφής (RESTRICT §3).
+                  const SupplierListEditor(),
                 ],
               ),
             ),

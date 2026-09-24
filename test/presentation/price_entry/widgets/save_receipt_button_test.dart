@@ -400,6 +400,9 @@ class _FailingReceiptRepo implements ReceiptRepository {
   @override
   Future<Receipt?> getById(int id) => throw const DataLoadException();
   @override
+  Future<int> countBySupplierId(int supplierId) =>
+      throw const DataLoadException();
+  @override
   Future<int> insert({required DateTime date, required int supplierId}) =>
       throw const DataLoadException();
   @override
@@ -441,6 +444,9 @@ class _BlockingReceiptRepo implements ReceiptRepository {
       inner.updateById(id, date: date, supplierId: supplierId);
   @override
   Future<bool> deleteById(int id) => inner.deleteById(id);
+  @override
+  Future<int> countBySupplierId(int supplierId) =>
+      inner.countBySupplierId(supplierId);
   @override
   Stream<List<ReceiptLine>> watchLines(int receiptId) =>
       inner.watchLines(receiptId);

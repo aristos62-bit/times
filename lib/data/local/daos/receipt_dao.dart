@@ -79,6 +79,24 @@ class ReceiptDao extends BaseDao {
             ),
       );
 
+  /// Μετράει τις αποδείξεις ενός προμηθευτή — Ρυθμίσεις, CRUD προμηθευτών
+  /// (24-09-2026, §2.3).
+  ///
+  /// Χρήση: πύλη διαγραφής — `0` = καθαρός (επιτρέπεται delete), `>0` =
+  /// μπλοκαρισμένος (greyed-out + tooltip «Ν αποδείξεις», πατρόν Βήματος 4).
+  /// Typed drift API (selectOnly + count, compile-time ονόματα — Α2).
+  Future<int> countBySupplierId(int supplierId) => guard(
+        'Μέτρηση αποδείξεων προμηθευτή',
+        () async {
+          final countExp = db.receipts.id.count();
+          final query = db.selectOnly(db.receipts)
+            ..addColumns([countExp])
+            ..where(db.receipts.supplierId.equals(supplierId));
+          final row = await query.getSingle();
+          return row.read(countExp) ?? 0;
+        },
+      );
+
   /// Διαβάζει μία απόδειξη ή null αν δεν υπάρχει.
   Future<Receipt?> getById(int id) => guard(
         'Ανάγνωση απόδειξης',

@@ -126,15 +126,27 @@ void main() {
       );
     });
 
-    test('ίδιο όνομα (άλλη πεζότητα) → ok no-op, χωρίς write', () async {
+    test('ίδιο κείμενο → ok no-op, χωρίς write', () async {
       final id = await container
           .read(categoryRepositoryProvider)
           .insert(name: 'ΤΡΟΦΙΜΑ');
-      final result = await controller().renameCategory(id, 'τροφιμα');
+      final result = await controller().renameCategory(id, 'ΤΡΟΦΙΜΑ');
       expect(result, (ok: true, error: null));
       expect(
         (await container.read(categoryRepositoryProvider).getById(id))!.name,
         'ΤΡΟΦΙΜΑ',
+      );
+    });
+
+    test('ίδιο όνομα, άλλη πεζότητα → ΓΡΑΦΕΤΑΙ (24-09-2026)', () async {
+      final id = await container
+          .read(categoryRepositoryProvider)
+          .insert(name: 'ΤΡΟΦΙΜΑ');
+      final result = await controller().renameCategory(id, 'Τρόφιμα');
+      expect(result, (ok: true, error: null));
+      expect(
+        (await container.read(categoryRepositoryProvider).getById(id))!.name,
+        'Τρόφιμα',
       );
     });
 

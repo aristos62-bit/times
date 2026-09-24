@@ -18,6 +18,11 @@ part 'receipt_form_state.freezed.dart';
 /// Καθρέφτης των ορισμάτων του `ReceiptLineDao.insert` (χωρίς `receiptId` /
 /// `lineTotalCents` — αυτά υπολογίζονται/εισάγονται στο save, Βήμα 5δ).
 /// Ίδιο είδος σε πολλές γραμμές ΕΠΙΤΡΕΠΕΤΑΙ — δεν γίνεται merge (§2.2:237).
+/// `enteredTotalCents` (24-09-2026): snapshot του πληκτρολογημένου συνόλου
+/// ΜΟΝΟ σε γραμμές «Συνολικής τιμής» (αλλιώς null) — το draft list το δείχνει
+/// χωρίς επαν-υπολογισμό (SPoT μαθηματικών το DAO)· το stored σύνολο
+/// `(priceCents×quantity).round()` μπορεί να διαφέρει ±1 λεπτό (στρογγυλοποίηση
+/// παραγόμενης μοναδιαίας — τεκμηριωμένο, με test).
 class DraftReceiptLine {
   const DraftReceiptLine({
     required this.itemId,
@@ -27,6 +32,7 @@ class DraftReceiptLine {
     required this.itemName,
     required this.unitAbbreviation,
     this.unitAllowsDecimal = true,
+    this.enteredTotalCents,
   });
 
   /// Id του είδους (FK → Items).
@@ -56,6 +62,11 @@ class DraftReceiptLine {
   /// καλούντες άθικτοι)· το section περνά την πραγματική τιμή στο Βήμα 6δ.
   final bool unitAllowsDecimal;
 
+  /// Snapshot πληκτρολογημένου συνόλου (λεπτά) — ΜΟΝΟ γραμμές «Συνολικής
+  /// τιμής» (24-09-2026) το έχουν non-null· αλλιώς null (μοναδιαία τιμή).
+  /// Nullable με default null = υπάρχοντες καλούντες/tests άθικτοι.
+  final int? enteredTotalCents;
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -66,7 +77,8 @@ class DraftReceiptLine {
               other.priceCents == priceCents &&
               other.itemName == itemName &&
               other.unitAbbreviation == unitAbbreviation &&
-              other.unitAllowsDecimal == unitAllowsDecimal;
+              other.unitAllowsDecimal == unitAllowsDecimal &&
+              other.enteredTotalCents == enteredTotalCents;
 
   @override
   int get hashCode => Object.hash(
@@ -77,6 +89,7 @@ class DraftReceiptLine {
     itemName,
     unitAbbreviation,
     unitAllowsDecimal,
+    enteredTotalCents,
   );
 }
 

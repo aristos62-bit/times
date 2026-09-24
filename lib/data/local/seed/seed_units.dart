@@ -10,6 +10,4 @@ const List<UnitSeed> seedUnits = <UnitSeed>[
   (name: 'Τεμάχιο', abbreviation: 'τεμ', allowsDecimal: false),
   (name: 'Κιλό', abbreviation: 'κιλ', allowsDecimal: true),
   (name: 'Λίτρο', abbreviation: 'λτ', allowsDecimal: true),
-  (name: 'Γραμμάριο', abbreviation: 'γρ', allowsDecimal: true),
-  (name: 'Χιλιοστόλιτρο', abbreviation: 'χλτ', allowsDecimal: true),
 ];
