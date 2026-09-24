@@ -3,10 +3,9 @@
 /// Στοιχείο του App Shell: ο `AppShell` δίνει το Scaffold με NavigationBar
 /// και η σελίδα προσθέτει δικό της nested Scaffold (AppBar + σώμα).
 /// Watches: `themeModeProvider` (section «Θέμα», SharedPreferences — ΟΧΙ η
-/// βάση) + `categoryTreeStreamProvider` (section «Κατηγορίες», Βήμα 4) +
-/// `receiptsByDayStreamProvider`/`selectedReceiptDayProvider` (section
-/// «Αποδείξεις», Φάση Β — η βάση ανοίγει και από εδώ· στο launch είναι ήδη
-/// ανοιχτή μέσω PriceEntry, IndexedStack §2.2:221/Α1).
+/// βάση) + `categoryTreeStreamProvider` (section «Κατηγορίες», Βήμα 4 —
+/// η βάση ανοίγει και από εδώ· στο launch είναι ήδη ανοιχτή μέσω PriceEntry,
+/// IndexedStack §2.2:221/Α1).
 /// Sections «Κατηγορίες»/«Προμηθευτές» collapsible (24-09-2026): κλειστά
 /// εξ αρχής (`ExpansionTile` default) — καθαρή είσοδος στη σελίδα· tap
 /// δείχνει τον editor ως ήταν. Το expand-state επιβιώνει σε αλλαγή tab
@@ -20,14 +19,12 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../data/providers/settings_providers.dart';
 import 'widgets/category_tree_editor.dart';
-import 'widgets/receipts_management_editor.dart';
 import 'widgets/supplier_list_editor.dart';
 import 'widgets/theme_mode_selector.dart';
 
 /// Σελίδα ρυθμίσεων (§2.3) — section «Θέμα» (Βήμα 1 · πάντα ορατό) +
 /// collapsible sections «Κατηγορίες» (tree editor, Βήμα 4) + «Προμηθευτές»
-/// (CRUD 24-09-2026) + «Αποδείξεις» (διαχείριση, Φάση Β 24-09-2026).
-/// Το Backup section έρχεται στο Βήμα 5.
+/// (CRUD 24-09-2026). Το Backup section έρχεται στο Βήμα 5.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -100,24 +97,6 @@ class SettingsPage extends ConsumerWidget {
               // Supplier editor (§2.3 · CRUD 24-09-2026): ζωντανή λίστα
               // + CRUD με πύλη διαγραφής (RESTRICT §3).
               children: const [SupplierListEditor()],
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingL),
-          Card(
-            // Collapsible section (§2.3 · Φάση Β): φίλτρο ημέρας + λίστα
-            // με edit/delete (reuse controller Φάσης Α, §2.4).
-            child: ExpansionTile(
-              title: Text(
-                AppStrings.titleReceiptsSection,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              childrenPadding: const EdgeInsets.fromLTRB(
-                AppConstants.spacingL,
-                0,
-                AppConstants.spacingL,
-                AppConstants.spacingL,
-              ),
-              children: const [ReceiptsManagementEditor()],
             ),
           ),
         ],

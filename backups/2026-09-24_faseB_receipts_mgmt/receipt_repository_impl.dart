@@ -50,16 +50,6 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
           );
 
   @override
-  Stream<List<ReceiptSummary>> watchSummariesByDay({
-    required DateTime day,
-    required int limit,
-  }) =>
-      _receiptDao.watchSummariesByDay(day: day, limit: limit).handleError(
-            (Object e, StackTrace s) =>
-                Error.throwWithStackTrace(const DataLoadException(), s),
-          );
-
-  @override
   Future<Receipt?> getById(int id) => _guard(() => _receiptDao.getById(id));
 
   @override

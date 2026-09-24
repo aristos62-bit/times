@@ -285,7 +285,6 @@ presentation/settings/
 - `canDeleteCategoryProvider` / `canDeleteSubCategoryProvider` (`FutureProvider.family<bool, int>`) → **προ-έλεγχος** (μετράει συνδεδεμένα Items/ReceiptLines) πριν καν εμφανιστεί ενεργό το εικονίδιο διαγραφής.
 - `canDeleteSupplierProvider` / `receiptCountSupplierProvider` (`FutureProvider.family`, 24-09-2026) → προ-έλεγχος προμηθευτή (`countBySupplierId == 0`, RESTRICT §3).
 - Scope CRUD: **Κατηγορίες/Υποκατηγορίες (Βήμα 4) + Προμηθευτές (24-09-2026)** — το cascade καθαρίζει orphan Items σε transaction ως side-effect, χωρίς νέο UI ειδών. Οι προμηθευτές ΔΕΝ έχουν cascade (RESTRICT §3 — μόνο καθαροί διαγράφονται)· η μετονομασία τους φαίνεται αυτόματα στις αποδείξεις (join). Το FK `RESTRICT` του §3 παραμένει· οι count/cascade queries ζουν στα **DAOs** (repos = error-mapping μόνο).
-- **Διαχείριση αποδείξεων (Φάση Β · 24-09-2026)**: section «Αποδείξεις» (collapsible Card) — φίλτρο ημέρας (`selectedReceiptDayProvider`, null = όλες· `receiptsByDayStreamProvider`) + λίστα συνόψεων (shared `ReceiptSummaryTile`) + μολύβι (load + `goNamed` Εισαγωγή, reuse controller Φάσης Α) + κάδος (confirm + CASCADE). Data: `ReceiptDao.watchSummariesByDay` (WHERE ημέρας) + `manageReceiptsLimit` (100)· SPoT +3/+1.
 
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
 - Το κουμπί διαγραφής **δεν** εμφανίζεται απλά "με error μετά το tap" — είναι **greyed-out με tooltip** (`AppMessages.itemsInUseTooltip(count)` / `supplierReceiptsTooltip(count)`) όταν `canDelete == false` (§1.4).

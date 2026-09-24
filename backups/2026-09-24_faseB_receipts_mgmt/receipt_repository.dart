@@ -30,13 +30,6 @@ abstract interface class ReceiptRepository {
   /// (ReceiptSummary) για τη read-only λίστα (Φάση 3, Βήμα 7 §2.2).
   Stream<List<ReceiptSummary>> watchRecentSummaries({required int limit});
 
-  /// Παρακολουθεί τις αποδείξεις μίας ημέρας με σύνοψη (§2.3 · Φάση Β).
-  /// Passthrough στο DAO (Βήμα 2).
-  Stream<List<ReceiptSummary>> watchSummariesByDay({
-    required DateTime day,
-    required int limit,
-  });
-
   /// Διαβάζει μία απόδειξη ή null αν δεν υπάρχει.
   Future<Receipt?> getById(int id);
 

@@ -51,7 +51,6 @@
 | 31 | [Editors: rename-fix, shared, docs-cleanup](oldsessions/2026-09-24_editor_fixes.md) | 24-09-2026 | Κλειστό | exact-match rename + self-clash + keys/βέλος + 2 shared + dialog label + νεκρό tooltip out · editor 422→366 · **896/896** ✓ (−3+2) · analyze καθαρό |
 | 32 | [Φάση 3 — post-closure: επεξεργασία + διαγραφή απόδειξης](oldsessions/2026-09-24_receipt_edit_delete.md) | 24-09-2026 | Κλειστό | Μολύβι (editingId, φόρτωση στη φόρμα) + κόκκινος κάδος (confirm, CASCADE) στη λίστα · `updateReceiptWithLines` (repo transaction) · ευρήματα Ε1–Ε3 (isSaving catch-all, drift-export, watch-FakeAsync→getLines) · **924/924** ✓ (+28) · analyze καθαρό |
 | 33 | [Ρυθμίσεις: collapsible sections](oldsessions/2026-09-24_settings_expandable.md) | 24-09-2026 | Κλειστό | «Κατηγορίες»/«Προμηθευτές» κλειστά by default (`ExpansionTile`) · 2 updates + 2 νέα tests · **926/926** ✓ (+2) · analyze καθαρό |
-| 34 | [Φάση 3 — post-closure: Διαχείριση αποδείξεων (Φάση Β)](oldsessions/2026-09-24_faseB_receipts_mgmt.md) | 24-09-2026 | Κλειστό | Section «Αποδείξεις» (φίλτρο ημέρας + λίστα + edit-άλμα + delete) · `watchSummariesByDay` + shared tile · ευρήματα Ε1–Ε4 (StateProvider, fakes, off-screen) · **945/945** ✓ (+19) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)

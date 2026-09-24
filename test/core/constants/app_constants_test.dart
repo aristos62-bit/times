@@ -177,6 +177,10 @@ void main() {
       expect(AppConstants.maxReceiptLines, 100);
     });
 
+    test('manageReceiptsLimit = 100 (διαχείριση αποδείξεων, §2.3 · Φάση Β)', () {
+      expect(AppConstants.manageReceiptsLimit, 100);
+    });
+
     test('limits invariants: όλα > 0, lines >= items limit', () {
       expect(AppConstants.recentReceiptsLimit, greaterThan(0));
       expect(AppConstants.maxReceiptLines, greaterThan(0));

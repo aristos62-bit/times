@@ -119,13 +119,8 @@ abstract final class AppConstants {
   static const int datePickerLastYear = 2100;
 
   // ─── Lists / Limits ────────────────────────────────────────────────────────
-  // Πλήθος τελευταίων αποδείξεων στη λίστα PriceEntry (Φάση 3).
+  // Πλήθος τελευταίων αποδείξεων στη placeholder λίστα (Φάση 3).
   static const int recentReceiptsLimit = 20;
-
-  // Πλήθος αποδείξεων στη «Διαχείριση αποδείξεων» (§2.3 · Φάση Β): η λίστα
-  // μεγαλώνει απεριόριστα στη βάση, οπότε το άφιλτρο προβάλλει τις Ν
-  // νεότερες (τεκμηριωμένο όριο προσωπικής χρήσης — όχι απόκρυψη σφάλματος).
-  static const int manageReceiptsLimit = 100;
 
   // Μέγιστες γραμμές ειδών ανά απόδειξη (καλάθι).
   static const int maxReceiptLines = 100;

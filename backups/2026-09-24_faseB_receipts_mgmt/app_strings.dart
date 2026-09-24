@@ -139,15 +139,4 @@ abstract final class AppStrings {
   static const String titleSuppliersSection = 'Προμηθευτές';
   /// Κενή κατάσταση της λίστας προμηθευτών (§2.3).
   static const String suppliersEmpty = 'Δεν υπάρχουν προμηθευτές ακόμα';
-
-  // ─── Receipts section (§2.3 · Φάση Β 24-09-2026) ───────────────────────────
-  /// Τίτλος του section «Αποδείξεις» στη σελίδα ρυθμίσεων (§2.3).
-  static const String titleReceiptsSection = 'Αποδείξεις';
-  /// Label κουμπιού καθαρισμού φίλτρου ημέρας — δείχνει όλες (§2.3 · Φάση Β).
-  /// Χρησιμοποιείται και ως subtitle όταν δεν υπάρχει φίλτρο (μία τιμή,
-  /// δύο χρήσεις — SPoT).
-  static const String clearReceiptFilter = 'Όλες';
-  /// Κενή κατάσταση φιλτραρισμένης ημέρας — καμία απόδειξη εκείνη την ημέρα.
-  static const String noReceiptsForDay =
-      'Δεν υπάρχουν αποδείξεις αυτή την ημέρα';
 }

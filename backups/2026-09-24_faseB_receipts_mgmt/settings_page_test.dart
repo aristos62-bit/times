@@ -111,13 +111,12 @@ void main() {
     });
 
     // ─── Categories section (§2.3 · Φάση 4 Βήμα 4) ───────────────────────────
-    testWidgets('sections κλειστά by default',
+    testWidgets('sections «Κατηγορίες»/«Προμηθευτές» κλειστά by default',
         (tester) async {
       await pumpAt(tester, const Size(800, 600));
       expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
       expect(find.text(AppStrings.titleSuppliersSection), findsOneWidget);
-      expect(find.text(AppStrings.titleReceiptsSection), findsOneWidget);
-      expect(find.byType(ExpansionTile), findsNWidgets(3));
+      expect(find.byType(ExpansionTile), findsNWidgets(2));
       // Περιεχόμενο κρυμμένο μέχρι tap (collapsible 24-09-2026).
       expect(find.text(AppStrings.categoriesEmpty), findsNothing);
       expect(find.text(AppStrings.suppliersEmpty), findsNothing);
@@ -143,15 +142,6 @@ void main() {
       expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
       expect(find.text(AppStrings.categoriesEmpty), findsOneWidget);
       expect(find.text(AppStrings.addNewCategory), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('expand «Αποδείξεις» → φαίνεται το φίλτρο ημέρας', (tester) async {
-      await pumpAt(tester, const Size(800, 600));
-      await tester.tap(find.text(AppStrings.titleReceiptsSection));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.fieldDate), findsOneWidget);
-      expect(find.text(AppStrings.recentReceiptsEmpty), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

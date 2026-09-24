@@ -31,7 +31,7 @@ import '../../../data/models/receipt_summary.dart';
 import '../../../data/providers/stream_providers.dart';
 import '../../shared/confirm_dialog.dart';
 import '../../shared/controller_op_runner.dart';
-import '../../shared/receipt_summary_tile.dart';
+import '../../shared/currency_text_field.dart';
 import '../controllers/item_search_controller.dart';
 import '../controllers/receipt_form_controller.dart';
 
@@ -99,18 +99,55 @@ class RecentReceiptsList extends ConsumerWidget {
     }
   }
 
-  /// Μία απόδειξη — SPoT tile (§2.4 shared · Φάση Β) με τα actions Φάσης Α.
+  /// Μία απόδειξη: #αριθμός (title) · προμηθευτής · ημερομηνία · γραμμές
+  /// (subtitle) · σύνολο ευρώ + μολύβι/κάδος (trailing, Φάση Α).
   Widget _buildRow(
     BuildContext context,
     WidgetRef ref,
     ReceiptSummary summary,
     bool busy,
   ) {
-    return ReceiptSummaryTile(
-      summary: summary,
-      busy: busy,
-      onEdit: () => _editReceipt(context, ref, summary),
-      onDelete: () => _deleteReceipt(context, ref, summary),
+    final theme = Theme.of(context);
+    final date =
+        MaterialLocalizations.of(context).formatShortDate(summary.date);
+    final subtitle = '${summary.supplierName} · $date · '
+        '${AppMessages.receiptLinesLabel(summary.lineCount)}';
+    return ListTile(
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+      title: Text(
+        AppMessages.receiptNumber(summary.id),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text(
+        subtitle,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '${CurrencyTextField.formatCents(summary.totalCents)} '
+            '${AppStrings.currencySymbol}',
+            style: theme.textTheme.titleSmall,
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: AppStrings.editAction,
+            onPressed:
+                busy ? null : () => _editReceipt(context, ref, summary),
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            color: theme.colorScheme.error,
+            tooltip: AppStrings.deleteAction,
+            onPressed:
+                busy ? null : () => _deleteReceipt(context, ref, summary),
+          ),
+        ],
+      ),
     );
   }
 

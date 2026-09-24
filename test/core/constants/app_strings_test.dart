@@ -172,6 +172,16 @@ void main() {
       expect(AppStrings.suppliersEmpty, 'Δεν υπάρχουν προμηθευτές ακόμα');
     });
 
+    // ─── Receipts section (§2.3 · Φάση Β 24-09-2026) ─────────────────────────
+    test('titleReceiptsSection + clearReceiptFilter + noReceiptsForDay (§2.3)', () {
+      expect(AppStrings.titleReceiptsSection, 'Αποδείξεις');
+      expect(AppStrings.clearReceiptFilter, 'Όλες');
+      expect(
+        AppStrings.noReceiptsForDay,
+        'Δεν υπάρχουν αποδείξεις αυτή την ημέρα',
+      );
+    });
+
     // ─── Καθολικές εγγυήσεις (όλα τα strings) ────────────────────────────────
     test('κανένα string μη-κενό, χωρίς whitespace στα άκρα, χωρίς αλλαγή γραμμής', () {
       for (final text in _allStrings) {
@@ -245,4 +255,7 @@ const List<String> _allStrings = [
   AppStrings.saveAction,
   AppStrings.titleSuppliersSection,
   AppStrings.suppliersEmpty,
+  AppStrings.titleReceiptsSection,
+  AppStrings.clearReceiptFilter,
+  AppStrings.noReceiptsForDay,
 ];

@@ -79,64 +79,6 @@ class ReceiptDao extends BaseDao {
             ),
       );
 
-  /// Παρακολουθεί τις αποδείξεις μίας ημέρας με σύνοψη (§2.3 · Φάση Β).
-  ///
-  /// Ίδιο SQL aggregation με [watchRecentSummaries] + `WHERE` ημέρας:
-  /// `dayStart <= date < dayStart + 1 ημέρα` — τα όρια υπολογίζονται εδώ με
-  /// καθαρό `DateTime` (όχι flutter `DateUtils`: το data layer δεν εξαρτάται
-  /// από το UI) και καλύπτουν τυχόν time-parts αμυντικά. Σειρά: date desc,
-  /// id desc — ίδια με [watchAll].
-  Stream<List<ReceiptSummary>> watchSummariesByDay({
-    required DateTime day,
-    required int limit,
-  }) =>
-      guardStream(
-        'Ανάγνωση αποδείξεων ημέρας',
-        () {
-          final start = DateTime(day.year, day.month, day.day);
-          final end = start.add(const Duration(days: 1));
-          return db
-              .customSelect(
-                '''
-        SELECT r.id AS id,
-                r.date AS date,
-                r.supplier_id AS supplierId,
-                s.name AS supplierName,
-                COUNT(rl.id) AS lineCount,
-                COALESCE(SUM(rl.line_total_cents), 0) AS totalCents
-        FROM receipts r
-        LEFT JOIN suppliers s      ON s.id = r.supplier_id
-        LEFT JOIN receipt_lines rl ON rl.receipt_id = r.id
-        WHERE r.date >= ? AND r.date < ?
-        GROUP BY r.id, r.date, r.supplier_id, s.name
-        ORDER BY r.date DESC, r.id DESC
-        LIMIT ?
-      ''',
-                variables: [
-                  Variable.withDateTime(start),
-                  Variable.withDateTime(end),
-                  Variable.withInt(limit),
-                ],
-                readsFrom: {db.receipts, db.suppliers, db.receiptLines},
-              )
-              .watch()
-              .map(
-                (rows) => rows
-                    .map(
-                      (row) => (
-                        id: row.read<int>('id'),
-                        date: row.read<DateTime>('date'),
-                        supplierId: row.read<int>('supplierId'),
-                        supplierName: row.read<String>('supplierName'),
-                        lineCount: row.read<int>('lineCount'),
-                        totalCents: row.read<int>('totalCents'),
-                      ),
-                    )
-                    .toList(),
-              );
-        },
-      );
-
   /// Μετράει τις αποδείξεις ενός προμηθευτή — Ρυθμίσεις, CRUD προμηθευτών
   /// (24-09-2026, §2.3).
   ///
