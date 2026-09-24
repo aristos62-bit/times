@@ -28,11 +28,6 @@
 /// έλεγχο (IndexedStack κρατά τα drafts σκόπιμα, §2.2:222).
 /// Κλείσιμο παραθύρου desktop (X/Alt+F4) και browser-close: εκτός ελέγχου
 /// Flutter-επιπέδου (native listener εκτός MVP — τεκμηριωμένο όριο).
-///
-/// Edit mode (Φάση Α · 24-09-2026): όταν `editingId != null` εμφανίζεται
-/// banner «Απόδειξη #id» + «Ακύρωση» πάνω από το header (pattern locked
-/// banner προμηθευτή/είδους §2.4) — η φόρμα δείχνει τα φορτωμένα δεδομένα
-/// και το save κάνει update.
 library;
 
 import 'package:flutter/material.dart';
@@ -88,11 +83,6 @@ class _PriceEntryPageState extends ConsumerState<PriceEntryPage> {
     // ενότητα (το field δείχνει spinner/retry μόνος του).
     final selected =
         ref.watch(itemSearchControllerProvider).value?.selectedItem;
-
-    // Edit mode (Φάση Α): id υπό επεξεργασία — banner + update-save.
-    final editingId = ref.watch(
-      receiptFormControllerProvider.select((s) => s.editingId),
-    );
 
     // Σταθερά blocks (ίδια και στις δύο διατάξεις).
     const searchBlock = Padding(
@@ -152,38 +142,6 @@ class _PriceEntryPageState extends ConsumerState<PriceEntryPage> {
                   vertical: AppConstants.spacingL,
                 ),
                 children: [
-                  // Banner επεξεργασίας (Φάση Α): ορατό ΜΟΝΟ σε edit mode.
-                  if (editingId != null)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.spacingM,
-                      ),
-                      child: Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.edit_outlined),
-                          title: Text(
-                            AppMessages.receiptNumber(editingId),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          trailing: TextButton(
-                            onPressed: () {
-                              ref
-                                  .read(receiptFormControllerProvider.notifier)
-                                  .cancelEdit();
-                              ref
-                                  .read(itemSearchControllerProvider.notifier)
-                                  .clearSelection();
-                            },
-                            child: const Text(
-                              AppMessages.confirmDialogCancel,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (editingId != null)
-                    const SizedBox(height: AppConstants.spacingL),
                   const ReceiptHeaderSection(),
                   const SizedBox(height: AppConstants.spacingL),
                   if (wide && sectionBlock != null)

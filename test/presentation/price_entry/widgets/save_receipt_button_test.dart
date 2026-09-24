@@ -414,7 +414,18 @@ class _FailingReceiptRepo implements ReceiptRepository {
   Stream<List<ReceiptLine>> watchLines(int receiptId) =>
       throw const DataLoadException();
   @override
+  Future<List<ReceiptLine>> getLines(int receiptId) =>
+      throw const DataLoadException();
+  @override
   Future<int> insertReceiptWithLines({
+    required DateTime date,
+    required int supplierId,
+    required List<ReceiptLineInput> lines,
+  }) =>
+      throw error;
+  @override
+  Future<void> updateReceiptWithLines({
+    required int id,
     required DateTime date,
     required int supplierId,
     required List<ReceiptLineInput> lines,
@@ -451,6 +462,9 @@ class _BlockingReceiptRepo implements ReceiptRepository {
   Stream<List<ReceiptLine>> watchLines(int receiptId) =>
       inner.watchLines(receiptId);
   @override
+  Future<List<ReceiptLine>> getLines(int receiptId) =>
+      inner.getLines(receiptId);
+  @override
   Future<int> insertReceiptWithLines({
     required DateTime date,
     required int supplierId,
@@ -458,6 +472,21 @@ class _BlockingReceiptRepo implements ReceiptRepository {
   }) async {
     await gate.future;
     return inner.insertReceiptWithLines(
+      date: date,
+      supplierId: supplierId,
+      lines: lines,
+    );
+  }
+  @override
+  Future<void> updateReceiptWithLines({
+    required int id,
+    required DateTime date,
+    required int supplierId,
+    required List<ReceiptLineInput> lines,
+  }) async {
+    await gate.future;
+    return inner.updateReceiptWithLines(
+      id: id,
       date: date,
       supplierId: supplierId,
       lines: lines,

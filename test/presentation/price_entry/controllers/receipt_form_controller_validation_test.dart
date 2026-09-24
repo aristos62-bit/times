@@ -313,6 +313,16 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
     insertCalls++;
     throw StateError('insertReceiptWithLines δεν έπρεπε να κληθεί');
   }
+  @override
+  Future<void> updateReceiptWithLines({
+    required int id,
+    required DateTime date,
+    required int supplierId,
+    required List<ReceiptLineInput> lines,
+  }) {
+    insertCalls++;
+    throw StateError('updateReceiptWithLines δεν έπρεπε να κληθεί');
+  }
 
   @override
   Stream<List<Receipt>> watchAll() => throw UnimplementedError();
@@ -334,5 +344,8 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
       throw UnimplementedError();
   @override
   Stream<List<ReceiptLine>> watchLines(int receiptId) =>
+      throw UnimplementedError();
+  @override
+  Future<List<ReceiptLine>> getLines(int receiptId) =>
       throw UnimplementedError();
 }

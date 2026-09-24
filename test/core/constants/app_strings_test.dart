@@ -48,6 +48,10 @@ void main() {
       expect(AppStrings.saveReceipt, 'Αποθήκευση Απόδειξης');
     });
 
+    test('updateReceipt = «Ενημέρωση Απόδειξης» (§2.2 · Φάση Α)', () {
+      expect(AppStrings.updateReceipt, 'Ενημέρωση Απόδειξης');
+    });
+
     test('addReceiptLine = «Προσθήκη γραμμής» (§2.2)', () {
       expect(AppStrings.addReceiptLine, 'Προσθήκη γραμμής');
     });
@@ -196,6 +200,7 @@ const List<String> _allStrings = [
   AppStrings.statsComingSoon,
   AppStrings.titlePriceEntry,
   AppStrings.saveReceipt,
+  AppStrings.updateReceipt,
   AppStrings.addReceiptLine,
   AppStrings.fieldDate,
   AppStrings.fieldSupplier,

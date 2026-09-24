@@ -31,8 +31,6 @@ abstract final class AppStrings {
   static const String titlePriceEntry = 'Εισαγωγή Τιμών';
   /// Κουμπί αποθήκευσης ολόκληρης απόδειξης.
   static const String saveReceipt = 'Αποθήκευση Απόδειξης';
-  /// Κουμπί ενημέρωσης απόδειξης σε edit mode (Φάση Α · 24-09-2026).
-  static const String updateReceipt = 'Ενημέρωση Απόδειξης';
   /// Κουμπί προσθήκης γραμμής στο «καλάθι» της απόδειξης.
   static const String addReceiptLine = 'Προσθήκη γραμμής';
   /// Labels πεδίων φόρμας (header + unit/quantity/price section).

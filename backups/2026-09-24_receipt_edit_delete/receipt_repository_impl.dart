@@ -75,10 +75,6 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
           );
 
   @override
-  Future<List<ReceiptLine>> getLines(int receiptId) =>
-      _guard(() => _lineDao.getByReceiptId(receiptId));
-
-  @override
   Future<int> insertReceiptWithLines({
     required DateTime date,
     required int supplierId,
@@ -99,42 +95,6 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
         }
         return receiptId;
       });
-    } on SqliteException {
-      // Rollback automatic (drift) — αναδύεται μόνο το mapped exception.
-      throw const SaveReceiptException();
-    }
-  }
-
-  @override
-  Future<void> updateReceiptWithLines({
-    required int id,
-    required DateTime date,
-    required int supplierId,
-    required List<ReceiptLineInput> lines,
-  }) async {
-    try {
-      await _receiptDao.db.transaction(() async {
-        final updated = await _receiptDao.updateById(
-          id,
-          date: date,
-          supplierId: supplierId,
-        );
-        if (!updated) throw const DataLoadException();
-        await (_receiptDao.db.delete(_receiptDao.db.receiptLines)
-              ..where((t) => t.receiptId.equals(id)))
-            .go();
-        for (final line in lines) {
-          await _lineDao.insert(
-            receiptId: id,
-            itemId: line.itemId,
-            unitId: line.unitId,
-            quantity: line.quantity,
-            priceCents: line.priceCents,
-          );
-        }
-      });
-    } on DataLoadException {
-      rethrow;
     } on SqliteException {
       // Rollback automatic (drift) — αναδύεται μόνο το mapped exception.
       throw const SaveReceiptException();

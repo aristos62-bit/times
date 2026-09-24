@@ -11,7 +11,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/constants/app_errors.dart';
 import '../../../core/errors/app_exceptions.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/utils/greek_text_normalizer.dart';
@@ -109,9 +108,6 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
   /// Αποθηκεύει ολόκληρη την απόδειξη (§2.2 · Βήμα 5δ): insert `Receipt` +
   /// όλες οι `ReceiptLine` σε ΜΙΑ transaction μέσω `insertReceiptWithLines`
   /// (atomicity — είτε όλα είτε τίποτα, §2.2:211).
-  /// Σε edit mode (`editingId != null`, Φάση Α): `updateReceiptWithLines`
-  /// (update κεφαλίδας + αντικατάσταση γραμμών, μία transaction) και μετά
-  /// το ίδιο reset (το `editingId` μηδενίζεται — επιστροφή σε δημιουργία).
   ///   * Επιτυχία → καθαρισμός φόρμας (`resetForm`, §2.2:212)· το
   ///     `recent_receipts_list` ανανεώνεται αυτόματα μέσω stream (§2.2:212).
   ///   * Αποτυχία (`SaveReceiptException` από το repository Ή απρόβλεπτο
@@ -150,42 +146,25 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
 
     state = state.copyWith(isSaving: true);
     try {
-      final editingId = state.editingId;
-      final receiptLines = [
-        for (final line in lines)
-          (
-          itemId: line.itemId,
-          unitId: line.unitId,
-          quantity: line.quantity,
-          priceCents: line.priceCents,
-          ),
-      ];
-      if (editingId == null) {
-        final id = await ref.read(receiptRepositoryProvider).insertReceiptWithLines(
-          date: date,
-          supplierId: supplier.id,
-          lines: receiptLines,
-        );
-        if (!ref.mounted) return; // disposed ενώ έτρεχε το save → παράλειψη
-        resetForm();
-        AppLogger.info(
-          LogTag.db,
-          'Αποθήκευση απόδειξης #$id (${lines.length} γραμμές)',
-        );
-      } else {
-        await ref.read(receiptRepositoryProvider).updateReceiptWithLines(
-          id: editingId,
-          date: date,
-          supplierId: supplier.id,
-          lines: receiptLines,
-        );
-        if (!ref.mounted) return; // disposed ενώ έτρεχε το update → παράλειψη
-        resetForm();
-        AppLogger.info(
-          LogTag.db,
-          'Ενημέρωση απόδειξης #$editingId (${lines.length} γραμμές)',
-        );
-      }
+      final id = await ref.read(receiptRepositoryProvider).insertReceiptWithLines(
+        date: date,
+        supplierId: supplier.id,
+        lines: [
+          for (final line in lines)
+            (
+            itemId: line.itemId,
+            unitId: line.unitId,
+            quantity: line.quantity,
+            priceCents: line.priceCents,
+            ),
+        ],
+      );
+      if (!ref.mounted) return; // disposed ενώ έτρεχε το save → παράλειψη
+      resetForm();
+      AppLogger.info(
+        LogTag.db,
+        'Αποθήκευση απόδειξης #$id (${lines.length} γραμμές)',
+      );
     } catch (e, s) {
       if (ref.mounted) state = state.copyWith(isSaving: false);
       if (e is! SaveReceiptException) {
@@ -215,114 +194,10 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
   }
 
   /// Καθαρισμός φόρμας μετά από επιτυχημένο save (§2.2:212): σημερινή
-  /// ημερομηνία, κανένας προμηθευτής, κενό «καλάθι», `editingId` null
-  /// (επιστροφή σε δημιουργία — Φάση Α).
+  /// ημερομηνία, κανένας προμηθευτής, κενό «καλάθι».
   void resetForm() {
     state = ReceiptFormState(date: DateUtils.dateOnly(DateTime.now()));
     AppLogger.info(LogTag.ui, 'Καθαρισμός φόρμας απόδειξης');
-  }
-
-  /// Ακυρώνει την επεξεργασία (Φάση Α · 24-09-2026): καθαρή φόρμα
-  /// (`resetForm` — μηδενίζει και το `editingId`). Ο καλών καθαρίζει και
-  /// την επιλογή είδους (`clearSelection`, όπως το exit-Ναι §2.2:244).
-  void cancelEdit() {
-    resetForm();
-    AppLogger.info(LogTag.ui, 'Ακύρωση επεξεργασίας απόδειξης');
-  }
-
-  /// Φορτώνει απόδειξη για επεξεργασία (Φάση Α · 24-09-2026).
-  /// Contract `(ok,error)` για `runControllerOp`: ανύπαρκτη απόδειξη /
-  /// προμηθευτής / είδος / μονάδα → `(ok:false, error:loadDataFailed)`
-  /// (αδύνατα λόγω RESTRICT §3, defensive — pattern rename-ανύπαρκτο §2.3).
-  /// DB σφάλμα → `DataLoadException` ανέγγιχτο (feedback στο widget).
-  /// Τα snapshots (`itemName/unitAbbreviation/unitAllowsDecimal`) επιλύονται
-  /// από τα ΤΡΕΧΟΝΤΑ repos (μετονομασία φαίνεται αυτόματα)·
-  /// `enteredTotalCents = null` (δεν ανακατασκευάζεται — stored ±1, §3).
-  /// Επανείσοδος ενώ `isSaving` → no-op (double-tap guard, §2.4).
-  Future<({bool ok, String? error})> loadReceiptForEdit(int id) async {
-    if (state.isSaving) return (ok: false, error: null);
-    state = state.copyWith(isSaving: true);
-    try {
-      final receiptRepo = ref.read(receiptRepositoryProvider);
-      final receipt = await receiptRepo.getById(id);
-      if (receipt == null) {
-        if (ref.mounted) state = state.copyWith(isSaving: false);
-        return (ok: false, error: AppErrors.loadDataFailed);
-      }
-      final supplier = await ref
-          .read(supplierRepositoryProvider)
-          .getById(receipt.supplierId);
-      if (supplier == null) {
-        if (ref.mounted) state = state.copyWith(isSaving: false);
-        return (ok: false, error: AppErrors.loadDataFailed);
-      }
-      final lines = await receiptRepo.getLines(id);
-      final itemRepo = ref.read(itemRepositoryProvider);
-      final unitRepo = ref.read(unitRepositoryProvider);
-      final drafts = <DraftReceiptLine>[];
-      for (final l in lines) {
-        final item = await itemRepo.getById(l.itemId);
-        final unit = await unitRepo.getById(l.unitId);
-        if (item == null || unit == null) {
-          if (ref.mounted) state = state.copyWith(isSaving: false);
-          return (ok: false, error: AppErrors.loadDataFailed);
-        }
-        drafts.add(
-          DraftReceiptLine(
-            itemId: item.id,
-            unitId: unit.id,
-            quantity: l.quantity,
-            priceCents: l.priceCents,
-            itemName: item.name,
-            unitAbbreviation: unit.abbreviation,
-            unitAllowsDecimal: unit.allowsDecimal,
-          ),
-        );
-      }
-      if (!ref.mounted) return (ok: false, error: null);
-      state = ReceiptFormState(
-        date: DateUtils.dateOnly(receipt.date),
-        supplier: supplier,
-        draftLines: drafts,
-        editingId: id,
-      );
-      AppLogger.info(
-        LogTag.ui,
-        'Φόρτωση απόδειξης #$id για επεξεργασία (${drafts.length} γραμμές)',
-      );
-      return (ok: true, error: null);
-    } catch (_) {
-      // Κάθε σφάλμα (mapped ή όχι) σβήνει το flag — αλλιώς τα κουμπιά
-      // μένουν ανενεργά για πάντα (pattern `saveReceipt` §2.2:213).
-      if (ref.mounted) state = state.copyWith(isSaving: false);
-      rethrow;
-    }
-  }
-
-  /// Διαγράφει απόδειξη (CASCADE §3 — σβήνουν και οι γραμμές).
-  /// Contract `(ok,error)` για `runControllerOp`: `false` (race, ήδη
-  /// σβησμένη) → `loadDataFailed`. Αν ήταν υπό επεξεργασία → `cancelEdit`.
-  /// Επανείσοδος ενώ `isSaving` → no-op (double-tap guard, §2.4).
-  Future<({bool ok, String? error})> deleteReceipt(int id) async {
-    if (state.isSaving) return (ok: false, error: null);
-    state = state.copyWith(isSaving: true);
-    try {
-      final deleted = await ref.read(receiptRepositoryProvider).deleteById(id);
-      if (!ref.mounted) return (ok: false, error: null);
-      if (!deleted) {
-        state = state.copyWith(isSaving: false);
-        return (ok: false, error: AppErrors.loadDataFailed);
-      }
-      final wasEditing = state.editingId == id;
-      state = state.copyWith(isSaving: false);
-      if (wasEditing) cancelEdit();
-      AppLogger.info(LogTag.db, 'Διαγραφή απόδειξης #$id');
-      return (ok: true, error: null);
-    } catch (_) {
-      // Κάθε σφάλμα (mapped ή όχι) σβήνει το flag (pattern `saveReceipt`).
-      if (ref.mounted) state = state.copyWith(isSaving: false);
-      rethrow;
-    }
   }
 
   /// Δημιουργεί προμηθευτή από την inline επιλογή «+» (§2.4). Επιστρέφει

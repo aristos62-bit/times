@@ -43,21 +43,6 @@ abstract final class AppMessages {
   /// Ένδειξη πλήθους γραμμών απόδειξης στη λίστα — «3 γραμμές».
   static String receiptLinesLabel(int count) => '$count γραμμές';
 
-  // ─── Επεξεργασία / Διαγραφή απόδειξης (Φάση Α · 24-09-2026) ──────────────
-  /// Επιτυχής ενημέρωση απόδειξης (edit mode).
-  static const String receiptUpdated = 'Η απόδειξη ενημερώθηκε';
-
-  /// Απόδειξη διαγράφηκε (CASCADE §3).
-  static const String receiptDeleted = 'Η απόδειξη διαγράφηκε';
-
-  /// Confirm διαγραφής απόδειξης με προμηθευτή.
-  static String deleteReceiptConfirm(int id, String supplier) =>
-      'Διαγραφή απόδειξης #$id ($supplier);';
-
-  /// Φόρτωση απόδειξης για επεξεργασία με γεμάτα drafts.
-  static const String editDiscardDraftsConfirm =
-      'Υπάρχουν μη αποθηκευμένες γραμμές. Φόρτωση απόδειξης για επεξεργασία;';
-
   // ─── Confirm dialog defaults (§2.4 ConfirmDialog) ─────────────────────────
   /// §2.4: "ConfirmDialog — τίτλος/μήνυμα/actions από παραμέτρους, SPoT strings".
   /// Default τίτλος επιβεβαιωτικού dialog.

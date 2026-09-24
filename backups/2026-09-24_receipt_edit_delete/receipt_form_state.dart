@@ -111,8 +111,5 @@ abstract class ReceiptFormState with _$ReceiptFormState {
     /// σύγχρονο (plain Notifier) και το flag σημειώνει το async save — ίδιο
     /// pattern με το `_isCreating` των «+» (§2.2:235, double-tap guard).
     @Default(false) bool isSaving,
-    /// `editingId` — Φάση Α (24-09-2026): id υπό-επεξεργασία απόδειξης,
-    /// `null` = δημιουργία. Το `resetForm` το μηδενίζει.
-    int? editingId,
   }) = _ReceiptFormState;
 }

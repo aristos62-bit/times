@@ -23,9 +23,7 @@ mixin _$ReceiptFormState {
  List<DraftReceiptLine> get draftLines;/// `isSaving` — async save σε εξέλιξη (§2.2 · Βήμα 5δ): το state ΠΑΡΑΜΕΝΕΙ
 /// σύγχρονο (plain Notifier) και το flag σημειώνει το async save — ίδιο
 /// pattern με το `_isCreating` των «+» (§2.2:235, double-tap guard).
- bool get isSaving;/// `editingId` — Φάση Α (24-09-2026): id υπό-επεξεργασία απόδειξης,
-/// `null` = δημιουργία. Το `resetForm` το μηδενίζει.
- int? get editingId;
+ bool get isSaving;
 /// Create a copy of ReceiptFormState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -37,20 +35,20 @@ $ReceiptFormStateCopyWith<ReceiptFormState> get copyWith => _$ReceiptFormStateCo
 @override
 bool operator ==(Object other) {
   final _this = this as ReceiptFormState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReceiptFormState&&(identical(other.date, _this.date) || other.date == _this.date)&&const DeepCollectionEquality().equals(other.supplier, _this.supplier)&&const DeepCollectionEquality().equals(other.draftLines, _this.draftLines)&&(identical(other.isSaving, _this.isSaving) || other.isSaving == _this.isSaving)&&(identical(other.editingId, _this.editingId) || other.editingId == _this.editingId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReceiptFormState&&(identical(other.date, _this.date) || other.date == _this.date)&&const DeepCollectionEquality().equals(other.supplier, _this.supplier)&&const DeepCollectionEquality().equals(other.draftLines, _this.draftLines)&&(identical(other.isSaving, _this.isSaving) || other.isSaving == _this.isSaving));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ReceiptFormState;
-  return Object.hash(runtimeType,_this.date,const DeepCollectionEquality().hash(_this.supplier),const DeepCollectionEquality().hash(_this.draftLines),_this.isSaving,_this.editingId);
+  return Object.hash(runtimeType,_this.date,const DeepCollectionEquality().hash(_this.supplier),const DeepCollectionEquality().hash(_this.draftLines),_this.isSaving);
 }
 
 @override
 String toString() {
   final _this = this as ReceiptFormState;
-  return 'ReceiptFormState(date: ${_this.date}, supplier: ${_this.supplier}, draftLines: ${_this.draftLines}, isSaving: ${_this.isSaving}, editingId: ${_this.editingId})';
+  return 'ReceiptFormState(date: ${_this.date}, supplier: ${_this.supplier}, draftLines: ${_this.draftLines}, isSaving: ${_this.isSaving})';
 }
 
 
@@ -61,7 +59,7 @@ abstract mixin class $ReceiptFormStateCopyWith<$Res>  {
   factory $ReceiptFormStateCopyWith(ReceiptFormState value, $Res Function(ReceiptFormState) _then) = _$ReceiptFormStateCopyWithImpl;
 @useResult
 $Res call({
- DateTime date, Supplier? supplier, List<DraftReceiptLine> draftLines, bool isSaving, int? editingId
+ DateTime date, Supplier? supplier, List<DraftReceiptLine> draftLines, bool isSaving
 });
 
 
@@ -78,14 +76,13 @@ class _$ReceiptFormStateCopyWithImpl<$Res>
 
 /// Create a copy of ReceiptFormState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? date = null,Object? supplier = freezed,Object? draftLines = null,Object? isSaving = null,Object? editingId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? date = null,Object? supplier = freezed,Object? draftLines = null,Object? isSaving = null,}) {
   return _then(ReceiptFormState(
 date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime,supplier: freezed == supplier ? _self.supplier : supplier // ignore: cast_nullable_to_non_nullable
 as Supplier?,draftLines: null == draftLines ? _self.draftLines : draftLines // ignore: cast_nullable_to_non_nullable
 as List<DraftReceiptLine>,isSaving: null == isSaving ? _self.isSaving : isSaving // ignore: cast_nullable_to_non_nullable
-as bool,editingId: freezed == editingId ? _self.editingId : editingId // ignore: cast_nullable_to_non_nullable
-as int?,
+as bool,
   ));
 }
 
@@ -170,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DateTime date,  Supplier? supplier,  List<DraftReceiptLine> draftLines,  bool isSaving,  int? editingId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DateTime date,  Supplier? supplier,  List<DraftReceiptLine> draftLines,  bool isSaving)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ReceiptFormState() when $default != null:
-return $default(_that.date,_that.supplier,_that.draftLines,_that.isSaving,_that.editingId);case _:
+return $default(_that.date,_that.supplier,_that.draftLines,_that.isSaving);case _:
   return orElse();
 
 }
@@ -191,10 +188,10 @@ return $default(_that.date,_that.supplier,_that.draftLines,_that.isSaving,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DateTime date,  Supplier? supplier,  List<DraftReceiptLine> draftLines,  bool isSaving,  int? editingId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DateTime date,  Supplier? supplier,  List<DraftReceiptLine> draftLines,  bool isSaving)  $default,) {final _that = this;
 switch (_that) {
 case _ReceiptFormState():
-return $default(_that.date,_that.supplier,_that.draftLines,_that.isSaving,_that.editingId);case _:
+return $default(_that.date,_that.supplier,_that.draftLines,_that.isSaving);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -211,10 +208,10 @@ return $default(_that.date,_that.supplier,_that.draftLines,_that.isSaving,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DateTime date,  Supplier? supplier,  List<DraftReceiptLine> draftLines,  bool isSaving,  int? editingId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DateTime date,  Supplier? supplier,  List<DraftReceiptLine> draftLines,  bool isSaving)?  $default,) {final _that = this;
 switch (_that) {
 case _ReceiptFormState() when $default != null:
-return $default(_that.date,_that.supplier,_that.draftLines,_that.isSaving,_that.editingId);case _:
+return $default(_that.date,_that.supplier,_that.draftLines,_that.isSaving);case _:
   return null;
 
 }
@@ -226,7 +223,7 @@ return $default(_that.date,_that.supplier,_that.draftLines,_that.isSaving,_that.
 
 
 class _ReceiptFormState implements ReceiptFormState {
-  const _ReceiptFormState({required this.date, this.supplier,  List<DraftReceiptLine> draftLines = const <DraftReceiptLine>[], this.isSaving = false, this.editingId}): _draftLines = draftLines;
+  const _ReceiptFormState({required this.date, this.supplier,  List<DraftReceiptLine> draftLines = const <DraftReceiptLine>[], this.isSaving = false}): _draftLines = draftLines;
   
 
 @override final  DateTime date;
@@ -249,9 +246,6 @@ class _ReceiptFormState implements ReceiptFormState {
 /// σύγχρονο (plain Notifier) και το flag σημειώνει το async save — ίδιο
 /// pattern με το `_isCreating` των «+» (§2.2:235, double-tap guard).
 @override@JsonKey() final  bool isSaving;
-/// `editingId` — Φάση Α (24-09-2026): id υπό-επεξεργασία απόδειξης,
-/// `null` = δημιουργία. Το `resetForm` το μηδενίζει.
-@override final  int? editingId;
 
 /// Create a copy of ReceiptFormState
 /// with the given fields replaced by the non-null parameter values.
@@ -263,18 +257,18 @@ _$ReceiptFormStateCopyWith<_ReceiptFormState> get copyWith => __$ReceiptFormStat
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReceiptFormState&&(identical(other.date, date) || other.date == date)&&const DeepCollectionEquality().equals(other.supplier, supplier)&&const DeepCollectionEquality().equals(other.draftLines, _draftLines)&&(identical(other.isSaving, isSaving) || other.isSaving == isSaving)&&(identical(other.editingId, editingId) || other.editingId == editingId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReceiptFormState&&(identical(other.date, date) || other.date == date)&&const DeepCollectionEquality().equals(other.supplier, supplier)&&const DeepCollectionEquality().equals(other.draftLines, _draftLines)&&(identical(other.isSaving, isSaving) || other.isSaving == isSaving));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,date,const DeepCollectionEquality().hash(supplier),const DeepCollectionEquality().hash(_draftLines),isSaving,editingId);
+    return Object.hash(runtimeType,date,const DeepCollectionEquality().hash(supplier),const DeepCollectionEquality().hash(_draftLines),isSaving);
 }
 
 @override
 String toString() {
-    return 'ReceiptFormState(date: $date, supplier: $supplier, draftLines: $draftLines, isSaving: $isSaving, editingId: $editingId)';
+    return 'ReceiptFormState(date: $date, supplier: $supplier, draftLines: $draftLines, isSaving: $isSaving)';
 }
 
 
@@ -285,7 +279,7 @@ abstract mixin class _$ReceiptFormStateCopyWith<$Res> implements $ReceiptFormSta
   factory _$ReceiptFormStateCopyWith(_ReceiptFormState value, $Res Function(_ReceiptFormState) _then) = __$ReceiptFormStateCopyWithImpl;
 @override @useResult
 $Res call({
- DateTime date, Supplier? supplier, List<DraftReceiptLine> draftLines, bool isSaving, int? editingId
+ DateTime date, Supplier? supplier, List<DraftReceiptLine> draftLines, bool isSaving
 });
 
 
@@ -302,14 +296,13 @@ class __$ReceiptFormStateCopyWithImpl<$Res>
 
 /// Create a copy of ReceiptFormState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? date = null,Object? supplier = freezed,Object? draftLines = null,Object? isSaving = null,Object? editingId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? date = null,Object? supplier = freezed,Object? draftLines = null,Object? isSaving = null,}) {
   return _then(_ReceiptFormState(
 date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as DateTime,supplier: freezed == supplier ? _self.supplier : supplier // ignore: cast_nullable_to_non_nullable
 as Supplier?,draftLines: null == draftLines ? _self._draftLines : draftLines // ignore: cast_nullable_to_non_nullable
 as List<DraftReceiptLine>,isSaving: null == isSaving ? _self.isSaving : isSaving // ignore: cast_nullable_to_non_nullable
-as bool,editingId: freezed == editingId ? _self.editingId : editingId // ignore: cast_nullable_to_non_nullable
-as int?,
+as bool,
   ));
 }
 

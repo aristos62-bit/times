@@ -57,6 +57,29 @@ void main() {
       expect(AppMessages.receiptLinesLabel(3), '3 γραμμές');
     });
 
+    // ─── Επεξεργασία / Διαγραφή απόδειξης (§2.2 · Φάση Α 24-09-2026) ─────────
+    test('receiptUpdated = «Η απόδειξη ενημερώθηκε» (Φάση Α)', () {
+      expect(AppMessages.receiptUpdated, 'Η απόδειξη ενημερώθηκε');
+    });
+
+    test('receiptDeleted = «Η απόδειξη διαγράφηκε» (Φάση Α)', () {
+      expect(AppMessages.receiptDeleted, 'Η απόδειξη διαγράφηκε');
+    });
+
+    test('deleteReceiptConfirm — αριθμός + προμηθευτής (Φάση Α)', () {
+      expect(
+        AppMessages.deleteReceiptConfirm(12, 'Μάρκος'),
+        'Διαγραφή απόδειξης #12 (Μάρκος);',
+      );
+    });
+
+    test('editDiscardDraftsConfirm — ακριβές κείμενο (Φάση Α)', () {
+      expect(
+        AppMessages.editDiscardDraftsConfirm,
+        'Υπάρχουν μη αποθηκευμένες γραμμές. Φόρτωση απόδειξης για επεξεργασία;',
+      );
+    });
+
     // ─── Confirm dialog defaults (§2.4) ─────────────────────────────────────
     test('confirmDialogTitle = «Επιβεβαίωση» (§2.4)', () {
       expect(AppMessages.confirmDialogTitle, 'Επιβεβαίωση');
@@ -162,4 +185,7 @@ const List<String> _allConstStrings = [
   AppMessages.subCategoryDeleted,
   AppMessages.supplierUpdated,
   AppMessages.supplierDeleted,
+  AppMessages.receiptUpdated,
+  AppMessages.receiptDeleted,
+  AppMessages.editDiscardDraftsConfirm,
 ];

@@ -51,25 +51,9 @@ abstract interface class ReceiptRepository {
   /// Παρακολουθεί τις γραμμές μιας απόδειξης, με σειρά εισαγωγής.
   Stream<List<ReceiptLine>> watchLines(int receiptId);
 
-  /// Διαβάζει ΟΛΕΣ τις γραμμές μιας απόδειξης (one-shot, σειρά εισαγωγής) —
-  /// για φόρτωση edit (Φάση Α). Passthrough στο DAO (Βήμα 2).
-  Future<List<ReceiptLine>> getLines(int receiptId);
-
   /// Εισάγει απόδειξη με όλες τις γραμμές σε μία transaction (atomicity).
   /// Επιστρέφει το id της απόδειξης. Αποτυχία → SaveReceiptException.
   Future<int> insertReceiptWithLines({
-    required DateTime date,
-    required int supplierId,
-    required List<ReceiptLineInput> lines,
-  });
-
-  /// Ενημερώνει απόδειξη με αντικατάσταση γραμμών σε μία transaction
-  /// (Φάση Α · 24-09-2026): update κεφαλίδας + διαγραφή ΟΛΩΝ των παλιών
-  /// γραμμών + insert νέων. Αποτυχία → SaveReceiptException· ανύπαρκτο
-  /// id → DataLoadException (pattern rename-ανύπαρκτο §2.3).
-  /// Τα line-ids αλλάζουν — αποδεκτό (καμία εξωτερική αναφορά, SUM §3).
-  Future<void> updateReceiptWithLines({
-    required int id,
     required DateTime date,
     required int supplierId,
     required List<ReceiptLineInput> lines,

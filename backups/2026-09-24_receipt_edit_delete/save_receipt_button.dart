@@ -7,8 +7,7 @@
 /// εμφανίζεται hint `supplierRequired` κάτω από το κουμπί (εξηγεί γιατί είναι
 /// ανενεργό). Το πάτημα καλεί `saveReceipt` και διαχειρίζεται το
 /// feedback ΜΟΝΟ από εδώ (dinner party rule — ποτέ μέσα στον controller):
-/// επιτυχία → `savedReceipt` (δημιουργία) ή `receiptUpdated` (edit mode,
-/// Φάση Α) + καθάρισμα επιλογής είδους· αποτυχία
+/// επιτυχία → `savedReceipt` + καθάρισμα επιλογής είδους· αποτυχία
 /// (`SaveReceiptException`, drafts ΠΑΡΑΜΕΝΟΥΝ §2.2:213) → `e.userMessage`.
 /// Ασφάλεια context: `context.mounted` μετά το await (το AppFeedback έχει
 /// δικό του guard, εδώ ζώνη άμυνας σε βάθος).
@@ -32,21 +31,14 @@ class SaveReceiptButton extends ConsumerWidget {
   const SaveReceiptButton({super.key});
 
   /// Πάτημα: save → success (snackbar + καθάρισμα επιλογής) / error (snackbar).
-  /// Σε edit mode (`editingId != null`, Φάση Α) το μήνυμα είναι
-  /// `receiptUpdated`, αλλιώς `savedReceipt`.
   /// Απρόβλεπτο σφάλμα (όχι `SaveReceiptException`) → γενικό
   /// `AppErrors.saveFailed`· ο controller έχει ήδη σβήσει το `isSaving` και
   /// έχει καταγράψει το σφάλμα.
   Future<void> _save(BuildContext context, WidgetRef ref) async {
-    final isEditing =
-        ref.read(receiptFormControllerProvider).editingId != null;
     try {
       await ref.read(receiptFormControllerProvider.notifier).saveReceipt();
       if (!context.mounted) return;
-      AppFeedback.showSuccess(
-        context,
-        isEditing ? AppMessages.receiptUpdated : AppMessages.savedReceipt,
-      );
+      AppFeedback.showSuccess(context, AppMessages.savedReceipt);
       // Η φόρμα καθάρισε (resetForm)· η επιλογή είδους καθαρίζει κι αυτή
       // (no-op αν ήδη null — π.χ. το section έκλεισε με το τελευταίο add).
       ref.read(itemSearchControllerProvider.notifier).clearSelection();
@@ -89,11 +81,7 @@ class SaveReceiptButton extends ConsumerWidget {
             ),
           )
               : const Icon(Icons.save_outlined),
-          label: Text(
-            form.editingId != null
-                ? AppStrings.updateReceipt
-                : AppStrings.saveReceipt,
-          ),
+          label: const Text(AppStrings.saveReceipt),
         ),
         if (showSupplierHint)
           Padding(
