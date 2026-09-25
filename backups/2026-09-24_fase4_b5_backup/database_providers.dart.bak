@@ -36,11 +36,10 @@ import '../repositories/unit_repository.dart';
 import '../repositories/unit_repository_impl.dart';
 
 /// Το `AppDatabase` (η μία βάση της εφαρμογής) — Drift SPoT σύνδεσης (§3).
-/// Zει όσο η εφαρμογή· το `onDispose(db.closeSafely)` κλείνει τη βάση
-/// idempotent στο τέλος (Φάση 4 Βήμα 5, απόφαση Β — double-close = no-op).
+/// Zει όσο η εφαρμογή· το `onDispose(db.close)` κλείνει τη βάση στο τέλος.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
-  ref.onDispose(db.closeSafely);
+  ref.onDispose(db.close);
   return db;
 });
 

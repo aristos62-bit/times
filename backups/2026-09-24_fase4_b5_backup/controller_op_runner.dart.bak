@@ -1,9 +1,9 @@
 /// SPoT helper: controller-op → feedback (§2.3 editors · 24-09-2026).
 ///
-/// Κοινός δρόμος για τους settings editors (κατηγορίες/προμηθευτές/backup —
-/// πριν αντιγραμμένος): `ok` → success snackbar· validation/dup `error` →
-/// error snackbar· `AppException` (λογκαρισμένο μία φορά στην πηγή) →
-/// `userMessage` (pattern `_save` του save button).
+/// Κοινός δρόμος για τους settings editors (κατηγορίες/προμηθευτές — πριν
+/// αντιγραμμένος και στους δύο): `ok` → success snackbar· validation/dup
+/// `error` → error snackbar· DB (`DataLoadException`, λογκαρισμένο μία φορά
+/// στον DAO guard) → `userMessage` (pattern `_save` του save button).
 /// Feedback ΜΟΝΟ εδώ (καλείται από widgets) — ποτέ μέσα στα dialogs
 /// (ScaffoldMessenger caveat, §2.4). Dumb function: καθόλου state/logging.
 library;
@@ -28,7 +28,7 @@ Future<void> runControllerOp(
     } else if (result.error != null) {
       AppFeedback.showError(context, result.error!);
     }
-  } on AppException catch (e) {
+  } on DataLoadException catch (e) {
     if (!context.mounted) return;
     AppFeedback.showError(context, e.userMessage);
   }

@@ -117,8 +117,7 @@ void main() {
       expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
       expect(find.text(AppStrings.titleSuppliersSection), findsOneWidget);
       expect(find.text(AppStrings.titleReceiptsSection), findsOneWidget);
-      expect(find.text(AppStrings.titleBackupSection), findsOneWidget);
-      expect(find.byType(ExpansionTile), findsNWidgets(4));
+      expect(find.byType(ExpansionTile), findsNWidgets(3));
       // Περιεχόμενο κρυμμένο μέχρι tap (collapsible 24-09-2026).
       expect(find.text(AppStrings.categoriesEmpty), findsNothing);
       expect(find.text(AppStrings.suppliersEmpty), findsNothing);
@@ -153,16 +152,6 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.fieldDate), findsOneWidget);
       expect(find.text(AppStrings.recentReceiptsEmpty), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('expand «Αντίγραφα» → φαίνονται τα 2 κουμπιά (§2.3 · Βήμα 5)',
-        (tester) async {
-      await pumpAt(tester, const Size(800, 600));
-      await tester.tap(find.text(AppStrings.titleBackupSection));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.backupExportAction), findsOneWidget);
-      expect(find.text(AppStrings.backupRestoreAction), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

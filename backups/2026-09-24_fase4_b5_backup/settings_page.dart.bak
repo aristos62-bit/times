@@ -1,4 +1,4 @@
-/// Φάση 4, Βήμα 1+4+5 — Σελίδα ρυθμίσεων (§2.3 DESIGN).
+/// Φάση 4, Βήμα 1+4 — Σελίδα ρυθμίσεων (§2.3 DESIGN).
 ///
 /// Στοιχείο του App Shell: ο `AppShell` δίνει το Scaffold με NavigationBar
 /// και η σελίδα προσθέτει δικό της nested Scaffold (AppBar + σώμα).
@@ -7,10 +7,9 @@
 /// `receiptsByDayStreamProvider`/`selectedReceiptDayProvider` (section
 /// «Αποδείξεις», Φάση Β — η βάση ανοίγει και από εδώ· στο launch είναι ήδη
 /// ανοιχτή μέσω PriceEntry, IndexedStack §2.2:221/Α1).
-/// Sections «Κατηγορίες»/«Προμηθευτές»/«Αποδείξεις»/«Αντίγραφα» collapsible
-/// (24-09-2026 + Βήμα 5): κλειστά εξ αρχής (`ExpansionTile` default) —
-/// καθαρή είσοδος στη σελίδα· tap δείχνει τον editor ως ήταν.
-/// Το expand-state επιβιώνει σε αλλαγή tab
+/// Sections «Κατηγορίες»/«Προμηθευτές» collapsible (24-09-2026): κλειστά
+/// εξ αρχής (`ExpansionTile` default) — καθαρή είσοδος στη σελίδα· tap
+/// δείχνει τον editor ως ήταν. Το expand-state επιβιώνει σε αλλαγή tab
 /// (IndexedStack κρατά το State, §2.2:222).
 library;
 
@@ -20,7 +19,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../data/providers/settings_providers.dart';
-import 'widgets/backup_restore_section.dart';
 import 'widgets/category_tree_editor.dart';
 import 'widgets/receipts_management_editor.dart';
 import 'widgets/supplier_list_editor.dart';
@@ -28,8 +26,8 @@ import 'widgets/theme_mode_selector.dart';
 
 /// Σελίδα ρυθμίσεων (§2.3) — section «Θέμα» (Βήμα 1 · πάντα ορατό) +
 /// collapsible sections «Κατηγορίες» (tree editor, Βήμα 4) + «Προμηθευτές»
-/// (CRUD 24-09-2026) + «Αποδείξεις» (διαχείριση, Φάση Β 24-09-2026) +
-/// «Αντίγραφα ασφαλείας» (export/restore, Βήμα 5).
+/// (CRUD 24-09-2026) + «Αποδείξεις» (διαχείριση, Φάση Β 24-09-2026).
+/// Το Backup section έρχεται στο Βήμα 5.
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -120,24 +118,6 @@ class SettingsPage extends ConsumerWidget {
                 AppConstants.spacingL,
               ),
               children: const [ReceiptsManagementEditor()],
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingL),
-          Card(
-            // Collapsible section (§2.3 · Βήμα 5): export/restore — data-less
-            // (μόνο isWorking flag, όπως το Theme — δεν ανοίγει τη βάση).
-            child: ExpansionTile(
-              title: Text(
-                AppStrings.titleBackupSection,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              childrenPadding: const EdgeInsets.fromLTRB(
-                AppConstants.spacingL,
-                0,
-                AppConstants.spacingL,
-                AppConstants.spacingL,
-              ),
-              children: const [BackupRestoreSection()],
             ),
           ),
         ],

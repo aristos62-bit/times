@@ -186,13 +186,6 @@ void main() {
       );
     });
 
-    // ─── Backup section (§2.3 · Φάση 4 Βήμα 5) ─────────────────────────────
-    test('titleBackupSection + export/restore actions (§2.3 · Βήμα 5)', () {
-      expect(AppStrings.titleBackupSection, 'Αντίγραφα ασφαλείας');
-      expect(AppStrings.backupExportAction, 'Εξαγωγή αντιγράφου');
-      expect(AppStrings.backupRestoreAction, 'Επαναφορά αντιγράφου');
-    });
-
     // ─── Καθολικές εγγυήσεις (όλα τα strings) ────────────────────────────────
     test('κανένα string μη-κενό, χωρίς whitespace στα άκρα, χωρίς αλλαγή γραμμής', () {
       for (final text in _allStrings) {
@@ -270,7 +263,4 @@ const List<String> _allStrings = [
   AppStrings.titleReceiptsSection,
   AppStrings.clearReceiptFilter,
   AppStrings.noReceiptsForDay,
-  AppStrings.titleBackupSection,
-  AppStrings.backupExportAction,
-  AppStrings.backupRestoreAction,
 ];

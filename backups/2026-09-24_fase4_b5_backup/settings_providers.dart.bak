@@ -27,8 +27,6 @@ import '../../core/theme/app_theme.dart';
 import '../models/category_tree_node.dart';
 import '../repositories/settings_repository.dart';
 import '../repositories/settings_repository_impl.dart';
-import '../../domain/services/backup_service.dart';
-import 'backup_file_picker.dart';
 import 'database_providers.dart';
 import 'stream_providers.dart';
 
@@ -220,21 +218,4 @@ final canDeleteSupplierProvider = FutureProvider.family<bool, int>(
 final receiptCountSupplierProvider = FutureProvider.family<int, int>(
   (ref, supplierId) =>
       ref.watch(receiptRepositoryProvider).countBySupplierId(supplierId),
-);
-
-// ─── Backup / Restore — service + picker (§2.3 · Φάση 4 Βήμα 5) ─────────────
-
-/// SPoT `BackupService` πάνω στην ανοιχτή βάση. Cascade invalidation: το
-/// `ref.invalidate(appDatabaseProvider)` ξαναχτίζει service + repos + streams
-/// (όλα κάνουν watch το DB provider) — το UI διαβάζει τα νέα δεδομένα.
-/// NON-autoDispose (σύμβαση DI δέντρου).
-final backupServiceProvider = Provider<BackupService>(
-  (ref) => BackupService(ref.watch(appDatabaseProvider)),
-);
-
-/// SPoT picker αντιγράφων — production impl εδώ, override με fake στα tests
-/// (pattern `sharedPreferencesProvider`/`appDatabaseProvider.overrideWithValue`).
-/// NON-autoDispose.
-final backupFilePickerProvider = Provider<BackupFilePicker>(
-  (ref) => FilePickerBackupPicker(),
 );
