@@ -40,6 +40,9 @@ abstract final class AppStrings {
   static const String fieldSupplier = 'Προμηθευτής';
   static const String fieldQuantity = 'Ποσότητα';
   static const String fieldPrice = 'Τιμή';
+  /// Label του πεδίου έκπτωσης γραμμής (ανά μονάδα, € — §2.2).
+  /// Κενό ≡ καμία έκπτωση.
+  static const String fieldDiscount = 'Έκπτωση';
   /// Label του διακόπτη «Συνολική τιμή» στη φόρμα γραμμής (§2.2 · 24-09-2026):
   /// ΟΝ = το πεδίο Τιμή είναι το σύνολο της ποσότητας (π.χ. 350 γρ = 12 €)·
   /// OFF (default) = τιμή μονάδας. Ισχύει για όλες τις μονάδες.

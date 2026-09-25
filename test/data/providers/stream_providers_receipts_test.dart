@@ -106,11 +106,11 @@ void main() {
               (itemId: chain.itemId,
                   unitId: chain.unitId,
                   quantity: 2,
-                  priceCents: 199),
+                  priceCents: 199, discountCents: 0),
               (itemId: chain.itemId,
                   unitId: chain.unitId,
                   quantity: 1,
-                  priceCents: 50),
+                  priceCents: 50, discountCents: 0),
             ],
           );
 
@@ -152,13 +152,53 @@ void main() {
               (itemId: chain.itemId,
                   unitId: chain.unitId,
                   quantity: 1,
-                  priceCents: 100),
+                  priceCents: 100, discountCents: 0),
             ],
           );
 
       final rows = await resultsFuture;
       expect(rows.single.lineCount, 1);
       expect(rows.single.totalCents, 100);
+    });
+  });
+
+  group('latestReceiptLineProvider (family · §2.2 prefill)', () {
+    test('επιστρέφει την τελευταία γραμμή του είδους', () async {
+      final container = containerWithDb();
+      final chain = await seedReceiptChain(container);
+      final receiptId = await container
+          .read(receiptRepositoryProvider)
+          .insertReceiptWithLines(
+            date: DateTime(2026, 1, 1),
+            supplierId: chain.supplierId,
+            lines: [
+              (
+                itemId: chain.itemId,
+                unitId: chain.unitId,
+                quantity: 2,
+                priceCents: 250,
+                discountCents: 50
+              ),
+            ],
+          );
+
+      final latest = await container
+          .read(latestReceiptLineProvider(chain.itemId).future);
+
+      expect(latest, isNotNull);
+      expect(latest!.receiptId, receiptId);
+      expect(latest.priceCents, 250);
+      expect(latest.discountCents, 50);
+    });
+
+    test('είδος χωρίς ιστορικό → null', () async {
+      final container = containerWithDb();
+      final chain = await seedReceiptChain(container);
+
+      final latest = await container
+          .read(latestReceiptLineProvider(chain.itemId).future);
+
+      expect(latest, isNull);
     });
   });
 
@@ -172,7 +212,7 @@ void main() {
             date: DateTime(2026, 1, 1),
             supplierId: chain.supplierId,
             lines: [
-              (itemId: chain.itemId, unitId: chain.unitId, quantity: 2, priceCents: 199),
+              (itemId: chain.itemId, unitId: chain.unitId, quantity: 2, priceCents: 199, discountCents: 0),
             ],
           );
 

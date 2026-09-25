@@ -163,6 +163,18 @@ final receiptLinesStreamProvider =
       ref.watch(receiptRepositoryProvider).watchLines(receiptId),
 );
 
+/// Τελευταία γραμμή είδους για prefill τιμής/έκπτωσης (§2.2) — `.family`
+/// παραμετροποιημένο ανά [itemId]. One-shot FutureProvider (όχι stream — η
+/// τιμή διαβάζεται μία φορά στην επιλογή είδους, precedent `canDelete*`
+/// §2.3). `null` = το είδος δεν έχει κινηθεί. Σφάλμα → `DataLoadException`
+/// (repository mapping)· το section το αγνοεί σιωπηλά (no-prefill — η φόρμα
+/// δεν μπλοκάρεται ποτέ από αποτυχία prefill).
+/// NON-autoDispose (σύμβαση DI δέντρου).
+final latestReceiptLineProvider = FutureProvider.family<ReceiptLine?, int>(
+  (ref, itemId) =>
+      ref.watch(receiptRepositoryProvider).getLatestByItemId(itemId),
+);
+
 /// Επιλεγμένη ημέρα φίλτρου «Διαχείρισης αποδείξεων» (§2.3 · Φάση Β).
 /// `null` = όλες (οι τελευταίες `AppConstants.manageReceiptsLimit`).
 /// Plain `Notifier` (όχι `StateProvider` — αφαιρέθηκε στο Riverpod 3·

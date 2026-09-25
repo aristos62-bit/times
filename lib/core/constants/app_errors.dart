@@ -63,6 +63,15 @@ abstract final class AppErrors {
   /// §2.2: τιμή πάνω από `AppConstants.maxPriceCents`.
   static const String priceTooLarge = 'Η τιμή είναι πολύ μεγάλη';
 
+  /// §2.2: έκπτωση μονάδας πάνω από την τιμή (`discountCents > priceCents`).
+  static const String discountTooLarge =
+      'Η έκπτωση δεν μπορεί να ξεπερνά την τιμή';
+
+  /// §2.2: αρνητική έκπτωση (defensive, programmatic-only — το UI regex
+  /// αποκλείει το «−», `CurrencyTextField.parseCents`).
+  static const String discountNegative =
+      'Η έκπτωση δεν μπορεί να είναι αρνητική';
+
   /// §2.2: ποσότητα ≤ `AppConstants.validationMinQuantity` (π.χ. «0»).
   static const String quantityMustBePositive =
       'Η ποσότητα πρέπει να είναι μεγαλύτερη από 0';

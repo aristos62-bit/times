@@ -21,14 +21,15 @@ part 'receipt_form_state.freezed.dart';
 /// `enteredTotalCents` (24-09-2026): snapshot του πληκτρολογημένου συνόλου
 /// ΜΟΝΟ σε γραμμές «Συνολικής τιμής» (αλλιώς null) — το draft list το δείχνει
 /// χωρίς επαν-υπολογισμό (SPoT μαθηματικών το DAO)· το stored σύνολο
-/// `(priceCents×quantity).round()` μπορεί να διαφέρει ±1 λεπτό (στρογγυλοποίηση
-/// παραγόμενης μοναδιαίας — τεκμηριωμένο, με test).
+/// `((priceCents−discountCents)×quantity).round()` μπορεί να διαφέρει ±1 λεπτό
+/// (στρογγυλοποίηση παραγόμενης μοναδιαίας — τεκμηριωμένο, με test).
 class DraftReceiptLine {
   const DraftReceiptLine({
     required this.itemId,
     required this.unitId,
     required this.quantity,
     required this.priceCents,
+    this.discountCents = 0,
     required this.itemName,
     required this.unitAbbreviation,
     this.unitAllowsDecimal = true,
@@ -50,6 +51,11 @@ class DraftReceiptLine {
   /// `CurrencyTextField.parseCents`).
   final int priceCents;
 
+  /// Έκπτωση μονάδας σε λεπτά (0 = καμία, §2.2 — SPoT parse στο
+  /// `CurrencyTextField.parseCents`, ίδιο με την τιμή).
+  /// Προαιρετικό: default `0` = υπάρχοντες καλούντες/tests άθικτοι.
+  final int discountCents;
+
   /// Snapshot ονόματος είδους για εμφάνιση (χωρίς join στο draft list).
   final String itemName;
 
@@ -67,6 +73,13 @@ class DraftReceiptLine {
   /// Nullable με default null = υπάρχοντες καλούντες/tests άθικτοι.
   final int? enteredTotalCents;
 
+  /// Καθαρή τιμή μονάδας (λεπτά) — display-only (stored SPoT: DAO §3).
+  int get netUnitCents => priceCents - discountCents;
+
+  /// Καθαρό σύνολο γραμμής — display-only mirror του DAO (όπως το
+  /// enteredTotalCents: η λίστα το δείχνει χωρίς να το αποθηκεύει).
+  int get netTotalCents => (netUnitCents * quantity).round();
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -75,6 +88,7 @@ class DraftReceiptLine {
               other.unitId == unitId &&
               other.quantity == quantity &&
               other.priceCents == priceCents &&
+              other.discountCents == discountCents &&
               other.itemName == itemName &&
               other.unitAbbreviation == unitAbbreviation &&
               other.unitAllowsDecimal == unitAllowsDecimal &&
@@ -86,6 +100,7 @@ class DraftReceiptLine {
     unitId,
     quantity,
     priceCents,
+    discountCents,
     itemName,
     unitAbbreviation,
     unitAllowsDecimal,

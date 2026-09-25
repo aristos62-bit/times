@@ -69,7 +69,8 @@ class Receipts extends Table {
 }
 
 /// Γραμμές αποδείξεων — `lineTotalCents` υπολογισμένο μία φορά στο insert
-/// (§3: ποτέ DB generated column).
+/// (`((priceCents − discountCents) × quantity).round()`, §3: ποτέ DB
+/// generated column).
 @TableIndex(name: 'idx_receipt_lines_item_id', columns: {#itemId})
 class ReceiptLines extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -81,5 +82,11 @@ class ReceiptLines extends Table {
       integer().references(Units, #id, onDelete: KeyAction.restrict)();
   RealColumn get quantity => real()();
   IntColumn get priceCents => integer()();
+
+  /// Έκπτωση μονάδας σε λεπτά (0 = καμία · ≤ priceCents, §2.2).
+  /// SPoT καθαρού συνόλου: `lineTotalCents = ((priceCents - discountCents)
+  /// * quantity).round()` στο ReceiptLineDao.
+  IntColumn get discountCents =>
+      integer().withDefault(const Constant(0))();
   IntColumn get lineTotalCents => integer()();
 }

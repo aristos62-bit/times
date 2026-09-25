@@ -78,6 +78,7 @@ void main() {
             unitId: s.unitId,
             quantity: 2,
             priceCents: 199,
+            discountCents: 0,
           ),
         ],
       );
@@ -135,6 +136,36 @@ void main() {
 
       expect(result, (ok: false, error: null));
     });
+
+    test('γραμμή με έκπτωση → draft με discountCents (§2.2)', () async {
+      final container = containerWithDb();
+      final s = await seed(container);
+      final receiptId = await container
+          .read(receiptRepositoryProvider)
+          .insertReceiptWithLines(
+        date: DateTime(2026, 2, 5),
+        supplierId: s.supplierId,
+        lines: [
+          (
+            itemId: s.itemId,
+            unitId: s.unitId,
+            quantity: 2,
+            priceCents: 250,
+            discountCents: 50,
+          ),
+        ],
+      );
+
+      final result = await container
+          .read(receiptFormControllerProvider.notifier)
+          .loadReceiptForEdit(receiptId);
+
+      expect(result, (ok: true, error: null));
+      final drafts =
+          container.read(receiptFormControllerProvider).draftLines;
+      expect(drafts.single.priceCents, 250);
+      expect(drafts.single.discountCents, 50);
+    });
   });
 
   group('cancelEdit (Φάση Α)', () {
@@ -152,6 +183,7 @@ void main() {
             unitId: s.unitId,
             quantity: 1,
             priceCents: 100,
+            discountCents: 0,
           ),
         ],
       );
@@ -187,6 +219,7 @@ void main() {
             unitId: s.unitId,
             quantity: 1,
             priceCents: 100,
+            discountCents: 0,
           ),
         ],
       );
@@ -238,6 +271,7 @@ void main() {
             unitId: s.unitId,
             quantity: 1,
             priceCents: 100,
+            discountCents: 0,
           ),
         ],
       );
@@ -289,6 +323,7 @@ void main() {
             unitId: s.unitId,
             quantity: 1,
             priceCents: 100,
+            discountCents: 0,
           ),
         ],
       );

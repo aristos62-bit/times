@@ -35,6 +35,15 @@
 /// παράγεται `(total/quantity).round()` με guard 0/overflow (ίδια errors)·
 /// OFF (default) = τιμή μονάδας. Ισχύει για όλες τις μονάδες· lifecycle από
 /// το `ValueKey(item.id)` (φρέσκο ανά είδος, Δ8).
+///
+/// ΕΚΠΤΩΣΗ (§2.2): πεδίο `DiscountField` (ανά μονάδα, €) μετά την Τιμή —
+/// κενό ≡ 0· τελικό γραμμής `(τιμή−έκπτωση)×ποσότητα`. Σε `_isTotal` το
+/// πεδίο κρύβεται (το σύνολο ΕΙΝΑΙ το τελικό) και η έκπτωση μηδενίζεται
+/// (το κείμενο κρατιέται για επιστροφή σε unit-mode).
+/// PREFILL (§2.2): είδος με ιστορικό → τιμή+έκπτωση από την τελευταία
+/// γραμμή (`latestReceiptLineProvider`) ΜΟΝΟ σε unit-mode, match μονάδας,
+/// κενά πεδία και χωρίς πληκτρολόγηση (ατομικά και τα δύο ή τίποτα —
+/// mixed provenance απαγορεύεται).
 library;
 
 import 'package:flutter/material.dart';
@@ -44,6 +53,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_errors.dart';
 import '../../../core/constants/app_messages.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/logging/app_logger.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/providers/stream_providers.dart';
 import '../../../domain/validators/receipt_validator.dart';
@@ -53,6 +63,9 @@ import '../../shared/searchable_dropdown_field.dart';
 import '../controllers/item_search_controller.dart';
 import '../controllers/receipt_form_controller.dart';
 import '../state/receipt_form_state.dart';
+import 'discount_field.dart';
+
+part 'unit_section_checks.dart';
 
 /// Φόρμα γραμμής για το [item]: μονάδα + ποσότητα + τιμή + «Προσθήκη».
 class UnitQuantityPriceSection extends ConsumerStatefulWidget {
@@ -90,13 +103,23 @@ class _UnitQuantityPriceSectionState
   /// κανένας νέος provider/controller.
   bool _isTotal = false;
 
+  /// Έγινε η (μία) απόπειρα prefill τελευταίας τιμής — δεν ξανατρέχει.
+  bool _prefillDone = false;
+
+  /// Ο χρήστης πληκτρολόγησε σε Τιμή/Έκπτωση — το prefill δεν γράφει πάνω
+  /// του (programmatic γραφές δεν πυροδοτούν `onChanged`, μόνο οι
+  /// πληκτρολογήσεις — άρα το flag είναι ασφαλές).
+  bool _userTyped = false;
+
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _discountController = TextEditingController();
 
   @override
   void dispose() {
     _quantityController.dispose();
     _priceController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
 
@@ -156,47 +179,37 @@ class _UnitQuantityPriceSectionState
     });
   }
 
-  /// Ποσότητα του πεδίου (Βήμα 6δ): `value` = η τιμή ΜΟΝΟ όταν είναι έγκυρη
-  /// (`ReceiptValidator.validateQuantity`, §2.2:217-218), `error` = inline
-  /// μήνυμα (AppErrors) ή `null`. Κενό πεδίο και αριθμός «υπό πληκτρολόγηση»
-  /// («2,») δεν δείχνουν σφάλμα. Το parse γίνεται πάντα με δεκαδικά — ο
-  /// κανόνας ακεραιότητας ανήκει στον validator. `null` από το parse σε
-  /// μη-κενό, ολοκληρωμένο κείμενο σημαίνει πάνω από το όριο.
-  ({double? value, String? error}) _quantityCheck() {
-    final text = _quantityController.text;
-    if (text.trim().isEmpty) return (value: null, error: null);
-    final parsed = QuantityTextField.parseQuantity(text, allowsDecimal: true);
-    if (parsed == null) {
-      return (
-      value: null,
-      error: ReceiptValidator.isIncompleteNumber(text)
-          ? null
-          : AppErrors.quantityTooLarge,
-      );
+  /// Prefill τιμής/έκπτωσης από την τελευταία γραμμή του είδους (§2.2).
+  ///
+  /// Πύλη (ΟΛΑ μαζί, αλλιώς skip): unit-mode (σε total η Τιμή έχει άλλη
+  /// σημασία) · υπάρχει ιστορικό · μία φορά · κανένα user typing · μονάδα
+  /// επιλεγμένη ΚΑΙ ίδια με της τελευταίας γραμμής (cross-unit prefill
+  /// απαγορεύεται — παραπλανητικό) · και τα δύο πεδία κενά (ατομικά και τα
+  /// δύο ή τίποτα — mixed provenance απαγορεύεται). Η εγγραφή γίνεται
+  /// post-frame με `mounted` guard (precedent `_applyDefaultUnit`).
+  void _tryApplyPrefill(ReceiptLine? lastLine) {
+    if (_isTotal ||
+        lastLine == null ||
+        _prefillDone ||
+        _userTyped ||
+        _unit == null ||
+        lastLine.unitId != _unit!.id ||
+        _priceController.text.isNotEmpty ||
+        _discountController.text.isNotEmpty) {
+      return;
     }
-    final error = ReceiptValidator.validateQuantity(
-      parsed,
-      allowsDecimal: _unit?.allowsDecimal ?? true,
-    );
-    return (value: error == null ? parsed : null, error: error);
-  }
-
-  /// Τιμή του πεδίου σε cents (Βήμα 6δ) — ίδιο contract με το
-  /// `_quantityCheck` (`ReceiptValidator.validatePriceCents`, §2.2:217).
-  ({int? value, String? error}) _priceCheck() {
-    final text = _priceController.text;
-    if (text.trim().isEmpty) return (value: null, error: null);
-    final cents = CurrencyTextField.parseCents(text);
-    if (cents == null) {
-      return (
-      value: null,
-      error: ReceiptValidator.isIncompleteNumber(text)
-          ? null
-          : AppErrors.priceTooLarge,
-      );
-    }
-    final error = ReceiptValidator.validatePriceCents(cents);
-    return (value: error == null ? cents : null, error: error);
+    _prefillDone = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _priceController.text =
+          CurrencyTextField.formatCents(lastLine.priceCents);
+      if (lastLine.discountCents > 0) {
+        _discountController.text =
+            CurrencyTextField.formatCents(lastLine.discountCents);
+      }
+      setState(() {});
+    });
+    AppLogger.info(LogTag.ui, 'Prefill τελευταίας τιμής: ${widget.item.name}');
   }
 
   /// «Προσθήκη γραμμής» → draft + επιστροφή search σε IDLE (§2.2:206).
@@ -205,10 +218,16 @@ class _UnitQuantityPriceSectionState
   /// το UI το έχει ήδη αποκλείσει στο `canAdd`)· το πληκτρολογημένο σύνολο
   /// φυλάσσεται ως `enteredTotalCents` snapshot για προβολή (χωρίς
   /// επαν-υπολογισμό στο draft list).
+  /// Έκπτωση (§2.2): ανά μονάδα πάνω στην τελική μοναδιαία (πληκτρολογημένη
+  /// ή παραγόμενη)· σε `_isTotal` μηδέν (το πεδίο κρύβεται — το σύνολο
+  /// ΕΙΝΑΙ το τελικό).
   void _addLine() {
     final unit = _unit;
-    final quantity = _quantityCheck().value;
-    final entered = _priceCheck().value;
+    final quantity = _quantityCheck(
+      _quantityController,
+      allowsDecimal: _unit?.allowsDecimal ?? true,
+    ).value;
+    final entered = _priceCheck(_priceController).value;
     if (unit == null || quantity == null || entered == null) return;
     final int unitPriceCents;
     final int? enteredTotal;
@@ -221,12 +240,17 @@ class _UnitQuantityPriceSectionState
       unitPriceCents = derived;
       enteredTotal = entered;
     }
+    final discount = _isTotal
+        ? 0
+        : _discountCheck(_discountController, unitPriceCents).value;
+    if (discount == null) return;
     ref.read(receiptFormControllerProvider.notifier).addDraftLine(
       DraftReceiptLine(
         itemId: widget.item.id,
         unitId: unit.id,
         quantity: quantity,
         priceCents: unitPriceCents,
+        discountCents: discount,
         itemName: widget.item.name,
         unitAbbreviation: unit.abbreviation,
         unitAllowsDecimal: unit.allowsDecimal,
@@ -251,6 +275,14 @@ class _UnitQuantityPriceSectionState
         if (mounted) _applyDefaultUnit(units);
       });
     }
+    // Prefill τελευταίας τιμής (§2.2): ΑΝΕΥ ΟΡΩΝ watch (το mount έγινε από
+    // επιλογή είδους = user action, §2.0.1 — ίδιο σκεπτικό με τα units)· η
+    // πύλη εφαρμογής (mode/match/κενά/typing) είναι στο `_tryApplyPrefill`.
+    // `.valueOrNull`: loading/error → null → σιωπηλό no-prefill (η φόρμα δεν
+    // μπλοκάρεται ποτέ από αποτυχία prefill).
+    final lastLine =
+        ref.watch(latestReceiptLineProvider(widget.item.id)).value;
+    _tryApplyPrefill(lastLine);
 
     final allowsDecimal = _unit?.allowsDecimal ?? true;
     final theme = Theme.of(context);
@@ -265,8 +297,11 @@ class _UnitQuantityPriceSectionState
     // `(total/quantity).round()` — τα ίδια `_quantityCheck`/`_priceCheck`
     // (parse+validator) + guard παραγόμενης (0/overflow, ίδια errors).
     // Διαίρεση ΜΟΝΟ με έγκυρη qty>0 (gated — ποτέ διαίρεση με μηδέν).
-    final quantity = _quantityCheck();
-    final entered = _priceCheck();
+    final quantity = _quantityCheck(
+      _quantityController,
+      allowsDecimal: _unit?.allowsDecimal ?? true,
+    );
+    final entered = _priceCheck(_priceController);
     int? unitPriceCents;
     String? priceError;
     if (!_isTotal) {
@@ -290,8 +325,13 @@ class _UnitQuantityPriceSectionState
         }
       }
     }
-    final canAdd =
-        _unit != null && quantity.value != null && unitPriceCents != null;
+    final ({int? value, String? error}) discount = _isTotal
+        ? (value: 0, error: null)
+        : _discountCheck(_discountController, unitPriceCents);
+    final canAdd = _unit != null &&
+        quantity.value != null &&
+        unitPriceCents != null &&
+        discount.value != null;
     // Hint μονάδας: μόνο όταν ο χρήστης έχει ήδη αρχίσει να γράφει τιμή ΚΑΙ
     // δεν έχει αρχίσει να πληκτρολογεί στο unit dropdown (Βήμα 21).
     final unitHint = !_unitTyping && _priceController.text.isNotEmpty
@@ -362,10 +402,20 @@ class _UnitQuantityPriceSectionState
               labelText: AppStrings.fieldPrice,
               suffixText: AppStrings.currencySymbol,
               errorText: priceError,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(() => _userTyped = true),
               prefixIcon: const Icon(Icons.euro_outlined),
-              textInputAction: TextInputAction.done,
+              textInputAction: TextInputAction.next,
             ),
+            // Έκπτωση (§2.2): ΜΟΝΟ σε unit-mode — σε total το σύνολο ΕΙΝΑΙ
+            // το τελικό (η έκπτωση μηδενίζεται, το κείμενο κρατιέται).
+            if (!_isTotal) ...[
+              const SizedBox(height: AppConstants.spacingM),
+              DiscountField(
+                controller: _discountController,
+                errorText: discount.error,
+                onChanged: (_) => setState(() => _userTyped = true),
+              ),
+            ],
             // Συνολική τιμή (24-09-2026, όλες οι μονάδες): ΟΝ = το πεδίο
             // Τιμή είναι το σύνολο της ποσότητας· η μοναδιαία παράγεται.
             // SwitchListTile (built-in semantics, theme/responsive δωρεάν).

@@ -89,6 +89,10 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
       _guard(() => _lineDao.getByReceiptId(receiptId));
 
   @override
+  Future<ReceiptLine?> getLatestByItemId(int itemId) =>
+      _guard(() => _lineDao.getLatestByItemId(itemId));
+
+  @override
   Future<int> insertReceiptWithLines({
     required DateTime date,
     required int supplierId,
@@ -105,6 +109,7 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
             unitId: line.unitId,
             quantity: line.quantity,
             priceCents: line.priceCents,
+            discountCents: line.discountCents,
           );
         }
         return receiptId;
@@ -140,6 +145,7 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
             unitId: line.unitId,
             quantity: line.quantity,
             priceCents: line.priceCents,
+            discountCents: line.discountCents,
           );
         }
       });

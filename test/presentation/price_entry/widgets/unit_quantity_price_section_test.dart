@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_strings.dart';
+import 'package:times/core/constants/app_errors.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
@@ -126,9 +127,9 @@ void main() {
       // Προεπιλογή: το dropdown δείχνει «Κιλό», η ποσότητα «1» (Δ8).
       expect(textOf(tester, AppStrings.fieldUnit), 'Κιλό');
       expect(textOf(tester, AppStrings.fieldQuantity), '1');
-      // Suffix μονάδας + suffix € παρόντα.
+      // Suffix μονάδας + suffix € παρόντα (×2: Τιμή + Έκπτωση, §2.2).
       expect(find.text('κιλ'), findsOneWidget);
-      expect(find.text(AppStrings.currencySymbol), findsOneWidget);
+      expect(find.text(AppStrings.currencySymbol), findsNWidgets(2));
       // Χωρίς τιμή → Add ανενεργό (OR gate).
       expect(addEnabled(tester), isFalse);
       expect(tester.takeException(), isNull);
@@ -369,6 +370,92 @@ void main() {
 
       expect(textOf(tester, AppStrings.fieldUnit), 'Κιλό');
       expect(addEnabled(tester), isFalse);
+      expect(tester.takeException(), isNull);
+    });
+
+    // ─── Έκπτωση γραμμής (§2.2) ────────────────────────────────────────────
+    testWidgets('D1: έκπτωση > τιμής → inline σφάλμα + Add ανενεργό',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      await tester.enterText(
+        find.byWidget(fieldByLabel(tester, AppStrings.fieldPrice)),
+        '2,50',
+      );
+      await tester.enterText(
+        find.byWidget(fieldByLabel(tester, AppStrings.fieldDiscount)),
+        '3,00',
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text(AppErrors.discountTooLarge), findsOneWidget);
+      expect(addEnabled(tester), isFalse);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('D2: έγκυρη έκπτωση → Add → draft με discountCents (§2.2)',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      await tester.enterText(
+        find.byWidget(fieldByLabel(tester, AppStrings.fieldPrice)),
+        '2,50',
+      );
+      await tester.enterText(
+        find.byWidget(fieldByLabel(tester, AppStrings.fieldDiscount)),
+        '0,50',
+      );
+      await tester.pumpAndSettle();
+      expect(addEnabled(tester), isTrue);
+
+      await tester.tap(
+        find.widgetWithText(FilledButton, AppStrings.addReceiptLine),
+      );
+      await tester.pumpAndSettle();
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(UnitQuantityPriceSection)),
+      );
+      final lines =
+          container.read(receiptFormControllerProvider).draftLines;
+      expect(lines.length, 1);
+      expect(lines[0].priceCents, 250);
+      expect(lines[0].discountCents, 50);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('D3: σειρά πληκτρολογίου τιμή(next) → έκπτωση(done)',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      expect(
+        fieldByLabel(tester, AppStrings.fieldPrice).textInputAction,
+        TextInputAction.next,
+      );
+      expect(
+        fieldByLabel(tester, AppStrings.fieldDiscount).textInputAction,
+        TextInputAction.done,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('D4: dark theme — πεδίο έκπτωσης ορατό · χωρίς exception',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db, theme: AppTheme.dark);
+
+      expect(find.text(AppStrings.fieldDiscount), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

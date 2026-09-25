@@ -47,7 +47,7 @@ void main() {
       date: DateTime(2026, 1, 1),
       supplierId: supplierId,
       lines: [
-        (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199),
+        (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199, discountCents: 0),
       ],
     );
     return (

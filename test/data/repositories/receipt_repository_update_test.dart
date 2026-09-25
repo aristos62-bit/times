@@ -57,7 +57,7 @@ void main() {
         date: DateTime(2026, 1, 1),
         supplierId: supplierId,
         lines: [
-          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199),
+          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199, discountCents: 0),
         ],
       );
 
@@ -66,8 +66,8 @@ void main() {
         date: DateTime(2026, 2, 5),
         supplierId: secondSupplierId,
         lines: [
-          (itemId: secondItemId, unitId: unitId, quantity: 1, priceCents: 300),
-          (itemId: itemId, unitId: unitId, quantity: 3, priceCents: 50),
+          (itemId: secondItemId, unitId: unitId, quantity: 1, priceCents: 300, discountCents: 0),
+          (itemId: itemId, unitId: unitId, quantity: 3, priceCents: 50, discountCents: 0),
         ],
       );
 
@@ -82,12 +82,47 @@ void main() {
       expect(lines[1].lineTotalCents, 150);
     });
 
+    test('update με έκπτωση → round-trip (stored net + discount)', () async {
+      final id = await repo.insertReceiptWithLines(
+        date: DateTime(2026, 1, 1),
+        supplierId: supplierId,
+        lines: [
+          (
+            itemId: itemId,
+            unitId: unitId,
+            quantity: 2,
+            priceCents: 199,
+            discountCents: 0
+          ),
+        ],
+      );
+
+      await repo.updateReceiptWithLines(
+        id: id,
+        date: DateTime(2026, 1, 1),
+        supplierId: supplierId,
+        lines: [
+          (
+            itemId: itemId,
+            unitId: unitId,
+            quantity: 2,
+            priceCents: 250,
+            discountCents: 50
+          ),
+        ],
+      );
+
+      final lines = await repo.watchLines(id).first;
+      expect(lines.single.discountCents, 50);
+      expect(lines.single.lineTotalCents, 400);
+    });
+
     test('κενές γραμμές → κεφαλίδα ενημερωμένη, γραμμές σβησμένες', () async {
       final id = await repo.insertReceiptWithLines(
         date: DateTime(2026, 1, 1),
         supplierId: supplierId,
         lines: [
-          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199),
+          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199, discountCents: 0),
         ],
       );
 
@@ -107,7 +142,7 @@ void main() {
         date: DateTime(2026, 1, 1),
         supplierId: supplierId,
         lines: [
-          (itemId: itemId, unitId: unitId, quantity: 1, priceCents: 100),
+          (itemId: itemId, unitId: unitId, quantity: 1, priceCents: 100, discountCents: 0),
         ],
       );
 
@@ -131,7 +166,7 @@ void main() {
         date: DateTime(2026, 1, 1),
         supplierId: supplierId,
         lines: [
-          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199),
+          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199, discountCents: 0),
         ],
       );
 
@@ -141,7 +176,7 @@ void main() {
           date: DateTime(2026, 2, 1),
           supplierId: supplierId,
           lines: [
-            (itemId: 9999, unitId: unitId, quantity: 1, priceCents: 100),
+            (itemId: 9999, unitId: unitId, quantity: 1, priceCents: 100, discountCents: 0),
           ],
         ),
         throwsA(isA<SaveReceiptException>()),
@@ -160,7 +195,7 @@ void main() {
         date: DateTime(2026, 1, 1),
         supplierId: supplierId,
         lines: [
-          (itemId: itemId, unitId: unitId, quantity: 1, priceCents: 100),
+          (itemId: itemId, unitId: unitId, quantity: 1, priceCents: 100, discountCents: 0),
         ],
       );
 
@@ -185,8 +220,8 @@ void main() {
         date: DateTime(2026, 1, 1),
         supplierId: supplierId,
         lines: [
-          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199),
-          (itemId: secondItemId, unitId: unitId, quantity: 1, priceCents: 50),
+          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199, discountCents: 0),
+          (itemId: secondItemId, unitId: unitId, quantity: 1, priceCents: 50, discountCents: 0),
         ],
       );
 

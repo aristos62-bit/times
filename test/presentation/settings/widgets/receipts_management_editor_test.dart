@@ -57,7 +57,7 @@ void main() {
           date: date,
           supplierId: supplierId,
           lines: [
-            (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199),
+            (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199, discountCents: 0),
           ],
         );
     return (todayId: await one(today), yesterdayId: await one(yesterday));

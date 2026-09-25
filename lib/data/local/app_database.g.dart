@@ -1818,6 +1818,18 @@ class $ReceiptLinesTable extends ReceiptLines
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _discountCentsMeta = const VerificationMeta(
+    'discountCents',
+  );
+  @override
+  late final GeneratedColumn<int> discountCents = GeneratedColumn<int>(
+    'discount_cents',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _lineTotalCentsMeta = const VerificationMeta(
     'lineTotalCents',
   );
@@ -1837,6 +1849,7 @@ class $ReceiptLinesTable extends ReceiptLines
     unitId,
     quantity,
     priceCents,
+    discountCents,
     lineTotalCents,
   ];
   @override
@@ -1894,6 +1907,15 @@ class $ReceiptLinesTable extends ReceiptLines
     } else if (isInserting) {
       context.missing(_priceCentsMeta);
     }
+    if (data.containsKey('discount_cents')) {
+      context.handle(
+        _discountCentsMeta,
+        discountCents.isAcceptableOrUnknown(
+          data['discount_cents']!,
+          _discountCentsMeta,
+        ),
+      );
+    }
     if (data.containsKey('line_total_cents')) {
       context.handle(
         _lineTotalCentsMeta,
@@ -1938,6 +1960,10 @@ class $ReceiptLinesTable extends ReceiptLines
         DriftSqlType.int,
         data['${effectivePrefix}price_cents'],
       )!,
+      discountCents: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}discount_cents'],
+      )!,
       lineTotalCents: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}line_total_cents'],
@@ -1958,6 +1984,11 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
   final int unitId;
   final double quantity;
   final int priceCents;
+
+  /// Έκπτωση μονάδας σε λεπτά (0 = καμία · ≤ priceCents, §2.2).
+  /// SPoT καθαρού συνόλου: `lineTotalCents = ((priceCents - discountCents)
+  /// * quantity).round()` στο ReceiptLineDao.
+  final int discountCents;
   final int lineTotalCents;
   const ReceiptLine({
     required this.id,
@@ -1966,6 +1997,7 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
     required this.unitId,
     required this.quantity,
     required this.priceCents,
+    required this.discountCents,
     required this.lineTotalCents,
   });
   @override
@@ -1977,6 +2009,7 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
     map['unit_id'] = Variable<int>(unitId);
     map['quantity'] = Variable<double>(quantity);
     map['price_cents'] = Variable<int>(priceCents);
+    map['discount_cents'] = Variable<int>(discountCents);
     map['line_total_cents'] = Variable<int>(lineTotalCents);
     return map;
   }
@@ -1989,6 +2022,7 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
       unitId: Value(unitId),
       quantity: Value(quantity),
       priceCents: Value(priceCents),
+      discountCents: Value(discountCents),
       lineTotalCents: Value(lineTotalCents),
     );
   }
@@ -2005,6 +2039,7 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
       unitId: serializer.fromJson<int>(json['unitId']),
       quantity: serializer.fromJson<double>(json['quantity']),
       priceCents: serializer.fromJson<int>(json['priceCents']),
+      discountCents: serializer.fromJson<int>(json['discountCents']),
       lineTotalCents: serializer.fromJson<int>(json['lineTotalCents']),
     );
   }
@@ -2018,6 +2053,7 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
       'unitId': serializer.toJson<int>(unitId),
       'quantity': serializer.toJson<double>(quantity),
       'priceCents': serializer.toJson<int>(priceCents),
+      'discountCents': serializer.toJson<int>(discountCents),
       'lineTotalCents': serializer.toJson<int>(lineTotalCents),
     };
   }
@@ -2029,6 +2065,7 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
     int? unitId,
     double? quantity,
     int? priceCents,
+    int? discountCents,
     int? lineTotalCents,
   }) => ReceiptLine(
     id: id ?? this.id,
@@ -2037,6 +2074,7 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
     unitId: unitId ?? this.unitId,
     quantity: quantity ?? this.quantity,
     priceCents: priceCents ?? this.priceCents,
+    discountCents: discountCents ?? this.discountCents,
     lineTotalCents: lineTotalCents ?? this.lineTotalCents,
   );
   ReceiptLine copyWithCompanion(ReceiptLinesCompanion data) {
@@ -2049,6 +2087,9 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
       priceCents: data.priceCents.present
           ? data.priceCents.value
           : this.priceCents,
+      discountCents: data.discountCents.present
+          ? data.discountCents.value
+          : this.discountCents,
       lineTotalCents: data.lineTotalCents.present
           ? data.lineTotalCents.value
           : this.lineTotalCents,
@@ -2064,6 +2105,7 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
           ..write('unitId: $unitId, ')
           ..write('quantity: $quantity, ')
           ..write('priceCents: $priceCents, ')
+          ..write('discountCents: $discountCents, ')
           ..write('lineTotalCents: $lineTotalCents')
           ..write(')'))
         .toString();
@@ -2077,6 +2119,7 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
     unitId,
     quantity,
     priceCents,
+    discountCents,
     lineTotalCents,
   );
   @override
@@ -2089,6 +2132,7 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
           other.unitId == this.unitId &&
           other.quantity == this.quantity &&
           other.priceCents == this.priceCents &&
+          other.discountCents == this.discountCents &&
           other.lineTotalCents == this.lineTotalCents);
 }
 
@@ -2099,6 +2143,7 @@ class ReceiptLinesCompanion extends UpdateCompanion<ReceiptLine> {
   final Value<int> unitId;
   final Value<double> quantity;
   final Value<int> priceCents;
+  final Value<int> discountCents;
   final Value<int> lineTotalCents;
   const ReceiptLinesCompanion({
     this.id = const Value.absent(),
@@ -2107,6 +2152,7 @@ class ReceiptLinesCompanion extends UpdateCompanion<ReceiptLine> {
     this.unitId = const Value.absent(),
     this.quantity = const Value.absent(),
     this.priceCents = const Value.absent(),
+    this.discountCents = const Value.absent(),
     this.lineTotalCents = const Value.absent(),
   });
   ReceiptLinesCompanion.insert({
@@ -2116,6 +2162,7 @@ class ReceiptLinesCompanion extends UpdateCompanion<ReceiptLine> {
     required int unitId,
     required double quantity,
     required int priceCents,
+    this.discountCents = const Value.absent(),
     required int lineTotalCents,
   }) : receiptId = Value(receiptId),
        itemId = Value(itemId),
@@ -2130,6 +2177,7 @@ class ReceiptLinesCompanion extends UpdateCompanion<ReceiptLine> {
     Expression<int>? unitId,
     Expression<double>? quantity,
     Expression<int>? priceCents,
+    Expression<int>? discountCents,
     Expression<int>? lineTotalCents,
   }) {
     return RawValuesInsertable({
@@ -2139,6 +2187,7 @@ class ReceiptLinesCompanion extends UpdateCompanion<ReceiptLine> {
       if (unitId != null) 'unit_id': unitId,
       if (quantity != null) 'quantity': quantity,
       if (priceCents != null) 'price_cents': priceCents,
+      if (discountCents != null) 'discount_cents': discountCents,
       if (lineTotalCents != null) 'line_total_cents': lineTotalCents,
     });
   }
@@ -2150,6 +2199,7 @@ class ReceiptLinesCompanion extends UpdateCompanion<ReceiptLine> {
     Value<int>? unitId,
     Value<double>? quantity,
     Value<int>? priceCents,
+    Value<int>? discountCents,
     Value<int>? lineTotalCents,
   }) {
     return ReceiptLinesCompanion(
@@ -2159,6 +2209,7 @@ class ReceiptLinesCompanion extends UpdateCompanion<ReceiptLine> {
       unitId: unitId ?? this.unitId,
       quantity: quantity ?? this.quantity,
       priceCents: priceCents ?? this.priceCents,
+      discountCents: discountCents ?? this.discountCents,
       lineTotalCents: lineTotalCents ?? this.lineTotalCents,
     );
   }
@@ -2184,6 +2235,9 @@ class ReceiptLinesCompanion extends UpdateCompanion<ReceiptLine> {
     if (priceCents.present) {
       map['price_cents'] = Variable<int>(priceCents.value);
     }
+    if (discountCents.present) {
+      map['discount_cents'] = Variable<int>(discountCents.value);
+    }
     if (lineTotalCents.present) {
       map['line_total_cents'] = Variable<int>(lineTotalCents.value);
     }
@@ -2199,6 +2253,7 @@ class ReceiptLinesCompanion extends UpdateCompanion<ReceiptLine> {
           ..write('unitId: $unitId, ')
           ..write('quantity: $quantity, ')
           ..write('priceCents: $priceCents, ')
+          ..write('discountCents: $discountCents, ')
           ..write('lineTotalCents: $lineTotalCents')
           ..write(')'))
         .toString();
@@ -4375,6 +4430,7 @@ typedef $$ReceiptLinesTableCreateCompanionBuilder =
       required int unitId,
       required double quantity,
       required int priceCents,
+      Value<int> discountCents,
       required int lineTotalCents,
     });
 typedef $$ReceiptLinesTableUpdateCompanionBuilder =
@@ -4385,6 +4441,7 @@ typedef $$ReceiptLinesTableUpdateCompanionBuilder =
       Value<int> unitId,
       Value<double> quantity,
       Value<int> priceCents,
+      Value<int> discountCents,
       Value<int> lineTotalCents,
     });
 
@@ -4465,6 +4522,11 @@ class $$ReceiptLinesTableFilterComposer
 
   ColumnFilters<int> get priceCents => $composableBuilder(
     column: $table.priceCents,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get discountCents => $composableBuilder(
+    column: $table.discountCents,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4567,6 +4629,11 @@ class $$ReceiptLinesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get discountCents => $composableBuilder(
+    column: $table.discountCents,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get lineTotalCents => $composableBuilder(
     column: $table.lineTotalCents,
     builder: (column) => ColumnOrderings(column),
@@ -4659,6 +4726,11 @@ class $$ReceiptLinesTableAnnotationComposer
 
   GeneratedColumn<int> get priceCents => $composableBuilder(
     column: $table.priceCents,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get discountCents => $composableBuilder(
+    column: $table.discountCents,
     builder: (column) => column,
   );
 
@@ -4771,6 +4843,7 @@ class $$ReceiptLinesTableTableManager
                 Value<int> unitId = const Value.absent(),
                 Value<double> quantity = const Value.absent(),
                 Value<int> priceCents = const Value.absent(),
+                Value<int> discountCents = const Value.absent(),
                 Value<int> lineTotalCents = const Value.absent(),
               }) => ReceiptLinesCompanion(
                 id: id,
@@ -4779,6 +4852,7 @@ class $$ReceiptLinesTableTableManager
                 unitId: unitId,
                 quantity: quantity,
                 priceCents: priceCents,
+                discountCents: discountCents,
                 lineTotalCents: lineTotalCents,
               ),
           createCompanionCallback:
@@ -4789,6 +4863,7 @@ class $$ReceiptLinesTableTableManager
                 required int unitId,
                 required double quantity,
                 required int priceCents,
+                Value<int> discountCents = const Value.absent(),
                 required int lineTotalCents,
               }) => ReceiptLinesCompanion.insert(
                 id: id,
@@ -4797,6 +4872,7 @@ class $$ReceiptLinesTableTableManager
                 unitId: unitId,
                 quantity: quantity,
                 priceCents: priceCents,
+                discountCents: discountCents,
                 lineTotalCents: lineTotalCents,
               ),
           withReferenceMapper: (p0) => p0

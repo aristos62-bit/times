@@ -75,6 +75,7 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
     final error = ReceiptValidator.validateLine(
       quantity: line.quantity,
       priceCents: line.priceCents,
+      discountCents: line.discountCents,
       allowsDecimal: line.unitAllowsDecimal,
     );
     if (error != null) {
@@ -88,7 +89,9 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
     AppLogger.info(
       LogTag.ui,
       'Προσθήκη γραμμής: ${line.itemName} × ${line.quantity} '
-      '${line.unitAbbreviation} (${state.draftLines.length} γραμμές)',
+      '${line.unitAbbreviation}'
+      '${line.discountCents > 0 ? ' (έκπτωση ${line.discountCents})' : ''} '
+      '(${state.draftLines.length} γραμμές)',
     );
   }
 
@@ -158,6 +161,7 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
           unitId: line.unitId,
           quantity: line.quantity,
           priceCents: line.priceCents,
+          discountCents: line.discountCents,
           ),
       ];
       if (editingId == null) {
@@ -207,6 +211,7 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
       final error = ReceiptValidator.validateLine(
         quantity: line.quantity,
         priceCents: line.priceCents,
+        discountCents: line.discountCents,
         allowsDecimal: line.unitAllowsDecimal,
       );
       if (error != null) return '${line.itemName}: $error';
@@ -237,7 +242,8 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
   /// DB σφάλμα → `DataLoadException` ανέγγιχτο (feedback στο widget).
   /// Τα snapshots (`itemName/unitAbbreviation/unitAllowsDecimal`) επιλύονται
   /// από τα ΤΡΕΧΟΝΤΑ repos (μετονομασία φαίνεται αυτόματα)·
-  /// `enteredTotalCents = null` (δεν ανακατασκευάζεται — stored ±1, §3).
+  /// `enteredTotalCents = null` (δεν ανακατασκευάζεται — stored ±1, §3)·
+  /// `discountCents` από τη γραμμή (§2.2).
   /// Επανείσοδος ενώ `isSaving` → no-op (double-tap guard, §2.4).
   Future<({bool ok, String? error})> loadReceiptForEdit(int id) async {
     if (state.isSaving) return (ok: false, error: null);
@@ -273,6 +279,7 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
             unitId: unit.id,
             quantity: l.quantity,
             priceCents: l.priceCents,
+            discountCents: l.discountCents,
             itemName: item.name,
             unitAbbreviation: unit.abbreviation,
             unitAllowsDecimal: unit.allowsDecimal,

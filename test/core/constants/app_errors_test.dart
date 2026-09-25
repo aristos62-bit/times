@@ -59,6 +59,16 @@ void main() {
       expect(AppErrors.priceTooLarge, 'Η τιμή είναι πολύ μεγάλη');
     });
 
+    test('discountTooLarge (§2.2 · έκπτωση γραμμής)', () {
+      expect(AppErrors.discountTooLarge,
+          'Η έκπτωση δεν μπορεί να ξεπερνά την τιμή');
+    });
+
+    test('discountNegative (§2.2 · defensive, programmatic-only)', () {
+      expect(AppErrors.discountNegative,
+          'Η έκπτωση δεν μπορεί να είναι αρνητική');
+    });
+
     test('quantityMustBePositive (§2.2)', () {
       expect(AppErrors.quantityMustBePositive,
           'Η ποσότητα πρέπει να είναι μεγαλύτερη από 0');
@@ -110,6 +120,8 @@ const List<String> _allConstStrings = [
   AppErrors.nameExists,
   AppErrors.priceMustBePositive,
   AppErrors.priceTooLarge,
+  AppErrors.discountTooLarge,
+  AppErrors.discountNegative,
   AppErrors.quantityMustBePositive,
   AppErrors.quantityTooLarge,
   AppErrors.quantityMustBeInteger,

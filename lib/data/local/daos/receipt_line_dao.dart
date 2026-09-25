@@ -1,9 +1,10 @@
 /// DAO για τον πίνακα `receipt_lines` — Φάση 1, Βήμα 2 (§3, §4.1 DESIGN).
 ///
 /// SPoT υπολογισμού του `lineTotalCents` (§3): ο υπολογισμός
-/// `(priceCents * quantity).round()` γίνεται ΑΠΟΚΛΕΙΣΤΙΚΑ εδώ — ο caller δεν
-/// μπορεί ποτέ να δώσει `lineTotalCents` (αποτρέπονται ασυνέπειες). Στο
-/// updateById ξανα-υπολογίζεται αυτόματα όταν αλλάζει quantity/priceCents.
+/// `((priceCents - discountCents) * quantity).round()` γίνεται ΑΠΟΚΛΕΙΣΤΙΚΑ
+/// εδώ — ο caller δεν μπορεί ποτέ να δώσει `lineTotalCents` (αποτρέπονται
+/// ασυνέπειες). Στο updateById ξανα-υπολογίζεται αυτόματα όταν αλλάζει
+/// quantity/priceCents/discountCents.
 library;
 
 import 'package:drift/drift.dart';
@@ -43,14 +44,43 @@ class ReceiptLineDao extends BaseDao {
             .getSingleOrNull(),
       );
 
+  /// Τελευταία γραμμή είδους (για prefill τιμής/έκπτωσης §2.2) — μία γραμμή
+  /// ή null αν το είδος δεν έχει κινηθεί ποτέ.
+  ///
+  /// Σειρά: ημερομηνία απόδειξης DESC, id DESC (όχι σκέτο id — backdated
+  /// αποδείξεις και edit-reinsert (§2.2 Φάση Α) αλλάζουν τη σειρά των ids).
+  /// Typed join (precedent counts/cascade Βήματος 4, §2.3).
+  Future<ReceiptLine?> getLatestByItemId(int itemId) => guard(
+        'Ανάγνωση τελευταίας γραμμής είδους',
+        () async {
+          final query = db.select(db.receiptLines).join([
+            innerJoin(
+              db.receipts,
+              db.receipts.id.equalsExp(db.receiptLines.receiptId),
+            ),
+          ])
+            ..where(db.receiptLines.itemId.equals(itemId))
+            ..orderBy([
+              OrderingTerm.desc(db.receipts.date),
+              OrderingTerm.desc(db.receiptLines.id),
+            ])
+            ..limit(1);
+          final row = await query.getSingleOrNull();
+          return row?.readTable(db.receiptLines);
+        },
+      );
+
   /// Εισάγει γραμμή. Το `lineTotalCents` υπολογίζεται ΕΔΩ (SPoT §3):
-  /// `(priceCents * quantity).round()` — στρογγυλοποίηση στο πλησιέστερο cent.
+  /// `((priceCents - discountCents) * quantity).round()` — στρογγυλοποίηση
+  /// στο πλησιέστερο cent. [discountCents] default 0 = καμία έκπτωση
+  /// (υπάρχοντες καλούντες άθικτοι).
   Future<int> insert({
     required int receiptId,
     required int itemId,
     required int unitId,
     required double quantity,
     required int priceCents,
+    int discountCents = 0,
   }) =>
       guard(
         'Εισαγωγή γραμμής απόδειξης',
@@ -61,13 +91,16 @@ class ReceiptLineDao extends BaseDao {
                 unitId: unitId,
                 quantity: quantity,
                 priceCents: priceCents,
-                lineTotalCents: (priceCents * quantity).round(),
+                discountCents: Value(discountCents),
+                lineTotalCents:
+                    ((priceCents - discountCents) * quantity).round(),
               ),
             ),
       );
 
-  /// Ενημερώνει γραμμή (όσα πεδία δεν είναι null). Αν αλλάζει quantity ΚΑΙ
-  /// priceCents, το lineTotalCents ξανα-υπολογίζεται με τα ΝΕΑ value (SPoT §3).
+  /// Ενημερώνει γραμμή (όσα πεδία δεν είναι null). Αν αλλάζει quantity,
+  /// priceCents Ή discountCents, το lineTotalCents ξανα-υπολογίζεται με τα
+  /// ΝΕΑ value (SPoT §3).
   Future<bool> updateById(
     int id, {
     int? receiptId,
@@ -75,6 +108,7 @@ class ReceiptLineDao extends BaseDao {
     int? unitId,
     double? quantity,
     int? priceCents,
+    int? discountCents,
   }) =>
       guard(
         'Ενημέρωση γραμμής απόδειξης',
@@ -83,7 +117,8 @@ class ReceiptLineDao extends BaseDao {
               itemId == null &&
               unitId == null &&
               quantity == null &&
-              priceCents == null) {
+              priceCents == null &&
+              discountCents == null) {
             return false;
           }
           var companion = const ReceiptLinesCompanion();
@@ -102,8 +137,12 @@ class ReceiptLineDao extends BaseDao {
           if (priceCents != null) {
             companion = companion.copyWith(priceCents: Value(priceCents));
           }
-          if (quantity != null || priceCents != null) {
-            // Recalculate: χρειαζόμαστε και τα δύο· ό,τι δεν δόθηκε το
+          if (discountCents != null) {
+            companion =
+                companion.copyWith(discountCents: Value(discountCents));
+          }
+          if (quantity != null || priceCents != null || discountCents != null) {
+            // Recalculate: χρειαζόμαστε και τα τρία· ό,τι δεν δόθηκε το
             // διαβάζουμε από την υπάρχουσα γραμμή (SPoT §3).
             final current = await (db.select(db.receiptLines)
                   ..where((t) => t.id.equals(id)))
@@ -111,7 +150,9 @@ class ReceiptLineDao extends BaseDao {
             if (current == null) return false;
             companion = companion.copyWith(
               lineTotalCents: Value(
-                ((priceCents ?? current.priceCents) * (quantity ?? current.quantity))
+                (((priceCents ?? current.priceCents) -
+                            (discountCents ?? current.discountCents)) *
+                        (quantity ?? current.quantity))
                     .round(),
               ),
             );

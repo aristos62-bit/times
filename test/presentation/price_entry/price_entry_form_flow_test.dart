@@ -374,6 +374,9 @@ class _BlockingReceiptRepo implements ReceiptRepository {
   Future<List<ReceiptLine>> getLines(int receiptId) =>
       inner.getLines(receiptId);
   @override
+  Future<ReceiptLine?> getLatestByItemId(int itemId) =>
+      inner.getLatestByItemId(itemId);
+  @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,
     required int limit,

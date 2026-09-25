@@ -172,6 +172,163 @@ void main() {
     });
   });
 
+  group('ReceiptLineDao.insert — με έκπτωση (SPoT §3)', () {
+    test('lineTotalCents = ((250−50)×2).round() = 400', () async {
+      final id = await dao.insert(
+        receiptId: receiptId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 2,
+        priceCents: 250,
+        discountCents: 50,
+      );
+      final row = await dao.getById(id);
+
+      expect(row!.discountCents, 50);
+      expect(row.lineTotalCents, 400);
+    });
+
+    test('έκπτωση = τιμή → σύνολο 0 (έγκυρη δωρεάν γραμμή)', () async {
+      final id = await dao.insert(
+        receiptId: receiptId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 3,
+        priceCents: 100,
+        discountCents: 100,
+      );
+      expect((await dao.getById(id))!.lineTotalCents, 0);
+    });
+
+    test('default (χωρίς όρισμα) → discountCents 0, σύνολο αμετάβλητο',
+        () async {
+      final id = await dao.insert(
+        receiptId: receiptId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 2,
+        priceCents: 199,
+      );
+      final row = await dao.getById(id);
+
+      expect(row!.discountCents, 0);
+      expect(row.lineTotalCents, 398);
+    });
+  });
+
+  group('ReceiptLineDao.updateById — με έκπτωση (SPoT §3)', () {
+    test('αλλαγή ΜΟΝΟ discountCents → ξανά-υπολογισμός', () async {
+      final id = await dao.insert(
+        receiptId: receiptId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 2,
+        priceCents: 250,
+      );
+
+      expect(await dao.updateById(id, discountCents: 50), isTrue);
+      final row = await dao.getById(id);
+      expect(row!.discountCents, 50);
+      expect(row.lineTotalCents, 400);
+    });
+
+    test('αλλαγή priceCents + discountCents → βάσει ΝΕΩΝ τιμών', () async {
+      final id = await dao.insert(
+        receiptId: receiptId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 1,
+        priceCents: 100,
+      );
+
+      await dao.updateById(id, priceCents: 300, discountCents: 100);
+      expect((await dao.getById(id))!.lineTotalCents, 200);
+    });
+  });
+
+  group('ReceiptLineDao.getLatestByItemId (§2.2 prefill)', () {
+    Future<int> receipt(DateTime date) => ReceiptDao(db)
+        .insert(date: date, supplierId: supplierId);
+
+    test('επιστρέφει τη γραμμή της νεότερης απόδειξης (όχι του max id)',
+        () async {
+      final oldId = await receipt(DateTime(2026, 3, 1));
+      final newId = await receipt(DateTime(2026, 1, 1));
+      await dao.insert(
+        receiptId: oldId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 1,
+        priceCents: 100,
+      );
+      await dao.insert(
+        receiptId: newId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 2,
+        priceCents: 250,
+        discountCents: 50,
+      );
+      // Backdated: παλιότερη ημερομηνία μπαίνει ΤΕΛΕΥΤΑΙΑ (μεγαλύτερο id).
+      final backdatedId = await receipt(DateTime(2025, 12, 1));
+      await dao.insert(
+        receiptId: backdatedId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 5,
+        priceCents: 90,
+      );
+
+      final latest = await dao.getLatestByItemId(itemId);
+
+      expect(latest, isNotNull);
+      expect(latest!.receiptId, oldId, reason: 'Νεότερη ΗΜΕΡΟΜΗΝΙΑ, όχι id');
+      expect(latest.priceCents, 100);
+    });
+
+    test('ίδια ημέρα → tiebreak με max id', () async {
+      final id = await receipt(DateTime(2026, 1, 1));
+      await dao.insert(
+        receiptId: id,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 1,
+        priceCents: 100,
+      );
+      final second = await dao.insert(
+        receiptId: id,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 1,
+        priceCents: 120,
+        discountCents: 20,
+      );
+
+      final latest = await dao.getLatestByItemId(itemId);
+
+      expect(latest!.id, second);
+      expect(latest.priceCents, 120);
+      expect(latest.discountCents, 20);
+    });
+
+    test('είδος χωρίς γραμμές → null', () async {
+      expect(await dao.getLatestByItemId(9999), isNull);
+    });
+
+    test('γραμμές άλλου είδους αγνοούνται', () async {
+      final id = await receipt(DateTime(2026, 1, 1));
+      await dao.insert(
+        receiptId: id,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 1,
+        priceCents: 100,
+      );
+
+      expect(await dao.getLatestByItemId(itemId + 9999), isNull);
+    });
+  });
+
   group('ReceiptLineDao.deleteById', () {
     test('διαγράφει τη γραμμή', () async {
       final id = await dao.insert(

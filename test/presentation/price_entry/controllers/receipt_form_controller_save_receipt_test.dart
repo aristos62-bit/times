@@ -276,6 +276,35 @@ void main() {
       expect(form.draftLines, isEmpty);
       expect(form.isSaving, isFalse);
     });
+
+    test('γραμμή με έκπτωση → stored net + discount (§2.2)', () async {
+      final container = containerWithDb();
+      final seeded = await seed(container);
+      final notifier = container.read(receiptFormControllerProvider.notifier);
+      notifier.setSupplier(seeded.supplier);
+      notifier.addDraftLine(
+        DraftReceiptLine(
+          itemId: seeded.itemId,
+          unitId: seeded.unitId,
+          quantity: 2,
+          priceCents: 250,
+          discountCents: 50,
+          itemName: 'Γάλα',
+          unitAbbreviation: 'κιλ',
+        ),
+      );
+
+      await notifier.saveReceipt();
+
+      final receipts =
+          await container.read(receiptRepositoryProvider).watchAll().first;
+      final lines = await container
+          .read(receiptRepositoryProvider)
+          .watchLines(receipts[0].id)
+          .first;
+      expect(lines.single.discountCents, 50);
+      expect(lines.single.lineTotalCents, 400);
+    });
   });
 }
 
@@ -311,6 +340,9 @@ class _FailingReceiptRepo implements ReceiptRepository {
       throw const DataLoadException();
   @override
   Future<List<ReceiptLine>> getLines(int receiptId) =>
+      throw const DataLoadException();
+  @override
+  Future<ReceiptLine?> getLatestByItemId(int itemId) =>
       throw const DataLoadException();
   @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
@@ -367,6 +399,9 @@ class _BlockingReceiptRepo implements ReceiptRepository {
   @override
   Future<List<ReceiptLine>> getLines(int receiptId) =>
       inner.getLines(receiptId);
+  @override
+  Future<ReceiptLine?> getLatestByItemId(int itemId) =>
+      inner.getLatestByItemId(itemId);
   @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,

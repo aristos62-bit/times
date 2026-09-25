@@ -123,7 +123,7 @@ void main() {
         date: DateTime(2026, 1, 1),
         supplierId: supplierId,
         lines: [
-          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199),
+          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199, discountCents: 0),
         ],
       );
 
@@ -140,8 +140,8 @@ void main() {
         date: DateTime(2026, 1, 1),
         supplierId: supplierId,
         lines: [
-          (itemId: itemId, unitId: unitId, quantity: 1, priceCents: 100),
-          (itemId: secondItemId, unitId: unitId, quantity: 3, priceCents: 50),
+          (itemId: itemId, unitId: unitId, quantity: 1, priceCents: 100, discountCents: 0),
+          (itemId: secondItemId, unitId: unitId, quantity: 3, priceCents: 50, discountCents: 0),
         ],
       );
 
@@ -175,8 +175,8 @@ void main() {
         date: DateTime(2026, 1, 1),
         supplierId: supplierId,
         lines: [
-          (itemId: itemId, unitId: unitId, quantity: 2.5, priceCents: 199),
-          (itemId: secondItemId, unitId: unitId, quantity: 1, priceCents: 300),
+          (itemId: itemId, unitId: unitId, quantity: 2.5, priceCents: 199, discountCents: 0),
+          (itemId: secondItemId, unitId: unitId, quantity: 1, priceCents: 300, discountCents: 0),
         ],
       );
 
@@ -204,7 +204,7 @@ void main() {
           date: DateTime(2026, 1, 1),
           supplierId: supplierId,
           lines: [
-            (itemId: 9999, unitId: unitId, quantity: 1, priceCents: 100),
+            (itemId: 9999, unitId: unitId, quantity: 1, priceCents: 100, discountCents: 0),
           ],
         ),
         throwsA(isA<SaveReceiptException>()),
@@ -221,7 +221,7 @@ void main() {
           date: DateTime(2026, 1, 1),
           supplierId: 9999,
           lines: [
-            (itemId: itemId, unitId: unitId, quantity: 1, priceCents: 100),
+            (itemId: itemId, unitId: unitId, quantity: 1, priceCents: 100, discountCents: 0),
           ],
         ),
         throwsA(isA<SaveReceiptException>()),
@@ -237,7 +237,7 @@ void main() {
           date: DateTime(2026, 1, 1),
           supplierId: supplierId,
           lines: [
-            (itemId: itemId, unitId: 9999, quantity: 1, priceCents: 100),
+            (itemId: itemId, unitId: 9999, quantity: 1, priceCents: 100, discountCents: 0),
           ],
         ),
         throwsA(isA<SaveReceiptException>()),
@@ -247,14 +247,59 @@ void main() {
     });
   });
 
+  group('ReceiptRepositoryImpl — με έκπτωση (§2.2)', () {
+    test('insertReceiptWithLines: έκπτωση αποθηκεύεται, σύνολο καθαρό',
+        () async {
+      final id = await repo.insertReceiptWithLines(
+        date: DateTime(2026, 1, 1),
+        supplierId: supplierId,
+        lines: [
+          (
+            itemId: itemId,
+            unitId: unitId,
+            quantity: 2,
+            priceCents: 250,
+            discountCents: 50
+          ),
+        ],
+      );
+
+      final lines = await repo.watchLines(id).first;
+      expect(lines.single.discountCents, 50);
+      expect(lines.single.lineTotalCents, 400);
+    });
+
+    test('getLatestByItemId: passthrough (data + null)', () async {
+      expect(await repo.getLatestByItemId(9999), isNull);
+
+      final id = await repo.insertReceiptWithLines(
+        date: DateTime(2026, 1, 1),
+        supplierId: supplierId,
+        lines: [
+          (
+            itemId: itemId,
+            unitId: unitId,
+            quantity: 1,
+            priceCents: 100,
+            discountCents: 0
+          ),
+        ],
+      );
+
+      final latest = await repo.getLatestByItemId(itemId);
+      expect(latest, isNotNull);
+      expect(latest!.receiptId, id);
+    });
+  });
+
   group('ReceiptRepositoryImpl.watchRecentSummaries (Φάση 3, Βήμα 7)', () {
     test('επιστρέφει σύνοψη με γραμμές + προμηθευτή (delegation)', () async {
       final receiptId = await repo.insertReceiptWithLines(
         date: DateTime(2026, 1, 1),
         supplierId: supplierId,
         lines: [
-          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199),
-          (itemId: secondItemId, unitId: unitId, quantity: 1, priceCents: 50),
+          (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199, discountCents: 0),
+          (itemId: secondItemId, unitId: unitId, quantity: 1, priceCents: 50, discountCents: 0),
         ],
       );
 

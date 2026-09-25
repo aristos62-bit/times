@@ -64,6 +64,10 @@ void main() {
       expect(AppStrings.fieldUnit, 'Μονάδα');
     });
 
+    test('fieldDiscount = «Έκπτωση» (§2.2 · έκπτωση γραμμής)', () {
+      expect(AppStrings.fieldDiscount, 'Έκπτωση');
+    });
+
     test('unit/price section — hint μονάδας + σύμβολο € (§2.2 · Βήμα 5γ)', () {
       expect(AppStrings.unitSearchHint, 'Αναζήτηση μονάδας');
       expect(AppStrings.currencySymbol, '€');
@@ -216,6 +220,7 @@ const List<String> _allStrings = [
   AppStrings.fieldSupplier,
   AppStrings.fieldQuantity,
   AppStrings.fieldPrice,
+  AppStrings.fieldDiscount,
   AppStrings.priceTotalMode,
   AppStrings.lineTotalLabel,
   AppStrings.fieldUnit,

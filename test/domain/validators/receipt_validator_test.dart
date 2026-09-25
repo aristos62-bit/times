@@ -237,6 +237,80 @@ void main() {
     });
   });
 
+  group('ReceiptValidator.validateDiscountCents (§2.2 · έκπτωση γραμμής)', () {
+    test('0 → null (καμία έκπτωση έγκυρη)', () {
+      expect(ReceiptValidator.validateDiscountCents(0, 250), isNull);
+    });
+
+    test('ίσo με την τιμή → null (δωρεάν γραμμή 0,00 €)', () {
+      expect(ReceiptValidator.validateDiscountCents(250, 250), isNull);
+    });
+
+    test('μικρότερη από την τιμή → null', () {
+      expect(ReceiptValidator.validateDiscountCents(50, 250), isNull);
+    });
+
+    test('μεγαλύτερη από την τιμή → discountTooLarge', () {
+      expect(ReceiptValidator.validateDiscountCents(251, 250),
+          AppErrors.discountTooLarge);
+    });
+
+    test('αρνητική → discountNegative (defensive, programmatic-only)', () {
+      expect(ReceiptValidator.validateDiscountCents(-1, 250),
+          AppErrors.discountNegative);
+    });
+
+    test('έκπτωση 0 με τιμή 0 → null (η τιμή απορρίπτεται ξεχωριστά)', () {
+      expect(ReceiptValidator.validateDiscountCents(0, 0), isNull);
+    });
+  });
+
+  group('ReceiptValidator.validateLine — με έκπτωση', () {
+    test('έγκυρη έκπτωση → null', () {
+      expect(
+        ReceiptValidator.validateLine(
+            quantity: 2,
+            priceCents: 250,
+            discountCents: 50,
+            allowsDecimal: true),
+        isNull,
+      );
+    });
+
+    test('έκπτωση = τιμή → null (δωρεάν γραμμή)', () {
+      expect(
+        ReceiptValidator.validateLine(
+            quantity: 1,
+            priceCents: 100,
+            discountCents: 100,
+            allowsDecimal: true),
+        isNull,
+      );
+    });
+
+    test('έκπτωση > τιμής → discountTooLarge', () {
+      expect(
+        ReceiptValidator.validateLine(
+            quantity: 1,
+            priceCents: 100,
+            discountCents: 101,
+            allowsDecimal: true),
+        AppErrors.discountTooLarge,
+      );
+    });
+
+    test('άκυρη τιμή ΚΑΙ άκυρη έκπτωση → πρώτα η τιμή (σταθερή σειρά)', () {
+      expect(
+        ReceiptValidator.validateLine(
+            quantity: 1,
+            priceCents: 0,
+            discountCents: 50,
+            allowsDecimal: true),
+        AppErrors.priceMustBePositive,
+      );
+    });
+  });
+
   group('ReceiptValidator.isIncompleteNumber', () {
     test('τελικό κόμμα («5,») → true', () {
       expect(ReceiptValidator.isIncompleteNumber('5,'), isTrue);

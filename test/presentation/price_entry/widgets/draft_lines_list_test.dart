@@ -162,5 +162,52 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('γραμμή με έκπτωση → «τιμή −έκπτωση (σύνολο net)» (§2.2)',
+        (tester) async {
+      await tester.pumpWidget(wrap());
+      final container = containerOf(tester);
+      container.read(receiptFormControllerProvider.notifier).addDraftLine(
+            DraftReceiptLine(
+              itemId: 1,
+              unitId: 2,
+              quantity: 2.5,
+              priceCents: 250,
+              discountCents: 50,
+              itemName: 'Γάλα',
+              unitAbbreviation: 'κιλ',
+            ),
+          );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('2,5 κιλ · 2,50 € -0,50 € (${AppStrings.lineTotalLabel} '
+            '5,00 €)'),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('dark mode: γραμμή με έκπτωση ορατή χωρίς exception (§1.5)',
+        (tester) async {
+      await tester.pumpWidget(wrap(theme: AppTheme.dark));
+      final container = containerOf(tester);
+      container.read(receiptFormControllerProvider.notifier).addDraftLine(
+            DraftReceiptLine(
+              itemId: 1,
+              unitId: 2,
+              quantity: 1,
+              priceCents: 100,
+              discountCents: 20,
+              itemName: 'Γάλα',
+              unitAbbreviation: 'κιλ',
+            ),
+          );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Γάλα'), findsOneWidget);
+      expect(find.textContaining('-0,20 €'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
 }

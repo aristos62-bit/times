@@ -1,9 +1,11 @@
 /// SPoT σύνδεσης με τη βάση SQLite μέσω Drift — Φάση 1, Βήμα 1.
 ///
 /// Οι πίνακες ορίζονται στο `tables.dart` (§3 DESIGN). Στο `onCreate`
-/// δημιουργείται όλο το σχήμα, εκτελείται το seed δεδομένων (Βήμα 3, §4.1)
-/// και στο `beforeOpen` ενεργοποιείται το `PRAGMA foreign_keys = ON`
-/// (τρέχει μετά από κάθε migration/reopen).
+/// δημιουργείται όλο το σχήμα, εκτελείται το seed δεδομένων (Βήμα 3, §4.1),
+/// το `onUpgrade` v1→v2 καθαρίζει legacy μονάδες (data-only, βλ.
+/// `migration_v1_to_v2.dart`) · v2→v3 προσθέτει `discountCents` (έκπτωση
+/// γραμμής, §2.2) και στο `beforeOpen` ενεργοποιείται το
+/// `PRAGMA foreign_keys = ON` (τρέχει μετά από κάθε migration/reopen).
 /// Logging μέσω `AppLogger` με tag `DB` (§1.7).
 library;
 
@@ -11,6 +13,7 @@ import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
 import '../../core/logging/app_logger.dart';
+import 'migration_v1_to_v2.dart';
 import 'seed/seed_runner.dart';
 import 'tables.dart';
 
@@ -49,7 +52,7 @@ class AppDatabase extends _$AppDatabase {
       driftDatabase(name: dbFileName);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -58,6 +61,17 @@ class AppDatabase extends _$AppDatabase {
           AppLogger.info(LogTag.db, 'Δημιουργία βάσης (times)');
           if (!skipSeed) {
             await runSeed(this);
+          }
+        },
+        // v2 → v3 (25-09-2026): στήλη έκπτωσης γραμμής, schema-πρώτα
+        // (οι παλιές γραμμές παίρνουν 0 — σύνολα άθικτα)· v1 → v2 data
+        // migration μένει για παλιές εγκαταστάσεις/backups.
+        onUpgrade: (m, from, to) async {
+          if (from < 3) {
+            await m.addColumn(receiptLines, receiptLines.discountCents);
+          }
+          if (from == 1) {
+            await migrateV1ToV2(this);
           }
         },
         beforeOpen: (details) async {

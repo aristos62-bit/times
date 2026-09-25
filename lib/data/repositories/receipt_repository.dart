@@ -13,12 +13,14 @@ import '../local/app_database.dart';
 import '../models/receipt_summary.dart';
 
 /// Record για την εισαγωγή γραμμής απόδειξης στη transaction.
-/// Το `lineTotalCents` υπολογίζεται στο DAO (SPoT §3) — εδώ μόνο τα βασικά πεδία.
+/// Το `lineTotalCents` υπολογίζεται στο DAO (SPoT §3) — εδώ μόνο τα βασικά
+/// πεδία (`discountCents` = έκπτωση μονάδας, 0 = καμία, §2.2).
 typedef ReceiptLineInput = ({
   int itemId,
   int unitId,
   double quantity,
   int priceCents,
+  int discountCents,
 });
 
 /// Abstract interface — υλοποιείται πάνω στους ReceiptDao + ReceiptLineDao.
@@ -61,6 +63,10 @@ abstract interface class ReceiptRepository {
   /// Διαβάζει ΟΛΕΣ τις γραμμές μιας απόδειξης (one-shot, σειρά εισαγωγής) —
   /// για φόρτωση edit (Φάση Α). Passthrough στο DAO (Βήμα 2).
   Future<List<ReceiptLine>> getLines(int receiptId);
+
+  /// Τελευταία γραμμή είδους (τιμή+έκπτωση prefill §2.2) — null αν το είδος
+  /// δεν έχει κινηθεί ποτέ. Passthrough στο DAO.
+  Future<ReceiptLine?> getLatestByItemId(int itemId);
 
   /// Εισάγει απόδειξη με όλες τις γραμμές σε μία transaction (atomicity).
   /// Επιστρέφει το id της απόδειξης. Αποτυχία → SaveReceiptException.

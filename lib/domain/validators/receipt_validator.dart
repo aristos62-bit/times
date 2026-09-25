@@ -11,6 +11,7 @@
 ///
 /// Οι κανόνες προέρχονται αποκλειστικά από το `AppConstants`:
 ///   * τιμή (σε ΛΕΠΤΑ, §3): `> validationMinPrice` και `<= maxPriceCents`,
+///   * έκπτωση μονάδας (σε ΛΕΠΤΑ, §2.2): `0 ≤ discountCents ≤ priceCents`,
 ///   * ποσότητα: `> validationMinQuantity` και `<= maxQuantity`,
 ///   * ακέραια ποσότητα όταν `Unit.allowsDecimal == false` (§2.2:218),
 ///   * γραμμές απόδειξης: `1 .. maxReceiptLines`.
@@ -41,6 +42,21 @@ abstract final class ReceiptValidator {
     return null;
   }
 
+  /// Έκπτωση μονάδας σε λεπτά (§2.2): `< 0` (defensive, programmatic-only —
+  /// το UI regex αποκλείει το «−», `CurrencyTextField.parseCents`) →
+  /// `discountNegative` · `> priceCents` → `discountTooLarge` · αλλιώς `null`
+  /// (το `0` = καμία έκπτωση ΕΙΝΑΙ έγκυρο — δεν μεταφέρεται το
+  /// Positive-pattern των ορίων).
+  static String? validateDiscountCents(int discountCents, int priceCents) {
+    if (discountCents < 0) {
+      return AppErrors.discountNegative;
+    }
+    if (discountCents > priceCents) {
+      return AppErrors.discountTooLarge;
+    }
+    return null;
+  }
+
   /// Ποσότητα: `NaN` ή `<= validationMinQuantity` → `quantityMustBePositive` ·
   /// `> maxQuantity` → `quantityTooLarge` · δεκαδική τιμή ενώ
   /// [allowsDecimal] false → `quantityMustBeInteger` (§2.2:218) · αλλιώς `null`.
@@ -63,14 +79,17 @@ abstract final class ReceiptValidator {
     return null;
   }
 
-  /// Ολόκληρη γραμμή: επιστρέφει το ΠΡΩΤΟ σφάλμα (ποσότητα, μετά τιμή) ή `null`.
+  /// Ολόκληρη γραμμή: επιστρέφει το ΠΡΩΤΟ σφάλμα (ποσότητα, μετά τιμή,
+  /// μετά έκπτωση — η έκπτωση αναφέρεται στην τιμή) ή `null`.
   static String? validateLine({
     required double quantity,
     required int priceCents,
+    int discountCents = 0,
     required bool allowsDecimal,
   }) =>
       validateQuantity(quantity, allowsDecimal: allowsDecimal) ??
-          validatePriceCents(priceCents);
+          validatePriceCents(priceCents) ??
+          validateDiscountCents(discountCents, priceCents);
 
   /// Πλήθος γραμμών «καλαθιού»: `< 1` → `receiptLinesRequired` ·
   /// `> maxReceiptLines` → `AppMessages.receiptLinesLimitReached` (ίδιο κείμενο

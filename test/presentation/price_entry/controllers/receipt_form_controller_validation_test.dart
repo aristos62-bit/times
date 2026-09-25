@@ -44,6 +44,7 @@ void main() {
   DraftReceiptLine lineOf({
     double quantity = 1.5,
     int priceCents = 250,
+    int discountCents = 0,
     bool unitAllowsDecimal = true,
     String itemName = 'Γάλα',
   }) =>
@@ -52,6 +53,7 @@ void main() {
         unitId: 2,
         quantity: quantity,
         priceCents: priceCents,
+        discountCents: discountCents,
         itemName: itemName,
         unitAbbreviation: 'κιλ',
         unitAllowsDecimal: unitAllowsDecimal,
@@ -112,6 +114,32 @@ void main() {
       expect(container.read(receiptFormControllerProvider).draftLines,
           isEmpty);
       expect(logged.toString(), contains(AppErrors.priceTooLarge));
+    });
+
+    test('έκπτωση πάνω από την τιμή → αγνοείται (discountTooLarge)',
+        () {
+      final container = ProviderContainer.test();
+      final logged = captureLogs();
+
+      container
+          .read(receiptFormControllerProvider.notifier)
+          .addDraftLine(lineOf(priceCents: 100, discountCents: 101));
+
+      expect(container.read(receiptFormControllerProvider).draftLines,
+          isEmpty);
+      expect(logged.toString(), contains(AppErrors.discountTooLarge));
+    });
+
+    test('έγκυρη έκπτωση → προστίθεται κανονικά', () {
+      final container = ProviderContainer.test();
+
+      container
+          .read(receiptFormControllerProvider.notifier)
+          .addDraftLine(lineOf(priceCents: 250, discountCents: 50));
+
+      final lines = container.read(receiptFormControllerProvider).draftLines;
+      expect(lines.length, 1);
+      expect(lines[0].discountCents, 50);
     });
 
     test('ποσότητα πάνω από maxQuantity → αγνοείται (quantityTooLarge)', () {
@@ -347,6 +375,9 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
       throw UnimplementedError();
   @override
   Future<List<ReceiptLine>> getLines(int receiptId) =>
+      throw UnimplementedError();
+  @override
+  Future<ReceiptLine?> getLatestByItemId(int itemId) =>
       throw UnimplementedError();
   @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
