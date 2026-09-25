@@ -36,13 +36,10 @@
 /// OFF (default) = τιμή μονάδας. Ισχύει για όλες τις μονάδες· lifecycle από
 /// το `ValueKey(item.id)` (φρέσκο ανά είδος, Δ8).
 ///
-/// ΕΚΠΤΩΣΗ (§2.2): πεδίο `DiscountField` (€) μετά την Τιμή — κενό ≡ 0.
-/// Σε unit-mode είναι ανά μονάδα· τελικό γραμμής `(τιμή−έκπτωση)×ποσότητα`.
-/// Σε `_isTotal` είναι έκπτωση ΣΥΝΟΛΟΥ (εφάπαξ στο πληκτρολογημένο μικτό
-/// σύνολο): παράγεται `discUnit=(D/Q).round()` (όπως η μοναδιαία) και
-/// αποθηκεύεται `priceCents=grossUnit, discountCents=discUnit` — stored
-/// `(gross−disc)×Q ≈ T−D (±2 λεπτά, δύο roundings). Toggle ON/OFF
-/// επανερμηνεύει το κείμενο (όπως η Τιμή) — δεν σβήνεται ποτέ.
+/// ΕΚΠΤΩΣΗ (§2.2): πεδίο `DiscountField` (ανά μονάδα, €) μετά την Τιμή —
+/// κενό ≡ 0· τελικό γραμμής `(τιμή−έκπτωση)×ποσότητα`. Σε `_isTotal` το
+/// πεδίο κρύβεται (το σύνολο ΕΙΝΑΙ το τελικό) και η έκπτωση μηδενίζεται
+/// (το κείμενο κρατιέται για επιστροφή σε unit-mode).
 /// PREFILL (§2.2): είδος με ιστορικό → τιμή+έκπτωση από την τελευταία
 /// γραμμή (`latestReceiptLineProvider`) ΜΟΝΟ σε unit-mode, match μονάδας,
 /// κενά πεδία και χωρίς πληκτρολόγηση (ατομικά και τα δύο ή τίποτα —
@@ -222,8 +219,8 @@ class _UnitQuantityPriceSectionState
   /// φυλάσσεται ως `enteredTotalCents` snapshot για προβολή (χωρίς
   /// επαν-υπολογισμό στο draft list).
   /// Έκπτωση (§2.2): ανά μονάδα πάνω στην τελική μοναδιαία (πληκτρολογημένη
-  /// ή παραγόμενη)· σε `_isTotal` είναι έκπτωση συνόλου και παράγεται
-  /// `discUnit=(D/Q).round()` με guard `0≤disc≤gross` (ίδια errors).
+  /// ή παραγόμενη)· σε `_isTotal` μηδέν (το πεδίο κρύβεται — το σύνολο
+  /// ΕΙΝΑΙ το τελικό).
   void _addLine() {
     final unit = _unit;
     final quantity = _quantityCheck(
@@ -243,27 +240,10 @@ class _UnitQuantityPriceSectionState
       unitPriceCents = derived;
       enteredTotal = entered;
     }
-    // Έκπτωση συνόλου σε total-mode: παράγεται ανά μονάδα από το
-    // πληκτρολογημένο μικτό σύνολο (όπως η μοναδιαία από το σύνολο) —
-    // `validateDiscountCents` ξαναχρησιμοποιείται και για τα δύο επίπεδα.
-    final int discount;
-    if (!_isTotal) {
-      final d = _discountCheck(_discountController, unitPriceCents).value;
-      if (d == null) return;
-      discount = d;
-    } else {
-      final totalDiscount = _discountCheck(_discountController, entered).value;
-      if (totalDiscount == null) return;
-      final derivedDiscount = (totalDiscount / quantity).round();
-      if (ReceiptValidator.validateDiscountCents(
-            derivedDiscount,
-            unitPriceCents,
-          ) !=
-          null) {
-        return;
-      }
-      discount = derivedDiscount;
-    }
+    final discount = _isTotal
+        ? 0
+        : _discountCheck(_discountController, unitPriceCents).value;
+    if (discount == null) return;
     ref.read(receiptFormControllerProvider.notifier).addDraftLine(
       DraftReceiptLine(
         itemId: widget.item.id,
@@ -345,28 +325,9 @@ class _UnitQuantityPriceSectionState
         }
       }
     }
-    // Έκπτωση συνόλου σε total-mode: ο ίδιος έλεγχος πάνω στο μικτό σύνολο
-    // (`0≤D≤T`, ίδια μηνύματα) + guard παραγόμενης (στρογγυλοποίηση —
-    // μαθηματικά πλεονασμός λόγω μονοτονίας του round, safety-net όπως η τιμή).
-    final ({int? value, String? error}) discount;
-    if (!_isTotal) {
-      discount = _discountCheck(_discountController, unitPriceCents);
-    } else {
-      final t = entered.value;
-      final q = quantity.value;
-      final totalD = _discountCheck(_discountController, t);
-      if (t == null || q == null || totalD.value == null) {
-        discount = (value: null, error: totalD.error);
-      } else {
-        final derived = (totalD.value! / q).round();
-        final guardError = unitPriceCents == null
-            ? null
-            : ReceiptValidator.validateDiscountCents(derived, unitPriceCents);
-        discount = guardError != null
-            ? (value: null, error: guardError)
-            : (value: derived, error: null);
-      }
-    }
+    final ({int? value, String? error}) discount = _isTotal
+        ? (value: 0, error: null)
+        : _discountCheck(_discountController, unitPriceCents);
     final canAdd = _unit != null &&
         quantity.value != null &&
         unitPriceCents != null &&
@@ -445,14 +406,16 @@ class _UnitQuantityPriceSectionState
               prefixIcon: const Icon(Icons.euro_outlined),
               textInputAction: TextInputAction.next,
             ),
-            // Έκπτωση (§2.2): ανά μονάδα σε unit-mode, έκπτωση ΣΥΝΟΛΟΥ σε
-            // total-mode (παράγεται ανά μονάδα — βλ. `_addLine`). Πάντα ορατό.
-            const SizedBox(height: AppConstants.spacingM),
-            DiscountField(
-              controller: _discountController,
-              errorText: discount.error,
-              onChanged: (_) => setState(() => _userTyped = true),
-            ),
+            // Έκπτωση (§2.2): ΜΟΝΟ σε unit-mode — σε total το σύνολο ΕΙΝΑΙ
+            // το τελικό (η έκπτωση μηδενίζεται, το κείμενο κρατιέται).
+            if (!_isTotal) ...[
+              const SizedBox(height: AppConstants.spacingM),
+              DiscountField(
+                controller: _discountController,
+                errorText: discount.error,
+                onChanged: (_) => setState(() => _userTyped = true),
+              ),
+            ],
             // Συνολική τιμή (24-09-2026, όλες οι μονάδες): ΟΝ = το πεδίο
             // Τιμή είναι το σύνολο της ποσότητας· η μοναδιαία παράγεται.
             // SwitchListTile (built-in semantics, theme/responsive δωρεάν).

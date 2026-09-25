@@ -6,8 +6,6 @@
 /// Βήμα 7, SPoT μαθηματικών το DAO) — ΕΞΑΙΡΕΣΗ 24-09-2026: γραμμές «Συνολικής
 /// τιμής» δείχνουν το πληκτρολογημένο σύνολο (`enteredTotalCents` snapshot,
 /// χωρίς επαν-υπολογισμό) — «0,35 κιλ · 34,29 € (σύνολο 12,00 €)».
-/// ΕΞΑΙΡΕΣΗ στην εξαίρεση: με έκπτωση (συνόλου) το snapshot παραλείπεται —
-/// το καθαρό φαίνεται ήδη (Δ2-β), διπλό «σύνολο» θα μπέρδευε.
 /// ΕΞΑΙΡΕΣΗ Δ2-β (§2.2): γραμμές με έκπτωση δείχνουν «τιμή −έκπτωση
 /// (σύνολο net)» (display mirror `netTotalCents` — χωρίς αυτό η έκπτωση
 /// δεν επαληθεύεται από τον χρήστη).
@@ -50,9 +48,7 @@ class DraftLinesList extends ConsumerWidget {
           '${CurrencyTextField.formatCents(line.netTotalCents)} '
           '${AppStrings.currencySymbol})';
     }
-    // Total + έκπτωση: το «σύνολο» φαίνεται ήδη ως καθαρό παραπάνω (Δ2-β) —
-    // δεύτερο «σύνολο» (snapshot μικτού) θα μπέρδευε· παραλείπεται.
-    if (line.enteredTotalCents != null && line.discountCents == 0) {
+    if (line.enteredTotalCents != null) {
       detail +=
           ' (${AppStrings.lineTotalLabel} '
           '${CurrencyTextField.formatCents(line.enteredTotalCents!)} '

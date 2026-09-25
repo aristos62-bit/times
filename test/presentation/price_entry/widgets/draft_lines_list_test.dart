@@ -146,6 +146,35 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('γραμμή total + έκπτωση → ένα σύνολο (το καθαρό)',
+        (tester) async {
+      await tester.pumpWidget(wrap());
+      final container = containerOf(tester);
+      container.read(receiptFormControllerProvider.notifier).addDraftLine(
+            DraftReceiptLine(
+              itemId: 1,
+              unitId: 2,
+              quantity: 0.634,
+              priceCents: 1090,
+              discountCents: 170,
+              itemName: 'Φέτα',
+              unitAbbreviation: 'κιλ',
+              enteredTotalCents: 691,
+            ),
+          );
+      await tester.pumpAndSettle();
+
+      // Καθαρό (1090−170)×0.634 = 583· το μικτό snapshot παραλείπεται (όχι
+      // διπλό «σύνολο»).
+      expect(
+        find.text('0,634 κιλ · 10,90 € -1,70 € (${AppStrings.lineTotalLabel} '
+            '5,83 €)'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('6,91'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('γραμμή μοναδιαίας → χωρίς σύνολο (Δ2 preserved)',
         (tester) async {
       await tester.pumpWidget(wrap());

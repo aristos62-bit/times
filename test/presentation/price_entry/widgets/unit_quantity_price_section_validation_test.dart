@@ -437,6 +437,94 @@ void main() {
       expect(addEnabled(tester), isFalse);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('T5: φέτα 0,634 + μικτά 6,91 + έκπτωση 1,08 → 1090/170/691',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+      await enter(tester, AppStrings.fieldQuantity, '0,634');
+      await enter(tester, AppStrings.fieldPrice, '6,91');
+      await enter(tester, AppStrings.fieldDiscount, '1,08');
+      expect(addEnabled(tester), isTrue);
+      await tester.tap(
+        find.widgetWithText(FilledButton, AppStrings.addReceiptLine),
+      );
+      await tester.pumpAndSettle();
+
+      final lines =
+          containerOf(tester).read(receiptFormControllerProvider).draftLines;
+      expect(lines, hasLength(1));
+      // 691 / 0.634 = 1089.9 → 1090 μικτά· 108 / 0.634 = 170.3 → 170 έκπτωση·
+      // stored (1090−170)×0.634 = 583 (5,83 € = 6,91 − 1,08 ακριβώς).
+      expect(lines[0].priceCents, 1090);
+      expect(lines[0].discountCents, 170);
+      expect(lines[0].enteredTotalCents, 691);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('T6: έκπτωση πάνω από το σύνολο → discountTooLarge',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+      await enter(tester, AppStrings.fieldQuantity, '1');
+      await enter(tester, AppStrings.fieldPrice, '5');
+      await enter(tester, AppStrings.fieldDiscount, '6');
+
+      expect(find.text(AppErrors.discountTooLarge), findsOneWidget);
+      expect(addEnabled(tester), isFalse);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('T7: κενή έκπτωση σε total → 0 (όπως πριν)',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+      await enter(tester, AppStrings.fieldQuantity, '1');
+      await enter(tester, AppStrings.fieldPrice, '5');
+      await tester.tap(
+        find.widgetWithText(FilledButton, AppStrings.addReceiptLine),
+      );
+      await tester.pumpAndSettle();
+
+      final lines =
+          containerOf(tester).read(receiptFormControllerProvider).draftLines;
+      expect(lines, hasLength(1));
+      expect(lines[0].discountCents, 0);
+      expect(lines[0].enteredTotalCents, 500);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('T8: toggle κρατά το κείμενο έκπτωσης (επανερμηνεία)',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      final seeded = await seed(db);
+      await pumpAt(tester, seeded.item, db);
+
+      await enter(tester, AppStrings.fieldDiscount, '1,08');
+      await tester.tap(find.byType(SwitchListTile));
+      await tester.pumpAndSettle();
+
+      // Το πεδίο μένει ορατό σε total-mode με το ίδιο κείμενο (νέο νόημα:
+      // έκπτωση συνόλου — βλ. T5).
+      expect(textOf(tester, AppStrings.fieldDiscount), '1,08');
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('UnitQuantityPriceSection — responsive + dark (Βήμα 6δ, §1.4)', () {
