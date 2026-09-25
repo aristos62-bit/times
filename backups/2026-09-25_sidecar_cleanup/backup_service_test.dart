@@ -119,47 +119,6 @@ void main() {
       final cats = await reopened.select(reopened.categories).get();
       expect(cats.map((c) => c.name), contains('ALPHA'));
     });
-
-    test('replace σβήνει stale sidecars + overwrite (double-replace)', () async {
-      final dbA = openFileDb('sa.sqlite');
-      final serviceA = BackupService(dbA);
-      final snap = '${tmpRoot.path}/sa_snap.sqlite';
-      await serviceA.exportSnapshot(snap);
-      await serviceA.replaceDatabaseFile(snap);
-      // Dummy stale sidecars δίπλα στο target (όπως θα άφηνε WAL-mode).
-      final target = File('${tmpRoot.path}/times.sqlite');
-      for (final s in const ['-wal', '-shm', '-journal']) {
-        File('${target.path}$s').writeAsStringSync('stale');
-      }
-      // Δεύτερο replace: copy-overwrite + cleanup (empirical Windows).
-      await serviceA.replaceDatabaseFile(snap);
-      expect(target.existsSync(), isTrue);
-      for (final s in const ['-wal', '-shm', '-journal']) {
-        expect(File('${target.path}$s').existsSync(), isFalse);
-      }
-      final reopened = AppDatabase(
-        executor: NativeDatabase(target),
-        skipSeed: true,
-      );
-      openDbs.add(reopened);
-      await serviceA.validateBackupFile(target.path);
-    });
-
-    test('replace αποτυχία → target + sidecars άθικτα (σειρά copy-πρώτα)',
-        () async {
-      final db = openFileDb('sb.sqlite');
-      final service = BackupService(db);
-      final target = File('${tmpRoot.path}/sb_target.sqlite');
-      target.writeAsStringSync('old-content');
-      final sidecar = File('${target.path}-wal');
-      sidecar.writeAsStringSync('old-sidecar');
-      expect(
-        service.replaceDatabaseFile('${tmpRoot.path}/missing.sqlite'),
-        throwsA(isA<RestoreBackupException>()),
-      );
-      expect(target.readAsStringSync(), 'old-content');
-      expect(sidecar.existsSync(), isTrue);
-    });
   });
 
   group('BackupService.validateBackupFile', () {
