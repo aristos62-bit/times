@@ -296,7 +296,7 @@ presentation/settings/
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
 - Το κουμπί διαγραφής **δεν** εμφανίζεται απλά "με error μετά το tap" — είναι **greyed-out με tooltip** (`AppMessages.itemsInUseTooltip(count)` / `supplierReceiptsTooltip(count)`) όταν `canDelete == false` (§1.4).
 - Edit ονόματος Κατηγορίας/Υποκατηγορίας/Προμηθευτή περνάει από τον **ίδιο** case-insensitive duplicate-check validator με τη Φάση 3 (κοινό `domain/validators/name_validator.dart` — SPoT, όχι διπλή υλοποίηση)· no-op ΜΟΝΟ σε ακριβώς ίδιο κείμενο (24-09-2026)· dumb `CategoryEditDialog` με SPoT `labelText` (§1.6).
-- `inUseCount*`/`receiptCount*` (int siblings για tooltip) + refresh ορατών πυλών (one-shot families, IndexedStack) — σκόπιμα one-shot αντί live watches (24-09-2026: 124 μόνιμες συνδρομές απορρίφθηκαν· staleness ακίνδυνο — defense στον controller)· auto-refresh από save/delete (25-09-2026: `_refreshAffectedGuards` — μόνο επηρεαζόμενα ids, swallow σε failure).
+- `inUseCount*`/`receiptCount*` (int siblings για tooltip) + refresh ορατών πυλών (one-shot families, IndexedStack) — σκόπιμα one-shot αντί live watches (24-09-2026: 124 μόνιμες συνδρομές απορρίφθηκαν· staleness ακίνδυνο — defense στον controller).
 
 **Backup/Restore — αναλυτική ροή (κλειδωμένη 23-09-2026)**
 1. **Export**: tap → snapshot μέσω `VACUUM INTO` temp αρχείου (WAL-safe) → bytes → `file_picker` save dialog (`saveFile(fileName, bytes)`, προτεινόμενο filename από `AppConstants.backupFileNamePattern` + timestamp) → `AppFeedback.showSuccess`. Προσαρμογή 25-09 (Βήμα 5): το `file_picker` 12 ΔΕΝ δίνει path (θέλει bytes) — το παλιό «save dialog → path → VACUUM INTO» δεν υλοποιείται. ΠΟΤΕ γραφή στο `backups/` του project (μόνο αρχεία βημάτων).

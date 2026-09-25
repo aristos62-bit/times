@@ -17,7 +17,6 @@ import '../../../core/logging/app_logger.dart';
 import '../../../core/utils/greek_text_normalizer.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/providers/database_providers.dart';
-import '../../../data/providers/settings_providers.dart';
 import '../../../domain/validators/name_validator.dart';
 import '../../../domain/validators/receipt_validator.dart';
 import '../state/receipt_form_state.dart';
@@ -110,45 +109,6 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
     AppLogger.info(LogTag.ui, 'Αφαίρεση γραμμής: ${removed.itemName}');
   }
 
-  /// Ανανέωση stale πυλών διαγραφής (§2.3:299 — one-shot families, IndexedStack).
-  ///
-  /// Καλείται ΜΟΝΟ μετά από επιτυχημένη μετάλλαξη γραμμών (save/delete):
-  /// τα families δεν ξανατρέχουν μόνα τους σε αλλαγή tab. Αποτυχία
-  /// resolution → log + swallow (οι πύλες μένουν stale = σημερινή
-  /// συμπεριφορά, το «↻» καλύπτει)· το save/delete έχει ήδη πετύχει.
-  /// `null` resolutions → skip (defensive, pattern `loadReceiptForEdit`).
-  Future<void> _refreshAffectedGuards({
-    required int? supplierId,
-    required Iterable<int> itemIds,
-  }) async {
-    try {
-      if (supplierId != null) {
-        ref.invalidate(canDeleteSupplierProvider(supplierId));
-        ref.invalidate(receiptCountSupplierProvider(supplierId));
-      }
-      final itemRepo = ref.read(itemRepositoryProvider);
-      final subRepo = ref.read(subCategoryRepositoryProvider);
-      for (final itemId in itemIds.toSet()) {
-        if (!ref.mounted) return;
-        final item = await itemRepo.getById(itemId);
-        if (item == null) continue;
-        final sub = await subRepo.getById(item.subCategoryId);
-        if (sub == null) continue;
-        if (!ref.mounted) return;
-        ref.invalidate(canDeleteSubCategoryProvider(sub.id));
-        ref.invalidate(inUseCountSubCategoryProvider(sub.id));
-        ref.invalidate(canDeleteCategoryProvider(sub.categoryId));
-        ref.invalidate(inUseCountCategoryProvider(sub.categoryId));
-      }
-      AppLogger.info(
-        LogTag.ui,
-        'Ανανέωση πυλών διαγραφής μετά από αλλαγή γραμμών',
-      );
-    } on Exception catch (e, s) {
-      AppLogger.error(LogTag.ui, 'Ανανέωση πυλών διαγραφής απέτυχε', e, s);
-    }
-  }
-
   /// Αποθηκεύει ολόκληρη την απόδειξη (§2.2 · Βήμα 5δ): insert `Receipt` +
   /// όλες οι `ReceiptLine` σε ΜΙΑ transaction μέσω `insertReceiptWithLines`
   /// (atomicity — είτε όλα είτε τίποτα, §2.2:211).
@@ -212,10 +172,6 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
         );
         if (!ref.mounted) return; // disposed ενώ έτρεχε το save → παράλειψη
         resetForm();
-        await _refreshAffectedGuards(
-          supplierId: supplier.id,
-          itemIds: [for (final line in lines) line.itemId],
-        );
         AppLogger.info(
           LogTag.db,
           'Αποθήκευση απόδειξης #$id (${lines.length} γραμμές)',
@@ -229,10 +185,6 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
         );
         if (!ref.mounted) return; // disposed ενώ έτρεχε το update → παράλειψη
         resetForm();
-        await _refreshAffectedGuards(
-          supplierId: supplier.id,
-          itemIds: [for (final line in lines) line.itemId],
-        );
         AppLogger.info(
           LogTag.db,
           'Ενημέρωση απόδειξης #$editingId (${lines.length} γραμμές)',
@@ -362,14 +314,7 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
     if (state.isSaving) return (ok: false, error: null);
     state = state.copyWith(isSaving: true);
     try {
-      // Pre-read ΠΡΙΝ το delete (μετά χάνεται): supplier + itemIds για
-      // ανανέωση πυλών (§2.3:299). Missing → υπάρχον `loadDataFailed` path.
-      final receiptRepo = ref.read(receiptRepositoryProvider);
-      final doomed = await receiptRepo.getById(id);
-      final doomedItemIds = [
-        for (final l in await receiptRepo.getLines(id)) l.itemId,
-      ];
-      final deleted = await receiptRepo.deleteById(id);
+      final deleted = await ref.read(receiptRepositoryProvider).deleteById(id);
       if (!ref.mounted) return (ok: false, error: null);
       if (!deleted) {
         state = state.copyWith(isSaving: false);
@@ -379,10 +324,6 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
       state = state.copyWith(isSaving: false);
       if (wasEditing) cancelEdit();
       AppLogger.info(LogTag.db, 'Διαγραφή απόδειξης #$id');
-      await _refreshAffectedGuards(
-        supplierId: doomed?.supplierId,
-        itemIds: doomedItemIds,
-      );
       return (ok: true, error: null);
     } catch (_) {
       // Κάθε σφάλμα (mapped ή όχι) σβήνει το flag (pattern `saveReceipt`).
