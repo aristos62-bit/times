@@ -20,7 +20,6 @@ import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/models/category_tree_node.dart';
-import 'package:times/data/models/chart_totals.dart';
 import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/providers/settings_providers.dart';
 import 'package:times/data/providers/stream_providers.dart';
@@ -36,8 +35,7 @@ void main() {
 
   /// ProviderScope με overrides: λίστα πρόσφατων (κενή ροή) + δέντρο
   /// κατηγοριών (κενή ροή, Βήμα 4 — η SettingsPage βλέπει DB providers)
-  /// + λίστα προμηθευτών (κενή ροή, CRUD 24-09-2026) + 4 chart families
-  /// (κενές ροές, Φάση 5 — η HomePage βλέπει streams) + prefs (Βήμα 1).
+  /// + λίστα προμηθευτών (κενή ροή, CRUD 24-09-2026) + prefs (Βήμα 1).
   ProviderScope scope() => ProviderScope(
         overrides: [
           recentReceiptsStreamProvider.overrideWith(
@@ -48,18 +46,6 @@ void main() {
           ),
           suppliersStreamProvider.overrideWith(
             (ref) => Stream.value(const <Supplier>[]),
-          ),
-          supplierTotalsProvider.overrideWith(
-            (ref, query) => Stream.value(const <ChartSlice>[]),
-          ),
-          categoryTotalsProvider.overrideWith(
-            (ref, query) => Stream.value(const <ChartSlice>[]),
-          ),
-          subCategoryTotalsProvider.overrideWith(
-            (ref, query) => Stream.value(const <ChartSlice>[]),
-          ),
-          topItemsTotalsProvider.overrideWith(
-            (ref, query) => Stream.value(const <ChartSlice>[]),
           ),
           sharedPreferencesProvider.overrideWithValue(prefs),
         ],
@@ -72,15 +58,11 @@ void main() {
     await tester.pumpWidget(scope());
     await tester.pumpAndSettle();
 
-    // Αρχική branch: Home — AppBar με τον τίτλο «Τιμές» (§2.1) + 1η κάρτα
-    // (οι κάτω κάρτες/Προσαρμογή είναι εκτός cache-extent στο default
-    // viewport — καλύπτονται στο home_page_test με tallSize).
+    // Αρχική branch: Home placeholder — AppBar με τον τίτλο «Τιμές»
+    // (§2.1) + placeholder text στατιστικών. Ο τίτλος υπάρχει ΜΟΝΟ μια
+    // φορά (AppBar) — το σώμα πλέον δείχνει το statsComingSoon.
     expect(find.text(AppStrings.appTitle), findsOneWidget);
-    expect(
-      find.text(AppStrings.chartSupplierTitle, skipOffstage: false),
-      findsOneWidget,
-    );
-    expect(find.text(AppStrings.statsComingSoon), findsNothing);
+    expect(find.text(AppStrings.statsComingSoon), findsOneWidget);
     // App Shell: NavigationBar (Material 3) με 3 destinations.
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationDestination), findsNWidgets(3));

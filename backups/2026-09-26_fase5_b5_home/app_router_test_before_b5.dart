@@ -21,7 +21,6 @@ import 'package:times/core/router/app_router.dart';
 import 'package:times/core/router/app_routes.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/models/category_tree_node.dart';
-import 'package:times/data/models/chart_totals.dart';
 import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/providers/settings_providers.dart';
 import 'package:times/data/providers/stream_providers.dart';
@@ -71,19 +70,6 @@ void main() {
           suppliersStreamProvider.overrideWith(
             (ref) => Stream.value(const <Supplier>[]),
           ),
-          // Φάση 5: η HomePage βλέπει 4 chart families — κενές ροές.
-          supplierTotalsProvider.overrideWith(
-            (ref, query) => Stream.value(const <ChartSlice>[]),
-          ),
-          categoryTotalsProvider.overrideWith(
-            (ref, query) => Stream.value(const <ChartSlice>[]),
-          ),
-          subCategoryTotalsProvider.overrideWith(
-            (ref, query) => Stream.value(const <ChartSlice>[]),
-          ),
-          topItemsTotalsProvider.overrideWith(
-            (ref, query) => Stream.value(const <ChartSlice>[]),
-          ),
           sharedPreferencesProvider.overrideWithValue(prefs),
         ],
         child: MaterialApp.router(routerConfig: buildAppRouter()),
@@ -97,9 +83,7 @@ void main() {
     testWidgets('initialLocation = `/` → HomePage', (tester) async {
       await pumpApp(tester);
       expect(find.byType(HomePage), findsOneWidget);
-      // 1η κάρτα (οι κάτω/Προσαρμογή εκτός cache-extent — βλ. home_page_test).
-      expect(find.text(AppStrings.chartSupplierTitle), findsOneWidget);
-      expect(find.text(AppStrings.statsComingSoon), findsNothing);
+      expect(find.text(AppStrings.statsComingSoon), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -119,19 +103,6 @@ void main() {
             // CRUD προμηθευτών (24-09-2026): κενή ροή (hermetic).
             suppliersStreamProvider.overrideWith(
               (ref) => Stream.value(const <Supplier>[]),
-            ),
-            // Φάση 5: η HomePage βλέπει 4 chart families — κενές ροές.
-            supplierTotalsProvider.overrideWith(
-              (ref, query) => Stream.value(const <ChartSlice>[]),
-            ),
-            categoryTotalsProvider.overrideWith(
-              (ref, query) => Stream.value(const <ChartSlice>[]),
-            ),
-            subCategoryTotalsProvider.overrideWith(
-              (ref, query) => Stream.value(const <ChartSlice>[]),
-            ),
-            topItemsTotalsProvider.overrideWith(
-              (ref, query) => Stream.value(const <ChartSlice>[]),
             ),
             // Στον launch χτίζεται και η SettingsPage (IndexedStack) →
             // themeModeProvider λύνεται με mock prefs (§2.0.1 · Βήμα 1).
@@ -177,10 +148,8 @@ void main() {
       // Το Home παραμένει ΖΩΝΤΑΝΟ στο IndexedStack (offstage — state
       // preservation §2.2:222). Με skipOffstage:false επιβεβαιώνουμε ότι η
       // branch ΔΕΝ καταστράφηκε κατά το tab switch.
-      expect(
-        find.text(AppStrings.chartSupplierTitle, skipOffstage: false),
-        findsOneWidget,
-      );
+      expect(find.text(AppStrings.statsComingSoon, skipOffstage: false),
+          findsOneWidget);
     });
 
     // ─── NAV logging (§1.7) ─────────────────────────────────────────────────
@@ -202,19 +171,6 @@ void main() {
             // CRUD προμηθευτών (24-09-2026): κενή ροή (hermetic).
             suppliersStreamProvider.overrideWith(
               (ref) => Stream.value(const <Supplier>[]),
-            ),
-            // Φάση 5: η HomePage βλέπει 4 chart families — κενές ροές.
-            supplierTotalsProvider.overrideWith(
-              (ref, query) => Stream.value(const <ChartSlice>[]),
-            ),
-            categoryTotalsProvider.overrideWith(
-              (ref, query) => Stream.value(const <ChartSlice>[]),
-            ),
-            subCategoryTotalsProvider.overrideWith(
-              (ref, query) => Stream.value(const <ChartSlice>[]),
-            ),
-            topItemsTotalsProvider.overrideWith(
-              (ref, query) => Stream.value(const <ChartSlice>[]),
             ),
             // IndexedStack §2.2:222 — η SettingsPage χτίζεται πάντα → prefs
             // override (Βήμα 1 · profeta database tests).

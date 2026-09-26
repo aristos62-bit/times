@@ -55,11 +55,6 @@ void main() {
       expect(AppStrings.othersSliceLabel, 'Λοιπά');
     });
 
-    test('chartMoveUp/chartMoveDown (§2.1 · Βήμα 5)', () {
-      expect(AppStrings.chartMoveUp, 'Μετακίνηση πάνω');
-      expect(AppStrings.chartMoveDown, 'Μετακίνηση κάτω');
-    });
-
     test('statsComingSoon — placeholder στατιστικών (§2.1 · Φάση 5)', () {
       expect(AppStrings.statsComingSoon, 'Τα στατιστικά θα εμφανιστούν σύντομα');
     });
@@ -254,8 +249,6 @@ const List<String> _allStrings = [
   AppStrings.periodCustom,
   AppStrings.homeCustomizationTitle,
   AppStrings.othersSliceLabel,
-  AppStrings.chartMoveUp,
-  AppStrings.chartMoveDown,
   AppStrings.statsComingSoon,
   AppStrings.titlePriceEntry,
   AppStrings.saveReceipt,

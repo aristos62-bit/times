@@ -45,10 +45,6 @@ abstract final class AppStrings {
   static const String homeCustomizationTitle = 'Προσαρμογή Οθόνης';
   /// Label φέτας «Λοιπά» (top-N + Λοιπά, §2.1:183 · Φάση 5).
   static const String othersSliceLabel = 'Λοιπά';
-  /// Tooltip/semantics του βέλους «πάνω» στην Προσαρμογή Οθόνης (§2.1 · Βήμα 5).
-  static const String chartMoveUp = 'Μετακίνηση πάνω';
-  /// Tooltip/semantics του βέλους «κάτω» στην Προσαρμογή Οθόνης (§2.1 · Βήμα 5).
-  static const String chartMoveDown = 'Μετακίνηση κάτω';
   /// Placeholder text στη σελίδα στατιστικών (μέχρι Φάση 5).
   static const String statsComingSoon = 'Τα στατιστικά θα εμφανιστούν σύντομα';
 

@@ -179,8 +179,10 @@ class Pie3dChart extends StatelessWidget {
           return ChartFallbackTable(slices: slices);
         }
         return Semantics(
-          // explicitChildNodes: τα legend-texts κρατούν δικά τους nodes —
-          // αλλιώς mergάρουν στο label και δεν βρίσκεται (§1.6).
+          // container + explicitChildNodes: το label μένει στον δικό του
+          // κόμβο (αλλιώς mergάρει προς τα πάνω και δεν βρίσκεται — ούτε
+          // αυτό ούτε οι τίτλοι καρτών, §1.6).
+          container: true,
           explicitChildNodes: true,
           label: semanticsLabel,
           child: Row(

@@ -65,11 +65,7 @@ class HomeChartCard extends ConsumerWidget {
           children: [
             Text(title, style: theme.textTheme.titleMedium),
             const SizedBox(height: AppConstants.spacingS),
-            // E5 (Βήμα 5): fresh state σε εξωτερική αλλαγή — το
-            // `initialSelection` του DropdownMenu δεν ενημερώνεται αλλιώς
-            // (precedent `ValueKey(item.id)` §2.2 Δ8).
             ChartPeriodSelector(
-              key: ValueKey(period),
               selected: period,
               onSelected: onPeriodChanged,
               customSubtitle: customSubtitle,
