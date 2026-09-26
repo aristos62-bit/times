@@ -10,10 +10,3 @@
 /// `StateProvider<DateRange>`. ThemeMode = built-in Flutter (app_theme) ·
 /// LogTag = debug_config.
 library;
-
-/// Περίοδος γραφήματος Κεντρικής (§2.1 · Φάση 5 Βήμα 1).
-///
-/// day/week/month/year = υπολογιζόμενα όρια (Βήμα 3) · custom = επιλογή
-/// χρήστη μέσω date-range picker (`DateTimeRange?`, validation from≤to).
-/// Persist με `.name` (pattern `SettingsRepository.saveThemeMode`).
-enum PeriodType { day, week, month, year, custom }

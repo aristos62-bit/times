@@ -59,12 +59,9 @@
 | 39 | [Post-closure: έκπτωση συνόλου σε total-mode](oldsessions/2026-09-25_total_discount.md) | 25-09-2026 | Κλειστό | DiscountField ορατό σε total = έκπτωση συνόλου (`discUnit=(D/Q).round()`) · draft single-net · reuse validator (0 strings) · T5–T8 + draft · σουίτα **1033/1033** ✓ (+5) · analyze καθαρό |
 | 40 | [Post-closure: sidecar cleanup στο restore](oldsessions/2026-09-25_sidecar_cleanup.md) | 25-09-2026 | Κλειστό | Stale `-wal`/`-shm`/`-journal` μετά το copy (όχι πριν — διπλό-σφάλμα) · reuse `deleteTemp`, 0 νέες μέθοδοι · candidate-side άθικτα · σουίτα **1035/1035** ✓ (+2) · analyze καθαρό |
 | 41 | [False alarm: «export δεν γράφει σε desktop»](oldsessions/2026-09-26_desktop_write_false_alarm.md) | 26-09-2026 | Κλειστό | Ισχυρισμός vs source (win/lin/mac γράφουν μόνα τους + CHANGELOG across-all-platforms) → revert χρήστη, επαληθευμένο (diff κενό, analyze + 27 tests ✓) · DESIGN αμετάβλητο |
-| 42 | [Φάση 5 — Βήμα 1: SPoT θεμέλιο](oldsessions/2026-09-26_fase5_b1_spot.md) | 26-09-2026 | Κλειστό | `PeriodType` + `pieMaxSlices/topItemsLimit/homeChartConfigKey/pieChartHeight/pieFallbackMaxWidth` + 11 strings (4 τίτλοι + 5 περίοδοι + Προσαρμογή + Λοιπά) · reuse `noPricesForPeriod/retryButton/formatCents/ColorScheme` · **1047/1047** ✓ (+12) · analyze καθαρό · DESIGN αμετάβλητο |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
-
-- **Φάση 5 Βήμα 1 — SPoT θεμέλιο (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #42): `PeriodType` + 5 consts + 11 strings · **1047/1047** ✓ (+12) · analyze καθαρό · DESIGN αμετάβλητο · backup `backups/2026-09-26_fase5_b1_spot/`.
 
 - **False alarm desktop-write (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #41): revert επαληθευμένο (diff κενό) · analyze + 27 backup tests ✓ · DESIGN αμετάβλητο (συμπεριφορά ίδια).
 - **Sidecar cleanup στο restore (25-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #40): copy-πρώτα, cleanup-μετά · **1035/1035** ✓ (+2) · analyze καθαρό · backup `backups/2026-09-25_sidecar_cleanup/`.

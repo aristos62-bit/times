@@ -35,26 +35,6 @@ void main() {
       expect(AppStrings.retryButton, 'Επανάληψη');
     });
 
-    test('chart titles — 4 κάρτες (§2.1 · Φάση 5)', () {
-      expect(AppStrings.chartSupplierTitle, 'Ανά προμηθευτή');
-      expect(AppStrings.chartCategoryTitle, 'Ανά κατηγορία');
-      expect(AppStrings.chartSubCategoryTitle, 'Ανά υποκατηγορία');
-      expect(AppStrings.chartTopItemsTitle, 'Top-10 είδη');
-    });
-
-    test('period labels — Η/Ε/Μ/Ε/Προσαρμοσμένο (§2.1 · Φάση 5)', () {
-      expect(AppStrings.periodDay, 'Ημέρα');
-      expect(AppStrings.periodWeek, 'Εβδομάδα');
-      expect(AppStrings.periodMonth, 'Μήνας');
-      expect(AppStrings.periodYear, 'Έτος');
-      expect(AppStrings.periodCustom, 'Προσαρμοσμένο');
-    });
-
-    test('homeCustomizationTitle + othersSliceLabel (§2.1 · Φάση 5)', () {
-      expect(AppStrings.homeCustomizationTitle, 'Προσαρμογή Οθόνης');
-      expect(AppStrings.othersSliceLabel, 'Λοιπά');
-    });
-
     test('statsComingSoon — placeholder στατιστικών (§2.1 · Φάση 5)', () {
       expect(AppStrings.statsComingSoon, 'Τα στατιστικά θα εμφανιστούν σύντομα');
     });
@@ -238,17 +218,6 @@ const List<String> _allStrings = [
   AppStrings.navSettings,
   AppStrings.noPricesForPeriod,
   AppStrings.retryButton,
-  AppStrings.chartSupplierTitle,
-  AppStrings.chartCategoryTitle,
-  AppStrings.chartSubCategoryTitle,
-  AppStrings.chartTopItemsTitle,
-  AppStrings.periodDay,
-  AppStrings.periodWeek,
-  AppStrings.periodMonth,
-  AppStrings.periodYear,
-  AppStrings.periodCustom,
-  AppStrings.homeCustomizationTitle,
-  AppStrings.othersSliceLabel,
   AppStrings.statsComingSoon,
   AppStrings.titlePriceEntry,
   AppStrings.saveReceipt,

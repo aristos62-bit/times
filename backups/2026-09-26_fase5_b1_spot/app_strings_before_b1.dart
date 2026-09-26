@@ -23,28 +23,6 @@ abstract final class AppStrings {
       'Δεν υπάρχουν καταχωρημένες τιμές για αυτή την περίοδο';
   /// Κουμπί «Επανάληψη» στην κατάσταση error (ref.invalidate).
   static const String retryButton = 'Επανάληψη';
-  /// Τίτλος κάρτας «Ανά προμηθευτή» (§2.1 · Φάση 5).
-  static const String chartSupplierTitle = 'Ανά προμηθευτή';
-  /// Τίτλος κάρτας «Ανά κατηγορία» (§2.1 · Φάση 5).
-  static const String chartCategoryTitle = 'Ανά κατηγορία';
-  /// Τίτλος κάρτας «Ανά υποκατηγορία» (§2.1 · Φάση 5).
-  static const String chartSubCategoryTitle = 'Ανά υποκατηγορία';
-  /// Τίτλος κάρτας Top-10 ειδών (§2.1 · Φάση 5).
-  static const String chartTopItemsTitle = 'Top-10 είδη';
-  /// Label περιόδου «Ημέρα» (per-chart selector, §2.1 · Φάση 5).
-  static const String periodDay = 'Ημέρα';
-  /// Label περιόδου «Εβδομάδα» (per-chart selector, §2.1 · Φάση 5).
-  static const String periodWeek = 'Εβδομάδα';
-  /// Label περιόδου «Μήνας» (per-chart selector, §2.1 · Φάση 5).
-  static const String periodMonth = 'Μήνας';
-  /// Label περιόδου «Έτος» (per-chart selector, §2.1 · Φάση 5).
-  static const String periodYear = 'Έτος';
-  /// Label περιόδου «Προσαρμοσμένο» (per-chart selector, §2.1 · Φάση 5).
-  static const String periodCustom = 'Προσαρμοσμένο';
-  /// Τίτλος «Προσαρμογή Οθόνης» (τελευταία γραμμή, §2.1 · Φάση 5).
-  static const String homeCustomizationTitle = 'Προσαρμογή Οθόνης';
-  /// Label φέτας «Λοιπά» (top-N + Λοιπά, §2.1:183 · Φάση 5).
-  static const String othersSliceLabel = 'Λοιπά';
   /// Placeholder text στη σελίδα στατιστικών (μέχρι Φάση 5).
   static const String statsComingSoon = 'Τα στατιστικά θα εμφανιστούν σύντομα';
 

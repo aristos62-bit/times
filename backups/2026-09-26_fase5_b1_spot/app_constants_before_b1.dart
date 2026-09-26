@@ -144,24 +144,6 @@ abstract final class AppConstants {
   // (mode.name) — SEE settings_repository_impl (SPoT mapping, §2.3:270).
   static const String themeModeKey = 'theme_mode';
 
-  // ─── Charts (§2.1 DESIGN · Φάση 5 Βήμα 1) ─────────────────────────────────
-  // Πλήθος φετών πίτας (top-N + «Λοιπά», §2.1:183) — suppliers/κατηγορίες.
-  static const int pieMaxSlices = 8;
-
-  // Πλήθος ειδών στην πίτα Top-10 (top-N + «Λοιπά», §2.1:183).
-  static const int topItemsLimit = 10;
-
-  // Key της SharedPreferences για το persisted chart config
-  // (ορατότητα/περίοδος/σειρά ανά γράφημα, §2.1 · pattern themeModeKey).
-  static const String homeChartConfigKey = 'home_chart_config';
-
-  // Ύψος κάρτας πίτας (auto-size πλάτος μέσω LayoutBuilder, §1.4).
-  static const double pieChartHeight = 220.0;
-
-  // Κάτω από αυτό το πλάτος η πίτα αντικαθίσταται από fallback πίνακα
-  // (§1.4 + §2.1:184 — όχι overflow/μικροσκοπική πίτα).
-  static const double pieFallbackMaxWidth = 360.0;
-
   // ─── Backup (§2.3 DESIGN) ──────────────────────────────────────────────────
   // Pattern ονομασίας αρχείων backup — βλ. DESIGN.md §2.3.
   // Χρησιμοποιεί το πρότυπο ημερομηνίας (yyyy=έτος, MM=μήνας, dd=ημέρα,

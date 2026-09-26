@@ -218,34 +218,6 @@ void main() {
       );
     });
 
-    // ─── Charts (§2.1 · Φάση 5 Βήμα 1) ─────────────────────────────────────
-    test('pieMaxSlices = 8 (top-N + Λοιπά, §2.1:183)', () {
-      expect(AppConstants.pieMaxSlices, 8);
-    });
-
-    test('topItemsLimit = 10 (Top-10 είδη, §2.1:183)', () {
-      expect(AppConstants.topItemsLimit, 10);
-    });
-
-    test('homeChartConfigKey = «home_chart_config» (§2.1 — SPoT key)', () {
-      expect(AppConstants.homeChartConfigKey, 'home_chart_config');
-    });
-
-    test('pieChartHeight = 220 (ύψος κάρτας πίτας)', () {
-      expect(AppConstants.pieChartHeight, 220.0);
-    });
-
-    test('pieFallbackMaxWidth = 360 (fallback πίνακα, §1.4)', () {
-      expect(AppConstants.pieFallbackMaxWidth, 360.0);
-    });
-
-    test('chart limits invariants: όλα > 0', () {
-      expect(AppConstants.pieMaxSlices, greaterThan(0));
-      expect(AppConstants.topItemsLimit, greaterThan(0));
-      expect(AppConstants.pieChartHeight, greaterThan(0));
-      expect(AppConstants.pieFallbackMaxWidth, greaterThan(0));
-    });
-
     // ─── Backup (§2.3) ───────────────────────────────────────────────────────
     test('backupFileNamePattern — template ονομασίας (§2.3)', () {
       expect(AppConstants.backupFileNamePattern, 'times_backup_yyyyMMdd_HHmmss');
@@ -283,5 +255,4 @@ void main() {
 const List<String> _allConstStrings = [
   AppConstants.backupFileNamePattern,
   AppConstants.themeModeKey,
-  AppConstants.homeChartConfigKey,
 ];
