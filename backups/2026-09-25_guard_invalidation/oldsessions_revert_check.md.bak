@@ -58,12 +58,10 @@
 | 38 | [Post-closure: auto-refresh πυλών από save/delete](oldsessions/2026-09-25_guard_invalidation.md) | 25-09-2026 | Κλειστό | Helper `_refreshAffectedGuards` στον form controller (save insert/update + delete με pre-read · swallow σε failure) · reuse families/getById · 0 νέα αρχεία lib · **1028/1028** ✓ (+4) · analyze καθαρό |
 | 39 | [Post-closure: έκπτωση συνόλου σε total-mode](oldsessions/2026-09-25_total_discount.md) | 25-09-2026 | Κλειστό | DiscountField ορατό σε total = έκπτωση συνόλου (`discUnit=(D/Q).round()`) · draft single-net · reuse validator (0 strings) · T5–T8 + draft · σουίτα **1033/1033** ✓ (+5) · analyze καθαρό |
 | 40 | [Post-closure: sidecar cleanup στο restore](oldsessions/2026-09-25_sidecar_cleanup.md) | 25-09-2026 | Κλειστό | Stale `-wal`/`-shm`/`-journal` μετά το copy (όχι πριν — διπλό-σφάλμα) · reuse `deleteTemp`, 0 νέες μέθοδοι · candidate-side άθικτα · σουίτα **1035/1035** ✓ (+2) · analyze καθαρό |
-| 41 | [False alarm: «export δεν γράφει σε desktop»](oldsessions/2026-09-26_desktop_write_false_alarm.md) | 26-09-2026 | Κλειστό | Ισχυρισμός vs source (win/lin/mac γράφουν μόνα τους + CHANGELOG across-all-platforms) → revert χρήστη, επαληθευμένο (diff κενό, analyze + 27 tests ✓) · DESIGN αμετάβλητο |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
 
-- **False alarm desktop-write (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #41): revert επαληθευμένο (diff κενό) · analyze + 27 backup tests ✓ · DESIGN αμετάβλητο (συμπεριφορά ίδια).
 - **Sidecar cleanup στο restore (25-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #40): copy-πρώτα, cleanup-μετά · **1035/1035** ✓ (+2) · analyze καθαρό · backup `backups/2026-09-25_sidecar_cleanup/`.
 - **Έκπτωση συνόλου σε total-mode (25-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #39): μικτό T + έκπτωση συνόλου D → `discUnit=(D/Q).round()` · draft single-net · **1033/1033** ✓ (+5) · analyze καθαρό · backup `backups/2026-09-25_total_discount/`.
 - **Auto-refresh πυλών από save/delete (25-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #38): `_refreshAffectedGuards` (save + delete με pre-read · swallow) · 0 νέα lib αρχεία · **1028/1028** ✓ (+4) · analyze καθαρό · backup `backups/2026-09-25_guard_invalidation/`.

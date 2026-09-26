@@ -157,32 +157,33 @@ presentation/<screen>/
 **Δομή αρχείων**
 ```
 presentation/home/
-├── home_page.dart                     -- ConsumerWidget, ΜΟΝΟ layout/σύνθεση
-├── controllers/
-│   └── home_chart_config_controller.dart -- plain Notifier, persisted config
-├── state/
-│   └── home_chart_config.dart         -- Freezed: ανά γράφημα {visible, order, period}
+├── home_page.dart
+├── controllers/home_controller.dart
+├── state/home_state.dart
 └── widgets/
-    ├── pie_3d_chart.dart              -- generic πίτα 3D-εφέ + legend δεξιά + auto-size
-    ├── home_chart_card.dart           -- τίτλος + period selector + AsyncValue states
-    ├── home_customization_section.dart -- «Προσαρμογή Οθόνης» (visibility/period/order)
-    └── chart_fallback_table.dart      -- βλ. §4 Φάση 5 (στενό container safety net)
+    ├── period_filter_bar.dart      -- επιλογή μήνας/τρίμηνο/έτος/custom range
+    ├── category_filter_chip.dart
+    ├── summary_totals_card.dart    -- σύνολο δαπανών περιόδου
+    ├── price_trend_chart.dart      -- εξέλιξη τιμής είδους (line chart)
+    ├── supplier_comparison_chart.dart -- bar chart σύγκρισης προμηθευτών
+    ├── top_items_list.dart
+    └── chart_fallback_table.dart   -- βλ. §4 Φάση 5, βήμα 3
 ```
-- Trend-line (`price_trend_chart`) + bar σύγκρισης + global `period_filter_bar`/`category_filter_chip` του παλιού πλάνου → **deferred σε επέκταση** (εκτός scope 4 πίτες — ρητό).
 
 **Providers / ροή δεδομένων**
-- `homeChartConfigProvider` (plain Notifier, persisted SharedPreferences — read στο build, save async όπως theme · equality gate).
-- 4 streams ( `supplierTotalsStreamProvider` / `categoryTotalsStreamProvider` / `subCategoryTotalsStreamProvider` / `topItemsStreamProvider`, `.family` ανά `ChartQuery{from,to,limit}`) → repo passthrough (error-mapping μόνο) → DAO aggregations (§3).
-- **Κρίσιμο**: άθροιση στο SQL · totals καθαρά (μετά έκπτωση §3) · `formatCents` SPoT προβολή.
+- `selectedPeriodProvider` (StateProvider<DateRange>) — αρχικοποιείται σε "τρέχων μήνας".
+- `selectedCategoryProvider` (StateProvider<int?>) — `null` = όλες οι κατηγορίες.
+- `homeStatisticsProvider` = `FutureProvider.autoDispose` που κάνει `ref.watch` στα δύο παραπάνω → καλεί `StatisticsService` (domain layer) → επιστρέφει `HomeStatisticsResult` (Freezed: totals, trendPoints, supplierComparison, topItems).
+- **Κρίσιμο**: η άθροιση γίνεται **στο SQL** (`SUM(lineTotalCents) GROUP BY ...`), όχι φορτώνοντας όλες τις γραμμές στη μνήμη και αθροίζοντας σε Dart — αλλιώς σε μεγάλο ιστορικό (πολλούς μήνες) η οθόνη κολλάει. Τα σύνολα είναι καθαρά (μετά έκπτωση, §3)· οι μοναδιαίες τιμές πάντα καθαρές (Δ-stat §3).
 
-**Καταστάσεις κάρτας**
-- `loading` → skeleton (όχι κενή κάρτα) · `data` κενό → `noPricesForPeriod` (SPoT) · `error` → `loadDataFailed` + «Επανάληψη» (`ref.invalidate` του family instance).
+**Καταστάσεις οθόνης**
+- `loading` → skeleton/placeholder cards (όχι κενή οθόνη — αποφυγή "flash of empty content").
+- `data` με άδεια αποτελέσματα → μήνυμα *"Δεν υπάρχουν καταχωρημένες τιμές για αυτή την περίοδο"* (SPoT string) αντί για κενό γράφημα.
+- `error` → μήνυμα + κουμπί "Επανάληψη" (`ref.invalidate(homeStatisticsProvider)`).
 
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
-- Jank: τοπικό `Consumer` ανά κάρτα (όχι rebuild σελίδας σε αλλαγή φίλτρου — §2.1Perf).
-- Πλήθος φετών: top-N + «Λοιπά» (όρια SPoT: pieMaxSlices — suppliers/κατηγορίες top 8+Λοιπά, είδη top 10+Λοιπά)· χρώματα από `ColorScheme` palette (dark-safe, §1.5).
-- Στενό container → fallback πίνακας (όχι overflow/μικροσκοπική πίτα — §1.4 + §4).
-- Custom range: from≤to + SPoT όρια (`datePickerFirstYear/LastYear`)· άδειο/άκυρο → empty msg, όχι crash.
+- Αλλαγή φίλτρου δεν πρέπει να ξαναχτίζει ολόκληρη τη σελίδα (jank) — μόνο το section που εξαρτάται από το φίλτρο μέσα σε `Consumer` τοπικό, όχι όλο το `HomePage` σε ένα `ConsumerWidget.build`.
+- Το `price_trend_chart` χρειάζεται δεδομένα **ανά είδος** — άρα προαπαιτεί επιλογή είδους (dropdown/search μέσα στη σελίδα, ξεχωριστό state `selectedItemForTrendProvider`), κάτι που δεν ήταν ρητό πριν· το προσθέτω τώρα ως απαιτούμενο widget.
 
 ---
 
@@ -520,11 +521,11 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 5. **BackupService + UI** (Βήμα 5 — **ΟΛΟΚΛΗΡΩΘΗΚΕ 25-09** ✓): Export = snapshot `VACUUM INTO` temp + `saveFile` bytes (§2.3) · Restore = validate (magic + πίνακες, read-only sqlite3 probe) → **confirm → auto-backup** → `closeSafely()` (idempotent, §2.3) → replace → **restart providers** (`ref.invalidate(appDatabaseProvider)` + reset φορμών, §2.3) · 1024/1024 ✓.
 6. **Housekeeping** (Βήμα 6): splits >500 γρ. (κανόνας 7) · oldsessions.md update (1 κεφάλαιο) · backups recap · `flutter analyze` + full tests.
 
-### Φάση 5 — Κεντρική Σελίδα (4 πίτες 3D-εφέ, κλειδώθηκε 25-09-2026)
-1. DAO aggregations (`SUM(lineTotalCents) GROUP BY` + TOP 10, §3) → repos (error-mapping) → 4 stream families (precedent Βήμα 7, auto-refresh).
-2. 4 pie cards (supplier/category/subcategory/top-10) με per-chart περίοδο (Η/Ε/Μ/Ε/προσαρμοσμένο, default Μήνας) + custom 3D-εφέ painter (`fl_chart` χωρίς 3D — evidence 25-09, 0 νέα packages) + labels δεξιά + auto-size (`LayoutBuilder`) + fallback πίνακα σε στενά (§1.4).
-3. «Προσαρμογή Οθόνης» τελευταία γραμμή (ορατότητα/περίοδος/σειρά ανά γράφημα, persisted SharedPreferences, defaults 4-ορατά/Μήνας/1-2-3-4).
-4. Unit tests (aggregations, config controller, validators ορίων) + widget tests (states/responsive 3 μεγέθη/dark/semantics)· 0 golden tests (brittle cross-platform).
+### Φάση 5 — Κεντρική Σελίδα (Στατιστικά & Γραφήματα)
+1. Domain service για υπολογισμούς (μέση τιμή ανά περίοδο, εξέλιξη τιμής είδους, σύγκριση προμηθευτών).
+2. UI φίλτρων περιόδου/κατηγορίας.
+3. Γραφήματα με `fl_chart`, responsive σε όλα τα μεγέθη οθόνης, dark-mode συμβατά χρώματα. **Ρητή απαίτηση**: τα γραφήματα πρέπει να δίνουν ρητά constraints ώστε να μην κόβονται legends/labels σε πολύ στενά ή πολύ φαρδιά containers· όπου το γράφημα δεν χωράει στο διαθέσιμο χώρο, χρησιμοποιείται **fallback σε πίνακα/λίστα** (safety net) αντί για overflow ή μη-αναγνώσιμο γράφημα.
+4. Unit tests στο domain service (η πιο κρίσιμη λογική για coverage).
 
 ### Φάση 6 — Στίλβωση & Επεκτάσεις
 1. Πλήρης έλεγχος responsive/overflow σε real συσκευές/μεγέθη.
