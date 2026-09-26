@@ -176,13 +176,7 @@ class Pie3dChart extends StatelessWidget {
     ];
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Fallback πίνακα (§1.4): στενό container Ή τεράστια κλίμακα
-        // κειμένου (ο πίνακας πλήρους πλάτους διαβάζεται καλύτερα από
-        // στριμωγμένη πίτα + legend σε 2x).
-        final hugeText =
-            MediaQuery.textScalerOf(context).scale(1.0) > 1.5;
-        if (constraints.maxWidth < AppConstants.pieFallbackMaxWidth ||
-            hugeText) {
+        if (constraints.maxWidth < AppConstants.pieFallbackMaxWidth) {
           return ChartFallbackTable(slices: slices);
         }
         return Semantics(
@@ -252,25 +246,6 @@ class Pie3dChart extends StatelessWidget {
                           ],
                         ),
                       ),
-                    const Divider(height: AppConstants.spacingL),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            AppStrings.chartTotalLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleSmall,
-                          ),
-                        ),
-                        const SizedBox(width: AppConstants.spacingS),
-                        Text(
-                          '${CurrencyTextField.formatCents(total)} '
-                          '${AppStrings.currencySymbol}',
-                          style: theme.textTheme.titleSmall,
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),

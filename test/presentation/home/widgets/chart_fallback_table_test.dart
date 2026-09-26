@@ -8,6 +8,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/models/chart_totals.dart';
 import 'package:times/presentation/home/widgets/chart_fallback_table.dart';
@@ -42,10 +43,12 @@ void main() {
   }
 
   group('ChartFallbackTable', () {
-    testWidgets('γραμμές label + € (SPoT formatCents)', (tester) async {
+    testWidgets('γραμμές label + € (SPoT formatCents) + σύνολο', (tester) async {
       await pumpTable(tester, sampleSlices());
       expect(find.text('Μάρκος', skipOffstage: false), findsOneWidget);
       expect(find.textContaining('3,98'), findsOneWidget);
+      expect(find.text(AppStrings.chartTotalLabel), findsOneWidget);
+      expect(find.text('4,98 €'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

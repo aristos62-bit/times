@@ -22,8 +22,6 @@ class ChartFallbackTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    if (slices.isEmpty) return const SizedBox.shrink();
-    final total = slices.fold<int>(0, (acc, s) => acc + s.totalCents);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,30 +47,6 @@ class ChartFallbackTable extends StatelessWidget {
             ],
           ),
         ],
-        const Divider(height: AppConstants.spacingL),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                AppStrings.chartTotalLabel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall,
-              ),
-            ),
-            const SizedBox(width: AppConstants.spacingS),
-            Flexible(
-              child: Text(
-                '${CurrencyTextField.formatCents(total)} '
-                '${AppStrings.currencySymbol}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.end,
-                style: theme.textTheme.titleSmall,
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }

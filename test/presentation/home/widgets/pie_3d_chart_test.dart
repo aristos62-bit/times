@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_constants.dart';
+import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/models/chart_totals.dart';
 import 'package:times/presentation/home/widgets/chart_fallback_table.dart';
@@ -63,12 +64,15 @@ void main() {
   }
 
   group('Pie3dChart', () {
-    testWidgets('φέτες + legend δεξιά (labels + €)', (tester) async {
+    testWidgets('φέτες + legend δεξιά (labels + €) + γραμμή συνόλου', (tester) async {
       await pumpChart(tester, sampleSlices());
       expect(findPie(), findsOneWidget);
       expect(find.text('Μάρκος'), findsOneWidget);
       expect(find.text('Ερμής'), findsOneWidget);
       expect(find.textContaining('3,98'), findsOneWidget);
+      // Γενικό σύνολο: 398 + 100 = 498 → «4,98 €».
+      expect(find.text(AppStrings.chartTotalLabel), findsOneWidget);
+      expect(find.text('4,98 €'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -91,6 +95,18 @@ void main() {
         sampleSlices(),
         size: const Size(800, 600),
         width: AppConstants.pieFallbackMaxWidth - 1,
+      );
+      expect(find.byType(ChartFallbackTable), findsOneWidget);
+      expect(findPie(), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('τεράστια γράμματα (2x) → fallback πίνακας (αναγνωσιμότητα)', (tester) async {
+      await pumpChart(
+        tester,
+        sampleSlices(),
+        size: const Size(800, 600),
+        textScaler: const TextScaler.linear(2.0),
       );
       expect(find.byType(ChartFallbackTable), findsOneWidget);
       expect(findPie(), findsNothing);

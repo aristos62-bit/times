@@ -55,10 +55,6 @@ void main() {
       expect(AppStrings.othersSliceLabel, 'Λοιπά');
     });
 
-    test('chartTotalLabel = «Σύνολο» (§2.1 · 26-09-2026)', () {
-      expect(AppStrings.chartTotalLabel, 'Σύνολο');
-    });
-
     test('chartMoveUp/chartMoveDown (§2.1 · Βήμα 5)', () {
       expect(AppStrings.chartMoveUp, 'Μετακίνηση πάνω');
       expect(AppStrings.chartMoveDown, 'Μετακίνηση κάτω');
@@ -258,7 +254,6 @@ const List<String> _allStrings = [
   AppStrings.periodCustom,
   AppStrings.homeCustomizationTitle,
   AppStrings.othersSliceLabel,
-  AppStrings.chartTotalLabel,
   AppStrings.chartMoveUp,
   AppStrings.chartMoveDown,
   AppStrings.statsComingSoon,

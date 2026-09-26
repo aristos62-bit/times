@@ -45,8 +45,6 @@ abstract final class AppStrings {
   static const String homeCustomizationTitle = 'Προσαρμογή Οθόνης';
   /// Label φέτας «Λοιπά» (top-N + Λοιπά, §2.1:183 · Φάση 5).
   static const String othersSliceLabel = 'Λοιπά';
-  /// Label γραμμής γενικού συνόλου κάρτας (άθροισμα φετών, §2.1 · 26-09-2026).
-  static const String chartTotalLabel = 'Σύνολο';
   /// Tooltip/semantics του βέλους «πάνω» στην Προσαρμογή Οθόνης (§2.1 · Βήμα 5).
   static const String chartMoveUp = 'Μετακίνηση πάνω';
   /// Tooltip/semantics του βέλους «κάτω» στην Προσαρμογή Οθόνης (§2.1 · Βήμα 5).
