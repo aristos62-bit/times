@@ -162,14 +162,6 @@ abstract final class AppConstants {
   // (§1.4 + §2.1:184 — όχι overflow/μικροσκοπική πίτα).
   static const double pieFallbackMaxWidth = 360.0;
 
-  // ─── Pie 3D-εφέ (§2.1 · Φάση 5 Βήμα 4) ───────────────────────────────────
-  // Σχετικό πάχος φέτας (κλάσμα του ύψους): πλευρά 3D = depth κάτω από την
-  // κεκλιμένη έλλειψη (custom `Pie3dPainter` — το fl_chart δεν έχει 3D).
-  static const double pieDepthRatio = 0.12;
-
-  // Κατακόρυφη συμπίεση της πίτας (κλάσμα του πλάτους): tilt-εφέ βάθους.
-  static const double pieTiltRatio = 0.5;
-
   // ─── Backup (§2.3 DESIGN) ──────────────────────────────────────────────────
   // Pattern ονομασίας αρχείων backup — βλ. DESIGN.md §2.3.
   // Χρησιμοποιεί το πρότυπο ημερομηνίας (yyyy=έτος, MM=μήνας, dd=ημέρα,

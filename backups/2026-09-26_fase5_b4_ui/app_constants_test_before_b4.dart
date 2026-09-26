@@ -246,18 +246,6 @@ void main() {
       expect(AppConstants.pieFallbackMaxWidth, greaterThan(0));
     });
 
-    test('pieDepthRatio = 0.12 + pieTiltRatio = 0.5 (§2.1 · Βήμα 4)', () {
-      expect(AppConstants.pieDepthRatio, 0.12);
-      expect(AppConstants.pieTiltRatio, 0.5);
-    });
-
-    test('pie ratios invariants: κλάσματα (0, 1]', () {
-      expect(AppConstants.pieDepthRatio, greaterThan(0));
-      expect(AppConstants.pieDepthRatio, lessThanOrEqualTo(1));
-      expect(AppConstants.pieTiltRatio, greaterThan(0));
-      expect(AppConstants.pieTiltRatio, lessThanOrEqualTo(1));
-    });
-
     // ─── Backup (§2.3) ───────────────────────────────────────────────────────
     test('backupFileNamePattern — template ονομασίας (§2.3)', () {
       expect(AppConstants.backupFileNamePattern, 'times_backup_yyyyMMdd_HHmmss');
