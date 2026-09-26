@@ -34,20 +34,5 @@ void main() {
         3,
       );
     });
-
-    // ─── Pie palette (§2.1 · Φάση 5, fix 26-09) ─────────────────────────────
-    test('pieSliceColors: 8 γεμάτα, teal πρώτο (brand §0)', () {
-      expect(AppColors.pieSliceColors.length, 8);
-      expect(AppColors.pieSliceColors.first, AppColors.brandSeed);
-      expect(AppColors.pieSliceColors.toSet().length, 8);
-    });
-
-    test('pieSliceColorsDark: 8 διακριτές, καμία ίδια με τη light', () {
-      expect(AppColors.pieSliceColorsDark.length, 8);
-      expect(AppColors.pieSliceColorsDark.toSet().length, 8);
-      for (final dark in AppColors.pieSliceColorsDark) {
-        expect(AppColors.pieSliceColors, isNot(contains(dark)));
-      }
-    });
   });
 }

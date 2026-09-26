@@ -65,6 +65,7 @@
 | 45 | [Φάση 5 — Βήμα 4: UI core](oldsessions/2026-09-26_fase5_b4_ui.md) | 26-09-2026 | Κλειστό | `Pie3dPainter` + πίτα/κάρτα/selector/πίνακας (4 αρχεία, DESIGN) · ευρήματα E1–E4 (hasError-priority, ink-CustomPaint, dropdown βέλος, semantics merge) · **1129/1129** ✓ (+25) · analyze καθαρό · DESIGN αμετάβλητο |
 | 46 | [Φάση 5 — Βήμα 5: Συναρμολόγηση + Προσαρμογή](oldsessions/2026-09-26_fase5_b5_home.md) | 26-09-2026 | Κλειστό | Home rewrite + Προσαρμογή (switch/order) + E5 ValueKey + ευρήματα E6–E10 (streams, slivers, semantics, tooltip, dropdown) · **1136/1136** ✓ (+7) · analyze καθαρό · **η Φάση 5 κλείνει** |
 | 47 | [Post-closure: όριο fallback 360→300](oldsessions/2026-09-26_fase5_threshold_fix.md) | 26-09-2026 | Κλειστό | Report «μόνο labels»: το 360 μετρούσε μετά το padding → πάντα πίνακας σε κινητά · fix 300 + test 320px + legend ellipsis · **1137/1137** ✓ (+1) · analyze καθαρό |
+| 48 | [Post-closure: γεμάτα χρώματα πίτας](oldsessions/2026-09-26_fase5_palette_fix.md) | 26-09-2026 | Κλειστό | Report «αχνά χρώματα»: containers → SPoT παλέτα 8+8 (teal πρώτο, dark ανοιχτές) · **1139/1139** ✓ (+2) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
@@ -75,6 +76,7 @@
 - **Φάση 5 Βήμα 4 — UI core (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #45): painter + 3 widgets (DESIGN) · **1129/1129** ✓ (+25) · analyze καθαρό · DESIGN αμετάβλητο · backup `backups/2026-09-26_fase5_b4_ui/`.
 - **Φάση 5 Βήμα 5 — Συναρμολόγηση + Προσαρμογή (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #46): Home rewrite + Προσαρμογή · **1136/1136** ✓ (+7) · analyze καθαρό · DESIGN §5 status · backup `backups/2026-09-26_fase5_b5_home/` · **η Φάση 5 κλείνει**.
 - **Post-closure threshold fix (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #47): fallback 360→300 (πίτα ορατή σε κινητά) + legend ellipsis · **1137/1137** ✓ (+1) · analyze καθαρό · backup `backups/2026-09-26_fase5_threshold_fix/`.
+- **Post-closure palette fix (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #48): SPoT παλέτα 8+8 · **1139/1139** ✓ (+2) · analyze καθαρό · backup `backups/2026-09-26_fase5_palette_fix/`.
 
 - **False alarm desktop-write (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #41): revert επαληθευμένο (diff κενό) · analyze + 27 backup tests ✓ · DESIGN αμετάβλητο (συμπεριφορά ίδια).
 - **Sidecar cleanup στο restore (25-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #40): copy-πρώτα, cleanup-μετά · **1035/1035** ✓ (+2) · analyze καθαρό · backup `backups/2026-09-25_sidecar_cleanup/`.

@@ -13,7 +13,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_strings.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../data/models/chart_totals.dart';
 import '../../shared/currency_text_field.dart';
 import 'chart_fallback_table.dart';
@@ -154,15 +153,15 @@ class Pie3dChart extends StatelessWidget {
   /// Προσβάσιμο label (η κάρτα περνά τον τίτλο, §1.6).
   final String? semanticsLabel;
 
-  /// Παλέτα φετών από SPoT (`AppColors` — γεμάτα χρώματα, §1.1/§1.5).
-  /// Light/dark λίστα ανά `brightness` (dark = ανοιχτές για κοντράστ)·
-  /// κυκλική χρήση όταν οι φέτες ξεπερνούν την παλέτα.
-  static List<Color> sliceColors(ColorScheme scheme) {
-    final palette = scheme.brightness == Brightness.dark
-        ? AppColors.pieSliceColorsDark
-        : AppColors.pieSliceColors;
-    return palette;
-  }
+  /// Παλέτα φετών από το `ColorScheme` (dark-safe, §1.5 — κυκλική).
+  static List<Color> sliceColors(ColorScheme scheme) => [
+        scheme.primary,
+        scheme.secondary,
+        scheme.tertiary,
+        scheme.primaryContainer,
+        scheme.secondaryContainer,
+        scheme.tertiaryContainer,
+      ];
 
   @override
   Widget build(BuildContext context) {
