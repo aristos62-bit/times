@@ -57,18 +57,3 @@ typedef ItemTotal = ({
   /// Συνολικό ποσό σε λεπτά (SUM lineTotalCents).
   int totalCents,
 });
-
-/// Παράμετρος-κλειδί των chart stream families (§2.1 · Φάση 5 Βήμα 3).
-///
-/// ΜΟΝΟ `from`/`to` (start-inclusive/end-exclusive, από τον
-/// `resolvePeriodRange`): το `limit` ΔΕΝ μπαίνει στο κλειδί — εφαρμόζεται στο
-/// slice (SPoT `pieMaxSlices`/`topItemsLimit`, Q1 Βήματος 2). Plain record —
-/// value equality για το family cache (pattern `subCategorySearchProvider`
-/// `({categoryId, query})`).
-typedef ChartQuery = ({DateTime from, DateTime to});
-
-/// Μία φέτα πίτας: έτοιμη για προβολή (§2.1 · Φάση 5 Βήμα 3).
-///
-/// Παράγεται από τον `toChartSlices` (top-N + συνθετικό «Λοιπά») — το UI
-/// δείχνει `label` + `formatCents(totalCents)` (SPoT προβολή §2.1:176).
-typedef ChartSlice = ({String label, int totalCents});

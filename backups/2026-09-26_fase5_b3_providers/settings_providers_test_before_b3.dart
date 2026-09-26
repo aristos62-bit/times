@@ -15,7 +15,6 @@ import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/providers/settings_providers.dart';
 import 'package:times/data/repositories/settings_repository.dart';
-import 'package:times/presentation/home/state/home_chart_config.dart';
 
 void main() {
   late SharedPreferences prefs;
@@ -131,12 +130,5 @@ class FailingRepository implements SettingsRepository {
 
   @override
   Future<void> saveThemeMode(ThemeMode mode) =>
-      throw UnimplementedError('save fail');
-
-  @override
-  HomeChartConfig readHomeChartConfig() => throw UnimplementedError('read fail');
-
-  @override
-  Future<void> saveHomeChartConfig(HomeChartConfig config) =>
       throw UnimplementedError('save fail');
 }

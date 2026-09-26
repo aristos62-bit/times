@@ -13,11 +13,8 @@ library;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
-import '../../core/constants/app_strings.dart';
 import '../../core/utils/greek_text_normalizer.dart';
-import '../../domain/services/chart_helpers.dart';
 import '../local/app_database.dart';
-import '../models/chart_totals.dart';
 import '../models/receipt_summary.dart';
 import 'database_providers.dart';
 
@@ -164,83 +161,6 @@ final receiptLinesStreamProvider =
     StreamProvider.family<List<ReceiptLine>, int>(
   (ref, receiptId) =>
       ref.watch(receiptRepositoryProvider).watchLines(receiptId),
-);
-
-// ─── Φάση 5 — Chart streams (§2.1 · Βήμα 3) ─────────────────────────────────
-//
-// 4 families παραμετροποιημένες ανά [ChartQuery] (`{from, to}` — το `limit`
-// εφαρμόζεται στο slice, Q1 Βήματος 2). Slice top-N + «Λοιπά» in-memory
-// (precedent `categoryTreeStreamProvider`): η SQL επιστρέφει την πλήρη
-// ordered λίστα (ΧΩΡΙΣ LIMIT) και ο `toChartSlices` κρατά top-N + exact
-// υπόλοιπο. Σφάλματα ήδη `DataLoadException` (repo mapping) — εδώ ΔΕΝ
-// προσθέτουμε logging. Όλα NON-autoDispose (σύμβαση DI δέντρου).
-
-/// Φέτες «Ανά προμηθευτή» — top `pieMaxSlices` + «Λοιπά».
-final supplierTotalsProvider =
-    StreamProvider.family<List<ChartSlice>, ChartQuery>(
-  (ref, query) => ref
-      .watch(receiptRepositoryProvider)
-      .watchTotalsBySupplier(from: query.from, to: query.to)
-      .map(
-        (rows) => toChartSlices(
-          rows,
-          labelOf: (row) => row.supplierName,
-          totalOf: (row) => row.totalCents,
-          limit: AppConstants.pieMaxSlices,
-          othersLabel: AppStrings.othersSliceLabel,
-        ),
-      ),
-);
-
-/// Φέτες «Ανά κατηγορία» — top `pieMaxSlices` + «Λοιπά».
-final categoryTotalsProvider =
-    StreamProvider.family<List<ChartSlice>, ChartQuery>(
-  (ref, query) => ref
-      .watch(receiptRepositoryProvider)
-      .watchTotalsByCategory(from: query.from, to: query.to)
-      .map(
-        (rows) => toChartSlices(
-          rows,
-          labelOf: (row) => row.categoryName,
-          totalOf: (row) => row.totalCents,
-          limit: AppConstants.pieMaxSlices,
-          othersLabel: AppStrings.othersSliceLabel,
-        ),
-      ),
-);
-
-/// Φέτες «Ανά υποκατηγορία» — top `pieMaxSlices` + «Λοιπά».
-final subCategoryTotalsProvider =
-    StreamProvider.family<List<ChartSlice>, ChartQuery>(
-  (ref, query) => ref
-      .watch(receiptRepositoryProvider)
-      .watchTotalsBySubCategory(from: query.from, to: query.to)
-      .map(
-        (rows) => toChartSlices(
-          rows,
-          labelOf: (row) => row.subCategoryName,
-          totalOf: (row) => row.totalCents,
-          limit: AppConstants.pieMaxSlices,
-          othersLabel: AppStrings.othersSliceLabel,
-        ),
-      ),
-);
-
-/// Φέτες Top-10 ειδών — top `topItemsLimit` + «Λοιπά».
-final topItemsTotalsProvider =
-    StreamProvider.family<List<ChartSlice>, ChartQuery>(
-  (ref, query) => ref
-      .watch(receiptRepositoryProvider)
-      .watchTopItems(from: query.from, to: query.to)
-      .map(
-        (rows) => toChartSlices(
-          rows,
-          labelOf: (row) => row.itemName,
-          totalOf: (row) => row.totalCents,
-          limit: AppConstants.topItemsLimit,
-          othersLabel: AppStrings.othersSliceLabel,
-        ),
-      ),
 );
 
 /// Τελευταία γραμμή είδους για prefill τιμής/έκπτωσης (§2.2) — `.family`

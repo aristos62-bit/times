@@ -5,18 +5,14 @@
 /// `AppTheme.defaultMode` (§1.5) — όχι hardcoded 'system'.
 library;
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_constants.dart';
-import 'package:times/core/constants/app_enums.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/repositories/settings_repository.dart';
 import 'package:times/data/repositories/settings_repository_impl.dart';
-import 'package:times/presentation/home/state/home_chart_config.dart';
 
 void main() {
   late SharedPreferences prefs;
@@ -68,74 +64,6 @@ void main() {
 
     test('εμφανίζεται με το abstract interface SettingsRepository', () {
       expect(newRepo(), isA<SettingsRepository>());
-    });
-
-    // ─── readHomeChartConfig (sync · Φάση 5 Βήμα 3) ──────────────────────────
-    test('χωρίς τιμή → HomeChartConfig.defaults() (§2.1)', () {
-      expect(newRepo().readHomeChartConfig(), HomeChartConfig.defaults());
-    });
-
-    test('μη-JSON τιμή → defaults (χωρίς throw)', () async {
-      await prefs.setString(AppConstants.homeChartConfigKey, 'not-json{{{');
-      expect(newRepo().readHomeChartConfig(), HomeChartConfig.defaults());
-    });
-
-    test('corrupt entry → default entry (οι υγιείς κρατιούνται)', () async {
-      await prefs.setString(
-        AppConstants.homeChartConfigKey,
-        jsonEncode({
-          'supplier': {'visible': false, 'order': 0, 'period': 'year'},
-          'category': 'corrupt',
-          'subCategory': {'visible': 'ναι', 'order': 'δύο'},
-          'topItems': null,
-        }),
-      );
-      final config = newRepo().readHomeChartConfig();
-      expect(
-        config.supplier,
-        const ChartEntry(visible: false, order: 0, period: PeriodType.year),
-      );
-      expect(config.category, const ChartEntry(order: 1));
-      expect(config.subCategory, const ChartEntry(order: 2));
-      expect(config.topItems, const ChartEntry(order: 3));
-    });
-
-    test('άγνωστο period → month (SPoT default §2.1)', () async {
-      await prefs.setString(
-        AppConstants.homeChartConfigKey,
-        jsonEncode({
-          'supplier': {'visible': true, 'order': 0, 'period': 'trimester'},
-        }),
-      );
-      expect(
-        newRepo().readHomeChartConfig().supplier.period,
-        PeriodType.month,
-      );
-    });
-
-    test('round-trip: config με custom range', () async {
-      final repo = newRepo();
-      final config = HomeChartConfig(
-        supplier: ChartEntry(
-          visible: false,
-          order: 2,
-          period: PeriodType.custom,
-          customFrom: DateTime(2026, 1, 1),
-          customTo: DateTime(2026, 1, 31),
-        ),
-        category: const ChartEntry(order: 0),
-        subCategory: const ChartEntry(order: 1, period: PeriodType.year),
-        topItems: const ChartEntry(order: 3, visible: false),
-      );
-      await repo.saveHomeChartConfig(config);
-      expect(repo.readHomeChartConfig(), config);
-    });
-
-    test('γράφει στον SPoT key AppConstants.homeChartConfigKey', () async {
-      await newRepo().saveHomeChartConfig(HomeChartConfig.defaults());
-      final stored = prefs.getString(AppConstants.homeChartConfigKey);
-      expect(stored, isNotNull);
-      expect(stored, contains('supplier'));
     });
   });
 }

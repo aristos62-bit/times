@@ -61,14 +61,12 @@
 | 41 | [False alarm: «export δεν γράφει σε desktop»](oldsessions/2026-09-26_desktop_write_false_alarm.md) | 26-09-2026 | Κλειστό | Ισχυρισμός vs source (win/lin/mac γράφουν μόνα τους + CHANGELOG across-all-platforms) → revert χρήστη, επαληθευμένο (diff κενό, analyze + 27 tests ✓) · DESIGN αμετάβλητο |
 | 42 | [Φάση 5 — Βήμα 1: SPoT θεμέλιο](oldsessions/2026-09-26_fase5_b1_spot.md) | 26-09-2026 | Κλειστό | `PeriodType` + `pieMaxSlices/topItemsLimit/homeChartConfigKey/pieChartHeight/pieFallbackMaxWidth` + 11 strings (4 τίτλοι + 5 περίοδοι + Προσαρμογή + Λοιπά) · reuse `noPricesForPeriod/retryButton/formatCents/ColorScheme` · **1047/1047** ✓ (+12) · analyze καθαρό · DESIGN αμετάβλητο |
 | 43 | [Φάση 5 — Βήμα 2: Data aggregations](oldsessions/2026-09-26_fase5_b2_data.md) | 26-09-2026 | Κλειστό | 4 `SUM GROUP BY` στο `ReceiptDao` (όχι νέο DAO) + `chart_totals.dart` + repo passthrough · INNER · πλήρης λίστα, slice+«Λοιπά» στον provider (Q1) · 6 fakes · **1065/1065** ✓ (+18) · analyze καθαρό · DESIGN §2.1 διευκρίνιση LIMIT |
-| 44 | [Φάση 5 — Βήμα 3: Providers + config](oldsessions/2026-09-26_fase5_b3_providers.md) | 26-09-2026 | Κλειστό | `HomeChartConfig` Freezed + controller (plain Notifier, persisted) + repo JSON + `ChartQuery/Slice` + 4 families + `chart_helpers` (pure) · **1104/1104** ✓ (+39) · analyze καθαρό · DESIGN αμετάβλητο |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
 
 - **Φάση 5 Βήμα 1 — SPoT θεμέλιο (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #42): `PeriodType` + 5 consts + 11 strings · **1047/1047** ✓ (+12) · analyze καθαρό · DESIGN αμετάβλητο · backup `backups/2026-09-26_fase5_b1_spot/`.
 - **Φάση 5 Βήμα 2 — Data aggregations (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #43): 4 `SUM GROUP BY` στο `ReceiptDao` + `chart_totals.dart` + repo passthrough + 6 fakes · **1065/1065** ✓ (+18) · analyze καθαρό · DESIGN §2.1 διευκρίνιση LIMIT · backup `backups/2026-09-26_fase5_b2_data/`.
-- **Φάση 5 Βήμα 3 — Providers + config (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #44): Freezed config + controller + repo JSON + 4 families + helpers · **1104/1104** ✓ (+39) · analyze καθαρό · DESIGN αμετάβλητο · backup `backups/2026-09-26_fase5_b3_providers/`.
 
 - **False alarm desktop-write (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #41): revert επαληθευμένο (diff κενό) · analyze + 27 backup tests ✓ · DESIGN αμετάβλητο (συμπεριφορά ίδια).
 - **Sidecar cleanup στο restore (25-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #40): copy-πρώτα, cleanup-μετά · **1035/1035** ✓ (+2) · analyze καθαρό · backup `backups/2026-09-25_sidecar_cleanup/`.

@@ -12,8 +12,6 @@ library;
 
 import 'package:flutter/material.dart';
 
-import '../../presentation/home/state/home_chart_config.dart';
-
 /// Abstract interface — υλοποιείται πάνω σε SharedPreferences.
 abstract interface class SettingsRepository {
   /// Διαβάζει το αποθηκευμένο ThemeMode ΣΥΓΧΡΟΝΩΣ· κενό/άγνωστο → default
@@ -22,12 +20,4 @@ abstract interface class SettingsRepository {
 
   /// Αποθηκεύει το ThemeMode στον SPoT key `AppConstants.themeModeKey`.
   Future<void> saveThemeMode(ThemeMode mode);
-
-  /// Διαβάζει τη ρύθμιση γραφημάτων ΣΥΓΧΡΟΝΩΣ (§2.1 · Φάση 5 Βήμα 3) —
-  /// κενό/corrupt → `HomeChartConfig.defaults()` (pattern `readThemeMode`).
-  HomeChartConfig readHomeChartConfig();
-
-  /// Αποθηκεύει τη ρύθμιση γραφημάτων στον SPoT key
-  /// `AppConstants.homeChartConfigKey` (JSON — mapping ΜΟΝΟ στο impl).
-  Future<void> saveHomeChartConfig(HomeChartConfig config);
 }
