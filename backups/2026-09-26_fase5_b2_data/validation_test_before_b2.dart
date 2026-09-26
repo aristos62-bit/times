@@ -17,7 +17,6 @@ import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/core/logging/app_logger.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/models/receipt_summary.dart';
-import 'package:times/data/models/chart_totals.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/repositories/receipt_repository.dart';
 import 'package:times/presentation/price_entry/controllers/receipt_form_controller.dart';
@@ -384,30 +383,6 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,
     required int limit,
-  }) =>
-      throw UnimplementedError();
-  @override
-  Stream<List<SupplierTotal>> watchTotalsBySupplier({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      throw UnimplementedError();
-  @override
-  Stream<List<CategoryTotal>> watchTotalsByCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      throw UnimplementedError();
-  @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      throw UnimplementedError();
-  @override
-  Stream<List<ItemTotal>> watchTopItems({
-    required DateTime from,
-    required DateTime to,
   }) =>
       throw UnimplementedError();
 }

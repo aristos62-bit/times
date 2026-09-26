@@ -10,7 +10,6 @@
 library;
 
 import '../local/app_database.dart';
-import '../models/chart_totals.dart';
 import '../models/receipt_summary.dart';
 
 /// Record για την εισαγωγή γραμμής απόδειξης στη transaction.
@@ -38,34 +37,6 @@ abstract interface class ReceiptRepository {
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,
     required int limit,
-  });
-
-  /// Παρακολουθεί τα σύνολα ανά προμηθευτή σε περίοδο (§2.1 · Φάση 5).
-  /// Passthrough στο DAO (Βήμα 2).
-  Stream<List<SupplierTotal>> watchTotalsBySupplier({
-    required DateTime from,
-    required DateTime to,
-  });
-
-  /// Παρακολουθεί τα σύνολα ανά κατηγορία σε περίοδο (§2.1 · Φάση 5).
-  /// Passthrough στο DAO (Βήμα 2).
-  Stream<List<CategoryTotal>> watchTotalsByCategory({
-    required DateTime from,
-    required DateTime to,
-  });
-
-  /// Παρακολουθεί τα σύνολα ανά υποκατηγορία σε περίοδο (§2.1 · Φάση 5).
-  /// Passthrough στο DAO (Βήμα 2).
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
-    required DateTime from,
-    required DateTime to,
-  });
-
-  /// Παρακολουθεί τα σύνολα ανά είδος σε περίοδο (§2.1 · Φάση 5 — Top-10).
-  /// Passthrough στο DAO (Βήμα 2).
-  Stream<List<ItemTotal>> watchTopItems({
-    required DateTime from,
-    required DateTime to,
   });
 
   /// Διαβάζει μία απόδειξη ή null αν δεν υπάρχει.

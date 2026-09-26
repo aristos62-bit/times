@@ -17,7 +17,6 @@ import '../../core/errors/app_exceptions.dart';
 import '../local/daos/receipt_dao.dart';
 import '../local/daos/receipt_line_dao.dart';
 import '../local/app_database.dart';
-import '../models/chart_totals.dart';
 import '../models/receipt_summary.dart';
 import 'receipt_repository.dart';
 
@@ -56,46 +55,6 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
     required int limit,
   }) =>
       _receiptDao.watchSummariesByDay(day: day, limit: limit).handleError(
-            (Object e, StackTrace s) =>
-                Error.throwWithStackTrace(const DataLoadException(), s),
-          );
-
-  @override
-  Stream<List<SupplierTotal>> watchTotalsBySupplier({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      _receiptDao.watchTotalsBySupplier(from: from, to: to).handleError(
-            (Object e, StackTrace s) =>
-                Error.throwWithStackTrace(const DataLoadException(), s),
-          );
-
-  @override
-  Stream<List<CategoryTotal>> watchTotalsByCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      _receiptDao.watchTotalsByCategory(from: from, to: to).handleError(
-            (Object e, StackTrace s) =>
-                Error.throwWithStackTrace(const DataLoadException(), s),
-          );
-
-  @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      _receiptDao.watchTotalsBySubCategory(from: from, to: to).handleError(
-            (Object e, StackTrace s) =>
-                Error.throwWithStackTrace(const DataLoadException(), s),
-          );
-
-  @override
-  Stream<List<ItemTotal>> watchTopItems({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      _receiptDao.watchTopItems(from: from, to: to).handleError(
             (Object e, StackTrace s) =>
                 Error.throwWithStackTrace(const DataLoadException(), s),
           );

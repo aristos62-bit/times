@@ -141,10 +141,6 @@ presentation/<screen>/
 - Άθροιση στο SQL (`SUM(lineTotalCents) GROUP BY`, top-10 με
   `ORDER BY SUM DESC LIMIT 10`) — ποτέ φόρτωμα γραμμών σε Dart (precedent
   Βήματος 7)· streams (όχι futures) → auto-refresh μετά από save.
-  Διευκρίνιση Βήματος 2 (exact «Λοιπά», §2.1:183): το DAO επιστρέφει την
-  πλήρη ordered λίστα (χωρίς LIMIT — οι ομάδες είναι ≤535 records) και το
-  slice top-N + «Λοιπά» γίνεται στον provider· το `limit` του `ChartQuery`
-  εφαρμόζεται εκεί (SPoT `pieMaxSlices`/`topItemsLimit`).
 
 **Περίοδος ανά γράφημα (Ημέρα/Εβδομάδα/Μήνας/Έτος/Προσαρμοσμένο)**
 - Κάθε κάρτα έχει δικό της selector (date-range picker στο Προσαρμοσμένο)·

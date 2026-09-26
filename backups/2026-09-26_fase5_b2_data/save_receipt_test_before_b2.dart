@@ -26,7 +26,6 @@ import 'package:times/data/local/daos/item_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/models/receipt_summary.dart';
-import 'package:times/data/models/chart_totals.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/repositories/receipt_repository.dart';
 import 'package:times/presentation/price_entry/controllers/receipt_form_controller.dart';
@@ -352,30 +351,6 @@ class _FailingReceiptRepo implements ReceiptRepository {
   }) =>
       throw const DataLoadException();
   @override
-  Stream<List<SupplierTotal>> watchTotalsBySupplier({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      throw const DataLoadException();
-  @override
-  Stream<List<CategoryTotal>> watchTotalsByCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      throw const DataLoadException();
-  @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      throw const DataLoadException();
-  @override
-  Stream<List<ItemTotal>> watchTopItems({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      throw const DataLoadException();
-  @override
   Future<int> insertReceiptWithLines({
     required DateTime date,
     required int supplierId,
@@ -433,30 +408,6 @@ class _BlockingReceiptRepo implements ReceiptRepository {
     required int limit,
   }) =>
       inner.watchSummariesByDay(day: day, limit: limit);
-  @override
-  Stream<List<SupplierTotal>> watchTotalsBySupplier({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      inner.watchTotalsBySupplier(from: from, to: to);
-  @override
-  Stream<List<CategoryTotal>> watchTotalsByCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      inner.watchTotalsByCategory(from: from, to: to);
-  @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      inner.watchTotalsBySubCategory(from: from, to: to);
-  @override
-  Stream<List<ItemTotal>> watchTopItems({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      inner.watchTopItems(from: from, to: to);
   @override
   Future<int> insertReceiptWithLines({
     required DateTime date,
