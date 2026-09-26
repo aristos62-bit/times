@@ -163,24 +163,6 @@ class ReceiptLineDao extends BaseDao {
         },
       );
 
-  /// Μετράει τις γραμμές ενός είδους — Ρυθμίσεις, πύλη διαγραφής είδους
-  /// (§2.3 · CRUD ειδών).
-  ///
-  /// Χρήση: πύλη διαγραφής — `0` = καθαρό (επιτρέπεται delete), `>0` =
-  /// μπλοκαρισμένο (greyed-out + tooltip, πατρόν Βήματος 4). Typed drift API
-  /// (selectOnly + count, compile-time ονόματα — Α2).
-  Future<int> countByItemId(int itemId) => guard(
-        'Μέτρηση γραμμών είδους',
-        () async {
-          final countExp = db.receiptLines.id.count();
-          final query = db.selectOnly(db.receiptLines)
-            ..addColumns([countExp])
-            ..where(db.receiptLines.itemId.equals(itemId));
-          final row = await query.getSingle();
-          return row.read(countExp) ?? 0;
-        },
-      );
-
   /// Διαγραφή γραμμής — πάντα επιτρεπτή (χωρίς dependents).
   Future<bool> deleteById(int id) => guard(
         'Διαγραφή γραμμής απόδειξης',

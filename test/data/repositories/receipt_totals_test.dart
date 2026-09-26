@@ -129,4 +129,23 @@ void main() {
       );
     });
   });
+
+  group('ReceiptRepositoryImpl.countLinesByItemId (§2.3 · πύλη είδους)', () {
+    test('χωρίς γραμμές → 0 · με γραμμές → πλήθος', () async {
+      expect(await repo.countLinesByItemId(itemId), 0);
+      final receiptId = await repo.insert(
+        date: DateTime(2026, 1, 1),
+        supplierId: supplierId,
+      );
+      final lineDao = ReceiptLineDao(db);
+      await lineDao.insert(
+        receiptId: receiptId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 1,
+        priceCents: 100,
+      );
+      expect(await repo.countLinesByItemId(itemId), 1);
+    });
+  });
 }

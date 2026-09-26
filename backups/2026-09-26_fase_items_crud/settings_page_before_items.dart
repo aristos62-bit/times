@@ -7,8 +7,8 @@
 /// `receiptsByDayStreamProvider`/`selectedReceiptDayProvider` (section
 /// «Αποδείξεις», Φάση Β — η βάση ανοίγει και από εδώ· στο launch είναι ήδη
 /// ανοιχτή μέσω PriceEntry, IndexedStack §2.2:221/Α1).
-/// Sections «Είδη»/«Κατηγορίες»/«Προμηθευτές»/«Αποδείξεις»/«Αντίγραφα» collapsible
-/// (24-09-2026 + Βήμα 5 + ενότητα Ειδών): κλειστά εξ αρχής (`ExpansionTile` default) —
+/// Sections «Κατηγορίες»/«Προμηθευτές»/«Αποδείξεις»/«Αντίγραφα» collapsible
+/// (24-09-2026 + Βήμα 5): κλειστά εξ αρχής (`ExpansionTile` default) —
 /// καθαρή είσοδος στη σελίδα· tap δείχνει τον editor ως ήταν.
 /// Το expand-state επιβιώνει σε αλλαγή tab
 /// (IndexedStack κρατά το State, §2.2:222).
@@ -22,13 +22,12 @@ import '../../core/constants/app_strings.dart';
 import '../../data/providers/settings_providers.dart';
 import 'widgets/backup_restore_section.dart';
 import 'widgets/category_tree_editor.dart';
-import 'widgets/item_list_editor.dart';
 import 'widgets/receipts_management_editor.dart';
 import 'widgets/supplier_list_editor.dart';
 import 'widgets/theme_mode_selector.dart';
 
 /// Σελίδα ρυθμίσεων (§2.3) — section «Θέμα» (Βήμα 1 · πάντα ορατό) +
-/// collapsible sections «Είδη» (editor, ενότητα Ειδών) + «Κατηγορίες» (tree editor, Βήμα 4) + «Προμηθευτές»
+/// collapsible sections «Κατηγορίες» (tree editor, Βήμα 4) + «Προμηθευτές»
 /// (CRUD 24-09-2026) + «Αποδείξεις» (διαχείριση, Φάση Β 24-09-2026) +
 /// «Αντίγραφα ασφαλείας» (export/restore, Βήμα 5).
 class SettingsPage extends ConsumerWidget {
@@ -64,26 +63,6 @@ class SettingsPage extends ConsumerWidget {
                   ),
                 ],
               ),
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingL),
-          Card(
-            // Collapsible section (ενότητα Ειδών): κλειστό εξ αρχής
-            // (pattern Κατηγοριών 24-09-2026) — ΠΡΙΝ τις Κατηγορίες.
-            child: ExpansionTile(
-              title: Text(
-                AppStrings.titleItemsSection,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              childrenPadding: const EdgeInsets.fromLTRB(
-                AppConstants.spacingL,
-                0,
-                AppConstants.spacingL,
-                AppConstants.spacingL,
-              ),
-              // Item editor (§2.3 · ενότητα Ειδών): αναζήτηση (forked
-              // instance §2.4) + CRUD με πύλη διαγραφής (RESTRICT §3).
-              children: const [ItemListEditor()],
             ),
           ),
           const SizedBox(height: AppConstants.spacingL),

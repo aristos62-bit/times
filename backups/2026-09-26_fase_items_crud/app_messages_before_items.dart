@@ -123,22 +123,6 @@ abstract final class AppMessages {
   static String supplierReceiptsTooltip(int count) =>
       'Δεν μπορεί να διαγραφεί: $count αποδείξεις';
 
-  // ─── Items CRUD (§2.3 · ενότητα Ειδών) ─────────────────────────────────────
-  /// Το όνομα είδους ενημερώθηκε (Ρυθμίσεις).
-  static const String itemUpdated = 'Το είδος ενημερώθηκε';
-
-  /// Είδος διαγράφηκε (Ρυθμίσεις — μόνο καθαρό, η πύλη εγγυάται
-  /// 0 γραμμές, RESTRICT §3).
-  static const String itemDeleted = 'Το είδος διαγράφηκε';
-
-  /// Confirm διαγραφής είδους (χωρίς cascade-διατύπωση — RESTRICT §3).
-  static String deleteItemConfirm(String name) =>
-      'Διαγραφή είδους "$name";';
-
-  /// Blocked tooltip: Ν γραμμές του είδους (§2.3).
-  static String itemLinesTooltip(int count) =>
-      'Δεν μπορεί να διαγραφεί: $count γραμμές';
-
   // ─── Backup / Restore (§2.3 · Φάση 4 Βήμα 5) ───────────────────────────────
   /// Επιτυχής εξαγωγή αντιγράφου (§2.3 · Βήμα 5 — συμμετρικό του
   /// `restoreSuccess`).

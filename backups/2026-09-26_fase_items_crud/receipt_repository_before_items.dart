@@ -75,10 +75,6 @@ abstract interface class ReceiptRepository {
   /// (§2.3 · 24-09-2026): `0` = καθαρός. Passthrough στο DAO (Βήμα 2).
   Future<int> countBySupplierId(int supplierId);
 
-  /// Μετράει τις γραμμές ενός είδους — πύλη διαγραφής είδους (§2.3 · CRUD
-  /// ειδών): `0` = καθαρό. Passthrough στο DAO (Βήμα 2).
-  Future<int> countLinesByItemId(int itemId);
-
   /// Εισάγει απόδειξη· επιστρέφει τον (αυτόματο) αριθμό = id.
   Future<int> insert({required DateTime date, required int supplierId});
 

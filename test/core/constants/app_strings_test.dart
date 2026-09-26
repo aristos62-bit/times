@@ -205,6 +205,11 @@ void main() {
       expect(AppStrings.suppliersEmpty, 'Δεν υπάρχουν προμηθευτές ακόμα');
     });
 
+    test('titleItemsSection + itemsEmpty (§2.3 · ενότητα Ειδών)', () {
+      expect(AppStrings.titleItemsSection, 'Είδη');
+      expect(AppStrings.itemsEmpty, 'Δεν υπάρχουν είδη ακόμα');
+    });
+
     // ─── Receipts section (§2.3 · Φάση Β 24-09-2026) ─────────────────────────
     test('titleReceiptsSection + clearReceiptFilter + noReceiptsForDay (§2.3)', () {
       expect(AppStrings.titleReceiptsSection, 'Αποδείξεις');
@@ -310,6 +315,8 @@ const List<String> _allStrings = [
   AppStrings.saveAction,
   AppStrings.titleSuppliersSection,
   AppStrings.suppliersEmpty,
+  AppStrings.titleItemsSection,
+  AppStrings.itemsEmpty,
   AppStrings.titleReceiptsSection,
   AppStrings.clearReceiptFilter,
   AppStrings.noReceiptsForDay,

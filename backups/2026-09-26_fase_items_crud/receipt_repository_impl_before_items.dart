@@ -108,10 +108,6 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
       _guard(() => _receiptDao.countBySupplierId(supplierId));
 
   @override
-  Future<int> countLinesByItemId(int itemId) =>
-      _guard(() => _lineDao.countByItemId(itemId));
-
-  @override
   Future<int> insert({required DateTime date, required int supplierId}) =>
       _guard(() => _receiptDao.insert(date: date, supplierId: supplierId));
 

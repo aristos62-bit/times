@@ -67,7 +67,6 @@
 | 47 | [Post-closure: όριο fallback 360→300](oldsessions/2026-09-26_fase5_threshold_fix.md) | 26-09-2026 | Κλειστό | Report «μόνο labels»: το 360 μετρούσε μετά το padding → πάντα πίνακας σε κινητά · fix 300 + test 320px + legend ellipsis · **1137/1137** ✓ (+1) · analyze καθαρό |
 | 48 | [Post-closure: γεμάτα χρώματα πίτας](oldsessions/2026-09-26_fase5_palette_fix.md) | 26-09-2026 | Κλειστό | Report «αχνά χρώματα»: containers → SPoT παλέτα 8+8 (teal πρώτο, dark ανοιχτές) · **1139/1139** ✓ (+2) · analyze καθαρό |
 | 49 | [Post-closure: γενικό σύνολο κάρτας](oldsessions/2026-09-26_fase5_chart_total.md) | 26-09-2026 | Κλειστό | Αίτημα «σύνολο»: γραμμή «Σύνολο» σε legend+πίνακα · fallback και σε 2x γράμματα · **1141/1141** ✓ (+2) · analyze καθαρό |
-| 50 | [Ρυθμίσεις: CRUD Ειδών](oldsessions/2026-09-26_fase_items_crud.md) | 26-09-2026 | Κλειστό | Section «Είδη» πριν τις Κατηγορίες (fork ItemSearchField + full edit dialog + πύλη `countLinesByItemId`) · εύρημα: `return future` flattening hang σε async helper → wrapper-record · settings_page_test 4→5 sections · **1167/1167** ✓ (+26) · analyze καθαρό · DESIGN §2.3:321 |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
@@ -80,7 +79,6 @@
 - **Post-closure threshold fix (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #47): fallback 360→300 (πίτα ορατή σε κινητά) + legend ellipsis · **1137/1137** ✓ (+1) · analyze καθαρό · backup `backups/2026-09-26_fase5_threshold_fix/`.
 - **Post-closure palette fix (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #48): SPoT παλέτα 8+8 · **1139/1139** ✓ (+2) · analyze καθαρό · backup `backups/2026-09-26_fase5_palette_fix/`.
 - **Post-closure γραμμή συνόλου (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #49): «Σύνολο» σε legend+πίνακα + fallback 2x · **1141/1141** ✓ (+2) · analyze καθαρό · backup `backups/2026-09-26_fase5_chart_total/`.
-- **Ρυθμίσεις CRUD Ειδών (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #50): section «Είδη» πριν τις Κατηγορίες (fork search + `ItemManagementController` + full edit + πύλη γραμμών, δημιουργία via `NewItemFlowDialog`) · εύρημα `return future` flattening (test hang → wrapper-record) · settings_page_test 4→5 · **1167/1167** ✓ (+26) · analyze καθαρό · DESIGN §2.3:321 · backup `backups/2026-09-26_fase_items_crud/`.
 
 - **False alarm desktop-write (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #41): revert επαληθευμένο (diff κενό) · analyze + 27 backup tests ✓ · DESIGN αμετάβλητο (συμπεριφορά ίδια).
 - **Sidecar cleanup στο restore (25-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #40): copy-πρώτα, cleanup-μετά · **1035/1035** ✓ (+2) · analyze καθαρό · backup `backups/2026-09-25_sidecar_cleanup/`.

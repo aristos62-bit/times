@@ -114,14 +114,12 @@ void main() {
     testWidgets('sections κλειστά by default',
         (tester) async {
       await pumpAt(tester, const Size(800, 600));
-      expect(find.text(AppStrings.titleItemsSection), findsOneWidget);
       expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
       expect(find.text(AppStrings.titleSuppliersSection), findsOneWidget);
       expect(find.text(AppStrings.titleReceiptsSection), findsOneWidget);
       expect(find.text(AppStrings.titleBackupSection), findsOneWidget);
-      expect(find.byType(ExpansionTile), findsNWidgets(5));
+      expect(find.byType(ExpansionTile), findsNWidgets(4));
       // Περιεχόμενο κρυμμένο μέχρι tap (collapsible 24-09-2026).
-      expect(find.text(AppStrings.itemsEmpty), findsNothing);
       expect(find.text(AppStrings.categoriesEmpty), findsNothing);
       expect(find.text(AppStrings.suppliersEmpty), findsNothing);
       expect(find.text(AppStrings.addNewCategory), findsNothing);

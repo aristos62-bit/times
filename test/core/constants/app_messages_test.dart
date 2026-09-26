@@ -139,6 +139,19 @@ void main() {
       expect(AppMessages.supplierDeleted, 'Ο προμηθευτής διαγράφηκε');
     });
 
+    test('itemUpdated/itemDeleted/deleteItemConfirm/itemLinesTooltip (§2.3)', () {
+      expect(AppMessages.itemUpdated, 'Το είδος ενημερώθηκε');
+      expect(AppMessages.itemDeleted, 'Το είδος διαγράφηκε');
+      expect(
+        AppMessages.deleteItemConfirm('Γάλα'),
+        'Διαγραφή είδους "Γάλα";',
+      );
+      expect(
+        AppMessages.itemLinesTooltip(2),
+        'Δεν μπορεί να διαγραφεί: 2 γραμμές',
+      );
+    });
+
     test('deleteSupplierConfirm — χωρίς cascade-διατύπωση (RESTRICT §3)', () {
       expect(
         AppMessages.deleteSupplierConfirm('Μάρκος'),
@@ -198,6 +211,8 @@ const List<String> _allConstStrings = [
   AppMessages.subCategoryDeleted,
   AppMessages.supplierUpdated,
   AppMessages.supplierDeleted,
+  AppMessages.itemUpdated,
+  AppMessages.itemDeleted,
   AppMessages.receiptUpdated,
   AppMessages.receiptDeleted,
   AppMessages.editDiscardDraftsConfirm,

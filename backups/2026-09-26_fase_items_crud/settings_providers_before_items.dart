@@ -222,29 +222,6 @@ final receiptCountSupplierProvider = FutureProvider.family<int, int>(
       ref.watch(receiptRepositoryProvider).countBySupplierId(supplierId),
 );
 
-// ─── CRUD ειδών — πύλη διαγραφής (§2.3 · ενότητα Ειδών) ─────────────────────
-
-/// Προ-έλεγχος διαγραφής είδους.
-///
-/// `true` = καθαρό (`countLinesByItemId == 0`, RESTRICT δεν εμποδίζει) ·
-/// `false` = μπλοκαρισμένο (greyed-out + tooltip με πλήθος γραμμών).
-/// Family one-shot ανά id + invalidate μετά από delete/μετακίνηση (πατρόν
-/// Βήματος 4 — η μετακίνηση αλλάζει τα `inUse` πυλών κατηγοριών).
-/// NON-autoDispose.
-final canDeleteItemProvider = FutureProvider.family<bool, int>(
-  (ref, itemId) async =>
-      await ref.watch(receiptRepositoryProvider).countLinesByItemId(itemId) ==
-      0,
-);
-
-/// Πλήθος γραμμών του είδους — sibling του `canDeleteItemProvider`
-/// (`int` για το blocked tooltip `itemLinesTooltip`). Invalidate μαζί
-/// με το canDelete. NON-autoDispose.
-final itemLinesCountProvider = FutureProvider.family<int, int>(
-  (ref, itemId) =>
-      ref.watch(receiptRepositoryProvider).countLinesByItemId(itemId),
-);
-
 // ─── Backup / Restore — service + picker (§2.3 · Φάση 4 Βήμα 5) ─────────────
 
 /// SPoT `BackupService` πάνω στην ανοιχτή βάση. Cascade invalidation: το

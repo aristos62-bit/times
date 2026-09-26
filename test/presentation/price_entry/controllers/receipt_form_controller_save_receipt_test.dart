@@ -329,6 +329,9 @@ class _FailingReceiptRepo implements ReceiptRepository {
   Future<int> countBySupplierId(int supplierId) =>
       throw const DataLoadException();
   @override
+  Future<int> countLinesByItemId(int itemId) =>
+      throw const DataLoadException();
+  @override
   Future<int> insert({required DateTime date, required int supplierId}) =>
       throw const DataLoadException();
   @override
@@ -418,6 +421,9 @@ class _BlockingReceiptRepo implements ReceiptRepository {
   @override
   Future<int> countBySupplierId(int supplierId) =>
       inner.countBySupplierId(supplierId);
+  @override
+  Future<int> countLinesByItemId(int itemId) =>
+      inner.countLinesByItemId(itemId);
   @override
   Stream<List<ReceiptLine>> watchLines(int receiptId) =>
       inner.watchLines(receiptId);

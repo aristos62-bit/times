@@ -171,12 +171,6 @@ abstract final class AppStrings {
   /// Κενή κατάσταση της λίστας προμηθευτών (§2.3).
   static const String suppliersEmpty = 'Δεν υπάρχουν προμηθευτές ακόμα';
 
-  // ─── Items section (§2.3 · CRUD ειδών) ───────────────────────────────────
-  /// Τίτλος του section «Είδη» στη σελίδα ρυθμίσεων (§2.3).
-  static const String titleItemsSection = 'Είδη';
-  /// Κενή κατάσταση αναζήτησης ειδών (§2.3 — πριν πληκτρολογήσει ο χρήστης).
-  static const String itemsEmpty = 'Δεν υπάρχουν είδη ακόμα';
-
   // ─── Receipts section (§2.3 · Φάση Β 24-09-2026) ───────────────────────────
   /// Τίτλος του section «Αποδείξεις» στη σελίδα ρυθμίσεων (§2.3).
   static const String titleReceiptsSection = 'Αποδείξεις';

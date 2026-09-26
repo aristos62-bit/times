@@ -372,6 +372,9 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
   Future<int> countBySupplierId(int supplierId) =>
       throw UnimplementedError();
   @override
+  Future<int> countLinesByItemId(int itemId) =>
+      throw UnimplementedError();
+  @override
   Stream<List<ReceiptLine>> watchLines(int receiptId) =>
       throw UnimplementedError();
   @override
