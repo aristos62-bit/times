@@ -97,6 +97,18 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('κινητό 320px (304 διαθέσιμα) → πίτα, όχι πίνακας (fix 26-09)', (tester) async {
+      await pumpChart(
+        tester,
+        sampleSlices(),
+        size: const Size(320, 568),
+        width: 304,
+      );
+      expect(find.byType(ChartFallbackTable), findsNothing);
+      expect(findPie(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('μία φέτα (100%) → πλήρης κύκλος', (tester) async {
       await pumpChart(tester, const [(label: 'Μάρκος', totalCents: 398)]);
       expect(findPie(), findsOneWidget);

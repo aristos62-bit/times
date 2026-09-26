@@ -232,10 +232,15 @@ class Pie3dChart extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: AppConstants.spacingS),
-                            Text(
-                              '${CurrencyTextField.formatCents(slices[i].totalCents)} '
-                              '${AppStrings.currencySymbol}',
-                              style: theme.textTheme.titleSmall,
+                            Flexible(
+                              child: Text(
+                                '${CurrencyTextField.formatCents(slices[i].totalCents)} '
+                                '${AppStrings.currencySymbol}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                                style: theme.textTheme.titleSmall,
+                              ),
                             ),
                           ],
                         ),

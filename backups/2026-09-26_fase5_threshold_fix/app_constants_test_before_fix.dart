@@ -235,8 +235,8 @@ void main() {
       expect(AppConstants.pieChartHeight, 220.0);
     });
 
-    test('pieFallbackMaxWidth = 300 (fallback πίνακα, §1.4)', () {
-      expect(AppConstants.pieFallbackMaxWidth, 300.0);
+    test('pieFallbackMaxWidth = 360 (fallback πίνακα, §1.4)', () {
+      expect(AppConstants.pieFallbackMaxWidth, 360.0);
     });
 
     test('chart limits invariants: όλα > 0', () {

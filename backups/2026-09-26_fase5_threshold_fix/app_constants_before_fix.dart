@@ -159,10 +159,8 @@ abstract final class AppConstants {
   static const double pieChartHeight = 220.0;
 
   // Κάτω από αυτό το πλάτος η πίτα αντικαθίσταται από fallback πίνακα
-  // (§1.4 + §2.1:184 — όχι overflow/μικροσκοπική πίτα). Fix 26-09: 360→300 —
-  // η κάρτα έχει οριζόντιο padding 16, οπότε σε κινητό 320px μένουν 304:
-  // με 360 έβλεπε ΠΑΝΤΑ πίνακα, ποτέ πίτα.
-  static const double pieFallbackMaxWidth = 300.0;
+  // (§1.4 + §2.1:184 — όχι overflow/μικροσκοπική πίτα).
+  static const double pieFallbackMaxWidth = 360.0;
 
   // ─── Pie 3D-εφέ (§2.1 · Φάση 5 Βήμα 4) ───────────────────────────────────
   // Σχετικό πάχος φέτας (κλάσμα του ύψους): πλευρά 3D = depth κάτω από την
