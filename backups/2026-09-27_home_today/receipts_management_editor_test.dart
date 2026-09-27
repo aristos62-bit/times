@@ -276,10 +276,6 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(db),
           sharedPreferencesProvider.overrideWithValue(prefs),
-          // Σταθερή ημέρα — χωρίς real Timer (pending-timer fail σε
-          // UncontrolledProviderScope: το container δεν κάνει dispose πριν
-          // το invariant check · precedent home_page_test).
-          todayProvider.overrideWithBuild((ref, self) => DateTime(2026, 9, 27)),
         ],
       );
       addTearDown(container.dispose);

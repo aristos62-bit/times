@@ -41,8 +41,6 @@ void main() {
     return ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        // Σταθερή ημέρα — χωρίς real Timer (no leak στα widget tests).
-        todayProvider.overrideWithBuild((ref, self) => DateTime(2026, 9, 27)),
         supplierTotalsProvider.overrideWith(
           (ref, query) => Stream.value(slices),
         ),

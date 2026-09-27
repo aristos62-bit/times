@@ -176,6 +176,7 @@ presentation/home/
 
 **Providers / ροή δεδομένων**
 - `homeChartConfigProvider` (plain Notifier, persisted SharedPreferences — read στο build, save async όπως theme · equality gate).
+- `todayProvider` (plain `Notifier<DateTime>`, SPoT τρέχουσα ημέρα dayOnly — `Timer.periodic` SPoT `clockCheckSeconds` + day-gate, rebuild Κεντρικής ΜΟΝΟ σε αλλαγή ημέρας · λύνει stale `now` τα μεσάνυχτα, 27-09-2026).
 - 4 streams ( `supplierTotalsStreamProvider` / `categoryTotalsStreamProvider` / `itemGroupTotalsStreamProvider` / `topItemsStreamProvider`, `.family` ανά `ChartQuery{from,to,limit}`) → repo passthrough (error-mapping μόνο) → DAO aggregations (§3).
 - **Κρίσιμο**: άθροιση στο SQL · totals καθαρά (μετά έκπτωση §3) · `formatCents` SPoT προβολή.
 

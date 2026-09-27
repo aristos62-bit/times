@@ -147,11 +147,6 @@ abstract final class AppConstants {
   // DESIGN) σε στενές οθόνες / μεγάλα fonts / ασυνήθιστα μακρά μηνύματα.
   static const int maxFeedbackLines = 3;
 
-  // Περιοδικότητα ελέγχου αλλαγής ημέρας του `todayProvider` (§2.1).
-  // Day-gate: ειδοποιεί ΜΟΝΟ σε αλλαγή ημέρας — το κόστος είναι μία
-  // σύγκριση DateTime ανά tick (κανένα IO/DB).
-  static const int clockCheckSeconds = 60;
-
   // ─── Theme (§2.3 DESIGN · Φάση 4 Βήμα 1) ─────────────────────────────────
   // Key της SharedPreferences όπου αποθηκεύεται το επιλεγμένο ThemeMode
   // (Light/Dark/Auto). Οι αποθηκευμένες τιμές είναι οι κωδικοί του enum

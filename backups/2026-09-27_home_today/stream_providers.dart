@@ -10,13 +10,10 @@
 /// (ανά category / ανά receipt) είναι `.family`.
 library;
 
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/logging/app_logger.dart';
 import '../../core/utils/greek_text_normalizer.dart';
 import '../../domain/services/chart_helpers.dart';
 import '../local/app_database.dart';
@@ -339,46 +336,3 @@ final receiptsByDayStreamProvider = StreamProvider<List<ReceiptSummary>>(
     );
   },
 );
-
-// ─── Τρέχουσα ημέρα — SPoT χρόνου Κεντρικής (§2.1 · 27-09-2026) ──────────────
-//
-// Plain `Notifier<DateTime>` (όχι Stream — εκπέμπει ΜΟΝΟ σε αλλαγή ημέρας,
-// day-gate, μηδέν churn στα 4 chart families): λύνει το stale `now` του
-// `HomePage.build` σε ανοικτή σελίδα πάνω στα μεσάνυχτα (day/week/month/year
-// ξανα-επιλύονται, custom άθικτο). Καθαρό Dart day-truncation (όχι flutter
-// `DateUtils`: το data layer δεν εξαρτάται από το UI, precedent
-// `watchSummariesByDay`). Αποδέσμευση του `Timer` με `ref.onDispose`
-// (precedent `ItemSearchController`).
-// Σημ.: τα παλιά chart family instances μένουν (NON-autoDispose σύμβαση) —
-// 4/ημέρα, αμελητέο για προσωπική χρήση (follow-up: autoDispose families).
-// NON-autoDispose (σύμβαση DI δέντρου).
-final todayProvider = NotifierProvider<TodayController, DateTime>(
-  TodayController.new,
-);
-
-/// Controller τρέχουσας ημέρας — βλ. `todayProvider`.
-class TodayController extends Notifier<DateTime> {
-  /// Κανονικοποιεί σε μέρα (καθαρό Dart — όχι `DateUtils`, βλ. πάνω).
-  static DateTime dayOnly(DateTime value) =>
-      DateTime(value.year, value.month, value.day);
-
-  @override
-  DateTime build() {
-    final timer = Timer.periodic(
-      Duration(seconds: AppConstants.clockCheckSeconds),
-      (_) => checkNow(DateTime.now()),
-    );
-    ref.onDispose(timer.cancel);
-    return dayOnly(DateTime.now());
-  }
-
-  /// Ελέγχει αν άλλαξε η ημέρα — ΜΟΝΟ τότε ειδοποιεί (day-gate).
-  /// Καλείται από το `Timer`· δημόσια και ως test-hook (hermetic
-  /// midnight-test χωρίς αναμονή, pattern `resolvePeriodRange(now:)`).
-  void checkNow(DateTime now) {
-    final day = dayOnly(now);
-    if (day == state) return;
-    state = day;
-    AppLogger.info(LogTag.ui, 'Αλλαγή ημέρας: ${day.toIso8601String()}');
-  }
-}

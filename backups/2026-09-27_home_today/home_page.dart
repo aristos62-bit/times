@@ -66,9 +66,7 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watch(homeChartConfigProvider);
-    // SPoT τρέχουσα ημέρα (§2.1): rebuild ΜΟΝΟ σε αλλαγή ημέρας —
-    // λύνει το stale `now` σε ανοικτή σελίδα πάνω στα μεσάνυχτα.
-    final now = ref.watch(todayProvider);
+    final now = DateTime.now();
     final visible = ChartId.values
         .where((id) => config.entryOf(id).visible)
         .toList()

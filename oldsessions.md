@@ -72,9 +72,12 @@
 | 52 | [Refactor καταλόγου 4 επιπέδων](oldsessions/2026-09-27_catalog_4level.md) | 27-09-2026 | Κλειστό | Cat▸Sub▸Τμήμα▸Item · UNIQUE παντού · wipe+fresh v4 · seed χωρίς είδη · πίτα «Ανά τμήμα» · Ε1 ValueKey crash fix · **1246/1246** ✓ · analyze καθαρό |
 | 53 | [Seed καταλόγου v3](oldsessions/2026-09-27_catalog_v3_seed.md) | 27-09-2026 | Κλειστό | Προσαρμογή `supermarket_categories_v3.md` (6/28/183/0) · διπλοεγγραφές λυμένες στο .md · **1249/1249** ✓ (+3) · analyze καθαρό |
 | 54 | [Υποχρεωτική μονάδα στη δημιουργία είδους](oldsessions/2026-09-27_item_unit_step.md) | 27-09-2026 | Κλειστό | Dropdown μονάδας στο Βήμα 4 → `defaultUnitId` → προεπιλογή entry · +5 tests · **1252/1252** ✓ (επαλήθευση χρήστη) · analyze καθαρό |
+| 55 | [SPoT τρέχουσα ημέρα Κεντρικής](oldsessions/2026-09-27_home_today.md) | 27-09-2026 | Κλειστό | `todayProvider` (day-gate Notifier, ενημέρωση `stream_providers`) + `clockCheckSeconds` · Ε1 foundation/Category clash · Ε2 pending-timer override · **1258/1258** ✓ (+6) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
+
+- **SPoT τρέχουσα ημέρα Κεντρικής (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #55): `todayProvider` (day-gate `Notifier<DateTime>` σε `stream_providers`, `clockCheckSeconds`=60) · `HomePage` rebuild ΜΟΝΟ σε αλλαγή ημέρας (stale `now` τα μεσάνυχτα) · Ε1/E2 (foundation clash, pending-timer override) · **1258/1258** ✓ (+6) · analyze καθαρό · DESIGN §2.1 · backup `backups/2026-09-27_home_today/`.
 
 - **Refactor καταλόγου 4 επιπέδων (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #52): Cat▸Sub▸Τμήμα▸Item · global UNIQUE · wipe+fresh v4 · seed v3 (6/28/183, row #53) · πίτα «Ανά τμήμα» · Ε1 ValueKey crash fix · **1249/1249** ✓ · analyze καθαρό · DESIGN §2.1/§2.2/§2.3/§3/§4/§5 · backup `backups/2026-09-27_catalog_4level/` + `backups/2026-09-27_catalog_v3_seed/`.
 
