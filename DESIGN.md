@@ -142,7 +142,7 @@ presentation/<screen>/
   `ORDER BY SUM DESC LIMIT 10`) — ποτέ φόρτωμα γραμμών σε Dart (precedent
   Βήματος 7)· streams (όχι futures) → auto-refresh μετά από save.
   Διευκρίνιση Βήματος 2 (exact «Λοιπά», §2.1:183): το DAO επιστρέφει την
-  πλήρη ordered λίστα (χωρίς LIMIT — οι ομάδες είναι ≤535 records) και το
+  πλήρη ordered λίστα (χωρίς LIMIT — οι ομάδες είναι λίγες, προσωπική χρήση) και το
   slice top-N + «Λοιπά» γίνεται στον provider· το `limit` του `ChartQuery`
   εφαρμόζεται εκεί (SPoT `pieMaxSlices`/`topItemsLimit`).
 
@@ -207,7 +207,7 @@ presentation/price_entry/
 └── widgets/
     ├── receipt_header_section.dart    -- ημερομηνία + προμηθευτής (με inline "+" νέου προμηθευτή)
     ├── item_search_field.dart         -- το search box με live αποτελέσματα από κάτω
-    ├── new_item_flow_dialog.dart      -- popup Κατηγορία→Υποκατηγορία→Είδος (βλ. state machine)
+    ├── new_item_flow_dialog.dart      -- popup Κατηγορία→Υποκατηγορία→Τμήμα→Είδος (βλ. state machine)
     ├── unit_quantity_price_section.dart
 ├── discount_field.dart               -- dumb πεδίο «Έκπτωση» (€/μονάδα, §2.2)
 ├── unit_section_checks.dart          -- part: helpers ανάγνωσης πεδίων (κανόνας 7)
@@ -268,7 +268,7 @@ ITEM_SELECTED ──▶ εμφάνιση Unit dropdown (προεπιλογή: It
 - Όνομα νέας Κατηγορίας/Υποκατηγορίας/Τμήματος/Είδους: όχι κενό, ≤ `maxItemNameLength`, **global UNIQUE `normalizedName`** (27-09-2026 — καμία επανάληψη ονόματος πουθενά, §3) — `domain/validators/name_validator.dart`.
 - **Υλοποίηση (Φάση 3, Βήμα 6)**: ο `ReceiptValidator` είναι καθαρός (static, χωρίς UI/DB/logging, εξαρτάται μόνο από `core/constants`, δουλεύει με primitives) και όπως ο `NameValidator` επιστρέφει `String?` — `null` = ΟΚ, αλλιώς SPoT μήνυμα (`AppErrors` ή `AppMessages.receiptLinesLimitReached`)· ΚΑΝΕΝΑ exception (δεν ορίστηκε `ValidationException`). API: `validateUnit` · `validatePriceCents` (σε ΛΕΠΤΑ, §3) · `validateDiscountCents(discount, price)` (`0≤d≤p`, §2.2) · `validateQuantity(q, allowsDecimal:)` · `validateLine` (ποσότητα → τιμή → έκπτωση) · `validateLineCount` · `validateReceipt(hasSupplier, lineCount)` (γραμμές → προμηθευτής) · `isIncompleteNumber(text)` (τελικός διαχωριστής → κανένα σφάλμα «υπό πληκτρολόγηση»). Δεν υπολογίζει `lineTotalCents` — SPoT του `ReceiptLineDao` (§3).
 - **Ένας κανόνας, τρεις καταναλωτές**: (1) `unit_quantity_price_section` — inline σφάλμα (`errorText` στα `CurrencyTextField`/`QuantityTextField`, `AppConstants.fieldErrorMaxLines`) ΜΟΝΟ σε μη κενή, ολοκληρωμένη είσοδο + hint μονάδας· (2) `save_receipt_button` — `canSave` από `validateReceipt` + hint `supplierRequired` όταν υπάρχουν γραμμές αλλά όχι προμηθευτής· (3) `receipt_form_controller` — safety-net: το `addDraftLine` αγνοεί άκυρη γραμμή και το `saveReceipt` απορρίπτει ΠΡΙΝ το `isSaving`, και στις δύο περιπτώσεις με log `[UI][ERROR]` και (στο save) `SaveReceiptException` — ο λόγος μένει στο log, το ειδικό μήνυμα φαίνεται inline. Το `DraftReceiptLine.unitAllowsDecimal` (snapshot του `Unit.allowsDecimal`, default `true`) τροφοδοτεί τον κανόνα ακεραιότητας.
-- **Ονόματα στο «+»**: προμηθευτής (`receipt_header_section`) → `AppFeedback.showError(nameRequired/nameTooLong)` πριν το DB· Κατηγορία/Υποκατηγορία στο `new_item_flow_dialog` → inline μήνυμα κάτω από το πεδίο (`nameRequired`/`nameTooLong`/`nameExists`) — ΟΧΙ snackbar μέσα στο dialog (ScaffoldMessenger caveat, §2.4).
+- **Ονόματα στο «+»**: προμηθευτής (`receipt_header_section`) → `AppFeedback.showError(nameRequired/nameTooLong)` πριν το DB· Κατηγορία/Υποκατηγορία/Τμήμα στο `new_item_flow_dialog` → inline μήνυμα κάτω από το πεδίο (`nameRequired`/`nameTooLong`/`nameExists`) — ΟΧΙ snackbar μέσα στο dialog (ScaffoldMessenger caveat, §2.4).
 
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
 - **Double-tap στο "+" προμηθευτή/είδους**: τοπικός busy-flag στο widget
@@ -303,7 +303,7 @@ presentation/settings/
 ├── state/settings_state.dart                 (Βήματα 4–5)
 └── widgets/
     ├── theme_mode_selector.dart              (Βήμα 1 ✓)
-    ├── category_tree_editor.dart      -- λίστα Κατηγορία▸Υποκατηγορία με edit/delete εικονίδια
+    ├── category_tree_editor.dart      -- δέντρο Κατηγορία▸Υποκατηγορία▸Τμήμα με edit/delete εικονίδια
     ├── supplier_list_editor.dart      -- λίστα Προμηθευτών με edit/delete εικονίδια (24-09-2026)
     └── backup_restore_section.dart
 ```
@@ -457,12 +457,12 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 - **`priceCents`**: ακέραιος σε λεπτά (μέγεθος ×100, π.χ. 2,50€ → 250). Το χρήμα αποθηκεύεται **ποτέ** ως float — όλα τα αθροίσματα/στατιστικά γίνονται σε ακέραιους χωρίς floating-point σφάλματα. Σε γραμμές «Συνολικής τιμής» (24-09-2026) η μοναδιαία **παράγεται** `(totalCents/quantity).round()` στη φόρμα — η βάση δέχεται πάντα μοναδιαία (καμία migration, τα στατιστικά €/μονάδα δουλεύουν).
 - **`quantity`**: REAL — φυσικό μέγεθος (κιλά/λίτρα/τεμάχια), δεν εμφανίζεται ποτέ μόνο του σε λογιστικό άθροισμα.
 - **`lineTotalCents`**: INTEGER, υπολογισμένο **μία φορά** κατά το insert `((priceCents - discountCents) * quantity).round()` — **όχι** Drift generated column (παραμένει ελεγχόμενο, testable, ανεξάρτητο από SQLite float handling). Κάθε επόμενος υπολογισμός (Φάση 5: μέσος όρος, σύνολο μήνα, σύγκριση προμηθευτών) δουλεύει **μόνο** σε `SUM(lineTotalCents)` (καθαρά, μετά έκπτωση).
-- **`discountCents`** (§2.2): έκπτωση μονάδας σε λεπτά (`0` = καμία · `0≤d≤p`, αλλιώς απόρριψη) — SPoT υπολογισμού στο `ReceiptLineDao`, στήλη από migration v2→v3 (`schemaVersion` 3, παλιές γραμμές = 0).
+- **`discountCents`** (§2.2): έκπτωση μονάδας σε λεπτά (`0` = καμία · `0≤d≤p`, αλλιώς απόρριψη) — SPoT υπολογισμού στο `ReceiptLineDao`, στήλη στο φρέσκο σχήμα v4 (παλιές γραμμές = 0).
 - **Κανόνας Δ-stat (δεσμευτικός για Φάση 5)**: κάθε στατιστικό μοναδιαίας τιμής (trend είδους, σύγκριση προμηθευτών €/μονάδα) χρησιμοποιεί **πάντα την καθαρή** `priceCents − discountCents` (ισοδύναμα `SUM(lineTotalCents)/SUM(quantity)`) — **ποτέ** σκέτο `priceCents` (θα έβγαζε τη χονδρική). Το πληκτρολογημένο σύνολο φυλάσσεται ως `DraftReceiptLine.enteredTotalCents` snapshot (display-only στο draft list — εξαίρεση Δ2 μόνο για αυτές τις γραμμές)· το stored σύνολο μπορεί να διαφέρει ±1 λεπτό (στρογγυλοποίηση παραγόμενης).
 - **`Unit.allowsDecimal`**: flag που ορίζει αν μια μονάδα δέχεται κλασματική ποσότητα (π.χ. Τεμάχιο=false, Κιλό=true). Χρησιμοποιείται από τη φόρμα εισαγωγής (Φάση 3) για απόρριψη τιμών όπως «2.5 τεμάχια».
-- **Migration v1→v2 (25-09-2026, data-only):** καθαρισμός Γραμμάριο/Χιλιοστόλιτρο σε Κιλό/Λίτρο (remap `defaultUnitId` + γραμμές με qty/1000, price×1000, σύνολο αμετάβλητο· `lineTotalCents` άθικτο) — ΚΑΜΙΑ αλλαγή σχήματος (`schemaVersion` 2, βλ. `migration_v1_to_v2.dart`, oldsessions κεφ. 35).
+- **Migration v1→v2 (25-09-2026, data-only) — ΚΑΤΑΡΓΗΘΗΚΕ 27-09-2026** (wipe+fresh v4, §3): καθαρισμός Γραμμάριο/Χιλιοστόλιτρο — ιστορικό oldsessions κεφ. 35.
 - **Foreign key policy** (απόφαση, Φάση 1):
-  - `ON DELETE RESTRICT` για Category/SubCategory/Item/Supplier/Unit (ώστε να μην διαγράφονται αν έχουν δεδομένα — υλοποιεί απευθείας τον κανόνα της §2.3).
+  - `ON DELETE RESTRICT` για Category/SubCategory/ItemGroup/Item/Supplier/Unit (ώστε να μην διαγράφονται αν έχουν δεδομένα — υλοποιεί απευθείας τον κανόνα της §2.3).
   - `ReceiptLine.receiptId → ON DELETE CASCADE`: η γραμμή χωρίς κεφαλίδα είναι άχρηστη (σχέση κυριότητας) — η διαγραφή απόδειξης σβήνει και τις γραμμές της. Εξαιρείται ρητά από τον RESTRICT κανόνα της §2.3.
   - `Item.defaultUnitId → ON DELETE SET NULL`: η προτεινόμενη μονάδα είναι προαιρετική — αν σβηστεί η μονάδα, το είδος απλώς μένει χωρίς πρόταση (null).
 - **`normalizedName`** (Category & SubCategory & ItemGroup & Item & Supplier — 27-09-2026): καθαρή `GreekTextNormalizer.normalize(name)` (lowercase + αφαίρεση τόνων + ς→σ) που υπολογίζεται στο Dart κατά insert/update — όχι DB-generated column, ελεγχόμενο/testable, ίδιο μοτίβο με το `lineTotalCents`. Η αναζήτηση ειδών/προμηθευτών γίνεται πάντα με `WHERE normalizedName LIKE '%' || :normalizedQuery || '%'` (§2.0.4). Κατηγορία/Υποκατηγορία/Τμήμα επιλέγονται από μικρές ήδη-φορτωμένες λίστες (SearchableDropdownField §2.4) — φιλτράρισμα in-memory πάνω στο stream, χωρίς DB query. Ο ίδιος `normalizedName` χρησιμοποιείται και στον global duplicate-check του §2.2 (exact match, όχι LIKE) — μία μόνο υλοποίηση normalization, καμία διπλή λογική.
@@ -496,17 +496,9 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
     - **Κατηγορίες / Υποκατηγορίες / Τμήματα**: πηγή το νέο `.md` του χρήστη (χωρίς είδη) → Dart seed constants στο `lib/data/local/seed/`· κάθε εγγραφή με `normalizedName` (UNIQUE §3) + fail-fast διπλότυπου· logging tag `DB`.
     - **Καμία seed για Είδη/Suppliers** — δημιουργούνται από το UI.
 4. Unit tests στα DAOs — **συμπεριλαμβάνουν seed-import tests**: μονάδες 3, άδειος κατάλογος default, `normalizedName` exact, **κανένα διπλότυπο (global UNIQUE §3)**, ατομικότητα, `onCreate` μία φορά.
-   - **Μονάδες μέτρησης** (Τεμάχιο/τεμ `allowsDecimal=false`, Κιλό/κιλ `true`, Λίτρο/λτ `true`) ως Dart seed constants — κάθε μονάδα με `name`, `abbreviation`, `allowsDecimal` (§3). Όχι hardcoded στο UI.
-   - **Κατηγορίες / Υποκατηγορίες / Είδη**: πηγή-αναφορά το `supermarket_categories_v2.md` (root repo, 9 κατηγορίες / 53 υποκατηγορίες / 535 είδη). Τα δεδομένα μεταγράφονται σε Dart seed constants στο `lib/data/local/seed/` (**πολλά αρχεία**, rule 7 — ένα ανά κατηγορία)· καμία runtime ανάγνωση του .md.
-     - Κάθε Item εγγράφεται με `normalizedName = GreekTextNormalizer.normalize(name)` (**υπάρχον** SPoT util, §3) + έλεγχο μήκους `≤ AppConstants.maxItemNameLength`· κάθε Category με `createdAt`.
-     - Το .md δεν ορίζει μονάδα ανά είδος → στο seed ορίζεται **προτεινόμενη** `defaultUnitId` από τη φύση του προϊόντος με βάση το `Unit.allowsDecimal` (Τεμάχιο για μετρητά, Κιλό για ζυγιζόμενα, Λίτρο για υγρά) — είναι πρόταση, όχι δεσμευτική (§2.2 επιτρέπει αλλαγή ανά γραμμή).
-     - Διπλότυπα ονόματα σε **διαφορετικές** υποκατηγορίες: μετά τη διόρθωση του `supermarket_categories_v2.md` δεν υπάρχει κανένα στο seed, και το `UNIQUE` του `Item.normalizedName` (§3) απαγορεύει πλέον παγκοσμίως δύο Items με ίδιο `normalizedName` — ένα Item = πάντα μία υποκατηγορία.
-     - Logging της διαδικασίας μέσω `AppLogger` (tag `DB`).
-   - **Καμία seed για Suppliers** (δεν υπάρχει στο .md) — δημιουργούνται χειροκίνητα στην εισαγωγή.
-4. Unit tests στα DAOs — **συμπεριλαμβάνουν seed-import tests**: πλήθος εγγραφών (9/53/535), `normalizedName` = `GreekTextNormalizer.normalize(name)`, **κανένα διπλότυπο (global — εγγυημένο και από το UNIQUE του §3)**, σωστά `createdAt`/`abbreviation`, ατομικότητα σε σφάλμα, και ότι το `onCreate` τρέχει μία φορά (επανα-άνοιγμα DB χωρίς νέο seed).
 
 ### Φάση 2 — Repository Layer
-1. Abstract repositories (Category, SubCategory, Item, Unit, Supplier, Receipt).
+1. Abstract repositories (Category, SubCategory, ItemGroup, Item, Unit, Supplier, Receipt).
 2. Υλοποιήσεις πάνω στα DAOs, με `Stream` methods για real-time.
 3. Riverpod providers (`StreamProvider`) πάνω στα repositories.
 4. Unit tests repositories (mocked DB ή in-memory Drift).
@@ -516,7 +508,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 1. **App UI σκελετός** (ξεκινά τη Φάση 3): `GoRouter` με `StatefulShellRoute.indexedStack` + `NavigationBar` (3 branches: Home/PriceEntry/Settings, paths από `AppRoutes`) + placeholder σελίδες ανά οθόνη (καθαρά `Scaffold`, ΚΑΝΕΝΑ provider watch → η βάση δεν ανοίγει στο launch) + `NavLogObserver` (σημείο καταγραφής `LogTag.nav`). Responsive layout από εδώ (§1.4). **Απόφαση Α1 (Βήμα 7, §2.2)**: η λίστα πρόσφατων αποδείξεων είναι πάντα ορατή στην PriceEntry → η βάση **ανοίγει στο launch** (ο κανόνας «ΚΑΝΕΝΑ provider watch» ισχύει μόνο μέχρι το Βήμα 7 — από εκεί και μετά κάθε widget test που pump-άρει `PriceEntryPage`/`TimesApp` κάνει override του `recentReceiptsStreamProvider`).
 2. Auto αριθμός απόδειξης + date picker.
 3. Supplier search/autocomplete + inline "+" δημιουργία.
-4. Item search/autocomplete με incremental filtering (debounce) + "+" popup ροή (Κατηγορία→Υποκατηγορία→Είδος).
+4. Item search/autocomplete με incremental filtering (debounce) + "+" popup ροή (Κατηγορία→Υποκατηγορία→Τμήμα→Είδος).
 5. Unit dropdown, ποσότητα, τιμή, save flow ("καλάθι" απόδειξης — βλ. state machine §2.2).
 6. Validation (π.χ. τιμή > 0, υποχρεωτικά πεδία) μέσω SPoT validators.
 7. **Λίστα πρόσφατων αποδείξεων (read-only) — ΟΛΟΚΛΗΡΩΘΗΚΕ.** `ReceiptSummary` projection + `ReceiptDao.watchRecentSummaries` (ένα watch query πάνω σε stored `lineTotalCents`) · `recentReceiptsStreamProvider` (μη autoDispose, όριο `AppConstants.recentReceiptsLimit` = 20) → **auto-refresh μετά το save** · `recent_receipts_list.dart` (`AsyncValue.when`: loading/error+Επανάληψη/empty, Card+ListTile, responsive + dark/light) · SPoT strings/messages · έγκυρη γραμμή 0,00 € όταν `(priceCents*quantity).round()==0` (§2.2). Tests **699/699** ✓ · analyze καθαρό.
@@ -549,6 +541,8 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 ---
 
 ## 5. Επόμενο Βήμα
+
+**Refactor καταλόγου 4 επιπέδων ΟΛΟΚΛΗΡΩΘΗΚΕ 27-09-2026** (oldsessions κεφ. 52): Cat▸Sub▸Τμήμα▸Item · UNIQUE παντού · wipe+fresh v4 · seed χωρίς είδη (δεδομένα από νέο `.md` χρήστη — εκκρεμεί Β4β) · πίτα «Ανά τμήμα» · σουίτα **1246/1246** ✓ · analyze καθαρό · backup `backups/2026-09-27_catalog_4level/`. Επόμενο: seed καταλόγου από το `.md` + επανεγκατάσταση dev συσκευών, μετά Φάση 6 — Στίλβωση & Επεκτάσεις (§4).
 
 **Φάση 5 — Κεντρική Σελίδα (4 πίτες 3D) ΟΛΟΚΛΗΡΩΘΗΚΕ 26-09-2026** (Βήματα 1–5: SPoT · Data · Providers+config · UI core · Συναρμολόγηση+Προσαρμογή — oldsessions κεφ. 42–46) · σουίτα **1136/1136** ✓ · analyze καθαρό. Επόμενο: Φάση 6 — Στίλβωση & Επεκτάσεις (§4).
 

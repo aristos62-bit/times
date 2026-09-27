@@ -72,7 +72,7 @@
 | 52 | [Refactor καταλόγου 4 επιπέδων](oldsessions/2026-09-27_catalog_4level.md) | 27-09-2026 | Κλειστό | Cat▸Sub▸Τμήμα▸Item · UNIQUE παντού · wipe+fresh v4 · seed χωρίς είδη · πίτα «Ανά τμήμα» · Ε1 ValueKey crash fix · **1246/1246** ✓ · analyze καθαρό |
 ---
 
-## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
+## ΤΡΕΧΟΥΣА ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
 
 - **Refactor καταλόγου 4 επιπέδων (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #52): Cat▸Sub▸Τμήμα▸Item · global UNIQUE · wipe+fresh v4 · seed χωρίς είδη (Β4β εκκρεμεί: νέο `.md` χρήστη) · πίτα «Ανά τμήμα» · Ε1 ValueKey crash fix · **1246/1246** ✓ · analyze καθαρό · DESIGN §2.1/§2.2/§2.3/§3/§4/§5 · backup `backups/2026-09-27_catalog_4level/`.
 

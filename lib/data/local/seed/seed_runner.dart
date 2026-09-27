@@ -100,10 +100,11 @@ Future<void> runSeed(AppDatabase db) => db.transaction(() async {
   AppLogger.info(LogTag.db, 'Seed: υποκατηγορίες → ${subCategoryIds.length}');
 
   // ── Τμήματα ────────────────────────────────────────────────────────────
+  final groupNames = <String>{};
   var groupCount = 0;
   for (final g in seedItemGroups) {
     final key = GreekTextNormalizer.normalize(g.name);
-    if (subCategoryIds.containsKey('__group__$key')) {
+    if (groupNames.contains(key)) {
       throw StateError('Seed: διπλό τμήμα "${g.name}"');
     }
     final subId = subCategoryIds[GreekTextNormalizer.normalize(g.subCategoryName)];
@@ -120,7 +121,7 @@ Future<void> runSeed(AppDatabase db) => db.transaction(() async {
             subCategoryId: subId,
           ),
         );
-    subCategoryIds['__group__$key'] = -1;
+    groupNames.add(key);
     groupCount++;
   }
   AppLogger.info(LogTag.db, 'Seed: τμήματα → $groupCount (ολοκληρώθηκε)');
