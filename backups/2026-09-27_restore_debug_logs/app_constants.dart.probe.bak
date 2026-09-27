@@ -134,15 +134,6 @@ abstract final class AppConstants {
   // Διάρκεια εμφάνισης SnackBar μηνυμάτων επιβεβαίωσης.
   static const int snackBarDurationSeconds = 4;
 
-  // Timeout του διαγνωστικού probe `SELECT 1` στο `closeSafely` (restore):
-  // ο executor απαντά σε ms — λήξη = μπλοκαρισμένος (transaction/isolate).
-  static const int restoreProbeTimeoutSeconds = 3;
-
-  // Χάρη κλεισίματος βάσης στο restore: το drift `close()` μπορεί να
-  // κρεμάσει (αποδεδειγμένα σε συσκευή, 27-09-2026) — λήξη = log + συνέχεια
-  // στο replace (αντί παγωμένη εφαρμογή).
-  static const int restoreCloseTimeoutSeconds = 5;
-
   // Μέγιστες γραμμές SnackBar μηνύματος — safety net αποφυγής overflow (§1.4
   // DESIGN) σε στενές οθόνες / μεγάλα fonts / ασυνήθιστα μακρά μηνύματα.
   static const int maxFeedbackLines = 3;

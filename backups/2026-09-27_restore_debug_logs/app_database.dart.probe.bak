@@ -9,12 +9,9 @@
 /// Logging μέσω `AppLogger` με tag `DB` (§1.7).
 library;
 
-import 'dart:async';
-
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
-import '../../core/constants/app_constants.dart';
 import '../../core/logging/app_logger.dart';
 import 'migration_v1_to_v2.dart';
 import 'seed/seed_runner.dart';
@@ -96,29 +93,10 @@ class AppDatabase extends _$AppDatabase {
   Future<void> closeSafely() async {
     if (_closed) return;
     _closed = true;
-    // Probe 1 (διάγνωση hang restore): απαντά ο executor; Με timeout και
-    // catch-all — ποτέ throw, μόνο log (δεν αλλάζει τη ροή κλεισίματος).
-    try {
-      await customSelect('SELECT 1').get().timeout(
-            Duration(seconds: AppConstants.restoreProbeTimeoutSeconds),
-          );
-      AppLogger.info(LogTag.db, 'closeSafely: probe SELECT 1 OK');
-    } on TimeoutException {
-      AppLogger.info(LogTag.db, 'closeSafely: probe SELECT 1 TIMEOUT');
-    } catch (e) {
-      AppLogger.info(LogTag.db, 'closeSafely: probe SELECT 1 error: $e');
-    }
     try {
       AppLogger.info(LogTag.db, 'closeSafely: κλείσιμο βάσης…');
-      await close().timeout(
-        Duration(seconds: AppConstants.restoreCloseTimeoutSeconds),
-      );
+      await close();
       AppLogger.info(LogTag.db, 'Κλείσιμο βάσης');
-    } on TimeoutException {
-      // Αποδεδειγμένο hang (συσκευή 27-09-2026): ο executor απαντά (probe
-      // OK) αλλά το teardown δεν ολοκληρώνεται — συνέχεια στο replace αντί
-      // για παγωμένη εφαρμογή (αποτυχία → mapped exception + snackbar).
-      AppLogger.info(LogTag.db, 'closeSafely: TIMEOUT — συνέχεια χωρίς close');
     } catch (e, s) {
       AppLogger.error(LogTag.db, 'Αποτυχία κλεισίματος βάσης', e, s);
     }

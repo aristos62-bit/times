@@ -64,7 +64,6 @@ class BackupRestoreSection extends ConsumerWidget {
       isDestructive: true,
     );
     if (confirmed != true || !context.mounted) return;
-    AppLogger.info(LogTag.backup, 'Restore: confirm Ναι — κλήση controller');
     await runControllerOp(
       context,
       () => controller.restoreBackup(path),

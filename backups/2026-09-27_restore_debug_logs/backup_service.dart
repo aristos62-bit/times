@@ -109,11 +109,9 @@ final class BackupService {
   /// path (για logs). Αποτυχία → `BackupCreationException` (abort πριν το
   /// close — η τρέχουσα βάση μένει άθικτη).
   Future<String> autoBackupCurrent() async {
-    AppLogger.info(LogTag.backup, 'Restore: auto-backup — docs dir');
     final docs = await getApplicationDocumentsDirectory();
     final name = 'auto_${buildBackupFileName(DateTime.now())}';
     final path = '${docs.path}${Platform.pathSeparator}$name';
-    AppLogger.info(LogTag.backup, 'Restore: auto-backup snapshot → $path');
     await exportSnapshot(path);
     return path;
   }
@@ -124,7 +122,6 @@ final class BackupService {
   /// `InvalidBackupFileException` (`invalidBackupFile`).
   Future<void> validateBackupFile(String candidatePath) async {
     final file = File(candidatePath);
-    AppLogger.info(LogTag.backup, 'Validation αντιγράφου: $candidatePath');
     // ΣΥΓΧΡΟΝΟ IO επίτηδες (existsSync/openSync/readSync/closeSync): το async
     // File IO κολλάει στο widget-test FakeAsync zone (empirical 24-09:
     // exists=true/open=false), ενώ το sync περνά παντού (zone-proof)·
@@ -187,9 +184,7 @@ final class BackupService {
   /// το journal της)· best-effort via `deleteTemp`, ποτέ throw.
   Future<void> replaceDatabaseFile(String sourcePath) async {
     try {
-      AppLogger.info(LogTag.backup, 'Restore: replace — target lookup');
       final target = await currentDbFile();
-      AppLogger.info(LogTag.backup, 'Restore: replace copy → ${target.path}');
       await File(sourcePath).copy(target.path);
       for (final suffix in const ['-wal', '-shm', '-journal']) {
         await deleteTemp('${target.path}$suffix');

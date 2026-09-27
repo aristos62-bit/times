@@ -20,7 +20,6 @@ import '../../../core/errors/app_exceptions.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../data/providers/database_providers.dart';
 import '../../../data/providers/settings_providers.dart';
-import '../../../data/providers/stream_providers.dart';
 import '../../../domain/services/backup_service.dart';
 import '../../price_entry/controllers/item_search_controller.dart';
 import '../../price_entry/controllers/receipt_form_controller.dart';
@@ -50,22 +49,6 @@ class BackupRestoreController extends Notifier<SettingsState> {
     } finally {
       if (ref.mounted) state = state.copyWith(isWorking: false);
     }
-  }
-
-  /// Probe 2 (διάγνωση hang restore): ποια DB stream providers ζουν πριν
-  /// το close — `ref.exists` (sync, χωρίς side effects), μόνο log.
-  void _logLiveStreams() {
-    final live = <String, bool>{
-      'category': ref.exists(categoryStreamProvider),
-      'subCategories': ref.exists(subCategoriesStreamProvider),
-      'units': ref.exists(unitsStreamProvider),
-      'items': ref.exists(itemsStreamProvider),
-      'suppliers': ref.exists(suppliersStreamProvider),
-      'receipts': ref.exists(receiptsStreamProvider),
-      'recentReceipts': ref.exists(recentReceiptsStreamProvider),
-      'receiptsByDay': ref.exists(receiptsByDayStreamProvider),
-    };
-    AppLogger.info(LogTag.backup, 'Restore: live streams πριν close: $live');
   }
 
   /// Εξάγει αντίγραφο: snapshot temp → bytes → save dialog → cleanup.
@@ -132,7 +115,6 @@ class BackupRestoreController extends Notifier<SettingsState> {
         final autoPath = await service.autoBackupCurrent();
         AppLogger.info(LogTag.backup, 'Auto-backup πριν restore: $autoPath');
         AppLogger.info(LogTag.backup, 'Restore: auto-backup OK — closeSafely');
-        _logLiveStreams();
         await ref.read(appDatabaseProvider).closeSafely();
         AppLogger.info(LogTag.backup, 'Restore: close OK — replace');
         await service.replaceDatabaseFile(candidatePath);

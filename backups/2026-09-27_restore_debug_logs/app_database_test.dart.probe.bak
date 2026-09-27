@@ -3,27 +3,13 @@
 /// Τρέχουν σε in-memory SQLite (Βήμα 2+: κοινό helper `in_memory_db.dart`).
 library;
 
-import 'dart:async';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/debug/debug_config.dart';
 import 'package:times/core/logging/app_logger.dart';
-import 'package:times/data/local/app_database.dart';
 
 import 'helpers/in_memory_db.dart';
-
-/// Βάση της οποίας το `close()` κρεμάει για πάντα (προσομοίωση hang
-/// συσκευής 27-09-2026) — το probe `SELECT 1` απαντά κανονικά.
-class _HangingCloseDb extends AppDatabase {
-  _HangingCloseDb()
-      : super(executor: NativeDatabase.memory(), skipSeed: true);
-
-  @override
-  Future<void> close() => Completer<void>().future;
-}
 
 void main() {
   group('AppDatabase', () {
@@ -90,23 +76,5 @@ void main() {
         ]),
       );
     });
-  });
-
-  group('AppDatabase.closeSafely (restore)', () {
-    test(
-      'close που κρεμάει → ολοκληρώνεται μετά το timeout (χωρίς hang)',
-      timeout: const Timeout(Duration(seconds: 30)),
-      () async {
-        final lines = <String>[];
-        AppLogger.testSink = lines.add;
-        addTearDown(AppLogger.resetTestSink);
-
-        final db = _HangingCloseDb();
-        await db.closeSafely();
-
-        expect(lines.join('\n'), contains('probe SELECT 1 OK'));
-        expect(lines.join('\n'), contains('TIMEOUT'));
-      },
-    );
   });
 }
