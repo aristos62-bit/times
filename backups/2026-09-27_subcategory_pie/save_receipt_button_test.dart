@@ -446,12 +446,6 @@ class _FailingReceiptRepo implements ReceiptRepository {
   }) =>
       throw const DataLoadException();
   @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      throw const DataLoadException();
-  @override
   Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,
@@ -535,12 +529,6 @@ class _BlockingReceiptRepo implements ReceiptRepository {
     required DateTime to,
   }) =>
       inner.watchTotalsByCategory(from: from, to: to);
-  @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      inner.watchTotalsBySubCategory(from: from, to: to);
   @override
   Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,

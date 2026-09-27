@@ -207,7 +207,7 @@ final receiptLinesStreamProvider =
 
 // ─── Φάση 5 — Chart streams (§2.1 · Βήμα 3) ─────────────────────────────────
 //
-// 5 families παραμετροποιημένες ανά [ChartQuery] (`{from, to}` — το `limit`
+// 4 families παραμετροποιημένες ανά [ChartQuery] (`{from, to}` — το `limit`
 // εφαρμόζεται στο slice, Q1 Βήματος 2). Slice top-N + «Λοιπά» in-memory
 // (precedent `categoryTreeStreamProvider`): η SQL επιστρέφει την πλήρη
 // ordered λίστα (ΧΩΡΙΣ LIMIT) και ο `toChartSlices` κρατά top-N + exact
@@ -248,24 +248,8 @@ final categoryTotalsProvider =
       ),
 );
 
-/// Φέτες «Ανά υποκατηγορία» — top `pieMaxSlices` + «Λοιπά».
-final subCategoryTotalsProvider =
-    StreamProvider.family<List<ChartSlice>, ChartQuery>(
-  (ref, query) => ref
-      .watch(receiptRepositoryProvider)
-      .watchTotalsBySubCategory(from: query.from, to: query.to)
-      .map(
-        (rows) => toChartSlices(
-          rows,
-          labelOf: (row) => row.subCategoryName,
-          totalOf: (row) => row.totalCents,
-          limit: AppConstants.pieMaxSlices,
-          othersLabel: AppStrings.othersSliceLabel,
-        ),
-      ),
-);
-
-/// Φέτες «Ανά τμήμα» — top `pieMaxSlices` + «Λοιπά».
+/// Φέτες «Ανά τμήμα» — top `pieMaxSlices` + «Λοιπά» (27-09-2026,
+/// αντικαθιστά την πίτα υποκατηγορίας).
 final itemGroupTotalsProvider =
     StreamProvider.family<List<ChartSlice>, ChartQuery>(
   (ref, query) => ref
@@ -359,7 +343,7 @@ final receiptsByDayStreamProvider = StreamProvider<List<ReceiptSummary>>(
 // ─── Τρέχουσα ημέρα — SPoT χρόνου Κεντρικής (§2.1 · 27-09-2026) ──────────────
 //
 // Plain `Notifier<DateTime>` (όχι Stream — εκπέμπει ΜΟΝΟ σε αλλαγή ημέρας,
-// day-gate, μηδέν churn στα chart families): λύνει το stale `now` του
+// day-gate, μηδέν churn στα 4 chart families): λύνει το stale `now` του
 // `HomePage.build` σε ανοικτή σελίδα πάνω στα μεσάνυχτα (day/week/month/year
 // ξανα-επιλύονται, custom άθικτο). Καθαρό Dart day-truncation (όχι flutter
 // `DateUtils`: το data layer δεν εξαρτάται από το UI, precedent

@@ -35,10 +35,9 @@ void main() {
       expect(AppStrings.retryButton, 'Επανάληψη');
     });
 
-    test('chart titles — 5 κάρτες (§2.1 · Φάση 5 · 5η πίτα 27-09-2026)', () {
+    test('chart titles — 4 κάρτες (§2.1 · Φάση 5 · 4 επίπεδα 27-09-2026)', () {
       expect(AppStrings.chartSupplierTitle, 'Ανά προμηθευτή');
       expect(AppStrings.chartCategoryTitle, 'Ανά κατηγορία');
-      expect(AppStrings.chartSubCategoryTitle, 'Ανά υποκατηγορία');
       expect(AppStrings.chartItemGroupTitle, 'Ανά τμήμα');
       expect(AppStrings.chartTopItemsTitle, 'Top-10 είδη');
     });
@@ -253,7 +252,6 @@ const List<String> _allStrings = [
   AppStrings.retryButton,
   AppStrings.chartSupplierTitle,
   AppStrings.chartCategoryTitle,
-  AppStrings.chartSubCategoryTitle,
   AppStrings.chartItemGroupTitle,
   AppStrings.chartTopItemsTitle,
   AppStrings.periodDay,

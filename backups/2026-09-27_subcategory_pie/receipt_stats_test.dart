@@ -288,55 +288,6 @@ void main() {
     });
   });
 
-  group('watchTotalsBySubCategory', () {
-    test('αθροίζει είδη υποκατηγορίας · άλλη υποκατηγορία εκτός', () async {
-      final otherSubId = await SubCategoryDao(db)
-          .insert(categoryId: categoryId, name: 'Καφές');
-      final otherGroupId = await ItemGroupDao(db)
-          .insert(subCategoryId: otherSubId, name: 'Εσπρέσο τμήμα');
-      final otherItemId =
-          await ItemDao(db).insert(itemGroupId: otherGroupId, name: 'Εσπρέσο');
-      await seedReceipt(date: DateTime(2026, 1, 5), supplier: supplierId, item: itemId);
-      await seedReceipt(
-        date: DateTime(2026, 1, 6),
-        supplier: supplierId,
-        item: otherItemId,
-        quantity: 1,
-        priceCents: 300,
-      );
-
-      final rows = await dao
-          .watchTotalsBySubCategory(
-            from: DateTime(2026, 1, 1),
-            to: DateTime(2026, 2, 1),
-          )
-          .first;
-
-      expect(rows.length, 2);
-      expect(
-        rows.singleWhere((r) => r.subCategoryId == subId).totalCents,
-        199 * 2,
-      );
-      expect(
-        rows.singleWhere((r) => r.subCategoryId == otherSubId).totalCents,
-        300,
-      );
-    });
-
-    test('γραμμές εκτός περιόδου δεν μετρούν', () async {
-      await seedReceipt(date: DateTime(2026, 3, 5), supplier: supplierId, item: itemId);
-
-      final rows = await dao
-          .watchTotalsBySubCategory(
-            from: DateTime(2026, 1, 1),
-            to: DateTime(2026, 2, 1),
-          )
-          .first;
-
-      expect(rows, isEmpty);
-    });
-  });
-
   group('watchTotalsByItemGroup (4 επίπεδα · αντικαθιστά πίτα sub)', () {
     test('αθροίζει είδη τμήματος · άλλο τμήμα εκτός', () async {
       final otherGroupId = await ItemGroupDao(db)

@@ -75,9 +75,12 @@
 | 55 | [SPoT τρέχουσα ημέρα Κεντρικής](oldsessions/2026-09-27_home_today.md) | 27-09-2026 | Κλειστό | `todayProvider` (day-gate Notifier, ενημέρωση `stream_providers`) + `clockCheckSeconds` · Ε1 foundation/Category clash · Ε2 pending-timer override · **1258/1258** ✓ (+6) · analyze καθαρό |
 | 56 | [Καθαρισμός νεκρού SPoT](oldsessions/2026-09-27_dead_spot.md) | 27-09-2026 | Κλειστό | Διαγραφή `statsComingSoon` + `priceUp`/`priceDown` (0 χρήσεις στο `lib/`) · DESIGN αμετάβλητο (0 αναφορές) · **1254/1254** ✓ (−4) · analyze καθαρό |
 | 57 | [Αφαίρεση dependency `fl_chart`](oldsessions/2026-09-27_flchart_removal.md) | 27-09-2026 | Κλειστό | 0 imports σε `lib/`/`test/` (custom `Pie3dPainter`) · DESIGN §4 Φάση 0 ενημερώθηκε · tests/analyze αμετάβλητα |
+| 58 | [5η πίτα «Ανά υποκατηγορία»](oldsessions/2026-09-27_subcategory_pie.md) | 27-09-2026 | Κλειστό | DAO 5-joins + repo + family + config (0-4) + migration 4→5-key · Ε1 overflow-harness · Ε2 closeSafely-timer overrides · DESIGN §2.1/§4 · **1258/1258** ✓ (+4) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
+
+- **5η πίτα «Ανά υποκατηγορία» (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #58): μεταξύ κατηγορίας–τμήματος, ίδιο design/λογική + Προσαρμογή · DAO 5-joins + repo + family + config + migration 4→5-key · Ε1/E2 · DESIGN §2.1/§4 · **1258/1258** ✓ (+4) · analyze καθαρό · backup `backups/2026-09-27_subcategory_pie/`.
 
 - **Αφαίρεση dependency `fl_chart` (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #57): 0 imports σε `lib/`/`test/` (custom `Pie3dPainter`) · −1 γραμμή `pubspec.yaml` + lock cleanup · DESIGN §4 Φάση 0 ενημερώθηκε (rationale σχόλια άθικτα) · backup `backups/2026-09-27_flchart_removal/`.
 

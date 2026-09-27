@@ -402,12 +402,6 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
   }) =>
       throw UnimplementedError();
   @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      throw UnimplementedError();
-  @override
   Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,

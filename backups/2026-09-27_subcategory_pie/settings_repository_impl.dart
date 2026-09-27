@@ -50,9 +50,8 @@ final class SettingsRepositoryImpl implements SettingsRepository {
 
   /// Διαβάζει τη ρύθμιση γραφημάτων ΣΥΓΧΡΟΝΩΣ (memory-read, pattern
   /// `readThemeMode`): κενό → defaults · corrupt → defaults στην οικεία
-  /// entry. 27-09-2026 (5η πίτα): key `subCategory` — παλιό 4-key JSON
-  /// (χωρίς `subCategory`) → default entry (order 2) + shift +1 στις
-  /// έγκυρες entries με order ≥ 2 (κρατά custom σειρά + ζητούμενη θέση).
+  /// entry. 27-09-2026: key `itemGroup` (fallback legacy `subCategory` —
+  /// τα prefs επιβιώνουν του DB wipe).
   @override
   HomeChartConfig readHomeChartConfig() {
     final raw = _prefs.getString(AppConstants.homeChartConfigKey);
@@ -60,39 +59,18 @@ final class SettingsRepositoryImpl implements SettingsRepository {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! Map<String, dynamic>) return HomeChartConfig.defaults();
-      final migrated = _migrateOrders(decoded);
       return HomeChartConfig(
-        supplier: _entryFromJson(migrated['supplier'], 0),
-        category: _entryFromJson(migrated['category'], 1),
-        subCategory: _entryFromJson(migrated['subCategory'], 2),
-        itemGroup: _entryFromJson(migrated['itemGroup'], 3),
-        topItems: _entryFromJson(migrated['topItems'], 4),
+        supplier: _entryFromJson(decoded['supplier'], 0),
+        category: _entryFromJson(decoded['category'], 1),
+        itemGroup: _entryFromJson(
+          decoded['itemGroup'] ?? decoded['subCategory'],
+          2,
+        ),
+        topItems: _entryFromJson(decoded['topItems'], 3),
       );
     } catch (_) {
       return HomeChartConfig.defaults();
     }
-  }
-
-  /// Migration 4→5 πίτες (27-09-2026): αν λείπει το key `subCategory`
-  /// (παλιό JSON), οι έγκυρες entries με order ≥ 2 ανεβαίνουν +1 ώστε η νέα
-  /// πίτα να μπει στη θέση 2 χωρίς διπλά orders. Νέο format → άθικτο.
-  /// (Το legacy fallback `subCategory`→`itemGroup` καταργήθηκε — το key
-  /// έχει πάλι την αρχική του σημασία· το transition έκλεισε.)
-  static Map<String, dynamic> _migrateOrders(Map<String, dynamic> decoded) {
-    if (decoded.containsKey('subCategory')) return decoded;
-    final migrated = Map<String, dynamic>.of(decoded);
-    for (final key in ['itemGroup', 'topItems']) {
-      final entry = migrated[key];
-      if (entry is Map) {
-        final order = entry['order'];
-        if (order is int && order >= 2) {
-          final shifted = Map.of(entry);
-          shifted['order'] = order + 1;
-          migrated[key] = shifted;
-        }
-      }
-    }
-    return migrated;
   }
 
   /// Αποθηκεύει τη ρύθμιση γραφημάτων (JSON στον SPoT key).
@@ -103,7 +81,6 @@ final class SettingsRepositoryImpl implements SettingsRepository {
       jsonEncode({
         'supplier': _entryToJson(config.supplier),
         'category': _entryToJson(config.category),
-        'subCategory': _entryToJson(config.subCategory),
         'itemGroup': _entryToJson(config.itemGroup),
         'topItems': _entryToJson(config.topItems),
       }),

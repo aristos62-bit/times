@@ -404,12 +404,6 @@ class _BlockingReceiptRepo implements ReceiptRepository {
   }) =>
       inner.watchTotalsByCategory(from: from, to: to);
   @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      inner.watchTotalsBySubCategory(from: from, to: to);
-  @override
   Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,

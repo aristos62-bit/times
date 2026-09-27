@@ -240,62 +240,11 @@ class ReceiptDao extends BaseDao {
             ),
       );
 
-  /// Παρακολουθεί τα σύνολα ανά υποκατηγορία σε περίοδο (§2.1).
-  ///
-  /// Ίδιο contract με [watchTotalsBySupplier] — 5 joins
-  /// (sub_categories → item_groups → items → receipt_lines → receipts).
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
-    required DateTime from,
-    required DateTime to,
-  }) =>
-      guardStream(
-        'Ανάγνωση συνόλων υποκατηγοριών',
-        () => db
-            .customSelect(
-              '''
-        SELECT sc.id AS id,
-               sc.name AS name,
-               COALESCE(SUM(rl.line_total_cents), 0) AS totalCents
-        FROM sub_categories sc
-        INNER JOIN item_groups ig   ON ig.sub_category_id = sc.id
-        INNER JOIN items i          ON i.item_group_id = ig.id
-        INNER JOIN receipt_lines rl ON rl.item_id = i.id
-        INNER JOIN receipts r       ON r.id = rl.receipt_id
-        WHERE r.date >= ? AND r.date < ?
-        GROUP BY sc.id, sc.name
-        ORDER BY totalCents DESC, sc.name ASC
-      ''',
-              variables: [
-                Variable.withDateTime(from),
-                Variable.withDateTime(to),
-              ],
-              readsFrom: {
-                db.subCategories,
-                db.itemGroups,
-                db.items,
-                db.receiptLines,
-                db.receipts,
-              },
-            )
-            .watch()
-            .map(
-              (rows) => rows
-                  .map(
-                    (row) => (
-                      subCategoryId: row.read<int>('id'),
-                      subCategoryName: row.read<String>('name'),
-                      totalCents: row.read<int>('totalCents'),
-                    ),
-                  )
-                  .toList(),
-            ),
-      );
-
   /// Παρακολουθεί τα σύνολα ανά τμήμα σε περίοδο (§2.1 · 4 επίπεδα).
   ///
   /// Ίδιο contract με [watchTotalsBySupplier] — 4 joins
-  /// (item_groups → items → receipt_lines → receipts). Συνυπάρχει με την
-  /// πίτα υποκατηγορίας (απόφαση «5 πίτες», 27-09-2026).
+  /// (item_groups → items → receipt_lines → receipts). Αντικαθιστά την
+  /// παλιά πίτα υποκατηγορίας (απόφαση «Αντικατάσταση», 27-09-2026).
   Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,

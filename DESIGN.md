@@ -129,11 +129,11 @@ presentation/<screen>/
 
 ### 2.1 Κεντρική Σελίδα — Γραφήματα & Στατιστικά
 
-**Σκοπός**: σύνολα δαπανών (καθαρά, μετά έκπτωση §3) ανά περίοδο σε 4 πίτες
+**Σκοπός**: σύνολα δαπανών (καθαρά, μετά έκπτωση §3) ανά περίοδο σε 5 πίτες
 με 3D-εφέ + «Προσαρμογή Οθόνης» από τον χρήστη (τελευταία γραμμή).
 
 **Γραφήματα (27-09-2026 — όλα pie, σύνολα €, καθαρά §3)**
-1. Ανά προμηθευτή · 2. Ανά κατηγορία · 3. Ανά τμήμα · 4. Top-10 είδη (κατά σύνολο €).
+1. Ανά προμηθευτή · 2. Ανά κατηγορία · 3. Ανά υποκατηγορία · 4. Ανά τμήμα · 5. Top-10 είδη (κατά σύνολο €).
 - 3D = εφέ βάθους (tilt + πάχος φέτας, custom painter): το `fl_chart` ΔΕΝ
   έχει 3D (evidence pub cache 25-09 — 0 results για depth/tilt) → custom
   `Pie3dPainter`, 0 νέα packages. Labels ΠΑΝΤΑ δεξιά της πίτας (custom
@@ -156,7 +156,7 @@ presentation/<screen>/
 **Προσαρμογή Οθόνης (τελευταία γραμμή, collapsible — pattern Ρυθμίσεων)**
 - Ανά γράφημα: ορατότητα (switch), περίοδος, σειρά (βέλη πάνω/κάτω).
 - Persisted σε SharedPreferences (SPoT keys, pattern theme Βήματος 1)·
-  default: και τα 4 ορατά, Μήνας, σειρά 1-2-3-4· corrupt → defaults.
+  default: και τα 5 ορατά, Μήνας, σειρά 1-2-3-4-5· corrupt → defaults.
 
 **Δομή αρχείων**
 ```
@@ -172,12 +172,12 @@ presentation/home/
     ├── home_customization_section.dart -- «Προσαρμογή Οθόνης» (visibility/period/order)
     └── chart_fallback_table.dart      -- βλ. §4 Φάση 5 (στενό container safety net)
 ```
-- Trend-line (`price_trend_chart`) + bar σύγκρισης + global `period_filter_bar`/`category_filter_chip` του παλιού πλάνου → **deferred σε επέκταση** (εκτός scope 4 πίτες — ρητό).
+- Trend-line (`price_trend_chart`) + bar σύγκρισης + global `period_filter_bar`/`category_filter_chip` του παλιού πλάνου → **deferred σε επέκταση** (εκτός scope 5 πίτες — ρητό).
 
 **Providers / ροή δεδομένων**
 - `homeChartConfigProvider` (plain Notifier, persisted SharedPreferences — read στο build, save async όπως theme · equality gate).
 - `todayProvider` (plain `Notifier<DateTime>`, SPoT τρέχουσα ημέρα dayOnly — `Timer.periodic` SPoT `clockCheckSeconds` + day-gate, rebuild Κεντρικής ΜΟΝΟ σε αλλαγή ημέρας · λύνει stale `now` τα μεσάνυχτα, 27-09-2026).
-- 4 streams ( `supplierTotalsStreamProvider` / `categoryTotalsStreamProvider` / `itemGroupTotalsStreamProvider` / `topItemsStreamProvider`, `.family` ανά `ChartQuery{from,to,limit}`) → repo passthrough (error-mapping μόνο) → DAO aggregations (§3).
+- 5 streams ( `supplierTotalsStreamProvider` / `categoryTotalsStreamProvider` / `subCategoryTotalsStreamProvider` / `itemGroupTotalsStreamProvider` / `topItemsStreamProvider`, `.family` ανά `ChartQuery{from,to,limit}`) → repo passthrough (error-mapping μόνο) → DAO aggregations (§3).
 - **Κρίσιμο**: άθροιση στο SQL · totals καθαρά (μετά έκπτωση §3) · `formatCents` SPoT προβολή.
 
 **Καταστάσεις κάρτας**
@@ -185,7 +185,7 @@ presentation/home/
 
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
 - Jank: τοπικό `Consumer` ανά κάρτα (όχι rebuild σελίδας σε αλλαγή φίλτρου — §2.1Perf).
-- Πλήθος φετών: top-N + «Λοιπά» (όρια SPoT: pieMaxSlices — suppliers/κατηγορίες top 8+Λοιπά, είδη top 10+Λοιπά)· χρώματα από `ColorScheme` palette (dark-safe, §1.5).
+- Πλήθος φετών: top-N + «Λοιπά» (όρια SPoT: pieMaxSlices — suppliers/κατηγορίες/υποκατηγορίες/τμήματα top 8+Λοιπά, είδη top 10+Λοιπά)· χρώματα από `ColorScheme` palette (dark-safe, §1.5).
 - Στενό container → fallback πίνακας (όχι overflow/μικροσκοπική πίτα — §1.4 + §4).
 - Custom range: from≤to + SPoT όρια (`datePickerFirstYear/LastYear`)· άδειο/άκυρο → empty msg, όχι crash.
 
@@ -530,10 +530,10 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 5. **BackupService + UI** (Βήμα 5 — **ΟΛΟΚΛΗΡΩΘΗΚΕ 25-09** ✓): Export = snapshot `VACUUM INTO` temp + `saveFile` bytes (§2.3) · Restore = validate (magic + πίνακες, read-only sqlite3 probe) → **confirm → auto-backup** → `closeSafely()` (idempotent, §2.3) → replace → **restart providers** (`ref.invalidate(appDatabaseProvider)` + reset φορμών, §2.3) · 1024/1024 ✓.
 6. **Housekeeping** (Βήμα 6): splits >500 γρ. (κανόνας 7) · oldsessions.md update (1 κεφάλαιο) · backups recap · `flutter analyze` + full tests.
 
-### Φάση 5 — Κεντρική Σελίδα (4 πίτες 3D-εφέ · refactor 27-09-2026: η 3η πίτα είναι «Ανά τμήμα»)
-1. DAO aggregations (`SUM(lineTotalCents) GROUP BY` + TOP 10, §3) → repos (error-mapping) → 4 stream families (precedent Βήμα 7, auto-refresh).
-2. 4 pie cards (supplier/category/subcategory/top-10) με per-chart περίοδο (Η/Ε/Μ/Ε/προσαρμοσμένο, default Μήνας) + custom 3D-εφέ painter (`fl_chart` χωρίς 3D — evidence 25-09, 0 νέα packages) + labels δεξιά + auto-size (`LayoutBuilder`) + fallback πίνακα σε στενά (§1.4).
-3. «Προσαρμογή Οθόνης» τελευταία γραμμή (ορατότητα/περίοδος/σειρά ανά γράφημα, persisted SharedPreferences, defaults 4-ορατά/Μήνας/1-2-3-4).
+### Φάση 5 — Κεντρική Σελίδα (5 πίτες 3D-εφέ · 27-09-2026: η υποκατηγορία επέστρεψε ως 3η πίτα)
+1. DAO aggregations (`SUM(lineTotalCents) GROUP BY` + TOP 10, §3) → repos (error-mapping) → 5 stream families (precedent Βήμα 7, auto-refresh).
+2. 5 pie cards (supplier/category/subCategory/itemGroup/top-10) με per-chart περίοδο (Η/Ε/Μ/Ε/προσαρμοσμένο, default Μήνας) + custom 3D-εφέ painter (`fl_chart` χωρίς 3D — evidence 25-09, 0 νέα packages) + labels δεξιά + auto-size (`LayoutBuilder`) + fallback πίνακα σε στενά (§1.4).
+3. «Προσαρμογή Οθόνης» τελευταία γραμμή (ορατότητα/περίοδος/σειρά ανά γράφημα, persisted SharedPreferences, defaults 5-ορατά/Μήνας/1-2-3-4-5).
 4. Unit tests (aggregations, config controller, validators ορίων) + widget tests (states/responsive 3 μεγέθη/dark/semantics)· 0 golden tests (brittle cross-platform).
 
 ### Φάση 6 — Στίλβωση & Επεκτάσεις

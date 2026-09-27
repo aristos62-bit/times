@@ -112,18 +112,6 @@ void main() {
       expect(slices.single.totalCents, 199 * 2);
     });
 
-    test('subCategoryTotalsProvider — φέτα υποκατηγορίας', () async {
-      final query = await seedMonth();
-      final container = containerWithDb();
-      final slices = await waitForChartValue(
-        (listen) =>
-            container.listen(subCategoryTotalsProvider(query), listen),
-        (value) => value.isNotEmpty,
-      );
-      expect(slices.single.label, 'Γαλακτοκομικά');
-      expect(slices.single.totalCents, 199 * 2);
-    });
-
     test('itemGroupTotalsProvider — φέτα τμήματος (4 επίπεδα)', () async {
       final query = await seedMonth();
       final container = containerWithDb();

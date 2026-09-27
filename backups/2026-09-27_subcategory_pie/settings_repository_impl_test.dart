@@ -100,54 +100,27 @@ void main() {
         const ChartEntry(visible: false, order: 0, period: PeriodType.year),
       );
       expect(config.category, const ChartEntry(order: 1));
-      expect(config.subCategory, const ChartEntry(order: 2));
-      expect(config.itemGroup, const ChartEntry(order: 3));
-      expect(config.topItems, const ChartEntry(order: 4));
+      expect(config.itemGroup, const ChartEntry(order: 2));
+      expect(config.topItems, const ChartEntry(order: 3));
     });
 
-    test('παλιό 4-key JSON (χωρίς subCategory) → migration: θέση 2 + shift',
-        () async {
-      await prefs.setString(
-        AppConstants.homeChartConfigKey,
-        jsonEncode({
-          'supplier': {'visible': true, 'order': 0, 'period': 'month'},
-          'category': {'visible': false, 'order': 1, 'period': 'year'},
-          'itemGroup': {'visible': true, 'order': 2, 'period': 'month'},
-          'topItems': {'visible': true, 'order': 3, 'period': 'month'},
-        }),
-      );
-      final config = newRepo().readHomeChartConfig();
-      expect(config.supplier.order, 0);
-      expect(config.category.order, 1);
-      expect(
-        config.subCategory,
-        const ChartEntry(order: 2),
-      );
-      expect(config.itemGroup.order, 3);
-      expect(config.topItems.order, 4);
-      expect(config.category.visible, isFalse);
-    });
-
-    /// Νέο key `subCategory` (5η πίτα 27-09-2026): το παλιό `subCategory`
-    /// (προ-4-επιπέδων) σήμαινε την παλιά πίτα — το legacy fallback
-    /// καταργήθηκε, το key έχει πάλι την αρχική σημασία.
-    test('key `subCategory` → διαβάζεται ως subCategory entry', () async {
+    /// Legacy prefs (προ-4-επιπέδων) με key `subCategory` διαβάζονται ως
+    /// `itemGroup` — τα prefs επιβιώνουν του DB wipe (27-09-2026).
+    test('legacy key `subCategory` → διαβάζεται ως itemGroup', () async {
       await prefs.setString(
         AppConstants.homeChartConfigKey,
         jsonEncode({
           'supplier': {'visible': true, 'order': 0, 'period': 'month'},
           'category': {'visible': true, 'order': 1, 'period': 'month'},
           'subCategory': {'visible': false, 'order': 2, 'period': 'year'},
-          'itemGroup': {'visible': true, 'order': 3, 'period': 'month'},
-          'topItems': {'visible': true, 'order': 4, 'period': 'month'},
+          'topItems': {'visible': true, 'order': 3, 'period': 'month'},
         }),
       );
       final config = newRepo().readHomeChartConfig();
       expect(
-        config.subCategory,
+        config.itemGroup,
         const ChartEntry(visible: false, order: 2, period: PeriodType.year),
       );
-      expect(config.itemGroup.order, 3);
     });
 
     test('άγνωστο period → month (SPoT default §2.1)', () async {
@@ -174,7 +147,6 @@ void main() {
           customTo: DateTime(2026, 1, 31),
         ),
         category: const ChartEntry(order: 0),
-        subCategory: const ChartEntry(order: 4),
         itemGroup: const ChartEntry(order: 1, period: PeriodType.year),
         topItems: const ChartEntry(order: 3, visible: false),
       );
@@ -182,13 +154,13 @@ void main() {
       expect(repo.readHomeChartConfig(), config);
     });
 
-    test('γράφει στον SPoT key με 5 keys (με `subCategory`)', () async {
+    test('γράφει στον SPoT key με `itemGroup` (όχι `subCategory`)', () async {
       await newRepo().saveHomeChartConfig(HomeChartConfig.defaults());
       final stored = prefs.getString(AppConstants.homeChartConfigKey);
       expect(stored, isNotNull);
       expect(stored, contains('supplier'));
-      expect(stored, contains('subCategory'));
       expect(stored, contains('itemGroup'));
+      expect(stored, isNot(contains('subCategory')));
     });
   });
 }

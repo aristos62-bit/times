@@ -71,14 +71,11 @@ void main() {
           suppliersStreamProvider.overrideWith(
             (ref) => Stream.value(const <Supplier>[]),
           ),
-          // Φάση 5: η HomePage βλέπει 5 chart families — κενές ροές.
+          // Φάση 5: η HomePage βλέπει 4 chart families — κενές ροές.
           supplierTotalsProvider.overrideWith(
             (ref, query) => Stream.value(const <ChartSlice>[]),
           ),
           categoryTotalsProvider.overrideWith(
-            (ref, query) => Stream.value(const <ChartSlice>[]),
-          ),
-          subCategoryTotalsProvider.overrideWith(
             (ref, query) => Stream.value(const <ChartSlice>[]),
           ),
           itemGroupTotalsProvider.overrideWith(
@@ -122,14 +119,11 @@ void main() {
             suppliersStreamProvider.overrideWith(
               (ref) => Stream.value(const <Supplier>[]),
             ),
-            // Φάση 5: η HomePage βλέπει 5 chart families — κενές ροές.
+            // Φάση 5: η HomePage βλέπει 4 chart families — κενές ροές.
             supplierTotalsProvider.overrideWith(
               (ref, query) => Stream.value(const <ChartSlice>[]),
             ),
             categoryTotalsProvider.overrideWith(
-              (ref, query) => Stream.value(const <ChartSlice>[]),
-            ),
-            subCategoryTotalsProvider.overrideWith(
               (ref, query) => Stream.value(const <ChartSlice>[]),
             ),
             itemGroupTotalsProvider.overrideWith(
@@ -208,14 +202,11 @@ void main() {
             suppliersStreamProvider.overrideWith(
               (ref) => Stream.value(const <Supplier>[]),
             ),
-            // Φάση 5: η HomePage βλέπει 5 chart families — κενές ροές.
+            // Φάση 5: η HomePage βλέπει 4 chart families — κενές ροές.
             supplierTotalsProvider.overrideWith(
               (ref, query) => Stream.value(const <ChartSlice>[]),
             ),
             categoryTotalsProvider.overrideWith(
-              (ref, query) => Stream.value(const <ChartSlice>[]),
-            ),
-            subCategoryTotalsProvider.overrideWith(
               (ref, query) => Stream.value(const <ChartSlice>[]),
             ),
             itemGroupTotalsProvider.overrideWith(

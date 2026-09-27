@@ -29,20 +29,6 @@ void main() {
         ),
       );
 
-  /// Ψηλό viewport (pattern `tallSize` home_page_test): με 5 γραμμές το
-  /// expanded section ξεπερνά τα 600px — σε production ζει σε ListView
-  /// (scroll), εδώ το viewport ψηλώνει ώστε όλα να είναι ορατά.
-  Future<void> pumpExpanded(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(800, 2500);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(wrap());
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(AppStrings.homeCustomizationTitle));
-    await tester.pumpAndSettle();
-  }
-
   group('HomeCustomizationSection', () {
     testWidgets('κλειστή by default (τίτλος ορατός, γραμμές όχι)', (tester) async {
       await tester.pumpWidget(wrap());
@@ -52,23 +38,29 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('tap ανοίγει: 5 γραμμές + βέλη', (tester) async {
-      await pumpExpanded(tester);
+    testWidgets('tap ανοίγει: 4 γραμμές + βέλη', (tester) async {
+      await tester.pumpWidget(wrap());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.homeCustomizationTitle));
+      await tester.pumpAndSettle();
       expect(find.text(AppStrings.chartSupplierTitle), findsOneWidget);
       expect(find.text(AppStrings.chartTopItemsTitle), findsOneWidget);
       expect(
         find.byTooltip(AppStrings.chartMoveUp, skipOffstage: false),
-        findsNWidgets(5),
+        findsNWidgets(4),
       );
       expect(
         find.byTooltip(AppStrings.chartMoveDown, skipOffstage: false),
-        findsNWidgets(5),
+        findsNWidgets(4),
       );
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('άκρα ανενεργά: πάνω στην 1η, κάτω στην 5η', (tester) async {
-      await pumpExpanded(tester);
+    testWidgets('άκρα ανενεργά: πάνω στην 1η, κάτω στην 4η', (tester) async {
+      await tester.pumpWidget(wrap());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.homeCustomizationTitle));
+      await tester.pumpAndSettle();
       // byTooltip βρίσκει το Tooltip — τα κουμπιά με predicate (tooltip).
       Finder upFinder = find.byWidgetPredicate(
         (widget) =>
@@ -78,11 +70,11 @@ void main() {
         (widget) =>
             widget is IconButton && widget.tooltip == AppStrings.chartMoveDown,
       );
-      expect(upFinder, findsNWidgets(5));
-      expect(downFinder, findsNWidgets(5));
+      expect(upFinder, findsNWidgets(4));
+      expect(downFinder, findsNWidgets(4));
       final upButtons = tester.widgetList<IconButton>(upFinder).toList();
       final downButtons = tester.widgetList<IconButton>(downFinder).toList();
-      // 1η γραμμή (supplier, order 0): πάνω ανενεργό · 5η: κάτω ανενεργό.
+      // 1η γραμμή (supplier, order 0): πάνω ανενεργό · 4η: κάτω ανενεργό.
       expect(upButtons.first.onPressed, isNull);
       expect(downButtons.first.onPressed, isNotNull);
       expect(upButtons.last.onPressed, isNotNull);
@@ -92,11 +84,6 @@ void main() {
 
     testWidgets('switch κρύβει κάρτα (controller + persist)', (tester) async {
       ProviderContainer? captured;
-      // Ψηλό viewport (βλ. pumpExpanded): 5 γραμμές expanded.
-      tester.view.physicalSize = const Size(800, 2500);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
         ProviderScope(
           overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
@@ -116,7 +103,7 @@ void main() {
       await tester.tap(find.text(AppStrings.homeCustomizationTitle));
       await tester.pumpAndSettle();
       final switches = find.byType(Switch);
-      expect(switches, findsNWidgets(5));
+      expect(switches, findsNWidgets(4));
       await tester.tap(switches.first);
       await tester.pumpAndSettle();
       expect(

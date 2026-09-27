@@ -27,9 +27,6 @@ abstract final class AppStrings {
   static const String chartSupplierTitle = 'Ανά προμηθευτή';
   /// Τίτλος κάρτας «Ανά κατηγορία» (§2.1 · Φάση 5).
   static const String chartCategoryTitle = 'Ανά κατηγορία';
-  /// Τίτλος κάρτας «Ανά υποκατηγορία» (§2.1 · 27-09-2026 — 5η πίτα,
-  /// μεταξύ κατηγορίας και τμήματος).
-  static const String chartSubCategoryTitle = 'Ανά υποκατηγορία';
   /// Τίτλος κάρτας «Ανά τμήμα» (§2.1 · 4 επίπεδα 27-09-2026 — αντικαθιστά
   /// την πίτα υποκατηγορίας).
   static const String chartItemGroupTitle = 'Ανά τμήμα';

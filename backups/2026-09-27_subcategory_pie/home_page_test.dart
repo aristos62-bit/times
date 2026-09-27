@@ -49,9 +49,6 @@ void main() {
         categoryTotalsProvider.overrideWith(
           (ref, query) => Stream.value(slices),
         ),
-        subCategoryTotalsProvider.overrideWith(
-          (ref, query) => Stream.value(slices),
-        ),
         itemGroupTotalsProvider.overrideWith(
           (ref, query) => Stream.value(slices),
         ),
@@ -102,10 +99,6 @@ const Size tallSize = Size(800, 2500);
         findsOneWidget,
       );
       expect(
-        find.text(AppStrings.chartSubCategoryTitle, skipOffstage: false),
-        findsOneWidget,
-      );
-      expect(
         find.text(AppStrings.chartItemGroupTitle, skipOffstage: false),
         findsOneWidget,
       );
@@ -124,7 +117,7 @@ const Size tallSize = Size(800, 2500);
       await pumpPage(tester, wrap(), tallSize);
       expect(
         find.text(AppStrings.noPricesForPeriod, skipOffstage: false),
-        findsNWidgets(5),
+        findsNWidgets(4),
       );
       expect(find.byType(Pie3dChart), findsNothing);
       expect(tester.takeException(), isNull);
@@ -138,7 +131,7 @@ const Size tallSize = Size(800, 2500);
       );
       expect(
         find.byType(Pie3dChart, skipOffstage: false),
-        findsNWidgets(5),
+        findsNWidgets(4),
       );
       expect(tester.takeException(), isNull);
     });
@@ -153,16 +146,11 @@ const Size tallSize = Size(800, 2500);
       // Μία γραμμή ανά γράφημα (switch ορατότητας το καθένα).
       expect(
         find.byType(SwitchListTile, skipOffstage: false),
-        findsNWidgets(5),
+        findsNWidgets(4),
       );
       // Το «Ανά τμήμα» εμφανίζεται 2 φορές: κάρτα + γραμμή προσαρμογής.
       expect(
         find.text(AppStrings.chartItemGroupTitle, skipOffstage: false),
-        findsNWidgets(2),
-      );
-      // Το «Ανά υποκατηγορία» εμφανίζεται 2 φορές: κάρτα + γραμμή προσαρμογής.
-      expect(
-        find.text(AppStrings.chartSubCategoryTitle, skipOffstage: false),
         findsNWidgets(2),
       );
       expect(
@@ -199,7 +187,7 @@ const Size tallSize = Size(800, 2500);
       await pumpPage(tester, wrap(theme: AppTheme.dark), tallSize);
       expect(
         find.byType(HomeChartCard, skipOffstage: false),
-        findsNWidgets(5),
+        findsNWidgets(4),
       );
       expect(tester.takeException(), isNull);
     });
