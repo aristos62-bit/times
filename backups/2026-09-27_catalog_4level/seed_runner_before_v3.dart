@@ -1,8 +1,10 @@
-/// Orchestrator seed — πηγή `supermarket_categories_v3.md` (27-09-2026).
+/// Orchestrator seed — Refactor 4 επιπέδων 27-09-2026.
 ///
 /// Εκτελείται μία φορά στο `onCreate` (νέο DB file): μονάδες + κατάλογος
-/// 3 επιπέδων (6 κατηγορίες · 28 υποκατηγορίες · 183 τμήματα).
-/// Είδη ΔΕΝ seed-άρονται (απόφαση 27-09-2026 — δημιουργούνται από το UI).
+/// 3 επιπέδων (κατηγορίες/υποκατηγορίες/τμήματα) από τα seed constants.
+/// Είδη ΔΕΝ seed-άρονται (απόφαση 27-09-2026). Τα δεδομένα καταλόγου θα
+/// έρθουν από το νέο `.md` του χρήστη (Βήμα Β4β) — μέχρι τότε ο κατάλογος
+/// μένει άδειος (μόνο μονάδες) και χτίζεται από το UI.
 ///
 /// Όλο το σώμα τυλίγεται σε **ένα transaction**: αποτυχία → πλήρες rollback.
 /// Fail-fast: διπλότυπο normalized όνομα (global UNIQUE §3) → `StateError`
@@ -14,10 +16,17 @@ import 'package:drift/drift.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/utils/greek_text_normalizer.dart';
 import '../app_database.dart';
-import 'seed_categories.dart';
-import 'seed_item_groups.dart';
-import 'seed_sub_categories.dart';
+import 'seed_types.dart';
 import 'seed_units.dart';
+
+/// Κατηγορίες seed — θα γεμίσουν από το νέο `.md` (Βήμα Β4β).
+const List<CategorySeed> seedCategories = <CategorySeed>[];
+
+/// Υποκατηγορίες seed — θα γεμίσουν από το νέο `.md` (Βήμα Β4β).
+const List<SubCategorySeed> seedSubCategories = <SubCategorySeed>[];
+
+/// Τμήματα seed — θα γεμίσουν από το νέο `.md` (Βήμα Β4β).
+const List<ItemGroupSeed> seedItemGroups = <ItemGroupSeed>[];
 
 /// Τρέχει το seed μία φορά στο `AppDatabase.onCreate`.
 ///

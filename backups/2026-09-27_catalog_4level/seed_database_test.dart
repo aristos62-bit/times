@@ -1,9 +1,11 @@
-/// DB integration tests για το seed — πηγή `supermarket_categories_v3.md`.
+/// DB integration tests για το seed (Refactor 4 επιπέδων 27-09-2026).
 ///
-/// Seed: 3 μονάδες + κατάλογος (6 κατηγορίες · 28 υποκατηγορίες ·
-/// 183 τμήματα · 0 είδη). Επαληθεύει: κενούς πίνακες με skipSeed, default
-/// seed (πλήθη + δειγματοληπτικές εγγραφές + normalizedName), μονάδες,
-/// createdAt, αλυσίδα 4 επιπέδων, ατομικότητα (rollback), onCreate μία φορά.
+/// Νέο seed: ΜΟΝΟ 3 μονάδες (Τεμάχιο/Κιλό/Λίτρο) — ο κατάλογος ξεκινά ΑΔΕΙΟΣ
+/// (seedCategories/SubCategories/ItemGroups = [], χτίζεται από το UI).
+/// Επαληθεύει: κενούς πίνακες με skipSeed, default seed (3 μονάδες + άδειος
+/// κατάλογος), σωστές μονάδες (όνομα+abbreviation+allowsDecimal), createdAt
+/// κατηγοριών (default βάσης), αλυσίδα 4 επιπέδων end-to-end (FK +
+/// normalizedName), ατομικότητα σε σφάλμα (rollback), onCreate μία φορά.
 library;
 
 import 'dart:io';
@@ -42,7 +44,7 @@ void main() {
       expect(await db.select(db.items).get(), isEmpty);
     });
 
-    test('default seed: 3 μονάδες + κατάλογος 6/28/183/0', () async {
+    test('default seed: 3 μονάδες + ΑΔΕΙΟΣ κατάλογος (0/0/0/0)', () async {
       final db = inMemoryDb(skipSeed: false);
       addTearDown(db.close);
 
@@ -54,25 +56,10 @@ void main() {
       final items = await db.select(db.items).get();
 
       expect(units.length, 3);
-      expect(categories.length, 6);
-      expect(subCategories.length, 28);
-      expect(groups.length, 183);
+      expect(categories, isEmpty);
+      expect(subCategories, isEmpty);
+      expect(groups, isEmpty);
       expect(items, isEmpty);
-    });
-
-    test('seed normalizedName = GreekTextNormalizer.normalize (δείγμα)',
-        () async {
-      final db = inMemoryDb(skipSeed: false);
-      addTearDown(db.close);
-
-      final categories = await db.select(db.categories).get();
-      for (final c in categories) {
-        expect(c.normalizedName, GreekTextNormalizer.normalize(c.name));
-      }
-      final groups = await db.select(db.itemGroups).get();
-      final feta =
-          groups.firstWhere((g) => g.name == 'Φέτα', orElse: () => groups.first);
-      expect(feta.normalizedName, 'φετα');
     });
 
     test('seed εισάγει σωστές μονάδες (όνομα+abbreviation+allowsDecimal)',
@@ -173,11 +160,11 @@ void main() {
       });
       final file = File('${dir.path}${Platform.pathSeparator}seed_reopen.db');
 
-      // 1ο άνοιγμα: νέο DB → createAll + seed (3 μονάδες + 6/28/183).
+      // 1ο άνοιγμα: νέο DB → createAll + seed (3 μονάδες, άδειος κατάλογος).
       final db1 = AppDatabase(executor: NativeDatabase(file), skipSeed: false);
       await db1.customSelect('SELECT 1').get();
       expect(await db1.select(db1.units).get(), hasLength(3));
-      expect(await db1.select(db1.categories).get(), hasLength(6));
+      expect(await db1.select(db1.categories).get(), isEmpty);
       expect(await db1.select(db1.items).get(), isEmpty);
       await db1.close();
 
@@ -188,9 +175,9 @@ void main() {
 
       expect(await db2.select(db2.units).get(), hasLength(3),
           reason: 'Reopen χωρίς re-seed (units)');
-      expect(await db2.select(db2.categories).get(), hasLength(6));
-      expect(await db2.select(db2.subCategories).get(), hasLength(28));
-      expect(await db2.select(db2.itemGroups).get(), hasLength(183));
+      expect(await db2.select(db2.categories).get(), isEmpty);
+      expect(await db2.select(db2.subCategories).get(), isEmpty);
+      expect(await db2.select(db2.itemGroups).get(), isEmpty);
       expect(await db2.select(db2.items).get(), isEmpty,
           reason: 'Reopen χωρίς re-seed (κατάλογος)');
     });

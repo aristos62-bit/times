@@ -70,11 +70,12 @@
 | 50 | [Ρυθμίσεις: CRUD Ειδών](oldsessions/2026-09-26_fase_items_crud.md) | 26-09-2026 | Κλειστό | Section «Είδη» πριν τις Κατηγορίες (fork ItemSearchField + full edit dialog + πύλη `countLinesByItemId`) · εύρημα: `return future` flattening hang σε async helper → wrapper-record · settings_page_test 4→5 sections · **1167/1167** ✓ (+26) · analyze καθαρό · DESIGN §2.3:321 |
 | 51 | [Restore: timeout στο `close()`](oldsessions/2026-09-27_restore_close_timeout.md) | 27-09-2026 | Κλειστό | Hang μετά το confirm → αποδείχθηκε drift `close()` (streams false, SELECT 1 OK) · timeout 5'' SPoT + συνέχεια · test hanging-close · επαλήθευση συσκευής · targeted 27/27 + analyze καθαρό · DESIGN αμετάβλητο |
 | 52 | [Refactor καταλόγου 4 επιπέδων](oldsessions/2026-09-27_catalog_4level.md) | 27-09-2026 | Κλειστό | Cat▸Sub▸Τμήμα▸Item · UNIQUE παντού · wipe+fresh v4 · seed χωρίς είδη · πίτα «Ανά τμήμα» · Ε1 ValueKey crash fix · **1246/1246** ✓ · analyze καθαρό |
+| 53 | [Seed καταλόγου v3](oldsessions/2026-09-27_catalog_v3_seed.md) | 27-09-2026 | Κλειστό | Προσαρμογή `supermarket_categories_v3.md` (6/28/183/0) · διπλοεγγραφές λυμένες στο .md · **1249/1249** ✓ (+3) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
 
-- **Refactor καταλόγου 4 επιπέδων (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #52): Cat▸Sub▸Τμήμα▸Item · global UNIQUE · wipe+fresh v4 · seed χωρίς είδη (Β4β εκκρεμεί: νέο `.md` χρήστη) · πίτα «Ανά τμήμα» · Ε1 ValueKey crash fix · **1246/1246** ✓ · analyze καθαρό · DESIGN §2.1/§2.2/§2.3/§3/§4/§5 · backup `backups/2026-09-27_catalog_4level/`.
+- **Refactor καταλόγου 4 επιπέδων (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #52): Cat▸Sub▸Τμήμα▸Item · global UNIQUE · wipe+fresh v4 · seed v3 (6/28/183, row #53) · πίτα «Ανά τμήμα» · Ε1 ValueKey crash fix · **1249/1249** ✓ · analyze καθαρό · DESIGN §2.1/§2.2/§2.3/§3/§4/§5 · backup `backups/2026-09-27_catalog_4level/` + `backups/2026-09-27_catalog_v3_seed/`.
 
 - **Φάση 5 Βήμα 1 — SPoT θεμέλιο (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #42): `PeriodType` + 5 consts + 11 strings · **1047/1047** ✓ (+12) · analyze καθαρό · DESIGN αμετάβλητο · backup `backups/2026-09-26_fase5_b1_spot/`.
 - **Φάση 5 Βήμα 2 — Data aggregations (26-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #43): 4 `SUM GROUP BY` στο `ReceiptDao` + `chart_totals.dart` + repo passthrough + 6 fakes · **1065/1065** ✓ (+18) · analyze καθαρό · DESIGN §2.1 διευκρίνιση LIMIT · backup `backups/2026-09-26_fase5_b2_data/`.
