@@ -69,6 +69,7 @@
 | 49 | [Post-closure: γενικό σύνολο κάρτας](oldsessions/2026-09-26_fase5_chart_total.md) | 26-09-2026 | Κλειστό | Αίτημα «σύνολο»: γραμμή «Σύνολο» σε legend+πίνακα · fallback και σε 2x γράμματα · **1141/1141** ✓ (+2) · analyze καθαρό |
 | 50 | [Ρυθμίσεις: CRUD Ειδών](oldsessions/2026-09-26_fase_items_crud.md) | 26-09-2026 | Κλειστό | Section «Είδη» πριν τις Κατηγορίες (fork ItemSearchField + full edit dialog + πύλη `countLinesByItemId`) · εύρημα: `return future` flattening hang σε async helper → wrapper-record · settings_page_test 4→5 sections · **1167/1167** ✓ (+26) · analyze καθαρό · DESIGN §2.3:321 |
 | 51 | [Restore: timeout στο `close()`](oldsessions/2026-09-27_restore_close_timeout.md) | 27-09-2026 | Κλειστό | Hang μετά το confirm → αποδείχθηκε drift `close()` (streams false, SELECT 1 OK) · timeout 5'' SPoT + συνέχεια · test hanging-close · επαλήθευση συσκευής · targeted 27/27 + analyze καθαρό · DESIGN αμετάβλητο |
+| 52 | [Refactor καταλόγου 4 επιπέδων](oldsessions/2026-09-27_catalog_4level.md) | 27-09-2026 | Κλειστό | Cat▸Sub▸Τμήμα▸Item · UNIQUE παντού · wipe+fresh v4 · seed χωρίς είδη · πίτα «Ανά τμήμα» · Ε1 ValueKey crash fix · **1246/1246** ✓ · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)

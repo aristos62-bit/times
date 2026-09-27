@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -32,7 +33,9 @@ void main() {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φέτα');
+    itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
     supplierId = await SupplierDao(db).insert(name: 'Μάρκος');
   });
 

@@ -1,23 +1,17 @@
-/// Data validation tests για το seed — Φάση 1, Βήμα 3.
+/// Data validation tests για το seed (Refactor 4 επιπέδων 27-09-2026).
 ///
-/// Επαληθεύει τα δεδομένα στανταλόν (χωρίς DB): μοναδικότητα, αναφορές,
-/// counts, normalization. Χρειάζεται μόνο `package:flutter_test` + οι seed files.
+/// Επαληθεύει τα seed δεδομένα στανταλόν (χωρίς DB): μονάδες (3, μοναδικά
+/// ονόματα/συντομογραφίες, allowsDecimal flags), ΑΔΕΙΟΣ κατάλογος default
+/// (seedCategories/SubCategories/ItemGroups = [] — τα είδη χτίζονται από το
+/// UI, απόφαση 27-09-2026), σχήμα seed records, normalization sanity.
+/// Χρειάζεται μόνο `package:flutter_test` + τα seed files — καμία αναφορά
+/// σε σβησμένα seed αρχεία (9/53/535).
 library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:times/core/utils/greek_text_normalizer.dart';
-import 'package:times/data/local/seed/seed_categories.dart';
-import 'package:times/data/local/seed/seed_items_brefika.dart';
-import 'package:times/data/local/seed/seed_items_hlektrika.dart';
-import 'package:times/data/local/seed/seed_items_kapnika.dart';
-import 'package:times/data/local/seed/seed_items_katharistika.dart';
-import 'package:times/data/local/seed/seed_items_katikidia.dart';
-import 'package:times/data/local/seed/seed_items_pota.dart';
-import 'package:times/data/local/seed/seed_items_prwswpiki_ygieini.dart';
-import 'package:times/data/local/seed/seed_items_trofima.dart';
-import 'package:times/data/local/seed/seed_items_xartika.dart';
 import 'package:times/data/local/seed/seed_runner.dart';
-import 'package:times/data/local/seed/seed_sub_categories.dart';
+import 'package:times/data/local/seed/seed_types.dart';
 import 'package:times/data/local/seed/seed_units.dart';
 
 void main() {
@@ -26,6 +20,24 @@ void main() {
   group('Μονάδες μέτρησης', () {
     test('ακριβώς 3 μονάδες', () {
       expect(seedUnits.length, 3);
+    });
+
+    test('Τεμάχιο/Κιλό/Λίτρο με σωστές συντομογραφίες', () {
+      final byName = <String, UnitSeed>{
+        for (final u in seedUnits) u.name: u,
+      };
+      expect(byName['Τεμάχιο']!.abbreviation, 'τεμ');
+      expect(byName['Κιλό']!.abbreviation, 'κιλ');
+      expect(byName['Λίτρο']!.abbreviation, 'λτ');
+    });
+
+    test('allowsDecimal: μόνο Κιλό/Λίτρο (όχι Τεμάχιο)', () {
+      final byName = <String, UnitSeed>{
+        for (final u in seedUnits) u.name: u,
+      };
+      expect(byName['Τεμάχιο']!.allowsDecimal, isFalse);
+      expect(byName['Κιλό']!.allowsDecimal, isTrue);
+      expect(byName['Λίτρο']!.allowsDecimal, isTrue);
     });
 
     test('μοναδικά ονόματα', () {
@@ -37,149 +49,59 @@ void main() {
       final abbrs = seedUnits.map((u) => u.abbreviation).toSet();
       expect(abbrs.length, seedUnits.length);
     });
-  });
 
-  // ── Κατηγορίες ───────────────────────────────────────────────────────────
-
-  group('Κατηγορίες', () {
-    test('ακριβώς 9 κατηγορίες', () {
-      expect(seedCategories.length, 9);
-    });
-
-    test('μοναδικά ονόματα', () {
-      final names = seedCategories.map((c) => c.name).toSet();
-      expect(names.length, seedCategories.length);
+    test('ονόματα/συντομογραφίες μη κενά + normalized μοναδικά', () {
+      final normalized = <String>{};
+      for (final u in seedUnits) {
+        expect(u.name.trim(), isNotEmpty);
+        expect(u.abbreviation.trim(), isNotEmpty);
+        normalized.add(GreekTextNormalizer.normalize(u.name));
+      }
+      expect(normalized.length, seedUnits.length);
     });
   });
 
-  // ── Υποκατηγορίες ─────────────────────────────────────────────────────────
+  // ── Κατάλογος: άδειος by default ─────────────────────────────────────────
 
-  group('Υποκατηγορίες', () {
-    test('ακριβώς 53 υποκατηγορίες', () {
-      expect(seedSubCategories.length, 53);
+  group('Κατάλογος (άδειος — χτίζεται από το UI)', () {
+    test('καμία seed κατηγορία', () {
+      expect(seedCategories, isEmpty);
     });
 
-    test('μοναδικά ονόματα', () {
-      final names = seedSubCategories.map((s) => s.name).toSet();
-      expect(names.length, seedSubCategories.length);
+    test('καμία seed υποκατηγορία', () {
+      expect(seedSubCategories, isEmpty);
     });
 
-    test('κάθε υποκατηγορία αναφέρεται σε υπάρχουσα κατηγορία', () {
-      final categoryNames = seedCategories.map((c) => c.name).toSet();
-      for (final s in seedSubCategories) {
-        expect(
-          categoryNames,
-          contains(s.categoryName),
-          reason: 'Υποκατηγορία "${s.name}" αναφέρεται στη '
-              'κατηγορία "${s.categoryName}" που δεν υπάρχει',
-        );
-      }
+    test('κανένα seed τμήμα', () {
+      expect(seedItemGroups, isEmpty);
+    });
+
+    test('κανένα seed είδος (απόφαση 27-09-2026)', () {
+      // Το runSeed δεν αναφέρει είδη πουθενά: ο κατάλογος ξεκινά άδειος
+      // (μόνο μονάδες) και χτίζεται από το UI.
+      expect(seedCategories, isEmpty);
+      expect(seedSubCategories, isEmpty);
+      expect(seedItemGroups, isEmpty);
     });
   });
 
-  // ── Είδη ──────────────────────────────────────────────────────────────────
+  // ── Σχήμα seed records ───────────────────────────────────────────────────
 
-  group('Είδη', () {
-    test('συνολικός αριθμός: ακριβώς 535 είδη', () {
-      expect(seedItems.length, 535);
-    });
-
-    test('μοναδικά ονόματα (raw)', () {
-      final names = seedItems.map((i) => i.name).toSet();
-      expect(names.length, seedItems.length);
-    });
-
-    test('κάθε είδος αναφέρεται σε υπάρχουσα υποκατηγορία', () {
-      final subCategoryNames = seedSubCategories.map((s) => s.name).toSet();
-      for (final item in seedItems) {
-        expect(
-          subCategoryNames,
-          contains(item.subCategoryName),
-          reason: 'Είδος "${item.name}" αναφέρεται στη '
-              'υποκατηγορία "${item.subCategoryName}" που δεν υπάρχει',
-        );
-      }
-    });
-
-    test('κάθε defaultUnitName (όταν υπάρχει) αναφέρεται σε υπάρχουσα μονάδα', () {
-      final unitNames = seedUnits.map((u) => u.name).toSet();
-      for (final item in seedItems) {
-        if (item.defaultUnitName != null) {
-          expect(
-            unitNames,
-            contains(item.defaultUnitName),
-            reason: 'Είδος "${item.name}" αναφέρεται στη μονάδα '
-                '"${item.defaultUnitName}" που δεν υπάρχει',
-          );
-        }
-      }
-    });
-
-    test('τα normalizedName είναι μοναδικά (zero normalization collisions)', () {
-      final normalizedNames = <String, String>{};
-      final duplicates = <String>[];
-      for (final item in seedItems) {
-        final normalized = GreekTextNormalizer.normalize(item.name);
-        if (normalizedNames.containsKey(normalized)) {
-          duplicates.add(
-            '"${item.name}" → "$normalized" '
-            '(το ίδιο με "${normalizedNames[normalized]}")',
-          );
-        }
-        normalizedNames[normalized] = item.name;
-      }
-      expect(duplicates, isEmpty, reason: 'Normalization collisions: $duplicates');
-    });
-
-    test('μακρύτερο όνομα είδους < 100 χαρακτήρες (maxItemNameLength)', () {
-      final maxLength = seedItems.map((i) => i.name.length).reduce(
-        (a, b) => a > b ? a : b,
+  group('Σχήμα seed records (seed_types)', () {
+    test('CategorySeed/SubCategorySeed/ItemGroupSeed κατασκευάζονται', () {
+      const CategorySeed c = (name: 'ΤΡΟΦΙΜΑ');
+      const SubCategorySeed s = (
+        name: 'Γαλακτοκομικά',
+        categoryName: 'ΤΡΟΦΙΜΑ',
       );
-      expect(maxLength, lessThan(100));
-    });
-  });
+      const ItemGroupSeed g = (
+        name: 'Φέτα',
+        subCategoryName: 'Γαλακτοκομικά',
+      );
 
-  // ── Κατανομή ανά κατηγορία ───────────────────────────────────────────────
-
-  group('Κατανομή ειδών ανά κατηγορία', () {
-    test('ΤΡΟΦΙΜΑ: 155 είδη', () {
-      expect(seedItemsTrofima.length, 155);
-    });
-
-    test('ΠΟΤΑ & ΡΟΦΗΜΑΤΑ: 60 είδη', () {
-      expect(seedItemsPota.length, 60);
-    });
-
-    test('ΠΡΟΣΩΠΙΚΗ ΥΓΙΕΙΝΗ & ΠΕΡΙΠΟΙΗΣΗ: 80 είδη', () {
-      expect(seedItemsPrwswpikiYgieini.length, 80);
-    });
-
-    test('ΚΑΘΑΡΙΣΤΙΚΑ & ΟΙΚΙΑΚΑ: 80 είδη', () {
-      expect(seedItemsKatharistika.length, 80);
-    });
-
-    test('ΧΑΡΤΙΚΑ & ΑΝΑΛΩΣΙΜΑ: 30 είδη', () {
-      expect(seedItemsXartika.length, 30);
-    });
-
-    test('ΒΡΕΦΙΚΑ ΠΡΟΪΟΝΤΑ: 50 είδη', () {
-      expect(seedItemsBrefika.length, 50);
-    });
-
-    test('ΚΑΤΟΙΚΙΔΙΑ: 30 είδη', () {
-      expect(seedItemsKatikidia.length, 30);
-    });
-
-    test('ΗΛΕΚΤΡΙΚΑ & ΛΟΙΠΑ: 30 είδη', () {
-      expect(seedItemsHlektrika.length, 30);
-    });
-
-    test('ΚΑΠΝΙΚΑ: 20 είδη', () {
-      expect(seedItemsKapnika.length, 20);
-    });
-
-    test('συνολικό άθροισμα = 535', () {
-      expect(seedItems.length, 535);
+      expect(c.name, 'ΤΡΟΦΙΜΑ');
+      expect(s.categoryName, 'ΤΡΟΦΙΜΑ');
+      expect(g.subCategoryName, 'Γαλακτοκομικά');
     });
   });
 }

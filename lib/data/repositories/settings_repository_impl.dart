@@ -49,9 +49,9 @@ final class SettingsRepositoryImpl implements SettingsRepository {
       ThemeMode.values.asNameMap()[raw] ?? AppTheme.defaultMode;
 
   /// Διαβάζει τη ρύθμιση γραφημάτων ΣΥΓΧΡΟΝΩΣ (memory-read, pattern
-  /// `readThemeMode`): κενό → defaults · corrupt (άγνωστο period, λάθος
-  /// τύποι, άκυρες ημερομηνίες) → defaults στην οικεία entry (όχι ολικό
-  /// reset — οι υγιείς entries κρατιούνται).
+  /// `readThemeMode`): κενό → defaults · corrupt → defaults στην οικεία
+  /// entry. 27-09-2026: key `itemGroup` (fallback legacy `subCategory` —
+  /// τα prefs επιβιώνουν του DB wipe).
   @override
   HomeChartConfig readHomeChartConfig() {
     final raw = _prefs.getString(AppConstants.homeChartConfigKey);
@@ -62,7 +62,10 @@ final class SettingsRepositoryImpl implements SettingsRepository {
       return HomeChartConfig(
         supplier: _entryFromJson(decoded['supplier'], 0),
         category: _entryFromJson(decoded['category'], 1),
-        subCategory: _entryFromJson(decoded['subCategory'], 2),
+        itemGroup: _entryFromJson(
+          decoded['itemGroup'] ?? decoded['subCategory'],
+          2,
+        ),
         topItems: _entryFromJson(decoded['topItems'], 3),
       );
     } catch (_) {
@@ -78,7 +81,7 @@ final class SettingsRepositoryImpl implements SettingsRepository {
       jsonEncode({
         'supplier': _entryToJson(config.supplier),
         'category': _entryToJson(config.category),
-        'subCategory': _entryToJson(config.subCategory),
+        'itemGroup': _entryToJson(config.itemGroup),
         'topItems': _entryToJson(config.topItems),
       }),
     );

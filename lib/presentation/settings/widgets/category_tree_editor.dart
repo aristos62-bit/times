@@ -1,16 +1,15 @@
-/// Tree editor κατηγοριών/υποκατηγοριών (§2.3 DESIGN / Φάση 4 Βήμα 4).
+/// Tree editor καταλόγου 4 επιπέδων (§2.3 DESIGN · 27-09-2026).
 ///
 /// Data-section `ConsumerWidget` (pattern `RecentReceiptsList`): βλέπει το
 /// ζωντανό `categoryTreeStreamProvider` (in-memory σύνθεση, κανένα νέο query)
 /// + ανά γραμμή τους `canDelete*/inUseCount*` providers. CRUD μέσω του
-/// `CategoryManagementController` + `CategoryEditDialog` (create/rename) +
-/// `ConfirmDialog` (delete, `isDestructive`). Feedback ΜΟΝΟ από εδώ μέσω
-/// `AppFeedback` — ποτέ μέσα στα dialogs (ScaffoldMessenger caveat, §2.4).
+/// `CategoryManagementController` + `CategoryEditDialog` (create/rename —
+/// reuse και για Τμήμα) + `ConfirmDialog` (delete, `isDestructive`).
+/// Feedback ΜΟΝΟ από εδώ μέσω `AppFeedback` — ποτέ μέσα στα dialogs.
 ///
 /// Πύλη διαγραφής (§2.3:275): `canDelete==false` → greyed-out + tooltip
-/// `itemsInUseTooltip(count)` (όχι error-after-tap)· loading/error πύλης →
-/// ανενεργό + tap=retry (invalidate). Οι πύλες είναι one-shot (IndexedStack):
-/// το κουμπί ανανέωσης ξανατρέχει όλες τις ορατές.
+/// `itemsInUseTooltip(count)`· loading/error πύλης → ανενεργό + tap=retry.
+/// One-shot families (IndexedStack) + κουμπί ανανέωσης.
 /// Responsive §1.4: στήλη, ellipsis, κανένα fixed ύψος· dark/light από theme.
 library;
 
@@ -32,12 +31,11 @@ import '../../shared/delete_gate_button.dart';
 import '../controllers/category_management_controller.dart';
 import 'category_edit_dialog.dart';
 
-/// Tree editor «Κατηγορία ▸ Υποκατηγορίες» με CRUD (§2.3 · Βήμα 4).
+/// Tree editor «Κατηγορία ▸ Υποκατηγορία ▸ Τμήμα» με CRUD (§2.3).
 class CategoryTreeEditor extends ConsumerWidget {
   const CategoryTreeEditor({super.key});
 
-  /// Προσθήκη κατηγορίας: dialog → controller → feedback (dup → snackbar
-  /// `nameExists`, όπως το `supplierExists` του header §2.4).
+  /// Προσθήκη κατηγορίας: dialog → controller → feedback.
   Future<void> _addCategory(BuildContext context, WidgetRef ref) async {
     final name = await showCategoryEditDialog(
       context,
@@ -109,7 +107,7 @@ class CategoryTreeEditor extends ConsumerWidget {
     );
   }
 
-  /// Προσθήκη υποκατηγορίας στην [categoryId] (dup-check εντός κατηγορίας).
+  /// Προσθήκη υποκατηγορίας στην [categoryId].
   Future<void> _addSubCategory(
     BuildContext context,
     WidgetRef ref,
@@ -185,16 +183,136 @@ class CategoryTreeEditor extends ConsumerWidget {
     );
   }
 
-  /// Γραμμή υποκατηγορίας: indented ListTile + edit + πύλη διαγραφής.
-  Widget _subTile(
+  /// Προσθήκη τμήματος στην [subCategoryId] (27-09-2026).
+  Future<void> _addItemGroup(
     BuildContext context,
     WidgetRef ref,
-    SubCategory sub,
+    int subCategoryId,
+  ) async {
+    final name = await showCategoryEditDialog(
+      context,
+      title: AppStrings.addNewItemGroup,
+      confirmLabel: AppStrings.newItemSave,
+      labelText: AppStrings.fieldItemGroup,
+    );
+    if (name == null || !context.mounted) return;
+    await runControllerOp(
+      context,
+      () => ref
+          .read(categoryManagementControllerProvider.notifier)
+          .createItemGroup(subCategoryId: subCategoryId, name: name),
+      AppMessages.itemGroupAdded,
+    );
+  }
+
+  /// Μετονομασία τμήματος (χωρίς αλλαγή υποκατηγορίας — εκτός scope).
+  Future<void> _renameItemGroup(
+    BuildContext context,
+    WidgetRef ref,
+    ItemGroup group,
+  ) async {
+    final name = await showCategoryEditDialog(
+      context,
+      title: AppStrings.fieldItemGroup,
+      confirmLabel: AppStrings.saveAction,
+      initialName: group.name,
+      labelText: AppStrings.fieldItemGroup,
+    );
+    if (name == null || !context.mounted) return;
+    await runControllerOp(
+      context,
+      () => ref
+          .read(categoryManagementControllerProvider.notifier)
+          .renameItemGroup(group.id, name),
+      AppMessages.itemGroupUpdated,
+    );
+  }
+
+  /// Διαγραφή τμήματος: count → confirm → delete (συμμετρικό).
+  Future<void> _deleteItemGroup(
+    BuildContext context,
+    WidgetRef ref,
+    ItemGroup group,
+  ) async {
+    final controller = ref.read(
+      categoryManagementControllerProvider.notifier,
+    );
+    int count;
+    try {
+      count = await controller.getItemGroupItemCount(group.id);
+    } on DataLoadException catch (e) {
+      if (!context.mounted) return;
+      AppFeedback.showError(context, e.userMessage);
+      return;
+    }
+    if (!context.mounted) return;
+    final confirmed = await showConfirmDialog(
+      context,
+      message: AppMessages.deleteItemGroupConfirm(group.name, count),
+      isDestructive: true,
+    );
+    if (confirmed != true || !context.mounted) return;
+    await runControllerOp(
+      context,
+      () => controller.deleteItemGroup(group.id),
+      AppMessages.itemGroupDeleted,
+    );
+  }
+
+  /// Γραμμή τμήματος: indented ListTile + edit + πύλη διαγραφής.
+  Widget _groupTile(
+    BuildContext context,
+    WidgetRef ref,
+    ItemGroup group,
     bool working,
   ) {
     return ListTile(
       dense: true,
-      contentPadding: const EdgeInsets.only(left: AppConstants.spacingXL),
+      contentPadding: const EdgeInsets.only(left: AppConstants.spacingXL * 2),
+      leading: const Icon(Icons.folder_open_outlined),
+      title: Text(
+        group.name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: AppStrings.editAction,
+            onPressed: working
+                ? null
+                : () => _renameItemGroup(context, ref, group),
+          ),
+          DeleteGateButton(
+            canDelete: ref.watch(canDeleteItemGroupProvider(group.id)),
+            count: ref.watch(inUseCountItemGroupProvider(group.id)),
+            blockedTooltip: AppMessages.itemsInUseTooltip,
+            onDelete: () => _deleteItemGroup(context, ref, group),
+            onRetry: () {
+              ref.invalidate(canDeleteItemGroupProvider(group.id));
+              ref.invalidate(inUseCountItemGroupProvider(group.id));
+            },
+            working: working,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Γραμμή υποκατηγορίας: ExpansionTile με τμήματα + «+» τμήματος.
+  Widget _subTile(
+    BuildContext context,
+    WidgetRef ref,
+    SubCategoryTreeNode node,
+    bool working,
+  ) {
+    final sub = node.subCategory;
+    return ExpansionTile(
+      key: ValueKey('sub_${sub.id}'),
+      controlAffinity: ListTileControlAffinity.leading,
+      tilePadding: const EdgeInsets.only(left: AppConstants.spacingXL),
       leading: const Icon(Icons.folder_outlined),
       title: Text(
         sub.name,
@@ -224,16 +342,29 @@ class CategoryTreeEditor extends ConsumerWidget {
           ),
         ],
       ),
+      children: [
+        for (final group in node.itemGroups)
+          _groupTile(context, ref, group, working),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.only(left: AppConstants.spacingXL * 2),
+            child: TextButton.icon(
+              onPressed: working
+                  ? null
+                  : () => _addItemGroup(context, ref, sub.id),
+              icon: const Icon(Icons.add_circle_outline),
+              label: const Text(AppStrings.addNewItemGroup),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  /// Κόμβος κατηγορίας: ExpansionTile (tap τίτλου = expand) + edit/διαγραφή
-  /// στο trailing + παιδιά υποκατηγορίες + κουμπί «+» υποκατηγορίας.
-  /// `ValueKey` ανά κατηγορία (24-09-2026): το expand state ακολουθεί την
-  /// οντότητα, όχι τη θέση (μετονομασία αλλάζει την αλφαβητική σειρά)·
-  /// `controlAffinity: leading` ΧΩΡΙΣ `leading` icon — το SDK δείχνει το βέλος
-  /// ΜΟΝΟ όταν δεν δίνεται leading (`leading ?? arrow`), και το trailing με
-  /// τα actions θα το έκρυβε (δεν φαινόταν ότι ανοίγει).
+  /// Κόμβος κατηγορίας: ExpansionTile + edit/διαγραφή + παιδιά + «+».
+  /// `ValueKey` ανά κατηγορία: το expand state ακολουθεί την οντότητα,
+  /// όχι τη θέση. `controlAffinity: leading` ΧΩΡΙΣ `leading` icon.
   Widget _categoryTile(
     BuildContext context,
     WidgetRef ref,
@@ -273,7 +404,8 @@ class CategoryTreeEditor extends ConsumerWidget {
         ],
       ),
       children: [
-        for (final sub in node.subCategories) _subTile(context, ref, sub, working),
+        for (final subNode in node.subNodes)
+          _subTile(context, ref, subNode, working),
         Align(
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
@@ -327,7 +459,12 @@ class CategoryTreeEditor extends ConsumerWidget {
                       ],
                       subCategoryIds: [
                         for (final n in nodes)
-                          for (final s in n.subCategories) s.id,
+                          for (final s in n.subNodes) s.subCategory.id,
+                      ],
+                      itemGroupIds: [
+                        for (final n in nodes)
+                          for (final s in n.subNodes)
+                            for (final g in s.itemGroups) g.id,
                       ],
                     ),
               ),

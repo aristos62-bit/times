@@ -20,6 +20,7 @@ import 'package:times/core/router/app_router.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
@@ -46,7 +47,11 @@ void main() {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    final itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    // 4 επίπεδα (27-09-2026): το είδος ανήκει σε Τμήμα, όχι σε υποκατηγορία.
+    final groupId = await ItemGroupDao(
+      db,
+    ).insert(subCategoryId: subId, name: 'Φρέσκα');
+    final itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
     final supplierId =
         await container.read(supplierRepositoryProvider).insert(name: 'Μάρκος');
     final now = DateTime.now();

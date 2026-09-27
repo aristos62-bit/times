@@ -7,6 +7,8 @@
 /// FK-violation → `SaveReceiptException` + rollback (οι παλιές γραμμές
 /// μένουν άθικτες). Το `lineTotalCents` το υπολογίζει ο ReceiptLineDao
 /// (SPoT §3).
+///
+/// Refactor 4 επιπέδων (27-09-2026): είδη μέσω Τμήματος.
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -39,12 +42,15 @@ void main() {
     repo = ReceiptRepositoryImpl(ReceiptDao(db), ReceiptLineDao(db));
     lineDao = ReceiptLineDao(db);
 
+    // Αλυσίδα 4 επιπέδων: unit → category → sub → group → items.
     unitId = await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId =
         await SubCategoryDao(db).insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
-    secondItemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Τυρί');
+    final groupId =
+        await ItemGroupDao(db).insert(subCategoryId: subId, name: 'Φέτα');
+    itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
+    secondItemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Τυρί');
     supplierId = await SupplierDao(db).insert(name: 'Μάρκος');
     secondSupplierId = await SupplierDao(db).insert(name: 'Προμηθευτής Β');
   });

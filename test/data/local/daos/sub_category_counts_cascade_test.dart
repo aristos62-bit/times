@@ -1,11 +1,12 @@
 /// Unit tests για τα counts + cascade του `SubCategoryDao`
-/// (Φάση 4, Βήμα 2 · §2.3).
+/// (Refactor 4 επιπέδων 27-09-2026 · §2.3).
 ///
-/// In-memory βάση (κοινό helper). Ελέγχει: `countItemsBySubCategoryId`
-/// (0/N + απομόνωση ξένης υποκατηγορίας), `countItemsInUseBySubCategoryId`
-/// (0/DISTINCT + απομόνωση), `deleteWithContents` (κενή/με είδη/ανύπαρκτη +
-/// ατομικότητα σε μπλοκαρισμένη). Τα σφάλματα FK είναι raw
-/// (όχι AppException) — mapping στο Repository (Βήμα 3).
+/// Αλυσίδες sub → group → item σε κάθε test. Ελέγχει:
+/// `countItemsBySubCategoryId` (0/N + απομόνωση ξένης υποκατηγορίας,
+/// 2 joins), `countItemsInUseBySubCategoryId` (0/DISTINCT + απομόνωση),
+/// `deleteWithContents` (κενή/με είδη/ανύπαρκτη + ατομικότητα σε
+/// μπλοκαρισμένη). Σειρά cascade: είδη → τμήματα → sub.
+/// Τα σφάλματα FK είναι raw (όχι AppException) — mapping στο Repository.
 library;
 
 import 'package:drift/native.dart';
@@ -14,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -43,6 +45,14 @@ void main() {
     return (unitId: unitId, supplierId: supplierId);
   }
 
+  /// Δημιουργεί τμήμα κάτω από την υποκατηγορία [subId].
+  Future<int> seedGroup(int subId, String name) =>
+      ItemGroupDao(db).insert(subCategoryId: subId, name: name);
+
+  /// Δημιουργεί είδος μέσα στο τμήμα [groupId].
+  Future<int> seedItem(int groupId, String name) =>
+      ItemDao(db).insert(itemGroupId: groupId, name: name);
+
   /// Δημιουργεί απόδειξη + γραμμή για το είδος.
   Future<void> seedReceiptLine({
     required int itemId,
@@ -61,25 +71,28 @@ void main() {
   }
 
   group('SubCategoryDao.countItemsBySubCategoryId', () {
-    test('κενή υποκατηγορία → 0', () async {
+    test('κενή υποκατηγορία (με κενό τμήμα) → 0', () async {
       final subId = await dao.insert(
         categoryId: foodCategoryId,
         name: 'Γαλακτοκομικά',
       );
+      await seedGroup(subId, 'Φέτα');
 
       expect(await dao.countItemsBySubCategoryId(subId), 0);
     });
 
-    test('μετράει τα είδη της', () async {
+    test('μετράει τα είδη όλων των τμημάτων της', () async {
       final subId = await dao.insert(
         categoryId: foodCategoryId,
         name: 'Γαλακτοκομικά',
       );
-      final itemDao = ItemDao(db);
-      await itemDao.insert(subCategoryId: subId, name: 'Γάλα');
-      await itemDao.insert(subCategoryId: subId, name: 'Γιαούρτι');
+      final group1 = await seedGroup(subId, 'Φέτα');
+      final group2 = await seedGroup(subId, 'Γιαούρτια');
+      await seedItem(group1, 'Γάλα');
+      await seedItem(group2, 'Γιαούρτι');
+      await seedItem(group2, 'Κεφίρ');
 
-      expect(await dao.countItemsBySubCategoryId(subId), 2);
+      expect(await dao.countItemsBySubCategoryId(subId), 3);
     });
 
     test('απομονώνει ξένη υποκατηγορία', () async {
@@ -91,9 +104,10 @@ void main() {
         categoryId: foodCategoryId,
         name: 'Αρτοποιήματα',
       );
-      final itemDao = ItemDao(db);
-      await itemDao.insert(subCategoryId: dairyId, name: 'Γάλα');
-      await itemDao.insert(subCategoryId: bakeryId, name: 'Ψωμί');
+      final dairyGroup = await seedGroup(dairyId, 'Φέτα');
+      final bakeryGroup = await seedGroup(bakeryId, 'Ψωμιά');
+      await seedItem(dairyGroup, 'Γάλα');
+      await seedItem(bakeryGroup, 'Ψωμί');
 
       expect(await dao.countItemsBySubCategoryId(dairyId), 1);
       expect(await dao.countItemsBySubCategoryId(bakeryId), 1);
@@ -106,7 +120,8 @@ void main() {
         categoryId: foodCategoryId,
         name: 'Γαλακτοκομικά',
       );
-      await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+      final groupId = await seedGroup(subId, 'Φέτα');
+      await seedItem(groupId, 'Γάλα');
 
       expect(await dao.countItemsInUseBySubCategoryId(subId), 0);
     });
@@ -117,8 +132,8 @@ void main() {
         categoryId: foodCategoryId,
         name: 'Γαλακτοκομικά',
       );
-      final itemId =
-          await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+      final groupId = await seedGroup(subId, 'Φέτα');
+      final itemId = await seedItem(groupId, 'Γάλα');
       await seedReceiptLine(
         itemId: itemId,
         unitId: seed.unitId,
@@ -143,10 +158,10 @@ void main() {
         categoryId: foodCategoryId,
         name: 'Αρτοποιήματα',
       );
-      final itemDao = ItemDao(db);
-      final milkId =
-          await itemDao.insert(subCategoryId: dairyId, name: 'Γάλα');
-      await itemDao.insert(subCategoryId: bakeryId, name: 'Ψωμί');
+      final dairyGroup = await seedGroup(dairyId, 'Φέτα');
+      final bakeryGroup = await seedGroup(bakeryId, 'Ψωμιά');
+      final milkId = await seedItem(dairyGroup, 'Γάλα');
+      await seedItem(bakeryGroup, 'Ψωμί');
       await seedReceiptLine(
         itemId: milkId,
         unitId: seed.unitId,
@@ -169,19 +184,23 @@ void main() {
       expect(await dao.getById(subId), isNull);
     });
 
-    test('με είδη χωρίς γραμμές → σβήνει είδη+υποκατηγορία', () async {
+    test('με τμήματα+είδη χωρίς γραμμές → σβήνει τμήματα+είδη+υποκατηγορία',
+        () async {
       final subId = await dao.insert(
         categoryId: foodCategoryId,
         name: 'Γαλακτοκομικά',
       );
+      final groupDao = ItemGroupDao(db);
       final itemDao = ItemDao(db);
-      final milkId =
-          await itemDao.insert(subCategoryId: subId, name: 'Γάλα');
-      final yogurtId =
-          await itemDao.insert(subCategoryId: subId, name: 'Γιαούρτι');
+      final group1 = await seedGroup(subId, 'Φέτα');
+      final group2 = await seedGroup(subId, 'Γιαούρτια');
+      final milkId = await seedItem(group1, 'Γάλα');
+      final yogurtId = await seedItem(group2, 'Γιαούρτι');
 
       expect(await dao.deleteWithContents(subId), isTrue);
       expect(await dao.getById(subId), isNull);
+      expect(await groupDao.getById(group1), isNull);
+      expect(await groupDao.getById(group2), isNull);
       expect(await itemDao.getById(milkId), isNull);
       expect(await itemDao.getById(yogurtId), isNull);
       // Η κατηγορία-γονέας παραμένει.
@@ -198,11 +217,11 @@ void main() {
         categoryId: foodCategoryId,
         name: 'Γαλακτοκομικά',
       );
+      final groupDao = ItemGroupDao(db);
       final itemDao = ItemDao(db);
-      final milkId =
-          await itemDao.insert(subCategoryId: subId, name: 'Γάλα');
-      final yogurtId =
-          await itemDao.insert(subCategoryId: subId, name: 'Γιαούρτι');
+      final groupId = await seedGroup(subId, 'Φέτα');
+      final milkId = await seedItem(groupId, 'Γάλα');
+      final yogurtId = await seedItem(groupId, 'Γιαούρτι');
       await seedReceiptLine(
         itemId: milkId,
         unitId: seed.unitId,
@@ -215,6 +234,7 @@ void main() {
         throwsA(allOf(isA<SqliteException>(), isNot(isA<AppException>()))),
       );
       expect(await dao.getById(subId), isNotNull);
+      expect(await groupDao.getById(groupId), isNotNull);
       expect(await itemDao.getById(milkId), isNotNull);
       expect(await itemDao.getById(yogurtId), isNotNull);
       expect(await db.select(db.receiptLines).get(), hasLength(1));

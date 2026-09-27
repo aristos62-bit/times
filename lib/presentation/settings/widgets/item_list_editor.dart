@@ -60,17 +60,26 @@ class ItemListEditor extends ConsumerWidget {
 class _ItemListContent extends ConsumerWidget {
   const _ItemListContent();
 
-  /// Επεξεργασία επιλεγμένου: lookups (υποκατηγορία → κατηγορία + μονάδα)
-  /// ΠΡΙΝ το open (το dialog μένει σύγχρονο, §2.4) → dialog → controller →
-  /// feedback + καθάρισμα fork-επιλογής (dup → snackbar `nameExists`).
+  /// Επεξεργασία επιλεγμένου: lookups (τμήμα → υποκατηγορία → κατηγορία +
+  /// μονάδα) ΠΡΙΝ το open (το dialog μένει σύγχρονο, §2.4) → dialog →
+  /// controller → feedback + καθάρισμα fork-επιλογής.
   /// Ανύπαρκτα refs (race διαγραφής) → `loadDataFailed` χωρίς dialog.
   Future<void> _editItem(
     BuildContext context,
     WidgetRef ref,
     Item item,
   ) async {
+    final group = await ref.read(itemGroupRepositoryProvider).getById(
+          item.itemGroupId,
+        );
+    if (group == null || !context.mounted) {
+      if (context.mounted) {
+        AppFeedback.showError(context, AppErrors.loadDataFailed);
+      }
+      return;
+    }
     final sub = await ref.read(subCategoryRepositoryProvider).getById(
-          item.subCategoryId,
+          group.subCategoryId,
         );
     if (sub == null || !context.mounted) {
       if (context.mounted) {
@@ -96,6 +105,7 @@ class _ItemListContent extends ConsumerWidget {
     final result = await showItemEditDialog(
       context,
       item: item,
+      itemGroup: group,
       subCategory: sub,
       category: category,
       unit: unit,
@@ -106,7 +116,7 @@ class _ItemListContent extends ConsumerWidget {
       () => ref.read(itemManagementControllerProvider.notifier).updateItem(
             id: item.id,
             name: result.name,
-            subCategoryId: result.subCategoryId,
+            itemGroupId: result.itemGroupId,
             defaultUnitId: result.defaultUnitId,
           ),
       AppMessages.itemUpdated,

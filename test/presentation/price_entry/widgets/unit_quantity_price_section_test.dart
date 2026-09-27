@@ -21,6 +21,7 @@ import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
@@ -89,7 +90,8 @@ void main() {
       )
       .enabled;
 
-  /// Seed: κατηγορία → υποκατηγορία → μονάδες → είδος. Επιστρέφει record
+  /// Seed: κατηγορία → υποκατηγορία → τμήμα → μονάδες → είδος.
+  /// Αλυσίδα 4 επιπέδων (§3 · 27-09-2026). Επιστρέφει record
   /// `{ item, kiloId, pieceId }`.
   Future<({Item item, int kiloId, int pieceId})> seed(
     AppDatabase db, {
@@ -98,6 +100,8 @@ void main() {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φρέσκα');
     final pieceId = await UnitDao(db).insert(
       name: 'Τεμάχιο',
       abbreviation: 'τεμ',
@@ -108,7 +112,7 @@ void main() {
       allowsDecimal: true,
     );
     final itemId = await ItemDao(db).insert(
-      subCategoryId: subId,
+      itemGroupId: groupId,
       name: 'Γάλα',
       defaultUnitId: withDefaultUnit ? kiloId : null,
     );

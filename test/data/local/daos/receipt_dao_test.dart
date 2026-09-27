@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -34,15 +35,17 @@ void main() {
 
   tearDown(() async => await db.close());
 
-  /// Δημιουργεί Unit + Category + SubCategory + Item και επιστρέφει
-  /// (itemId, unitId) — απαραίτητα για την εισαγωγή γραμμής απόδειξης.
+  /// Δημιουργεί Unit + Category + SubCategory + ItemGroup + Item και
+  /// επιστρέφει (itemId, unitId) — απαραίτητα για γραμμή απόδειξης.
   Future<({int itemId, int unitId})> seedItemWithUnit() async {
     final unitId = await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φέτα');
     final itemId = await ItemDao(db).insert(
-          subCategoryId: subId,
+          itemGroupId: groupId,
           name: 'Γάλα',
           defaultUnitId: unitId,
         );
@@ -120,8 +123,10 @@ void main() {
       final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
       final subId = await SubCategoryDao(db)
           .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+      final groupId = await ItemGroupDao(db)
+          .insert(subCategoryId: subId, name: 'Φέτα');
       final itemId = await ItemDao(db).insert(
-        subCategoryId: subId,
+        itemGroupId: groupId,
         name: 'Γάλα',
         defaultUnitId: unitId,
       );

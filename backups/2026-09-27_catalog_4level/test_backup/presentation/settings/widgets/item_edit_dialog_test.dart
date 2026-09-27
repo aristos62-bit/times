@@ -1,0 +1,142 @@
+/// Widget tests — `ItemEditDialog` (§2.3 · ενότητα Ειδών).
+///
+/// Το dialog παίρνει έτοιμα entities (χωρίς DB lookups — lookup ευθύνη του
+/// καλούντος): τα tests χτίζουν drift data classes χειροκίνητα — ΚΑΜΙΑ βάση,
+/// κανένα runAsync, κανένα hang. Prefill · validation κενού (inline, χωρίς
+/// pop) · submit → record · responsive/dark.
+library;
+
+import 'package:drift/drift.dart' show Value;
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:times/core/constants/app_strings.dart';
+import 'package:times/core/theme/app_theme.dart';
+import 'package:times/data/local/app_database.dart';
+import 'package:times/presentation/settings/widgets/item_edit_dialog.dart';
+
+void main() {
+  /// Χειροκίνητα entities (drift data classes — ίδια με seed).
+
+  Item testItem() => Item(
+        id: 1,
+        subCategoryId: 10,
+        name: 'Γάλα',
+        normalizedName: 'γαλα',
+        defaultUnitId: 100,
+      );
+
+  SubCategory testSub() => const SubCategory(id: 10, categoryId: 20, name: 'Γαλακτοκομικά');
+
+  Category testCategory() => Category(
+        id: 20,
+        name: 'ΤΡΟΦΙΜΑ',
+        createdAt: DateTime(2026, 1, 1),
+      );
+
+  Unit testUnit() => const Unit(
+        id: 100,
+        name: 'Τεμάχιο',
+        abbreviation: 'τεμ',
+        allowsDecimal: false,
+      );
+
+  /// Ανοίγει το dialog με έτοιμα entities.
+  ///
+  /// Επιστρέφει wrapper-record (ΟΧΙ το dialog future κατευθείαν — σε async
+  /// συνάρτηση το `return future` θα το υιοθετούσε (flattening) και το await
+  /// θα κρεμούσε όσο το dialog μένει ανοιχτό).
+  Future<
+      ({
+        Future<({String name, int subCategoryId, Value<int?> defaultUnitId})?>
+            dialog
+      })>
+      openDialog(
+    WidgetTester tester, {
+    ThemeData? theme,
+    Size size = const Size(800, 600),
+  }) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    late Future<({String name, int subCategoryId, Value<int?> defaultUnitId})?>
+        future;
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () async {
+                  future = showItemEditDialog(
+                    context,
+                    item: testItem(),
+                    subCategory: testSub(),
+                    category: testCategory(),
+                    unit: testUnit(),
+                  );
+                },
+                child: const Text('άνοιγμα'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('άνοιγμα'));
+    await tester.pumpAndSettle();
+    return (dialog: future);
+  }
+
+  group('ItemEditDialog', () {
+    testWidgets('prefill: όνομα + κατηγορία + υποκατηγορία + μονάδα',
+        (tester) async {
+      await openDialog(tester);
+      expect(find.text('Γάλα'), findsWidgets);
+      expect(find.text('ΤΡΟΦΙΜΑ'), findsWidgets);
+      expect(find.text('Γαλακτοκομικά'), findsWidgets);
+      expect(find.text('Τεμάχιο'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('κενό όνομα → inline σφάλμα, χωρίς pop', (tester) async {
+      final dialog = (await openDialog(tester)).dialog;
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.first, '   ');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.saveAction));
+      await tester.pumpAndSettle();
+      expect(find.byType(ItemEditDialog), findsOneWidget);
+      expect(dialog, isNotNull);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('submit έγκυρου → record (name/sub/unit)', (tester) async {
+      final dialog = (await openDialog(tester)).dialog;
+      await tester.enterText(find.byType(TextField).first, 'Γάλα φρέσκο');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.saveAction));
+      await tester.pumpAndSettle();
+      final result = await dialog;
+      expect(result?.name, 'Γάλα φρέσκο');
+      expect(result?.subCategoryId, 10);
+      // Μονάδα ανέγγιχτη → absent (no-op).
+      expect(result?.defaultUnitId.present, isFalse);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('dark + 320px — κανένα overflow', (tester) async {
+      await openDialog(
+        tester,
+        theme: AppTheme.dark,
+        size: const Size(320, 568),
+      );
+      expect(find.byType(ItemEditDialog), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+}

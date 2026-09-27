@@ -1,22 +1,18 @@
-/// Controller διαχείρισης κατηγοριών/υποκατηγοριών (§2.3 DESIGN /
-/// Φάση 4 Βήμα 4).
+/// Controller διαχείρισης καταλόγου 4 επιπέδων (§2.3 DESIGN · 27-09-2026).
 ///
 /// Plain `Notifier<SettingsState>` (όχι AsyncNotifier): το state είναι
 /// σύγχρονο (μόνο `isWorking` flag)· το δέντρο έρχεται από τον
-/// `categoryTreeStreamProvider` και η πύλη από τους `canDelete* providers.
+/// `categoryTreeStreamProvider` και οι πύλες από τους `canDelete*` providers.
 /// Pattern `ReceiptFormController` (σύγχρονο state + async actions με flag).
 /// NON-autoDispose (§2.2:221, IndexedStack).
 ///
-/// Dup-check in-memory (`watchAll().first` / `watchByCategoryId().first` +
-/// `NameValidator.isDuplicate`) — οι πίνακες Category/SubCategory ΔΕΝ έχουν
-/// UNIQUE στήλη (`tables.dart`), άρα δεν υπάρχει `getByNormalizedName`
-/// (pattern `ItemSearchController.createCategory`, όχι reuse του instance —
-/// λάθος lifecycle/οθόνη). Το rename εξαιρεί τον εαυτό του· ίδιο normalized
-/// με τον εαυτό = no-op επιτυχία χωρίς write.
+/// Dup-check exact-match (`getByNormalizedName` — όλοι οι πίνακες καταλόγου
+/// ΕΧΟΥΝ UNIQUE `normalizedName`, §3 27-09-2026). Το rename εξαιρεί τον εαυτό
+/// του (recase επιτρέπεται)· clash με άλλον → `nameExists`.
 ///
 /// Σφάλματα: validation/dup → record `(ok:false, error:)` (inline/snackbar
-/// από το widget, pattern `_createSupplier`)· DB → `DataLoadException`
-/// ανέγγιχτο (λογκαρισμένο μία φορά στον DAO guard, feedback στο widget).
+/// από το widget)· DB → `DataLoadException` ανέγγιχτο (λογκαρισμένο μία
+/// φορά στον DAO guard, feedback στο widget).
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_errors.dart';
 import '../../../core/constants/app_messages.dart';
 import '../../../core/logging/app_logger.dart';
+import '../../../core/utils/greek_text_normalizer.dart';
 import '../../../data/providers/database_providers.dart';
 import '../../../data/providers/settings_providers.dart';
 import '../../../domain/validators/name_validator.dart';
@@ -35,7 +32,7 @@ final categoryManagementControllerProvider =
       CategoryManagementController.new,
     );
 
-/// Controller CRUD κατηγοριών/υποκατηγοριών (tree editor §2.3 · Βήμα 4).
+/// Controller CRUD κατηγοριών/υποκατηγοριών/τμημάτων (tree editor §2.3).
 class CategoryManagementController extends Notifier<SettingsState> {
   @override
   SettingsState build() => const SettingsState();
@@ -55,8 +52,8 @@ class CategoryManagementController extends Notifier<SettingsState> {
     }
   }
 
-  /// Δημιουργεί κατηγορία. Validation/dup → `(ok:false, error:)` χωρίς DB
-  /// access· επιτυχία → `(ok:true)` + log. DB σφάλμα → `DataLoadException`.
+  /// Δημιουργεί κατηγορία. Validation/dup → `(ok:false, error:)` χωρίς
+  /// περιττό write· επιτυχία → `(ok:true)` + log. DB σφάλμα → rethrow.
   Future<({bool ok, String? error})> createCategory(String name) =>
       _guarded(() async {
         final trimmed = name.trim();
@@ -64,8 +61,10 @@ class CategoryManagementController extends Notifier<SettingsState> {
           return (ok: false, error: NameValidator.validate(trimmed));
         }
         final repo = ref.read(categoryRepositoryProvider);
-        final existing = await repo.watchAll().first;
-        if (NameValidator.isDuplicate(trimmed, existing.map((c) => c.name))) {
+        final clash = await repo.getByNormalizedName(
+          GreekTextNormalizer.normalize(trimmed),
+        );
+        if (clash != null) {
           AppLogger.info(
             LogTag.ui,
             'Απόρριψη «+» κατηγορίας "$trimmed": διπλότυπο',
@@ -77,10 +76,9 @@ class CategoryManagementController extends Notifier<SettingsState> {
         return (ok: true, error: null);
       });
 
-  /// Μετονομάζει κατηγορία. Ακριβώς ίδιο κείμενο → no-op επιτυχία
-  /// (χωρίς write)· αλλαγή μόνο πεζών/τόνων ΓΡΑΦΕΤΑΙ (24-09-2026 — τα seed
-  /// είναι κεφαλαία). Dup προς αδελφό → `nameExists`. Ανύπαρκτο id →
-  /// `loadDataFailed` (το δέντρο ανανεώθηκε ενδιάμεσα — race §2.3).
+  /// Μετονομάζει κατηγορία. Ίδιο normalized με τον εαυτό → write (recase
+  /// επιτρέπεται)· clash με άλλον → `nameExists`. Ανύπαρκτο id →
+  /// `loadDataFailed` (race §2.3).
   Future<({bool ok, String? error})> renameCategory(int id, String name) =>
       _guarded(() async {
         final trimmed = name.trim();
@@ -96,11 +94,10 @@ class CategoryManagementController extends Notifier<SettingsState> {
         if (trimmed == current.name) {
           return (ok: true, error: null); // no-op — ακριβώς ίδιο κείμενο
         }
-        final existing = await repo.watchAll().first;
-        if (NameValidator.isDuplicate(
-          trimmed,
-          existing.where((c) => c.id != id).map((c) => c.name),
-        )) {
+        final clash = await repo.getByNormalizedName(
+          GreekTextNormalizer.normalize(trimmed),
+        );
+        if (clash != null && clash.id != id) {
           AppLogger.info(
             LogTag.ui,
             'Απόρριψη μετονομασίας κατηγορίας #$id σε "$trimmed": διπλότυπο',
@@ -115,7 +112,6 @@ class CategoryManagementController extends Notifier<SettingsState> {
   /// Διαγράφει κατηγορία με το περιεχόμενό της (cascade, §2.3 Α/Γ).
   /// Ελέγχει ο ΙΔΙΟΣ την πύλη (`countItemsInUse == 0`) — defense in depth
   /// πέρα από το greyed-out UI· μπλοκαρισμένη → `itemsInUseTooltip`.
-  /// Μετά το delete αποδεσμεύει το family cache του id (canDelete+inUse).
   Future<({bool ok, String? error})> deleteCategory(int id) =>
       _guarded(() async {
         final repo = ref.read(categoryRepositoryProvider);
@@ -133,8 +129,7 @@ class CategoryManagementController extends Notifier<SettingsState> {
         return (ok: true, error: null);
       });
 
-  /// Δημιουργεί υποκατηγορία στην [categoryId]. Dup-check εντός της
-  /// κατηγορίας (in-memory, scope Βήματος 4 — όχι global).
+  /// Δημιουργεί υποκατηγορία στην [categoryId] (exact-match dup-check).
   Future<({bool ok, String? error})> createSubCategory({
     required int categoryId,
     required String name,
@@ -144,8 +139,10 @@ class CategoryManagementController extends Notifier<SettingsState> {
       return (ok: false, error: NameValidator.validate(trimmed));
     }
     final repo = ref.read(subCategoryRepositoryProvider);
-    final existing = await repo.watchByCategoryId(categoryId).first;
-    if (NameValidator.isDuplicate(trimmed, existing.map((s) => s.name))) {
+    final clash = await repo.getByNormalizedName(
+      GreekTextNormalizer.normalize(trimmed),
+    );
+    if (clash != null) {
       AppLogger.info(
         LogTag.ui,
         'Απόρριψη «+» υποκατηγορίας "$trimmed": διπλότυπο',
@@ -160,9 +157,8 @@ class CategoryManagementController extends Notifier<SettingsState> {
     return (ok: true, error: null);
   });
 
-  /// Μετονομάζει υποκατηγορία (χωρίς αλλαγή κατηγορίας — καμία μετακίνηση,
-  /// εκτός scope Βήματος 4). Ακριβώς ίδιο κείμενο → no-op (24-09-2026).
-  /// Dup-check εντός της ίδιας κατηγορίας.
+  /// Μετονομάζει υποκατηγορία (χωρίς αλλαγή κατηγορίας — εκτός scope).
+  /// Recase επιτρέπεται· clash με άλλον → `nameExists`.
   Future<({bool ok, String? error})> renameSubCategory(int id, String name) =>
       _guarded(() async {
         final trimmed = name.trim();
@@ -178,13 +174,10 @@ class CategoryManagementController extends Notifier<SettingsState> {
         if (trimmed == current.name) {
           return (ok: true, error: null); // no-op — ακριβώς ίδιο κείμενο
         }
-        final siblings = await repo
-            .watchByCategoryId(current.categoryId)
-            .first;
-        if (NameValidator.isDuplicate(
-          trimmed,
-          siblings.where((s) => s.id != id).map((s) => s.name),
-        )) {
+        final clash = await repo.getByNormalizedName(
+          GreekTextNormalizer.normalize(trimmed),
+        );
+        if (clash != null && clash.id != id) {
           AppLogger.info(
             LogTag.ui,
             'Απόρριψη μετονομασίας υποκατηγορίας #$id σε "$trimmed": διπλότυπο',
@@ -196,8 +189,7 @@ class CategoryManagementController extends Notifier<SettingsState> {
         return (ok: true, error: null);
       });
 
-  /// Διαγράφει υποκατηγορία με τα ορφανά είδη της (cascade, §2.3 Α/Γ).
-  /// Ίδια πύλη + cache-αποδέσμευση με την κατηγορία.
+  /// Διαγράφει υποκατηγορία με τμήματα + ορφανά είδη (cascade, §2.3 Α/Γ).
   Future<({bool ok, String? error})> deleteSubCategory(int id) =>
       _guarded(() async {
         final repo = ref.read(subCategoryRepositoryProvider);
@@ -215,9 +207,85 @@ class CategoryManagementController extends Notifier<SettingsState> {
         return (ok: true, error: null);
       });
 
+  /// Δημιουργεί τμήμα στην [subCategoryId] (27-09-2026 · exact-match).
+  Future<({bool ok, String? error})> createItemGroup({
+    required int subCategoryId,
+    required String name,
+  }) => _guarded(() async {
+    final trimmed = name.trim();
+    if (NameValidator.validate(trimmed) != null) {
+      return (ok: false, error: NameValidator.validate(trimmed));
+    }
+    final repo = ref.read(itemGroupRepositoryProvider);
+    final clash = await repo.getByNormalizedName(
+      GreekTextNormalizer.normalize(trimmed),
+    );
+    if (clash != null) {
+      AppLogger.info(
+        LogTag.ui,
+        'Απόρριψη «+» τμήματος "$trimmed": διπλότυπο',
+      );
+      return (ok: false, error: AppErrors.nameExists);
+    }
+    final id = await repo.insert(subCategoryId: subCategoryId, name: trimmed);
+    AppLogger.info(
+      LogTag.db,
+      'Δημιουργία τμήματος: $trimmed (#$id, sub #$subCategoryId)',
+    );
+    return (ok: true, error: null);
+  });
+
+  /// Μετονομάζει τμήμα (χωρίς αλλαγή υποκατηγορίας). Recase επιτρέπεται.
+  Future<({bool ok, String? error})> renameItemGroup(int id, String name) =>
+      _guarded(() async {
+        final trimmed = name.trim();
+        final validationError = NameValidator.validate(trimmed);
+        if (validationError != null) {
+          return (ok: false, error: validationError);
+        }
+        final repo = ref.read(itemGroupRepositoryProvider);
+        final current = await repo.getById(id);
+        if (current == null) {
+          return (ok: false, error: AppErrors.loadDataFailed);
+        }
+        if (trimmed == current.name) {
+          return (ok: true, error: null); // no-op — ακριβώς ίδιο κείμενο
+        }
+        final clash = await repo.getByNormalizedName(
+          GreekTextNormalizer.normalize(trimmed),
+        );
+        if (clash != null && clash.id != id) {
+          AppLogger.info(
+            LogTag.ui,
+            'Απόρριψη μετονομασίας τμήματος #$id σε "$trimmed": διπλότυπο',
+          );
+          return (ok: false, error: AppErrors.nameExists);
+        }
+        await repo.updateById(id, name: trimmed);
+        AppLogger.info(LogTag.db, 'Μετονομασία τμήματος #$id: $trimmed');
+        return (ok: true, error: null);
+      });
+
+  /// Διαγράφει τμήμα με τα ορφανά είδη του (cascade, §2.3 Α/Γ).
+  Future<({bool ok, String? error})> deleteItemGroup(int id) =>
+      _guarded(() async {
+        final repo = ref.read(itemGroupRepositoryProvider);
+        final inUse = await repo.countItemsInUse(id);
+        if (inUse > 0) {
+          return (ok: false, error: AppMessages.itemsInUseTooltip(inUse));
+        }
+        final deleted = await repo.deleteWithContents(id);
+        if (!deleted) {
+          return (ok: false, error: AppErrors.loadDataFailed);
+        }
+        ref.invalidate(canDeleteItemGroupProvider(id));
+        ref.invalidate(inUseCountItemGroupProvider(id));
+        AppLogger.info(LogTag.db, 'Διαγραφή τμήματος #$id (cascade)');
+        return (ok: true, error: null);
+      });
+
   /// Σύνολο ειδών κατηγορίας για το cascade confirm («θα σβηστούν Ν είδη»).
-  /// One-shot την ώρα του tap — όχι provider (Βήμα 4, Δ1 επανελέγχου).
-  /// DB σφάλμα → `DataLoadException` (widget δείχνει `loadDataFailed`).
+  /// One-shot την ώρα του tap — DB σφάλμα → `DataLoadException`.
   Future<int> getCategoryItemCount(int categoryId) =>
       ref.read(categoryRepositoryProvider).countItems(categoryId);
 
@@ -225,12 +293,16 @@ class CategoryManagementController extends Notifier<SettingsState> {
   Future<int> getSubCategoryItemCount(int subCategoryId) =>
       ref.read(subCategoryRepositoryProvider).countItems(subCategoryId);
 
-  /// Ανανέωση ΟΛΩΝ των ορατών πυλών (stale one-shot bools, IndexedStack):
-  /// το PriceEntry προσθέτει γραμμές χωρίς να ξανατρέχουν τα families.
+  /// Σύνολο ειδών τμήματος για το cascade confirm (27-09-2026).
+  Future<int> getItemGroupItemCount(int itemGroupId) =>
+      ref.read(itemGroupRepositoryProvider).countItems(itemGroupId);
+
+  /// Ανανέωση ΟΛΩΝ των ορατών πυλών (stale one-shot bools, IndexedStack).
   /// Καλείται από το κουμπί ανανέωσης με τα ids του τρέχοντος δέντρου.
   void refreshGuards({
     required Iterable<int> categoryIds,
     required Iterable<int> subCategoryIds,
+    required Iterable<int> itemGroupIds,
   }) {
     for (final id in categoryIds) {
       ref.invalidate(canDeleteCategoryProvider(id));
@@ -239,6 +311,10 @@ class CategoryManagementController extends Notifier<SettingsState> {
     for (final id in subCategoryIds) {
       ref.invalidate(canDeleteSubCategoryProvider(id));
       ref.invalidate(inUseCountSubCategoryProvider(id));
+    }
+    for (final id in itemGroupIds) {
+      ref.invalidate(canDeleteItemGroupProvider(id));
+      ref.invalidate(inUseCountItemGroupProvider(id));
     }
     AppLogger.info(LogTag.ui, 'Ανανέωση ελέγχων διαγραφής καταλόγου');
   }

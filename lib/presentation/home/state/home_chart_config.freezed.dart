@@ -291,7 +291,7 @@ as DateTime?,
 /// @nodoc
 mixin _$HomeChartConfig {
 
- ChartEntry get supplier; ChartEntry get category; ChartEntry get subCategory; ChartEntry get topItems;
+ ChartEntry get supplier; ChartEntry get category; ChartEntry get itemGroup; ChartEntry get topItems;
 /// Create a copy of HomeChartConfig
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -303,20 +303,20 @@ $HomeChartConfigCopyWith<HomeChartConfig> get copyWith => _$HomeChartConfigCopyW
 @override
 bool operator ==(Object other) {
   final _this = this as HomeChartConfig;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeChartConfig&&(identical(other.supplier, _this.supplier) || other.supplier == _this.supplier)&&(identical(other.category, _this.category) || other.category == _this.category)&&(identical(other.subCategory, _this.subCategory) || other.subCategory == _this.subCategory)&&(identical(other.topItems, _this.topItems) || other.topItems == _this.topItems));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is HomeChartConfig&&(identical(other.supplier, _this.supplier) || other.supplier == _this.supplier)&&(identical(other.category, _this.category) || other.category == _this.category)&&(identical(other.itemGroup, _this.itemGroup) || other.itemGroup == _this.itemGroup)&&(identical(other.topItems, _this.topItems) || other.topItems == _this.topItems));
 }
 
 
 @override
 int get hashCode {
   final _this = this as HomeChartConfig;
-  return Object.hash(runtimeType,_this.supplier,_this.category,_this.subCategory,_this.topItems);
+  return Object.hash(runtimeType,_this.supplier,_this.category,_this.itemGroup,_this.topItems);
 }
 
 @override
 String toString() {
   final _this = this as HomeChartConfig;
-  return 'HomeChartConfig(supplier: ${_this.supplier}, category: ${_this.category}, subCategory: ${_this.subCategory}, topItems: ${_this.topItems})';
+  return 'HomeChartConfig(supplier: ${_this.supplier}, category: ${_this.category}, itemGroup: ${_this.itemGroup}, topItems: ${_this.topItems})';
 }
 
 
@@ -327,11 +327,11 @@ abstract mixin class $HomeChartConfigCopyWith<$Res>  {
   factory $HomeChartConfigCopyWith(HomeChartConfig value, $Res Function(HomeChartConfig) _then) = _$HomeChartConfigCopyWithImpl;
 @useResult
 $Res call({
- ChartEntry supplier, ChartEntry category, ChartEntry subCategory, ChartEntry topItems
+ ChartEntry supplier, ChartEntry category, ChartEntry itemGroup, ChartEntry topItems
 });
 
 
-$ChartEntryCopyWith<$Res> get supplier;$ChartEntryCopyWith<$Res> get category;$ChartEntryCopyWith<$Res> get subCategory;$ChartEntryCopyWith<$Res> get topItems;
+$ChartEntryCopyWith<$Res> get supplier;$ChartEntryCopyWith<$Res> get category;$ChartEntryCopyWith<$Res> get itemGroup;$ChartEntryCopyWith<$Res> get topItems;
 
 }
 /// @nodoc
@@ -344,11 +344,11 @@ class _$HomeChartConfigCopyWithImpl<$Res>
 
 /// Create a copy of HomeChartConfig
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? supplier = null,Object? category = null,Object? subCategory = null,Object? topItems = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? supplier = null,Object? category = null,Object? itemGroup = null,Object? topItems = null,}) {
   return _then(HomeChartConfig(
 supplier: null == supplier ? _self.supplier : supplier // ignore: cast_nullable_to_non_nullable
 as ChartEntry,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
-as ChartEntry,subCategory: null == subCategory ? _self.subCategory : subCategory // ignore: cast_nullable_to_non_nullable
+as ChartEntry,itemGroup: null == itemGroup ? _self.itemGroup : itemGroup // ignore: cast_nullable_to_non_nullable
 as ChartEntry,topItems: null == topItems ? _self.topItems : topItems // ignore: cast_nullable_to_non_nullable
 as ChartEntry,
   ));
@@ -375,10 +375,10 @@ $ChartEntryCopyWith<$Res> get category {
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$ChartEntryCopyWith<$Res> get subCategory {
+$ChartEntryCopyWith<$Res> get itemGroup {
   
-  return $ChartEntryCopyWith<$Res>(_self.subCategory, (value) {
-    return _then(_self.copyWith(subCategory: value));
+  return $ChartEntryCopyWith<$Res>(_self.itemGroup, (value) {
+    return _then(_self.copyWith(itemGroup: value));
   });
 }/// Create a copy of HomeChartConfig
 /// with the given fields replaced by the non-null parameter values.
@@ -471,10 +471,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ChartEntry supplier,  ChartEntry category,  ChartEntry subCategory,  ChartEntry topItems)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ChartEntry supplier,  ChartEntry category,  ChartEntry itemGroup,  ChartEntry topItems)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _HomeChartConfig() when $default != null:
-return $default(_that.supplier,_that.category,_that.subCategory,_that.topItems);case _:
+return $default(_that.supplier,_that.category,_that.itemGroup,_that.topItems);case _:
   return orElse();
 
 }
@@ -492,10 +492,10 @@ return $default(_that.supplier,_that.category,_that.subCategory,_that.topItems);
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ChartEntry supplier,  ChartEntry category,  ChartEntry subCategory,  ChartEntry topItems)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ChartEntry supplier,  ChartEntry category,  ChartEntry itemGroup,  ChartEntry topItems)  $default,) {final _that = this;
 switch (_that) {
 case _HomeChartConfig():
-return $default(_that.supplier,_that.category,_that.subCategory,_that.topItems);case _:
+return $default(_that.supplier,_that.category,_that.itemGroup,_that.topItems);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -512,10 +512,10 @@ return $default(_that.supplier,_that.category,_that.subCategory,_that.topItems);
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ChartEntry supplier,  ChartEntry category,  ChartEntry subCategory,  ChartEntry topItems)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ChartEntry supplier,  ChartEntry category,  ChartEntry itemGroup,  ChartEntry topItems)?  $default,) {final _that = this;
 switch (_that) {
 case _HomeChartConfig() when $default != null:
-return $default(_that.supplier,_that.category,_that.subCategory,_that.topItems);case _:
+return $default(_that.supplier,_that.category,_that.itemGroup,_that.topItems);case _:
   return null;
 
 }
@@ -527,12 +527,12 @@ return $default(_that.supplier,_that.category,_that.subCategory,_that.topItems);
 
 
 class _HomeChartConfig implements HomeChartConfig {
-  const _HomeChartConfig({required this.supplier, required this.category, required this.subCategory, required this.topItems});
+  const _HomeChartConfig({required this.supplier, required this.category, required this.itemGroup, required this.topItems});
   
 
 @override final  ChartEntry supplier;
 @override final  ChartEntry category;
-@override final  ChartEntry subCategory;
+@override final  ChartEntry itemGroup;
 @override final  ChartEntry topItems;
 
 /// Create a copy of HomeChartConfig
@@ -545,18 +545,18 @@ _$HomeChartConfigCopyWith<_HomeChartConfig> get copyWith => __$HomeChartConfigCo
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _HomeChartConfig&&(identical(other.supplier, supplier) || other.supplier == supplier)&&(identical(other.category, category) || other.category == category)&&(identical(other.subCategory, subCategory) || other.subCategory == subCategory)&&(identical(other.topItems, topItems) || other.topItems == topItems));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _HomeChartConfig&&(identical(other.supplier, supplier) || other.supplier == supplier)&&(identical(other.category, category) || other.category == category)&&(identical(other.itemGroup, itemGroup) || other.itemGroup == itemGroup)&&(identical(other.topItems, topItems) || other.topItems == topItems));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,supplier,category,subCategory,topItems);
+    return Object.hash(runtimeType,supplier,category,itemGroup,topItems);
 }
 
 @override
 String toString() {
-    return 'HomeChartConfig(supplier: $supplier, category: $category, subCategory: $subCategory, topItems: $topItems)';
+    return 'HomeChartConfig(supplier: $supplier, category: $category, itemGroup: $itemGroup, topItems: $topItems)';
 }
 
 
@@ -567,11 +567,11 @@ abstract mixin class _$HomeChartConfigCopyWith<$Res> implements $HomeChartConfig
   factory _$HomeChartConfigCopyWith(_HomeChartConfig value, $Res Function(_HomeChartConfig) _then) = __$HomeChartConfigCopyWithImpl;
 @override @useResult
 $Res call({
- ChartEntry supplier, ChartEntry category, ChartEntry subCategory, ChartEntry topItems
+ ChartEntry supplier, ChartEntry category, ChartEntry itemGroup, ChartEntry topItems
 });
 
 
-@override $ChartEntryCopyWith<$Res> get supplier;@override $ChartEntryCopyWith<$Res> get category;@override $ChartEntryCopyWith<$Res> get subCategory;@override $ChartEntryCopyWith<$Res> get topItems;
+@override $ChartEntryCopyWith<$Res> get supplier;@override $ChartEntryCopyWith<$Res> get category;@override $ChartEntryCopyWith<$Res> get itemGroup;@override $ChartEntryCopyWith<$Res> get topItems;
 
 }
 /// @nodoc
@@ -584,11 +584,11 @@ class __$HomeChartConfigCopyWithImpl<$Res>
 
 /// Create a copy of HomeChartConfig
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? supplier = null,Object? category = null,Object? subCategory = null,Object? topItems = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? supplier = null,Object? category = null,Object? itemGroup = null,Object? topItems = null,}) {
   return _then(_HomeChartConfig(
 supplier: null == supplier ? _self.supplier : supplier // ignore: cast_nullable_to_non_nullable
 as ChartEntry,category: null == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
-as ChartEntry,subCategory: null == subCategory ? _self.subCategory : subCategory // ignore: cast_nullable_to_non_nullable
+as ChartEntry,itemGroup: null == itemGroup ? _self.itemGroup : itemGroup // ignore: cast_nullable_to_non_nullable
 as ChartEntry,topItems: null == topItems ? _self.topItems : topItems // ignore: cast_nullable_to_non_nullable
 as ChartEntry,
   ));
@@ -616,10 +616,10 @@ $ChartEntryCopyWith<$Res> get category {
 /// with the given fields replaced by the non-null parameter values.
 @override
 @pragma('vm:prefer-inline')
-$ChartEntryCopyWith<$Res> get subCategory {
+$ChartEntryCopyWith<$Res> get itemGroup {
   
-  return $ChartEntryCopyWith<$Res>(_self.subCategory, (value) {
-    return _then(_self.copyWith(subCategory: value));
+  return $ChartEntryCopyWith<$Res>(_self.itemGroup, (value) {
+    return _then(_self.copyWith(itemGroup: value));
   });
 }/// Create a copy of HomeChartConfig
 /// with the given fields replaced by the non-null parameter values.

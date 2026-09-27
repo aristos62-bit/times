@@ -49,8 +49,8 @@ void main() {
     );
   }
 
-  /// Πλήρης αλυσίδα seed για αποδείξεις (unit → category → sub → items →
-  /// supplier) — επιστρέφει τα id που χρειάζονται τα receipt tests.
+  /// Πλήρης αλυσίδα seed για αποδείξεις (unit → category → sub → group →
+  /// items → supplier) — επιστρέφει τα id που χρειάζονται τα receipt tests.
   Future<({int supplierId, int itemId, int unitId})> seedReceiptChain(
     ProviderContainer container,
   ) async {
@@ -64,9 +64,12 @@ void main() {
     final subId = await container
         .read(subCategoryRepositoryProvider)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    final groupId = await container
+        .read(itemGroupRepositoryProvider)
+        .insert(subCategoryId: subId, name: 'Φέτα');
     final itemId = await container
         .read(itemRepositoryProvider)
-        .insert(subCategoryId: subId, name: 'Γάλα');
+        .insert(itemGroupId: groupId, name: 'Γάλα');
     final supplierId =
         await container.read(supplierRepositoryProvider).insert(name: 'Μάρκος');
     return (supplierId: supplierId, itemId: itemId, unitId: unitId);

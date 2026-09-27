@@ -1,8 +1,10 @@
-/// Κοινοί τύποι δεδομένων seed (Dart records) — Φάση 1, Βήμα 3.
+/// Κοινοί τύποι δεδομένων seed (Dart records) — Refactor 4 επιπέδων 27-09-2026.
 ///
 /// Τα seed δεδομένα γράφονται με **ονόματα** (όχι αριθμητικά IDs) για να
 /// παραμένουν αναγνώσιμα και ανεξάρτητα από τη σειρά εισαγωγής. Οι μετατροπές
 /// σε αριθμητικά references γίνονται κεντρικά στο `seed_runner.dart`.
+/// Καταλόγου 4 επιπέδων: Category ▸ SubCategory ▸ ItemGroup (Τμήμα).
+/// Είδη ΔΕΝ seed-άρονται (απόφαση 27-09-2026 — δημιουργούνται από το UI).
 library;
 
 /// Μονάδα μέτρησης που θα γίνει γραμμή του πίνακα `units`.
@@ -23,12 +25,9 @@ typedef SubCategorySeed = ({
   String categoryName,
 });
 
-/// Είδος που αναφέρεται στην υποκατηγορία [SubCategorySeed.name] και —
-/// προαιρετικά — στη μονάδα [UnitSeed.name] ως προτεινόμενη `defaultUnitId`.
-/// Το [defaultUnitName] είναι `null` όταν η φύση του προϊόντος δεν είναι
-/// μονοσήμαντη (π.χ. κονσέρβες, αξεσουάρ).
-typedef ItemSeed = ({
+/// Τμήμα που αναφέρεται στην υποκατηγορία [SubCategorySeed.name].
+/// Ορατό όνομα UI: «Τμήμα» (27-09-2026).
+typedef ItemGroupSeed = ({
   String name,
   String subCategoryName,
-  String? defaultUnitName,
 });

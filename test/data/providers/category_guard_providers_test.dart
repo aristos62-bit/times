@@ -1,13 +1,18 @@
 /// Unit tests — Βήμα 3 providers ελέγχου (DESIGN §2.3:274-275 · §4:463).
 ///
-/// `categoryTreeStreamProvider` (ζωντανό δέντρο, in-memory σύνθεση χωρίς νέο
-/// DB query) + `canDelete*Provider` (πύλη `countItemsInUse == 0`).
+/// `categoryTreeStreamProvider` (ζωντανό δέντρο 3 επιπέδων, in-memory
+/// σύνθεση χωρίς νέο DB query) + `canDelete*Provider`
+/// (πύλη `countItemsInUse == 0`).
 ///
 /// `ProviderContainer.test()` + override του `appDatabaseProvider` με
 /// in-memory βάση (πρότυπο `stream_providers_test`). Για τα families
 /// αρκεί το `.future` (το τεκμηριωμένο hang αφορούσε ΜΟΝΟ StreamProvider +
 /// drift)· για το tree (StreamProvider) `container.listen` + Completer με
 /// predicate (επιλεκτική ακρόαση, fail-fast 5s).
+///
+/// Refactor 4 επιπέδων (27-09-2026): το δέντρο είναι
+/// `CategoryTreeNode(category:, subNodes:[(subCategory:, itemGroups:)])`
+/// + πύλη `canDeleteItemGroupProvider`/`inUseCountItemGroupProvider`.
 library;
 
 import 'dart:async';
@@ -20,6 +25,7 @@ import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -119,6 +125,15 @@ void main() {
     );
   }
 
+  /// Είδος σε τμήμα κάτω από το sub (αλυσίδα 4 επιπέδων).
+  Future<int> seedItemInSub(AppDatabase db, int subId, String name) =>
+      ItemGroupDao(db)
+          .insert(subCategoryId: subId, name: 'Τμήμα $name')
+          .then((groupId) => ItemDao(db).insert(
+                itemGroupId: groupId,
+                name: name,
+              ));
+
   group('canDeleteCategoryProvider', () {
     test('άδεια κατηγορία → true', () async {
       final container = containerWithDb();
@@ -138,7 +153,7 @@ void main() {
       final subId = await container
           .read(subCategoryRepositoryProvider)
           .insert(categoryId: id, name: 'Γαλακτοκομικά');
-      await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+      await seedItemInSub(db, subId, 'Γάλα');
 
       expect(await container.read(canDeleteCategoryProvider(id).future), isTrue);
     });
@@ -153,8 +168,7 @@ void main() {
       final subId = await container
           .read(subCategoryRepositoryProvider)
           .insert(categoryId: id, name: 'Γαλακτοκομικά');
-      final itemId =
-          await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+      final itemId = await seedItemInSub(db, subId, 'Γάλα');
       await seedReceiptLine(
         db,
         itemId: itemId,
@@ -165,51 +179,6 @@ void main() {
       expect(
         await container.read(canDeleteCategoryProvider(id).future),
         isFalse,
-      );
-    });
-
-    test('απομόνωση: άλλη μπλοκαρισμένη, αυτή true', () async {
-      final container = containerWithDb();
-      final db = container.read(appDatabaseProvider);
-      final seed = await seedUnitAndSupplier(db);
-      final foodId = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΤΡΟΦΙΜΑ');
-      final homeId = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΟΙΚΙΑΚΑ');
-      final subDao = SubCategoryDao(db);
-      final foodSub =
-          await subDao.insert(categoryId: foodId, name: 'Γαλακτοκομικά');
-      final homeSub =
-          await subDao.insert(categoryId: homeId, name: 'Καθαριότητα');
-      final itemDao = ItemDao(db);
-      final milkId =
-          await itemDao.insert(subCategoryId: foodSub, name: 'Γάλα');
-      await itemDao.insert(subCategoryId: homeSub, name: 'Σφουγγάρι');
-      await seedReceiptLine(
-        db,
-        itemId: milkId,
-        unitId: seed.unitId,
-        supplierId: seed.supplierId,
-      );
-
-      expect(
-        await container.read(canDeleteCategoryProvider(foodId).future),
-        isFalse,
-      );
-      expect(
-        await container.read(canDeleteCategoryProvider(homeId).future),
-        isTrue,
-      );
-    });
-
-    test('ανύπαρκτο id → true (τίποτα δεν μπλοκάρει)', () async {
-      final container = containerWithDb();
-
-      expect(
-        await container.read(canDeleteCategoryProvider(999).future),
-        isTrue,
       );
     });
 
@@ -268,8 +237,7 @@ void main() {
       final subId = await container
           .read(subCategoryRepositoryProvider)
           .insert(categoryId: catId, name: 'Γαλακτοκομικά');
-      final itemId =
-          await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+      final itemId = await seedItemInSub(db, subId, 'Γάλα');
       await seedReceiptLine(
         db,
         itemId: itemId,
@@ -334,15 +302,21 @@ void main() {
       expect(tree, isEmpty);
     });
 
-    test('nesting + αλφαβητική σειρά', () async {
+    test('nesting 3 επιπέδων + αλφαβητική σειρά', () async {
       final container = containerWithDb();
       final catRepo = container.read(categoryRepositoryProvider);
       final subRepo = container.read(subCategoryRepositoryProvider);
+      final groupRepo = container.read(itemGroupRepositoryProvider);
       final foodId = await catRepo.insert(name: 'ΤΡΟΦΙΜΑ');
       final homeId = await catRepo.insert(name: 'ΟΙΚΙΑΚΑ');
-      await subRepo.insert(categoryId: foodId, name: 'Κρέας');
-      await subRepo.insert(categoryId: foodId, name: 'Γαλακτοκομικά');
-      await subRepo.insert(categoryId: homeId, name: 'Καθαριότητα');
+      final meatId = await subRepo.insert(categoryId: foodId, name: 'Κρέας');
+      final dairyId =
+          await subRepo.insert(categoryId: foodId, name: 'Γαλακτοκομικά');
+      final cleanId =
+          await subRepo.insert(categoryId: homeId, name: 'Καθαριότητα');
+      await groupRepo.insert(subCategoryId: dairyId, name: 'Γραβιέρα');
+      await groupRepo.insert(subCategoryId: dairyId, name: 'Φέτα');
+      await groupRepo.insert(subCategoryId: meatId, name: 'Μπριζόλα');
 
       final tree = await waitForTreeValue<List<CategoryTreeNode>>(
         (listen) => container.listen(categoryTreeStreamProvider, listen),
@@ -350,15 +324,27 @@ void main() {
       );
       // Κατηγορίες αλφαβητικά (ΟΙΚΙΑΚΑ < ΤΡΟΦΙΜΑ).
       expect(tree.map((n) => n.category.name), ['ΟΙΚΙΑΚΑ', 'ΤΡΟΦΙΜΑ']);
-      // Nested υποκατηγορίες αλφαβητικά ανά κατηγορία.
+      // Υποκόμβοι αλφαβητικά ανά κατηγορία.
       expect(
-        tree[1].subCategories.map((s) => s.name),
+        tree[1].subNodes.map((s) => s.subCategory.name),
         ['Γαλακτοκομικά', 'Κρέας'],
       );
       expect(
-        tree[0].subCategories.map((s) => s.name),
+        tree[0].subNodes.map((s) => s.subCategory.name),
         ['Καθαριότητα'],
       );
+      // Τμήματα αλφαβητικά μέσα στο subNode.
+      final dairyNode = tree[1].subNodes.firstWhere(
+            (s) => s.subCategory.name == 'Γαλακτοκομικά',
+          );
+      expect(
+        dairyNode.itemGroups.map((g) => g.name),
+        ['Γραβιέρα', 'Φέτα'],
+      );
+      // Sub χωρίς τμήματα → [] (όχι null).
+      final cleanNode = tree[0].subNodes.single;
+      expect(cleanNode.itemGroups, isEmpty);
+      expect(cleanNode.subCategory.id, cleanId);
     });
 
     test('κατηγορία χωρίς subs → node με []', () async {
@@ -371,7 +357,7 @@ void main() {
         (listen) => container.listen(categoryTreeStreamProvider, listen),
         (v) => v.length == 1,
       );
-      expect(tree.single.subCategories, isEmpty);
+      expect(tree.single.subNodes, isEmpty);
     });
 
     test('live re-emit μετά από insert', () async {

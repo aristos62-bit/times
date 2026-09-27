@@ -1,8 +1,13 @@
-/// Unit tests — `CategoryManagementController` (§2.3 / Φάση 4 Βήμα 4).
+/// Unit tests — `CategoryManagementController` (κατάλογος 4 επιπέδων §2.3).
 ///
 /// Validation/dup/no-op/gate μέσω record `(ok, error)` + `DataLoadException`
 /// propagation σε DB αποτυχία. `ProviderContainer.test()` + in-memory βάση
 /// (pattern `category_guard_providers_test`).
+///
+/// Dup-check exact-match (UNIQUE `normalizedName`, §3 27-09-2026): η
+/// κανονικοποίηση ζει στο DAO· recase του ΕΑΥΤΟΥ γράφεται (self-clash →
+/// write), clash με ΑΛΛΟΝ → `nameExists`. Το scope είναι πλέον GLOBAL (όχι
+/// ανά γονέα — το UNIQUE είναι στον πίνακα).
 library;
 
 import 'package:drift/native.dart';
@@ -51,6 +56,24 @@ void main() {
 
   CategoryManagementController controller() =>
       container.read(categoryManagementControllerProvider.notifier);
+
+  /// Σπέρνει αλυσίδα Κατηγορία ▸ Υποκατηγορία ▸ Τμήμα (επιστρέφει τα ids).
+  Future<({int catId, int subId, int groupId})> seedChain({
+    String category = 'ΤΡΟΦΙΜΑ',
+    String sub = 'Γαλακτοκομικά',
+    String group = 'Φρέσκα',
+  }) async {
+    final catId = await container
+        .read(categoryRepositoryProvider)
+        .insert(name: category);
+    final subId = await container
+        .read(subCategoryRepositoryProvider)
+        .insert(categoryId: catId, name: sub);
+    final groupId = await container
+        .read(itemGroupRepositoryProvider)
+        .insert(subCategoryId: subId, name: group);
+    return (catId: catId, subId: subId, groupId: groupId);
+  }
 
   /// Σπέρνει μονάδα + προμηθευτή + γραμμή για το είδος (μπλοκάρισμα).
   Future<void> seedLineInUse(int itemId) async {
@@ -106,7 +129,7 @@ void main() {
       );
     });
 
-    test('διπλότυπο (case/tone-insensitive) → nameExists', () async {
+    test('διπλότυπο exact-match (normalized) → nameExists', () async {
       await controller().createCategory('ΤΡΟΦΙΜΑ');
       final result = await controller().createCategory('τροφιμα');
       expect(result, (ok: false, error: AppErrors.nameExists));
@@ -138,7 +161,8 @@ void main() {
       );
     });
 
-    test('ίδιο όνομα, άλλη πεζότητα → ΓΡΑΦΕΤΑΙ (24-09-2026)', () async {
+    test('ίδιο όνομα, άλλη πεζότητα → ΓΡΑΦΕΤΑΙ (self-clash → write)',
+        () async {
       final id = await container
           .read(categoryRepositoryProvider)
           .insert(name: 'ΤΡΟΦΙΜΑ');
@@ -166,42 +190,34 @@ void main() {
   });
 
   group('deleteCategory', () {
-    test('καθαρή με είδη → ok + cascade', () async {
-      final catId = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId = await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: catId, name: 'Γαλακτοκομικά');
-      await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    test('καθαρή με είδη → ok + cascade (4 επίπεδα)', () async {
+      final ids = await seedChain();
+      final itemId = await ItemDao(
+        db,
+      ).insert(itemGroupId: ids.groupId, name: 'Γάλα');
 
-      final result = await controller().deleteCategory(catId);
+      final result = await controller().deleteCategory(ids.catId);
       expect(result, (ok: true, error: null));
       expect(
-        await container.read(categoryRepositoryProvider).getById(catId),
+        await container.read(categoryRepositoryProvider).getById(ids.catId),
         isNull,
       );
+      expect(await ItemDao(db).getById(itemId), isNull);
     });
 
     test('μπλοκαρισμένη → ok:false + itemsInUseTooltip', () async {
-      final catId = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId = await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: catId, name: 'Γαλακτοκομικά');
-      final itemId = await ItemDao(db).insert(
-        subCategoryId: subId,
-        name: 'Γάλα',
-      );
+      final ids = await seedChain();
+      final itemId = await ItemDao(
+        db,
+      ).insert(itemGroupId: ids.groupId, name: 'Γάλα');
       await seedLineInUse(itemId);
 
-      final result = await controller().deleteCategory(catId);
+      final result = await controller().deleteCategory(ids.catId);
       expect(result.ok, isFalse);
       expect(result.error, AppMessages.itemsInUseTooltip(1));
       // Τίποτα δεν σβήστηκε (gate πριν το transaction).
       expect(
-        await container.read(categoryRepositoryProvider).getById(catId),
+        await container.read(categoryRepositoryProvider).getById(ids.catId),
         isNotNull,
       );
     });
@@ -212,7 +228,7 @@ void main() {
     });
   });
 
-  group('subCategory CRUD', () {
+  group('subCategory CRUD (4 επίπεδα)', () {
     test('create + rename + delete ροή', () async {
       final catId = await container
           .read(categoryRepositoryProvider)
@@ -224,14 +240,14 @@ void main() {
       );
       expect(result, (ok: true, error: null));
 
-      // Dup εντός ίδιας κατηγορίας → nameExists.
+      // Dup exact-match (global UNIQUE §3) → nameExists.
       result = await controller().createSubCategory(
         categoryId: catId,
         name: 'γαλακτοκομικα',
       );
       expect(result, (ok: false, error: AppErrors.nameExists));
 
-      // Ίδιο όνομα σε ΑΛΛΗ κατηγορία → επιτρέπεται (scope ανά κατηγορία).
+      // Ίδιο όνομα σε ΑΛΛΗ κατηγορία → nameExists (UNIQUE πίνακα, 27-09-2026).
       final otherCat = await container
           .read(categoryRepositoryProvider)
           .insert(name: 'ΟΙΚΙΑΚΑ');
@@ -239,7 +255,7 @@ void main() {
         categoryId: otherCat,
         name: 'Γαλακτοκομικά',
       );
-      expect(result, (ok: true, error: null));
+      expect(result, (ok: false, error: AppErrors.nameExists));
 
       final subs = await container
           .read(subCategoryRepositoryProvider)
@@ -250,6 +266,15 @@ void main() {
       result = await controller().renameSubCategory(subId, 'Τυροκομικά');
       expect(result, (ok: true, error: null));
 
+      // Recase εαυτού → γράφεται (self-clash → write).
+      result = await controller().renameSubCategory(subId, 'ΤΥΡΟΚΟΜΙΚΑ');
+      expect(result, (ok: true, error: null));
+      expect(
+        (await container.read(subCategoryRepositoryProvider).getById(subId))!
+            .name,
+        'ΤΥΡΟΚΟΜΙΚΑ',
+      );
+
       result = await controller().deleteSubCategory(subId);
       expect(result, (ok: true, error: null));
       expect(
@@ -259,43 +284,183 @@ void main() {
     });
 
     test('delete μπλοκαρισμένης → tooltip, τίποτα δεν σβήνεται', () async {
-      final catId = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId = await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: catId, name: 'Γαλακτοκομικά');
-      final itemId = await ItemDao(db).insert(
-        subCategoryId: subId,
-        name: 'Γάλα',
-      );
+      final ids = await seedChain();
+      final itemId = await ItemDao(
+        db,
+      ).insert(itemGroupId: ids.groupId, name: 'Γάλα');
       await seedLineInUse(itemId);
 
-      final result = await controller().deleteSubCategory(subId);
+      final result = await controller().deleteSubCategory(ids.subId);
       expect(result.ok, isFalse);
       expect(result.error, AppMessages.itemsInUseTooltip(1));
     });
   });
 
-  group('counts + refresh + σφάλματα', () {
-    test('getCategoryItemCount/getSubCategoryItemCount', () async {
-      final catId = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId = await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: catId, name: 'Γαλακτοκομικά');
-      await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
-
-      expect(await controller().getCategoryItemCount(catId), 1);
-      expect(await controller().getSubCategoryItemCount(subId), 1);
+  group('itemGroup CRUD — Τμήμα (27-09-2026)', () {
+    test('create → ok + read-back', () async {
+      final ids = await seedChain();
+      // Καθαρό sub χωρίς τμήματα αρχικά — το seed έβαλε 1 («Φρέσκα»).
+      final result = await controller().createItemGroup(
+        subCategoryId: ids.subId,
+        name: 'Κατεψυγμένα',
+      );
+      expect(result, (ok: true, error: null));
+      expect(
+        await container
+            .read(itemGroupRepositoryProvider)
+            .watchBySubCategoryId(ids.subId)
+            .first,
+        hasLength(2),
+      );
     });
 
-    test('refreshGuards → no-throw', () {
+    test('κενό → nameRequired, χωρίς DB write', () async {
+      final ids = await seedChain();
+      final result = await controller().createItemGroup(
+        subCategoryId: ids.subId,
+        name: '   ',
+      );
+      expect(result, (ok: false, error: AppErrors.nameRequired));
+      expect(
+        await container
+            .read(itemGroupRepositoryProvider)
+            .watchBySubCategoryId(ids.subId)
+            .first,
+        hasLength(1),
+      );
+    });
+
+    test('διπλότυπο exact-match → nameExists (και σε άλλη υποκατηγορία)',
+        () async {
+      final ids = await seedChain();
+      var result = await controller().createItemGroup(
+        subCategoryId: ids.subId,
+        name: 'φρεσκα',
+      );
+      expect(result, (ok: false, error: AppErrors.nameExists));
+
+      // Global UNIQUE §3 — ίδιο όνομα αλλού → nameExists.
+      final otherSub = await container
+          .read(subCategoryRepositoryProvider)
+          .insert(categoryId: ids.catId, name: 'Αλλαντικά');
+      result = await controller().createItemGroup(
+        subCategoryId: otherSub,
+        name: 'Φρέσκα',
+      );
+      expect(result, (ok: false, error: AppErrors.nameExists));
+    });
+
+    test('rename → ok + νέο όνομα · ίδιο κείμενο → no-op', () async {
+      final ids = await seedChain();
+      var result = await controller().renameItemGroup(
+        ids.groupId,
+        'Κατεψυγμένα',
+      );
+      expect(result, (ok: true, error: null));
+      expect(
+        (await container.read(itemGroupRepositoryProvider).getById(
+              ids.groupId,
+            ))!
+            .name,
+        'Κατεψυγμένα',
+      );
+
+      result = await controller().renameItemGroup(
+        ids.groupId,
+        'Κατεψυγμένα',
+      );
+      expect(result, (ok: true, error: null));
+    });
+
+    test('recase εαυτού → ΓΡΑΦΕΤΑΙ (self-clash → write)', () async {
+      final ids = await seedChain();
+      final result = await controller().renameItemGroup(
+        ids.groupId,
+        'ΦΡΕΣΚΑ',
+      );
+      expect(result, (ok: true, error: null));
+      expect(
+        (await container.read(itemGroupRepositoryProvider).getById(
+              ids.groupId,
+            ))!
+            .name,
+        'ΦΡΕΣΚΑ',
+      );
+    });
+
+    test('clash με άλλο τμήμα → nameExists', () async {
+      final ids = await seedChain();
+      final other = await container
+          .read(itemGroupRepositoryProvider)
+          .insert(subCategoryId: ids.subId, name: 'Κατεψυγμένα');
+      final result = await controller().renameItemGroup(other, 'φρεσκα');
+      expect(result, (ok: false, error: AppErrors.nameExists));
+    });
+
+    test('rename ανύπαρκτου → loadDataFailed', () async {
+      final result = await controller().renameItemGroup(999, 'Χ');
+      expect(result, (ok: false, error: AppErrors.loadDataFailed));
+    });
+
+    test('delete καθαρού με είδη → ok + cascade', () async {
+      final ids = await seedChain();
+      final itemId = await ItemDao(
+        db,
+      ).insert(itemGroupId: ids.groupId, name: 'Γάλα');
+
+      final result = await controller().deleteItemGroup(ids.groupId);
+      expect(result, (ok: true, error: null));
+      expect(
+        await container.read(itemGroupRepositoryProvider).getById(ids.groupId),
+        isNull,
+      );
+      expect(await ItemDao(db).getById(itemId), isNull);
+    });
+
+    test('delete μπλοκαρισμένου → tooltip, τίποτα δεν σβήνεται', () async {
+      final ids = await seedChain();
+      final itemId = await ItemDao(
+        db,
+      ).insert(itemGroupId: ids.groupId, name: 'Γάλα');
+      await seedLineInUse(itemId);
+
+      final result = await controller().deleteItemGroup(ids.groupId);
+      expect(result.ok, isFalse);
+      expect(result.error, AppMessages.itemsInUseTooltip(1));
+      expect(
+        await container.read(itemGroupRepositoryProvider).getById(ids.groupId),
+        isNotNull,
+      );
+    });
+
+    test('delete ανύπαρκτου → loadDataFailed', () async {
+      final result = await controller().deleteItemGroup(999);
+      expect(result, (ok: false, error: AppErrors.loadDataFailed));
+    });
+  });
+
+  group('counts + refresh + σφάλματα', () {
+    test('getCategoryItemCount/getSubCategoryItemCount/getItemGroupItemCount',
+        () async {
+      final ids = await seedChain();
+      await ItemDao(db).insert(itemGroupId: ids.groupId, name: 'Γάλα');
+
+      expect(await controller().getCategoryItemCount(ids.catId), 1);
+      expect(await controller().getSubCategoryItemCount(ids.subId), 1);
+      expect(await controller().getItemGroupItemCount(ids.groupId), 1);
+      // Άδειο τμήμα → 0.
+      final empty = await container
+          .read(itemGroupRepositoryProvider)
+          .insert(subCategoryId: ids.subId, name: 'Άδειο');
+      expect(await controller().getItemGroupItemCount(empty), 0);
+    });
+
+    test('refreshGuards (3 επίπεδα) → no-throw', () {
       expect(
         () => controller().refreshGuards(
           categoryIds: [1, 2],
           subCategoryIds: [3],
+          itemGroupIds: [4, 5],
         ),
         returnsNormally,
       );

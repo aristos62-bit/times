@@ -1,8 +1,11 @@
-/// DB integration tests για seed — Φάση 1, Βήμα 3 + Βήμα 4 (seed-import tests).
+/// DB integration tests για το seed (Refactor 4 επιπέδων 27-09-2026).
 ///
-/// Επαληθεύει ότι το seed εισάγει σωστά τα δεδομένα στη βάση, καλύπτει requests
-/// του DESIGN §4.1.34 (πλήθος εγγραφών, normalizedName exact match, createdAt/
-/// abbreviation, ατομικότητα σε σφάλμα, onCreate μία φορά).
+/// Νέο seed: ΜΟΝΟ 3 μονάδες (Τεμάχιο/Κιλό/Λίτρο) — ο κατάλογος ξεκινά ΑΔΕΙΟΣ
+/// (seedCategories/SubCategories/ItemGroups = [], χτίζεται από το UI).
+/// Επαληθεύει: κενούς πίνακες με skipSeed, default seed (3 μονάδες + άδειος
+/// κατάλογος), σωστές μονάδες (όνομα+abbreviation+allowsDecimal), createdAt
+/// κατηγοριών (default βάσης), αλυσίδα 4 επιπέδων end-to-end (FK +
+/// normalizedName), ατομικότητα σε σφάλμα (rollback), onCreate μία φορά.
 library;
 
 import 'dart:io';
@@ -12,14 +15,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/utils/greek_text_normalizer.dart';
 import 'package:times/data/local/app_database.dart';
+import 'package:times/data/local/daos/category_dao.dart';
+import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
+import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/seed/seed_runner.dart';
 import 'package:times/data/local/seed/seed_units.dart';
 
 import '../helpers/in_memory_db.dart';
 
 void main() {
-  group('Seed Database Integration', () {
-    test('skipSeed=true → κενοί πίνακες', () async {
+  group('Seed Database Integration (4 επίπεδα)', () {
+    test('skipSeed=true → κενοί πίνακες (και item_groups)', () async {
       final db = inMemoryDb(skipSeed: true);
       addTearDown(db.close);
 
@@ -27,15 +34,17 @@ void main() {
       await db.select(db.units).get();
       await db.select(db.categories).get();
       await db.select(db.subCategories).get();
+      await db.select(db.itemGroups).get();
       await db.select(db.items).get();
 
       expect(await db.select(db.units).get(), isEmpty);
       expect(await db.select(db.categories).get(), isEmpty);
       expect(await db.select(db.subCategories).get(), isEmpty);
+      expect(await db.select(db.itemGroups).get(), isEmpty);
       expect(await db.select(db.items).get(), isEmpty);
     });
 
-    test('seed εισάγει σωστό πλήθος εγγραφών (3/9/53/535)', () async {
+    test('default seed: 3 μονάδες + ΑΔΕΙΟΣ κατάλογος (0/0/0/0)', () async {
       final db = inMemoryDb(skipSeed: false);
       addTearDown(db.close);
 
@@ -43,15 +52,18 @@ void main() {
       final units = await db.select(db.units).get();
       final categories = await db.select(db.categories).get();
       final subCategories = await db.select(db.subCategories).get();
+      final groups = await db.select(db.itemGroups).get();
       final items = await db.select(db.items).get();
 
       expect(units.length, 3);
-      expect(categories.length, 9);
-      expect(subCategories.length, 53);
-      expect(items.length, 535);
+      expect(categories, isEmpty);
+      expect(subCategories, isEmpty);
+      expect(groups, isEmpty);
+      expect(items, isEmpty);
     });
 
-    test('seed εισάγει σωστές μονάδες (όνομα + abbreviation)', () async {
+    test('seed εισάγει σωστές μονάδες (όνομα+abbreviation+allowsDecimal)',
+        () async {
       final db = inMemoryDb(skipSeed: false);
       addTearDown(db.close);
 
@@ -66,94 +78,75 @@ void main() {
           su.abbreviation,
           reason: 'Λάθος abbreviation για "${su.name}"',
         );
-      }
-    });
-
-    test('seed ρυθμίζει createdAt στις κατηγορίες (default βάσης)', () async {
-      final db = inMemoryDb(skipSeed: false);
-      addTearDown(db.close);
-
-      final categories = await db.select(db.categories).get();
-      expect(categories.length, 9);
-      for (final c in categories) {
-        expect(c.createdAt, isNot(isNull),
-            reason: 'Κατηγορία "${c.name}" χωρίς createdAt');
-      }
-    });
-
-    test('seed θέτει normalizedName = GreekTextNormalizer.normalize(name)', () async {
-      final db = inMemoryDb(skipSeed: false);
-      addTearDown(db.close);
-
-      final items = await db.select(db.items).get();
-
-      for (final item in items) {
         expect(
-          item.normalizedName,
-          GreekTextNormalizer.normalize(item.name),
-          reason: 'Item "${item.name}" έχει λάθος normalizedName',
+          byName[su.name]!.allowsDecimal,
+          su.allowsDecimal,
+          reason: 'Λάθος allowsDecimal για "${su.name}"',
         );
       }
     });
 
-    test('seed θέτει foreign keys σωστά (subCategoryId, defaultUnitId)', () async {
-      final db = inMemoryDb(skipSeed: false);
-      addTearDown(db.close);
-
-      final items = await db.select(db.items).get();
-      final unitIds = (await db.select(db.units).get()).map((u) => u.id).toSet();
-      final subCatIds =
-          (await db.select(db.subCategories).get()).map((s) => s.id).toSet();
-
-      for (final item in items) {
-        expect(subCatIds, contains(item.subCategoryId),
-            reason: 'Item ${item.name} has invalid subCategoryId');
-        // defaultUnitId μπορεί να είναι null.
-        if (item.defaultUnitId != null) {
-          expect(unitIds, contains(item.defaultUnitId),
-              reason: 'Item ${item.name} has invalid defaultUnitId');
-        }
-      }
-    });
-
-    test('ατομικότητα: αποτυχία στη μέση του seed → rollback, καμία εγγραφή', () async {
+    test('createdAt κατηγορίας: default βάσης (κοντά στο τώρα)', () async {
       final db = inMemoryDb(skipSeed: true);
       addTearDown(db.close);
 
-      // Άνοιγμα + createAll (κενά tables).
+      final before = DateTime.now().subtract(const Duration(minutes: 5));
+      final id = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
+      final row = await CategoryDao(db).getById(id);
+
+      expect(row, isNotNull);
+      expect(row!.createdAt, isNot(isNull));
+      expect(row.createdAt.isAfter(before), isTrue);
+    });
+
+    test('αλυσίδα 4 επιπέδων end-to-end: FK έγκυρα + normalizedName', () async {
+      final db = inMemoryDb(skipSeed: true);
+      addTearDown(db.close);
+
+      final catId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
+      final subId = await SubCategoryDao(db)
+          .insert(categoryId: catId, name: 'Γαλακτοκομικά');
+      final groupId = await ItemGroupDao(db)
+          .insert(subCategoryId: subId, name: 'Φέτα');
+      final itemId =
+          await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
+
+      final item = await ItemDao(db).getById(itemId);
+      expect(item!.itemGroupId, groupId);
+      expect(item.normalizedName, GreekTextNormalizer.normalize('Γάλα'));
+      expect(item.defaultUnitId, isNull);
+
+      final group = await ItemGroupDao(db).getById(groupId);
+      expect(group!.subCategoryId, subId);
+      expect(group.normalizedName, GreekTextNormalizer.normalize('Φέτα'));
+    });
+
+    test('ατομικότητα: αποτυχία στο seed → rollback, καμία εγγραφή', () async {
+      final db = inMemoryDb(skipSeed: true);
+      addTearDown(db.close);
+
+      // Άνοιγμα + createAll (κενοί πίνακες).
       await db.customSelect('SELECT 1').get();
 
-      // Marker που θα συγκρουστεί με το 1ο seed item στο UNIQUE normalized_name.
-      // Τοποθετείται ΕΚΤΟΣ transaction ώστε να επιζήσει στο rollback.
-      final firstItem = seedItems.first;
-      final catId = await db.into(db.categories).insert(
-            CategoriesCompanion.insert(name: 'test-cat'),
-          );
-      final subId = await db.into(db.subCategories).insert(
-            SubCategoriesCompanion.insert(name: 'test-sub', categoryId: catId),
-          );
-      await db.into(db.items).insert(
-            ItemsCompanion.insert(
-              name: 'seed-conflict-marker',
-              normalizedName: GreekTextNormalizer.normalize(firstItem.name),
-              subCategoryId: subId,
-            ),
-          );
+      // Σκόπιμη αποτυχία στο 2ο unit (Κιλό): το runSeed τυλίγει όλο το σώμα
+      // σε ένα transaction — πρέπει να γίνει rollback και του 1ου (Τεμάχιο).
+      await db.customStatement(
+        'CREATE TRIGGER seed_fail_trigger BEFORE INSERT ON units '
+        "WHEN NEW.name = 'Κιλό' "
+        "BEGIN SELECT RAISE(ABORT, 'σκοπιμη αποτυχια seed'); END;",
+      );
 
-      // Ο seed προχωράει (units/categories/subcategories) και αποτυγχάνει στο
-      // 1ο item (UNIQUE violation). Το runSeed τυλίγει μόνο του το σώμα σε
-      // transaction (§4.1.3) — ΕΔΩ ΔΕΝ βάζουμε εξωτερικό wrapper: ελέγχουμε
-      // ακριβώς την production διαδρομή (ζήτημα §4.1.34).
       await expectLater(
         () => runSeed(db),
         throwsA(isA<SqliteException>()),
       );
 
-      // Rollback: δεν έμεινε ΚΑΝΕΝΑ seed δεδομένο (ούτε units).
+      // Rollback: δεν έμεινε ΚΑΜΙΑ seed εγγραφή (ούτε το Τεμάχιο).
       expect(await db.select(db.units).get(), isEmpty);
-      expect(await db.select(db.categories).get(), hasLength(1)); // μόνο marker
-      expect(await db.select(db.subCategories).get(), hasLength(1));
-      expect(await db.select(db.items).get(), hasLength(1));
+      expect(await db.select(db.categories).get(), isEmpty);
+      expect(await db.select(db.subCategories).get(), isEmpty);
+      expect(await db.select(db.itemGroups).get(), isEmpty);
+      expect(await db.select(db.items).get(), isEmpty);
     });
 
     test('onCreate τρέχει μία φορά: επανα-άνοιγμα χωρίς νέο seed', () async {
@@ -167,11 +160,12 @@ void main() {
       });
       final file = File('${dir.path}${Platform.pathSeparator}seed_reopen.db');
 
-      // 1ο άνοιγμα: νέο DB → createAll + seed.
+      // 1ο άνοιγμα: νέο DB → createAll + seed (3 μονάδες, άδειος κατάλογος).
       final db1 = AppDatabase(executor: NativeDatabase(file), skipSeed: false);
       await db1.customSelect('SELECT 1').get();
       expect(await db1.select(db1.units).get(), hasLength(3));
-      expect(await db1.select(db1.items).get(), hasLength(535));
+      expect(await db1.select(db1.categories).get(), isEmpty);
+      expect(await db1.select(db1.items).get(), isEmpty);
       await db1.close();
 
       // 2ο άνοιγμα του ΙΔΙΟΥ αρχείου: το onCreate ΔΕΝ ξανα-τρέχει.
@@ -181,10 +175,11 @@ void main() {
 
       expect(await db2.select(db2.units).get(), hasLength(3),
           reason: 'Reopen χωρίς re-seed (units)');
-      expect(await db2.select(db2.categories).get(), hasLength(9));
-      expect(await db2.select(db2.subCategories).get(), hasLength(53));
-      expect(await db2.select(db2.items).get(), hasLength(535),
-          reason: 'Reopen χωρίς re-seed (items)');
+      expect(await db2.select(db2.categories).get(), isEmpty);
+      expect(await db2.select(db2.subCategories).get(), isEmpty);
+      expect(await db2.select(db2.itemGroups).get(), isEmpty);
+      expect(await db2.select(db2.items).get(), isEmpty,
+          reason: 'Reopen χωρίς re-seed (κατάλογος)');
     });
   });
 }

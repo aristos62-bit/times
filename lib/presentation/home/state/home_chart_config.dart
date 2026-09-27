@@ -12,10 +12,11 @@ import '../../../core/constants/app_enums.dart';
 
 part 'home_chart_config.freezed.dart';
 
-/// Γράφημα Κεντρικής — οι 4 κάρτες (§2.1: supplier/category/subCategory/
-/// topItems). Home-specific enum (όχι SPoT `app_enums` — το χρησιμοποιεί
+/// Γράφημα Κεντρικής — οι 4 κάρτες (§2.1: supplier/category/itemGroup/
+/// topItems · 27-09-2026: το Τμήμα αντικαθιστά την υποκατηγορία).
+/// Home-specific enum (όχι SPoT `app_enums` — το χρησιμοποιεί
 /// μόνο η Κεντρική).
-enum ChartId { supplier, category, subCategory, topItems }
+enum ChartId { supplier, category, itemGroup, topItems }
 
 /// Ρύθμιση ενός γραφήματος: ορατότητα + σειρά + περίοδος.
 @freezed
@@ -38,7 +39,7 @@ abstract class HomeChartConfig with _$HomeChartConfig {
   const factory HomeChartConfig({
     required ChartEntry supplier,
     required ChartEntry category,
-    required ChartEntry subCategory,
+    required ChartEntry itemGroup,
     required ChartEntry topItems,
   }) = _HomeChartConfig;
 
@@ -46,7 +47,7 @@ abstract class HomeChartConfig with _$HomeChartConfig {
   factory HomeChartConfig.defaults() => const HomeChartConfig(
         supplier: ChartEntry(order: 0),
         category: ChartEntry(order: 1),
-        subCategory: ChartEntry(order: 2),
+        itemGroup: ChartEntry(order: 2),
         topItems: ChartEntry(order: 3),
       );
 }
@@ -56,7 +57,7 @@ extension HomeChartConfigById on HomeChartConfig {
   ChartEntry entryOf(ChartId id) => switch (id) {
         ChartId.supplier => supplier,
         ChartId.category => category,
-        ChartId.subCategory => subCategory,
+        ChartId.itemGroup => itemGroup,
         ChartId.topItems => topItems,
       };
 
@@ -64,7 +65,7 @@ extension HomeChartConfigById on HomeChartConfig {
   HomeChartConfig withEntry(ChartId id, ChartEntry entry) => switch (id) {
         ChartId.supplier => copyWith(supplier: entry),
         ChartId.category => copyWith(category: entry),
-        ChartId.subCategory => copyWith(subCategory: entry),
+        ChartId.itemGroup => copyWith(itemGroup: entry),
         ChartId.topItems => copyWith(topItems: entry),
       };
 }

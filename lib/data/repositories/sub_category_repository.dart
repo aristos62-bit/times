@@ -19,6 +19,10 @@ abstract interface class SubCategoryRepository {
   /// Διαβάζει μία υποκατηγορία ή null αν δεν υπάρχει.
   Future<SubCategory?> getById(int id);
 
+  /// Διαβάζει υποκατηγορία με βάση το κανονικοποιημένο όνομα (exact-match,
+  /// soft dup-check §2.2 — UNIQUE `normalizedName`, §3).
+  Future<SubCategory?> getByNormalizedName(String normalizedName);
+
   /// Εισάγει υποκατηγορία σε [categoryId]· επιστρέφει το νέο id.
   Future<int> insert({required int categoryId, required String name});
 

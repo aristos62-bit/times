@@ -1,8 +1,11 @@
 /// Unit tests για τα chart StreamProviders — Μέρος 4/4 · γραφήματα (§2.1).
 ///
-/// `supplier/category/subCategory/topItemsTotalsProvider` (Φάση 5, Βήμα 3):
+/// `supplier/category/itemGroup/topItemsTotalsProvider` (Φάση 5, Βήμα 3):
 /// emit τιμών από in-memory DB + slice top-N/«Λοιπά» + error mapping.
 /// Τα catalog/search/receipt streams ζουν στα μέρη 1-3.
+///
+/// Refactor 4 επιπέδων (27-09-2026): η πίτα υποκατηγορίας αντικαταστάθηκε
+/// από πίτα Τμήματος (`itemGroupTotalsProvider`).
 ///
 /// Riverpod 3.4.3: `container.listen` + `Completer` με predicate (όχι `.future`).
 library;
@@ -14,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -61,13 +65,15 @@ void main() {
         overrides: [appDatabaseProvider.overrideWithValue(db)],
       );
 
-  /// Πλήρης αλυσίδα seed + 1 απόδειξη 2 τεμαχίων × 199.
+  /// Πλήρης αλυσίδα 4 επιπέδων + 1 απόδειξη 2 τεμαχίων × 199.
   Future<ChartQuery> seedMonth() async {
     final unitId = await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    final itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    final groupId =
+        await ItemGroupDao(db).insert(subCategoryId: subId, name: 'Φέτα');
+    final itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
     final supplierId = await SupplierDao(db).insert(name: 'Μάρκος');
     final receiptId = await ReceiptDao(db).insert(
       date: DateTime(2026, 1, 5),
@@ -106,15 +112,16 @@ void main() {
       expect(slices.single.totalCents, 199 * 2);
     });
 
-    test('subCategoryTotalsProvider — φέτα υποκατηγορίας', () async {
+    test('itemGroupTotalsProvider — φέτα τμήματος (4 επίπεδα)', () async {
       final query = await seedMonth();
       final container = containerWithDb();
       final slices = await waitForChartValue(
         (listen) =>
-            container.listen(subCategoryTotalsProvider(query), listen),
+            container.listen(itemGroupTotalsProvider(query), listen),
         (value) => value.isNotEmpty,
       );
-      expect(slices.single.label, 'Γαλακτοκομικά');
+      expect(slices.single.label, 'Φέτα');
+      expect(slices.single.totalCents, 199 * 2);
     });
 
     test('topItemsTotalsProvider — φέτα είδους', () async {
@@ -145,7 +152,9 @@ void main() {
       final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
       final subId = await SubCategoryDao(db)
           .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-      final itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+      final groupId =
+          await ItemGroupDao(db).insert(subCategoryId: subId, name: 'Φέτα');
+      final itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
       for (var i = 0; i < 10; i++) {
         final supplierId =
             await SupplierDao(db).insert(name: 'Προμηθευτής $i');

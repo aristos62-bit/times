@@ -44,6 +44,10 @@ final class SubCategoryRepositoryImpl implements SubCategoryRepository {
   Future<SubCategory?> getById(int id) => _guard(() => _dao.getById(id));
 
   @override
+  Future<SubCategory?> getByNormalizedName(String normalizedName) =>
+      _guard(() => _dao.getByNormalizedName(normalizedName));
+
+  @override
   Future<int> insert({required int categoryId, required String name}) =>
       _guard(() => _dao.insert(categoryId: categoryId, name: name));
 

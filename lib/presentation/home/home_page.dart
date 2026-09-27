@@ -33,7 +33,7 @@ class HomePage extends ConsumerWidget {
   static String titleOf(ChartId id) => switch (id) {
         ChartId.supplier => AppStrings.chartSupplierTitle,
         ChartId.category => AppStrings.chartCategoryTitle,
-        ChartId.subCategory => AppStrings.chartSubCategoryTitle,
+        ChartId.itemGroup => AppStrings.chartItemGroupTitle,
         ChartId.topItems => AppStrings.chartTopItemsTitle,
       };
 
@@ -135,7 +135,7 @@ class _ChartCard extends ConsumerWidget {
     final family = switch (id) {
       ChartId.supplier => supplierTotalsProvider(query),
       ChartId.category => categoryTotalsProvider(query),
-      ChartId.subCategory => subCategoryTotalsProvider(query),
+      ChartId.itemGroup => itemGroupTotalsProvider(query),
       ChartId.topItems => topItemsTotalsProvider(query),
     };
     final customSubtitle = entry.period == PeriodType.custom &&

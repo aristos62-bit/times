@@ -3,6 +3,10 @@
 /// In-memory SharedPreferences μέσω `setMockInitialValues` (χωρίς widget —
 /// το store είναι pure Dart, δεν χρειάζεται binding). Defaults από τον SPoT
 /// `AppTheme.defaultMode` (§1.5) — όχι hardcoded 'system'.
+///
+/// Refactor 4 επιπέδων (27-09-2026): το 3ο γράφημα είναι Τμήμα — JSON key
+/// `itemGroup` (με legacy fallback `subCategory` → itemGroup, τα prefs
+/// επιβιώνουν του DB wipe).
 library;
 
 import 'dart:convert';
@@ -86,7 +90,7 @@ void main() {
         jsonEncode({
           'supplier': {'visible': false, 'order': 0, 'period': 'year'},
           'category': 'corrupt',
-          'subCategory': {'visible': 'ναι', 'order': 'δύο'},
+          'itemGroup': {'visible': 'ναι', 'order': 'δύο'},
           'topItems': null,
         }),
       );
@@ -96,8 +100,27 @@ void main() {
         const ChartEntry(visible: false, order: 0, period: PeriodType.year),
       );
       expect(config.category, const ChartEntry(order: 1));
-      expect(config.subCategory, const ChartEntry(order: 2));
+      expect(config.itemGroup, const ChartEntry(order: 2));
       expect(config.topItems, const ChartEntry(order: 3));
+    });
+
+    /// Legacy prefs (προ-4-επιπέδων) με key `subCategory` διαβάζονται ως
+    /// `itemGroup` — τα prefs επιβιώνουν του DB wipe (27-09-2026).
+    test('legacy key `subCategory` → διαβάζεται ως itemGroup', () async {
+      await prefs.setString(
+        AppConstants.homeChartConfigKey,
+        jsonEncode({
+          'supplier': {'visible': true, 'order': 0, 'period': 'month'},
+          'category': {'visible': true, 'order': 1, 'period': 'month'},
+          'subCategory': {'visible': false, 'order': 2, 'period': 'year'},
+          'topItems': {'visible': true, 'order': 3, 'period': 'month'},
+        }),
+      );
+      final config = newRepo().readHomeChartConfig();
+      expect(
+        config.itemGroup,
+        const ChartEntry(visible: false, order: 2, period: PeriodType.year),
+      );
     });
 
     test('άγνωστο period → month (SPoT default §2.1)', () async {
@@ -124,18 +147,20 @@ void main() {
           customTo: DateTime(2026, 1, 31),
         ),
         category: const ChartEntry(order: 0),
-        subCategory: const ChartEntry(order: 1, period: PeriodType.year),
+        itemGroup: const ChartEntry(order: 1, period: PeriodType.year),
         topItems: const ChartEntry(order: 3, visible: false),
       );
       await repo.saveHomeChartConfig(config);
       expect(repo.readHomeChartConfig(), config);
     });
 
-    test('γράφει στον SPoT key AppConstants.homeChartConfigKey', () async {
+    test('γράφει στον SPoT key με `itemGroup` (όχι `subCategory`)', () async {
       await newRepo().saveHomeChartConfig(HomeChartConfig.defaults());
       final stored = prefs.getString(AppConstants.homeChartConfigKey);
       expect(stored, isNotNull);
       expect(stored, contains('supplier'));
+      expect(stored, contains('itemGroup'));
+      expect(stored, isNot(contains('subCategory')));
     });
   });
 }

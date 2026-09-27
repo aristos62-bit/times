@@ -1,13 +1,15 @@
-/// DAO για τον πίνακα `categories` — Φάση 1, Βήμα 2 (§3, §4.1 DESIGN).
+/// DAO για τον πίνακα `categories` — Refactor 4 επιπέδων 27-09-2026.
 ///
-/// Καθαρό CRUD + streams + counts/cascade (Φάση 4, Βήμα 2 · §2.3).
-/// Δεν υπάρχουν υπολογισμένα πεδία (normalizedName
-/// είναι μόνο σε Item/Supplier). Όλα τα σφάλματα: log (tag DB) + raw rethrow
-/// μέσω BaseDao — το mapping σε AppException γίνεται στο Repository (Φάση 2).
+/// Καθαρό CRUD + streams + counts/cascade (§2.3). SPoT `normalizedName`:
+/// υπολογίζεται ΑΠΟΚΛΕΙΣΤΙΚΑ εδώ (insert-time + re-calc στο updateById,
+/// pattern `ItemDao`) — global UNIQUE (§3: καμία επανάληψη ονόματος).
+/// Όλα τα σφάλματα: log (tag DB) + raw rethrow μέσω BaseDao — το mapping
+/// σε AppException γίνεται στο Repository.
 library;
 
 import 'package:drift/drift.dart';
 
+import '../../../core/utils/greek_text_normalizer.dart';
 import '../app_database.dart';
 import '../base_dao.dart';
 
@@ -29,18 +31,37 @@ class CategoryDao extends BaseDao {
             .getSingleOrNull(),
       );
 
-  /// Εισάγει κατηγορία· επιστρέφει το νέο id.
-  Future<int> insert({required String name}) => guard(
-        'Εισαγωγή κατηγορίας',
-        () => db.into(db.categories).insert(CategoriesCompanion.insert(name: name)),
+  /// Διαβάζει κατηγορία με βάση το κανονικοποιημένο όνομα (exact-match,
+  /// pattern `ItemDao.getByNormalizedName` — soft dup-check §2.2).
+  Future<Category?> getByNormalizedName(String normalizedName) => guard(
+        'Αναζήτηση κατηγορίας κατά normalizedName',
+        () => (db.select(db.categories)
+              ..where((t) => t.normalizedName.equals(normalizedName)))
+            .getSingleOrNull(),
       );
 
-  /// Ενημερώνει το όνομα. Επιστρέφει true αν άλλαξε 1 γραμμή.
+  /// Εισάγει κατηγορία· το `normalizedName` υπολογίζεται ΕΔΩ (SPoT §3).
+  Future<int> insert({required String name}) => guard(
+        'Εισαγωγή κατηγορίας',
+        () => db.into(db.categories).insert(
+              CategoriesCompanion.insert(
+                name: name,
+                normalizedName: GreekTextNormalizer.normalize(name),
+              ),
+            ),
+      );
+
+  /// Ενημερώνει το όνομα (ξανα-υπολογίζει normalizedName). True αν άλλαξε.
   Future<bool> updateById(int id, {required String name}) => guard(
         'Ενημέρωση κατηγορίας',
         () async {
           final rows = await (db.update(db.categories)..where((t) => t.id.equals(id)))
-              .write(CategoriesCompanion(name: Value(name)));
+              .write(
+            CategoriesCompanion(
+              name: Value(name),
+              normalizedName: Value(GreekTextNormalizer.normalize(name)),
+            ),
+          );
           return rows > 0;
         },
       );
@@ -54,15 +75,10 @@ class CategoryDao extends BaseDao {
         },
       );
 
-  /// Μετράει τα είδη της κατηγορίας — Φάση 4, Βήμα 2 (§2.3).
+  /// Μετράει τα είδη της κατηγορίας — §2.3 (4 επίπεδα: cat→sub→group→item).
   ///
-  /// Χρήση (Βήμα 4): ο αριθμός στο confirm του cascade («θα σβηστούν Ν είδη»)
-  /// και στο tooltip όταν η διαγραφή είναι μπλοκαρισμένη. Άθροιση στο SQL
-  /// (§2.1) με typed drift API (selectOnly + join + count — τα ονόματα
-  /// πινάκων/στηλών ελέγχονται στο compile time).
-  /// Σημ.: το `items.sub_category_id` δεν έχει index (οι FK στήλες δεν
-  /// παίρνουν αυτόματα στο SQLite) — αμελητέο για τον όγκο καταλόγου
-  /// (53 υποκατηγορίες / 535 είδη), χωρίς migration.
+  /// Χρήση: αριθμός στο cascade confirm + tooltip όταν μπλοκαρισμένη.
+  /// Άθροιση στο SQL με typed drift API (compile-time ονόματα).
   Future<int> countItemsByCategoryId(int categoryId) => guard(
         'Μέτρηση ειδών κατηγορίας',
         () async {
@@ -71,8 +87,12 @@ class CategoryDao extends BaseDao {
             ..addColumns([countExp])
             ..join([
               innerJoin(
+                db.itemGroups,
+                db.itemGroups.id.equalsExp(db.items.itemGroupId),
+              ),
+              innerJoin(
                 db.subCategories,
-                db.subCategories.id.equalsExp(db.items.subCategoryId),
+                db.subCategories.id.equalsExp(db.itemGroups.subCategoryId),
               ),
             ])
             ..where(db.subCategories.categoryId.equals(categoryId));
@@ -81,13 +101,10 @@ class CategoryDao extends BaseDao {
         },
       );
 
-  /// Μετράει τα είδη της κατηγορίας με τουλάχιστον μία γραμμή απόδειξης —
-  /// Φάση 4, Βήμα 2 (§2.3, εύρημα Α2).
+  /// Μετράει τα είδη της κατηγορίας με τουλάχιστον μία γραμμή απόδειξης.
   ///
-  /// Χρήση (Βήμα 3/4): πύλη διαγραφής — `0` = καθαρή (επιτρέπεται cascade),
-  /// `>0` = μπλοκαρισμένη (greyed-out + tooltip «Χ είδη έχουν καταχωρημένες
-  /// τιμές»). COUNT(DISTINCT items.id) πάνω σε join με τις γραμμές, ώστε
-  /// ένα είδος με πολλές γραμμές να μετριέται μία φορά.
+  /// Πύλη διαγραφής — `0` = καθαρή (cascade), `>0` = μπλοκαρισμένη.
+  /// COUNT(DISTINCT items.id) πάνω σε join με τις γραμμές.
   Future<int> countItemsInUseByCategoryId(int categoryId) => guard(
         'Μέτρηση χρησιμοποιούμενων ειδών κατηγορίας',
         () async {
@@ -100,8 +117,12 @@ class CategoryDao extends BaseDao {
                 db.receiptLines.itemId.equalsExp(db.items.id),
               ),
               innerJoin(
+                db.itemGroups,
+                db.itemGroups.id.equalsExp(db.items.itemGroupId),
+              ),
+              innerJoin(
                 db.subCategories,
-                db.subCategories.id.equalsExp(db.items.subCategoryId),
+                db.subCategories.id.equalsExp(db.itemGroups.subCategoryId),
               ),
             ])
             ..where(db.subCategories.categoryId.equals(categoryId));
@@ -111,22 +132,26 @@ class CategoryDao extends BaseDao {
       );
 
   /// Διαγράφει την κατηγορία με όλο το περιεχόμενό της (υποκατηγορίες +
-  /// ορφανά είδη) — Φάση 4, Βήμα 2 (§2.3, αποφάσεις Α/Γ).
+  /// τμήματα + ορφανά είδη) — §2.3, αποφάσεις Α/Γ.
   ///
-  /// Καλείται ΜΟΝΟ όταν `countItemsInUseByCategoryId == 0` (καθαρή) — ο
-  /// έλεγχος γίνεται στον provider (Βήμα 3), όχι εδώ. Αν παρόλα αυτά
-  /// υπάρχουν γραμμές, το RESTRICT ρίχνει raw σφάλμα και το transaction
-  /// κάνει rollback (τίποτα δεν σβήνεται). Σειρά: είδη → υποκατηγορίες →
-  /// κατηγορία, όλα σε ΕΝΑ transaction (είτε όλα είτε τίποτα). Το subquery
-  /// (`isInQuery`) αποφεύγει branch άδειας λίστας και race read→delete.
-  /// Επιστρέφει true αν έσβησε η κατηγορία, false αν δεν υπήρχε.
+  /// ΜΟΝΟ όταν `countItemsInUseByCategoryId == 0` (έλεγχος στον provider).
+  /// Σειρά: είδη → τμήματα → υποκατηγορίες → κατηγορία, ΕΝΑ transaction.
+  /// Subqueries (`isInQuery`) — κανένα branch άδειας λίστας, κανένα race.
   Future<bool> deleteWithContents(int categoryId) => guard(
         'Διαγραφή κατηγορίας με περιεχόμενα',
         () => db.transaction(() async {
           final subIdsQuery = db.selectOnly(db.subCategories)
             ..addColumns([db.subCategories.id])
             ..where(db.subCategories.categoryId.equals(categoryId));
+          final groupIdsQuery = db.selectOnly(db.itemGroups)
+            ..addColumns([db.itemGroups.id])
+            ..where(
+              (db.itemGroups.subCategoryId.isInQuery(subIdsQuery)),
+            );
           await (db.delete(db.items)
+                ..where((t) => t.itemGroupId.isInQuery(groupIdsQuery)))
+              .go();
+          await (db.delete(db.itemGroups)
                 ..where((t) => t.subCategoryId.isInQuery(subIdsQuery)))
               .go();
           await (db.delete(db.subCategories)

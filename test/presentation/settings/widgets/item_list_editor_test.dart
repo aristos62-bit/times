@@ -15,11 +15,13 @@ import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/presentation/price_entry/controllers/item_search_controller.dart';
 import 'package:times/presentation/price_entry/widgets/item_search_field.dart';
+import 'package:times/presentation/settings/widgets/item_edit_dialog.dart';
 import 'package:times/presentation/settings/widgets/item_list_editor.dart';
 
 import '../../../data/local/helpers/in_memory_db.dart';
@@ -71,10 +73,28 @@ void main() {
   Future<int> seedGala(AppDatabase db) async {
     // Μονάδα seed (μελλοντική χρήση tiles) — το id αγνοείται σκόπιμα.
     await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
+    // ΣΗΜ.: το ItemEditDialog key-άρει τα dropdowns με ValueKey(categoryId)
+    // και ValueKey(subCategoryId) — με cat.id == sub.id (π.χ. 1/1 σε φρέσκια
+    // βάση) τα keys συγκρούονται (εύρημα προς lib — εδώ seed με dummy
+    // κατηγορία ώστε τα ids να διαφέρουν).
+    await CategoryDao(db).insert(name: 'ΑΛΛΗ');
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    return ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    // 4 επίπεδα (27-09-2026): το είδος ανήκει σε Τμήμα, όχι σε υποκατηγορία.
+    final groupId = await ItemGroupDao(
+      db,
+    ).insert(subCategoryId: subId, name: 'Φρέσκα');
+    return ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
+  }
+
+  /// Αναζήτηση + επιλογή «Γάλα» (κοινό setup των tile tests).
+  Future<void> selectGala(WidgetTester tester, AppDatabase db) async {
+    await pumpAt(tester, db, const Size(800, 600));
+    await tester.enterText(find.byType(TextField), 'γάλα');
+    await settleSearch(tester);
+    await tester.tap(find.text('Γάλα'));
+    await tester.pumpAndSettle();
   }
 
   group('ItemListEditor', () {
@@ -135,6 +155,48 @@ void main() {
         rootContainer.read(itemSearchControllerProvider).value?.selectedItem,
         isNull,
       );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('edit → dialog με lookups τμήματος (μέσω group)',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await seedGala(db);
+      await selectGala(tester, db);
+
+      // Το tile φέρει edit — tap ανοίγει το dialog (lookups group → sub →
+      // cat ΠΡΙΝ το open, §2.4). Χωρίς controller write (βλ. ΣΗΜ. tree test).
+      await tester.tap(
+        find.byTooltip(AppStrings.editAction, skipOffstage: false),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(ItemEditDialog), findsOneWidget);
+      expect(find.text('Γάλα'), findsWidgets);
+      expect(find.text('Φρέσκα'), findsWidgets);
+      // Ακύρωση → επιστροφή στο tile.
+      await tester.tap(find.text(AppMessages.confirmDialogCancel));
+      await tester.pumpAndSettle();
+      expect(find.byType(ItemEditDialog), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('delete → confirm → Ακύρωση (χωρίς write)', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await seedGala(db);
+      await selectGala(tester, db);
+
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(AppMessages.deleteItemConfirm('Γάλα')),
+        findsOneWidget,
+      );
+      await tester.tap(find.text(AppMessages.confirmDialogCancel));
+      await tester.pumpAndSettle();
+      // Η επιλογή παραμένει (καμία διαγραφή).
+      expect(find.text('Γάλα'), findsWidgets);
       expect(tester.takeException(), isNull);
     });
 

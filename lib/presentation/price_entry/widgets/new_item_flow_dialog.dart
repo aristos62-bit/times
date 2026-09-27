@@ -1,28 +1,24 @@
-/// Popup «Νέο είδος» (3-βημάτων, γραμμικό) — §2.4 DESIGN / Φάση 3 Βήμα 4.
+/// Popup «Νέο είδος» (4-βημάτων, γραμμικό) — §2.4 DESIGN / 27-09-2026.
 ///
-/// ΡΟΗ: Κατηγορία → Υποκατηγορία → Όνομα. ΑΥΣΤΗΡΑ ΓΡΑΜΜΙΚΟ (§2.4): το
-/// επόμενο βήμα εμφανίζεται ΜΟΝΟ αφού επιλεγεί/δημιουργηθεί το προηγούμενο —
-/// κανένα «πίσω» κουμπί (self-reinforcing linear flow, απόφαση Βήμα 4).
+/// ΡΟΗ: Κατηγορία → Υποκατηγορία → Τμήμα → Όνομα. ΑΥΣΤΗΡΑ ΓΡΑΜΜΙΚΟ (§2.4):
+/// το επόμενο βήμα εμφανίζεται ΜΟΝΟ αφού επιλεγεί/δημιουργηθεί το
+/// προηγούμενο — κανένα «πίσω» κουμπί (self-reinforcing linear flow).
 ///
 /// ΑΡΧΙΤΕΚΤΟΝΙΚΗ:
-///   * Βήματα 1-2 χρησιμοποιούν το generic `SearchableDropdownField<T>`
-///     (§2.4) με τις νέες icon παραμέτρους (prefixIcon/resultLeadingIcon,
-///     Βήμα 4) + τα search families `categorySearchProvider` /
-///     `subCategorySearchProvider` (stream_providers · Βήμα 4).
-///   * Όλες οι δημιουργίες (κατηγορία/υποκατηγορία) γίνονται σιωπηλά
+///   * Βήματα 1-3 χρησιμοποιούν το generic `SearchableDropdownField<T>`
+///     (§2.4) + τα search families `categorySearchProvider` /
+///     `subCategorySearchProvider` / `itemGroupSearchProvider`.
+///   * Όλες οι δημιουργίες (κατηγορία/υποκατηγορία/τμήμα) γίνονται σιωπηλά
 ///     (silent intermediate creates — §2.4 απόφαση): ΚΑΝΕΝΑ snackbar μέσα
 ///     στο dialog. Μόνο το τελικό Είδος «γυρίζει» πίσω με το result.
-///     Άκυρο όνομα ή διπλότυπο στο «+» (Βήμα 6ζ): ΚΑΜΙΑ δημιουργία και
-///     inline μήνυμα κάτω από το πεδίο του βήματος (`nameRequired`/
-///     `nameTooLong`/`nameExists`) — όχι snackbar. Σβήνει σε επιλογή ή σε
-///     επόμενη επιτυχημένη δημιουργία, καθώς και ήδη κατά την πληκτρολόγηση
-///     της διόρθωσης (onChanged · Βήμα 21).
+///     Άκυρο όνομα ή διπλότυπο στο «+»: ΚΑΜΙΑ δημιουργία και inline μήνυμα
+///     κάτω από το πεδίο του βήματος (`nameRequired`/`nameTooLong`/
+///     `nameExists`) — όχι snackbar. Σβήνει σε επιλογή ή σε επόμενη
+///     επιτυχημένη δημιουργία, καθώς και κατά την πληκτρολόγηση (onChanged).
 ///   * Το feedback (SnackBar) γίνεται πάντα ΜΕΤΑ το pop από τον καλούντα
-///     (ScaffoldMessenger caveat — αλλιώς το snackbar «κρύβεται» πίσω από
-///     το dialog overlay). Το AppFeedback καλείται ΜΟΝΟ εκεί.
+///     (ScaffoldMessenger caveat). Το AppFeedback καλείται ΜΟΝΟ εκεί.
 ///   * `isSaving` = double-tap guard (§2.4): όσο τρέχει το save, το «Προσθήκη»
-///     απενεργοποιείται. Σφάλμα DB (DataLoadException) → pop `failed` —
-///     χωρίς αλλαγή state· ο καλών εμφανίζει AppErrors.loadDataFailed.
+///     απενεργοποιείται. Σφάλμα DB (DataLoadException) → pop `failed`.
 ///   * Responsive §1.4: `ConstrainedBox` (max width) + `SingleChildScrollView`,
 ///     κανένα fixed ύψος.
 library;
@@ -65,7 +61,7 @@ final class NewItemDialogFailed extends NewItemDialogResult {
   const NewItemDialogFailed();
 }
 
-/// Popup δημιουργίας είδους — γραμμικός 3-βημάτος wizard (§2.4).
+/// Popup δημιουργίας είδους — γραμμικός 4-βημάτος wizard (§2.4).
 class NewItemFlowDialog extends ConsumerStatefulWidget {
   const NewItemFlowDialog({super.key, this.initialName = ''});
 
@@ -83,15 +79,19 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
   /// Επιλεγμένη (ή νέα-δημιουργημένη) υποκατηγορία — «null» = Βήμα 2 pending.
   SubCategory? _subCategory;
 
+  /// Επιλεγμένο (ή νέο-δημιουργημένο) τμήμα — «null» = Βήμα 3 pending.
+  ItemGroup? _itemGroup;
+
   /// Controller του πεδίου ονόματος (Βήμα 3) — prefill από [initialName].
   late final TextEditingController _nameController;
 
   /// Double-tap guard του «Προσθήκη» (§2.4).
   bool _isSaving = false;
 
-  /// Inline σφάλμα του «+» ανά βήμα (Βήμα 6ζ) — `null` = κανένα.
+  /// Inline σφάλμα του «+» ανά βήμα — `null` = κανένα.
   String? _categoryError;
   String? _subCategoryError;
+  String? _itemGroupError;
 
   @override
   void initState() {
@@ -179,6 +179,43 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
     }
   }
 
+  /// Βήμα 3: δημιουργία τμήματος από το «+» — ΣΙΩΠΗΛΗ (27-09-2026).
+  /// Ίδιο inline σφάλμα (`_itemGroupError`) με τα προηγούμενα βήματα.
+  Future<ItemGroup?> _createItemGroup(String name) async {
+    final nameError = NameValidator.validate(name.trim());
+    if (nameError != null) {
+      AppLogger.info(
+        LogTag.ui,
+        'Απόρριψη «+» τμήματος "$name": $nameError',
+      );
+      setState(() => _itemGroupError = nameError);
+      return null;
+    }
+    try {
+      final result = await ref
+          .read(itemSearchControllerProvider.notifier)
+          .createItemGroup(subCategoryId: _subCategory!.id, name: name);
+      if (!mounted) return result.itemGroup;
+      if (result.itemGroup == null) {
+        AppLogger.info(
+          LogTag.ui,
+          'Απόρριψη «+» τμήματος "$name": διπλότυπο',
+        );
+      }
+      setState(() {
+        _itemGroupError =
+        result.itemGroup == null ? AppErrors.nameExists : null;
+        if (result.itemGroup != null) _itemGroup = result.itemGroup;
+      });
+      return result.itemGroup;
+    } on DataLoadException {
+      AppLogger.error(LogTag.db, 'Αποτυχία «+» τμήματος "$name" (DB)');
+      if (!mounted) return null;
+      setState(() => _itemGroupError = AppErrors.loadDataFailed);
+      return null;
+    }
+  }
+
   bool get _nameIsValid => NameValidator.validate(_nameController.text) == null;
 
   String? get _nameError {
@@ -188,7 +225,7 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
         : null; // κενό → χωρίς error πριν τη «Αποθήκευση» (disabled κουμπί)
   }
 
-  /// Βήμα 3: αποθήκευση — αλυσιδωτό save, pop με το αποτέλεσμα. Μόνο το
+  /// Βήμα 4: αποθήκευση — αλυσιδωτό save, pop με το αποτέλεσμα. Μόνο το
   /// `NewItemDialogCreated` «επιστρέφει» Είδος· DB error → pop failed.
   Future<void> _save() async {
     if (_isSaving || !_nameIsValid) return;
@@ -196,7 +233,7 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
     try {
       final result = await ref
           .read(itemSearchControllerProvider.notifier)
-          .createItem(subCategoryId: _subCategory!.id, name: _nameController.text);
+          .createItem(itemGroupId: _itemGroup!.id, name: _nameController.text);
       if (!mounted) return;
       if (result.item == null) {
         setState(() => _isSaving = false);
@@ -252,7 +289,29 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
     );
   }
 
-  /// Βήμα 3 (όνομα + save) — ΜΟΝΟ όταν υπάρχει υποκατηγορία.
+  /// Δείχνει το Βήμα 3 (τμήμα) — ΜΟΝΟ όταν υπάρχει υποκατηγορία.
+  Widget _buildItemGroupStep() {
+    return SearchableDropdownField<ItemGroup>(
+      labelText: AppStrings.fieldItemGroup,
+      hintText: AppStrings.fieldItemGroup,
+      searchProvider: (query) => itemGroupSearchProvider((
+        subCategoryId: _subCategory!.id,
+        query: query,
+      )),
+      labelOf: (group) => group.name,
+      createLabel: (query) => '${AppStrings.addNewItemGroup} "$query"',
+      onCreate: _createItemGroup,
+      onChanged: (_) => setState(() => _itemGroupError = null),
+      onSelected: (group) => setState(() {
+        _itemGroup = group;
+        _itemGroupError = null;
+      }),
+      prefixIcon: const Icon(Icons.folder_open_outlined),
+      resultLeadingIcon: const Icon(Icons.folder_open_outlined),
+    );
+  }
+
+  /// Βήμα 4 (όνομα + save) — ΜΟΝΟ όταν υπάρχει τμήμα.
   Widget _buildNameStep() {
     return TextField(
       controller: _nameController,
@@ -311,6 +370,11 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
               ],
               if (_subCategory != null) ...[
                 const SizedBox(height: AppConstants.spacingL),
+                _buildItemGroupStep(),
+                if (_itemGroupError case final message?) _stepError(message),
+              ],
+              if (_itemGroup != null) ...[
+                const SizedBox(height: AppConstants.spacingL),
                 _buildNameStep(),
               ],
             ],
@@ -326,7 +390,7 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
         ),
         FilledButton(
           onPressed:
-              (_isSaving || _subCategory == null || !_nameIsValid ? null : _save),
+              (_isSaving || _itemGroup == null || !_nameIsValid ? null : _save),
           child: _isSaving
               ? SizedBox(
                   width: AppConstants.dialogSpinnerSize,

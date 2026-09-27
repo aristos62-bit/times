@@ -98,6 +98,15 @@ abstract final class AppMessages {
   /// Υποκατηγορία διαγράφηκε (cascade, §2.3 · Βήμα 4).
   static const String subCategoryDeleted = 'Η υποκατηγορία διαγράφηκε';
 
+  /// Τμήμα δημιουργήθηκε (§2.3 · 27-09-2026).
+  static const String itemGroupAdded = 'Το τμήμα προστέθηκε';
+
+  /// Το όνομα τμήματος ενημερώθηκε (§2.3 · 27-09-2026).
+  static const String itemGroupUpdated = 'Το τμήμα ενημερώθηκε';
+
+  /// Τμήμα διαγράφηκε (cascade, §2.3 · 27-09-2026).
+  static const String itemGroupDeleted = 'Το τμήμα διαγράφηκε';
+
   // ─── Blocked delete + cascade confirm (§2.3 · Βήμα 4, διόρθωση Α2-1) ────
   /// Cascade confirm διαγραφής κατηγορίας με [count] είδη (§2.3 · Βήμα 4).
   static String deleteCategoryConfirm(String name, int count) =>
@@ -106,6 +115,10 @@ abstract final class AppMessages {
   /// Cascade confirm διαγραφής υποκατηγορίας με [count] είδη (§2.3 · Βήμα 4).
   static String deleteSubCategoryConfirm(String name, int count) =>
       'Διαγραφή υποκατηγορίας "$name" με $count είδη; Τα είδη θα διαγραφούν.';
+
+  /// Cascade confirm διαγραφής τμήματος με [count] είδη (§2.3 · 27-09-2026).
+  static String deleteItemGroupConfirm(String name, int count) =>
+      'Διαγραφή τμήματος "$name" με $count είδη; Τα είδη θα διαγραφούν.';
 
   // ─── Suppliers CRUD (§2.3 · 24-09-2026) ───────────────────────────────────
   /// Το όνομα προμηθευτή ενημερώθηκε (Ρυθμίσεις).

@@ -34,13 +34,13 @@ typedef CategoryTotal = ({
   int totalCents,
 });
 
-/// Σύνολο υποκατηγορίας σε περίοδο (καθαρό, μετά έκπτωση §3).
-typedef SubCategoryTotal = ({
-  /// FK → SubCategories.id.
-  int subCategoryId,
+/// Σύνολο τμήματος σε περίοδο (καθαρό, μετά έκπτωση §3) — 4 επίπεδα.
+typedef ItemGroupTotal = ({
+  /// FK → ItemGroups.id.
+  int itemGroupId,
 
-  /// Όνομα υποκατηγορίας (INNER JOIN — μόνο με πωλήσεις στην περίοδο).
-  String subCategoryName,
+  /// Όνομα τμήματος (INNER JOIN — μόνο με πωλήσεις στην περίοδο).
+  String itemGroupName,
 
   /// Συνολικό ποσό σε λεπτά (SUM lineTotalCents).
   int totalCents,

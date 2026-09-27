@@ -28,12 +28,12 @@ final class BackupService {
 
   final AppDatabase _db;
 
-  /// Αναμενόμενοι πίνακες §3 (drift snake_case — τα `receipts`/`suppliers` /
-  /// `receipt_lines` επιβεβαιωμένα από το SQL του `ReceiptDao`, οι υπόλοιποι
-  /// από την ίδια γεννήτρια ονομάτων).
+  /// Αναμενόμενοι πίνακες §3 (drift snake_case, 27-09-2026: 8 με
+  /// `item_groups`).
   static const Set<String> expectedTables = {
     'categories',
     'sub_categories',
+    'item_groups',
     'units',
     'items',
     'suppliers',

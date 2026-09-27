@@ -1,10 +1,10 @@
-/// DAO για τον πίνακα `items` — Φάση 1, Βήμα 2 (§3, §4.1 DESIGN).
+/// DAO για τον πίνακα `items` — Refactor 4 επιπέδων 27-09-2026.
 ///
 /// SPoT υπολογισμού του `normalizedName`: Ο υπολογισμός γίνεται ΑΠΟΚΛΕΙΣΤΙΚΑ
 /// εδώ (§3: insert-time με GreekTextNormalizer.normalize) και στο updateById
-/// ξανα-υπολογίζεται αυτόματα όταν αλλάζει το `name`. Ο caller δεν μπορεί
-/// ποτέ να δώσει `normalizedName` — αποτρέπονται silent bugs (σύμβαση §3).
-/// Το `getByNormalizedName` υποστηρίζει τον duplicate-check (§2.2, exact).
+/// ξανα-υπολογίζεται αυτόματα όταν αλλάζει το `name`. Το είδος ανήκει πάντα
+/// σε ένα Τμήμα (`itemGroupId` → ItemGroups). Το `getByNormalizedName`
+/// υποστηρίζει τον duplicate-check (§2.2, exact).
 library;
 
 import 'package:drift/drift.dart';
@@ -25,11 +25,11 @@ class ItemDao extends BaseDao {
             .watch(),
       );
 
-  /// Παρακολουθεί τα είδη μιας υποκατηγορίας, με σειρά normalizedName.
-  Stream<List<Item>> watchBySubCategoryId(int subCategoryId) => guardStream(
-        'Ανάγνωση ειδών υποκατηγορίας',
+  /// Παρακολουθεί τα είδη ενός τμήματος, με σειρά normalizedName.
+  Stream<List<Item>> watchByItemGroupId(int itemGroupId) => guardStream(
+        'Ανάγνωση ειδών τμήματος',
         () => (db.select(db.items)
-              ..where((t) => t.subCategoryId.equals(subCategoryId))
+              ..where((t) => t.itemGroupId.equals(itemGroupId))
               ..orderBy([(t) => OrderingTerm.asc(t.normalizedName)]))
             .watch(),
       );
@@ -53,7 +53,7 @@ class ItemDao extends BaseDao {
   /// Εισάγει είδος. Το `normalizedName` υπολογίζεται ΕΔΩ (SPoT §3).
   /// [defaultUnitId] προαιρετικό — η βάση επιβάλλει FK (setNull σε διαγραφή).
   Future<int> insert({
-    required int subCategoryId,
+    required int itemGroupId,
     required String name,
     int? defaultUnitId,
   }) =>
@@ -61,7 +61,7 @@ class ItemDao extends BaseDao {
         'Εισαγωγή είδους',
         () => db.into(db.items).insert(
               ItemsCompanion.insert(
-                subCategoryId: subCategoryId,
+                itemGroupId: itemGroupId,
                 name: name,
                 normalizedName: GreekTextNormalizer.normalize(name),
                 defaultUnitId: Value(defaultUnitId),
@@ -69,14 +69,13 @@ class ItemDao extends BaseDao {
             ),
       );
 
-  /// Ενημερώνει subCategoryId/name/defaultUnitId (όσα δεν είναι null).
+  /// Ενημερώνει itemGroupId/name/defaultUnitId (όσα δεν είναι null).
   /// Αν αλλάζει το [name], ξανα-υπολογίζεται και το normalizedName (SPoT §3).
-  /// Το [defaultUnitId] δέχεται `Value<int?>` ώστε `Value(null)` = καθάρισμα
-  /// (δηλ. χωρίς προτεινόμενη μονάδα), ενώ `const Value.absent()` = μην το
-  /// πειράξεις. Βλ. §2.3: η αλλαγή defaultUnitId γίνεται από Ρυθμίσεις (Φάση 4).
+  /// Το [defaultUnitId] δέχεται `Value<int?>` ώστε `Value(null)` = καθάρισμα,
+  /// ενώ `const Value.absent()` = μην το πειράξεις (§2.3).
   Future<bool> updateById(
     int id, {
-    int? subCategoryId,
+    int? itemGroupId,
     String? name,
     Value<int?>? defaultUnitId,
   }) =>
@@ -84,8 +83,8 @@ class ItemDao extends BaseDao {
         'Ενημέρωση είδους',
         () async {
           var companion = const ItemsCompanion();
-          if (subCategoryId != null) {
-            companion = companion.copyWith(subCategoryId: Value(subCategoryId));
+          if (itemGroupId != null) {
+            companion = companion.copyWith(itemGroupId: Value(itemGroupId));
           }
           if (name != null) {
             companion = companion.copyWith(

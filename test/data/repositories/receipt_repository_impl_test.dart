@@ -5,6 +5,9 @@
 /// transaction· αποτυχία (FK) → `SaveReceiptException` ΚΑΙ rollback
 /// (η απόδειξη δεν μένει μισο-αποθηκευμένη). Το lineTotalCents το
 /// υπολογίζει ο ReceiptLineDao (SPoT §3).
+///
+/// Refactor 4 επιπέδων (27-09-2026): τα είδη δημιουργούνται μέσω
+/// Τμήματος (category → subCategory → itemGroup → item).
 library;
 
 import 'package:drift/native.dart';
@@ -14,6 +17,7 @@ import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -45,9 +49,6 @@ class _FailingStreamReceiptDao extends ReceiptDao {
 void main() {
   late dynamic db;
   late ReceiptRepositoryImpl repo;
-  late CategoryDao categoryDao;
-  late SubCategoryDao subDao;
-  late ItemDao itemDao;
   late UnitDao unitDao;
   late SupplierDao supplierDao;
   late ReceiptLineDao lineDao;
@@ -60,20 +61,19 @@ void main() {
   setUp(() async {
     db = inMemoryDb();
     repo = ReceiptRepositoryImpl(ReceiptDao(db), ReceiptLineDao(db));
-    categoryDao = CategoryDao(db);
-    subDao = SubCategoryDao(db);
-    itemDao = ItemDao(db);
     unitDao = UnitDao(db);
     supplierDao = SupplierDao(db);
     lineDao = ReceiptLineDao(db);
 
-    // Πλήρης αλυσίδα seed: unit → category → subcategory → items → supplier.
+    // Πλήρης αλυσίδα 4 επιπέδων: unit → category → sub → group → items.
     unitId = await unitDao.insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
-    final categoryId = await categoryDao.insert(name: 'ΤΡΟΦΙΜΑ');
-    final subId =
-        await subDao.insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    itemId = await itemDao.insert(subCategoryId: subId, name: 'Γάλα');
-    secondItemId = await itemDao.insert(subCategoryId: subId, name: 'Τυρί');
+    final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
+    final subId = await SubCategoryDao(db)
+        .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φέτα');
+    itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
+    secondItemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Τυρί');
     supplierId = await supplierDao.insert(name: 'Μάρκος');
   });
 

@@ -1,33 +1,53 @@
-/// Drift πίνακες της βάσης (§3 DESIGN.md) — Φάση 1, Βήμα 1.
+/// Drift πίνακες της βάσης (§3 DESIGN.md) — Refactor 4 επιπέδων 27-09-2026.
 ///
-/// 7 πίνακες: Categories, SubCategories, Units, Items, Suppliers,
-/// Receipts, ReceiptLines. Foreign keys με `ON DELETE RESTRICT` μόνο για
-/// Category/SubCategory/Item/Supplier/Unit (προστασία καταλόγου §2.3).
+/// 8 πίνακες: Categories, SubCategories, ItemGroups, Units, Items,
+/// Suppliers, Receipts, ReceiptLines. Ιεραρχία καταλόγου:
+/// Category (Τρόφιμα) ▸ SubCategory (Γαλακτοκομικά) ▸ ItemGroup
+/// (Τμήμα, π.χ. Φέτα) ▸ Item (π.χ. Φέτα Βαρέλι Μυτιλήνης).
+/// Foreign keys με `ON DELETE RESTRICT` σε όλο τον κατάλογο
+/// (Category/SubCategory/ItemGroup/Item/Supplier/Unit — προστασία §2.3).
 /// Η Receipt→ReceiptLine είναι σχέση κυριότητας: `ReceiptLines.receiptId`
 /// κάνει `CASCADE` (η διαγραφή απόδειξης σβήνει και τις γραμμές της — §3).
 /// Το προαιρετικό `Items.defaultUnitId` είναι `SET NULL` (null = χωρίς πρόταση).
+/// `normalizedName` global UNIQUE σε Category/SubCategory/ItemGroup/Item/
+/// Supplier (πεζά/άτονα/ς→σ, §2.2 — καμία επανάληψη ονόματος πουθενά).
 /// Το μοναδικό ρητό index είναι στο `ReceiptLine.itemId` (για στατιστικά)·
-/// τα `UNIQUE` σε Item/Supplier.normalizedName φέρνουν index αυτόματα.
+/// τα `UNIQUE` φέρνουν index αυτόματα.
 ///
 /// Καμία στήλη με length/check constraint: `maxItemNameLength` είναι
-/// validation του domain layer (Φάση 3), όχι σχήματος — §3 DESIGN.
+/// validation του domain layer, όχι σχήματος — §3 DESIGN.
 library;
 
 import 'package:drift/drift.dart';
 
-/// Κατηγορίες ειδών (π.χ. ΤΡΟΦΙΜΑ) — ένα Item ανήκει πάντα σε μία.
+/// Κατηγορίες ειδών (π.χ. Τρόφιμα) — ένα Item ανήκει πάντα σε μία,
+/// μέσω Υποκατηγορίας ▸ Τμήματος.
 class Categories extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
+  TextColumn get normalizedName => text().unique()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-/// Υποκατηγορίες κάτω από μία κατηγορία.
+/// Υποκατηγορίες κάτω από μία κατηγορία (π.χ. Γαλακτοκομικά).
 class SubCategories extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get categoryId =>
       integer().references(Categories, #id, onDelete: KeyAction.restrict)();
   TextColumn get name => text()();
+  TextColumn get normalizedName => text().unique()();
+}
+
+/// Τμήματα κάτω από μία υποκατηγορία (π.χ. Φέτα) — 27-09-2026.
+///
+/// Το «Τμήμα» είναι το 3ο επίπεδο καταλόγου (ορατό όνομα UI: «Τμήμα»).
+/// Το είδος ανήκει πάντα σε ένα τμήμα (`Items.itemGroupId`).
+class ItemGroups extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get subCategoryId =>
+      integer().references(SubCategories, #id, onDelete: KeyAction.restrict)();
+  TextColumn get name => text()();
+  TextColumn get normalizedName => text().unique()();
 }
 
 /// Μονάδες μέτρησης (Τεμάχιο/τεμ, Κιλό/κιλ, ...) — §3.
@@ -43,8 +63,8 @@ class Units extends Table {
 /// ώστε η βάση να απορρίπτει διπλότυπα (π.χ. «Γάλα» vs «γαλα»).
 class Items extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get subCategoryId => integer()
-      .references(SubCategories, #id, onDelete: KeyAction.restrict)();
+  IntColumn get itemGroupId => integer()
+      .references(ItemGroups, #id, onDelete: KeyAction.restrict)();
   TextColumn get name => text()();
   TextColumn get normalizedName => text().unique()();
   IntColumn get defaultUnitId =>

@@ -17,8 +17,8 @@ abstract interface class ItemRepository {
   /// Παρακολουθεί όλα τα είδη, με σειρά normalizedName.
   Stream<List<Item>> watchAll();
 
-  /// Παρακολουθεί τα είδη μιας υποκατηγορίας, με σειρά normalizedName.
-  Stream<List<Item>> watchBySubCategoryId(int subCategoryId);
+  /// Παρακολουθεί τα είδη ενός τμήματος, με σειρά normalizedName.
+  Stream<List<Item>> watchByItemGroupId(int itemGroupId);
 
   /// Διαβάζει ένα είδος ή null αν δεν υπάρχει.
   Future<Item?> getById(int id);
@@ -33,18 +33,18 @@ abstract interface class ItemRepository {
 
   /// Εισάγει είδος· επιστρέφει το νέο id.
   Future<int> insert({
-    required int subCategoryId,
+    required int itemGroupId,
     required String name,
     int? defaultUnitId,
   });
 
-  /// Ενημερώνει subCategoryId/name/defaultUnitId (όσα δεν είναι null).
+  /// Ενημερώνει itemGroupId/name/defaultUnitId (όσα δεν είναι null).
   /// [defaultUnitId] δέχεται `Value<int?>` ώστε:
   /// - `Value(null)` = καθάρισμα (χωρίς προτεινόμενη μονάδα)
   /// - `const Value.absent()` = μην το πειράξεις
   Future<bool> updateById(
     int id, {
-    int? subCategoryId,
+    int? itemGroupId,
     String? name,
     Value<int?>? defaultUnitId,
   });

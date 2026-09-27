@@ -46,8 +46,8 @@ final class ItemRepositoryImpl implements ItemRepository {
       );
 
   @override
-  Stream<List<Item>> watchBySubCategoryId(int subCategoryId) =>
-      _dao.watchBySubCategoryId(subCategoryId).handleError(
+  Stream<List<Item>> watchByItemGroupId(int itemGroupId) =>
+      _dao.watchByItemGroupId(itemGroupId).handleError(
             (Object e, StackTrace s) =>
                 Error.throwWithStackTrace(const DataLoadException(), s),
           );
@@ -82,13 +82,13 @@ final class ItemRepositoryImpl implements ItemRepository {
 
   @override
   Future<int> insert({
-    required int subCategoryId,
+    required int itemGroupId,
     required String name,
     int? defaultUnitId,
   }) =>
       _guard(
         () => _dao.insert(
-          subCategoryId: subCategoryId,
+          itemGroupId: itemGroupId,
           name: name,
           defaultUnitId: defaultUnitId,
         ),
@@ -97,14 +97,14 @@ final class ItemRepositoryImpl implements ItemRepository {
   @override
   Future<bool> updateById(
     int id, {
-    int? subCategoryId,
+    int? itemGroupId,
     String? name,
     Value<int?>? defaultUnitId,
   }) =>
       _guard(
         () => _dao.updateById(
           id,
-          subCategoryId: subCategoryId,
+          itemGroupId: itemGroupId,
           name: name,
           defaultUnitId: defaultUnitId,
         ),

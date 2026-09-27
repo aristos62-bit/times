@@ -1,13 +1,17 @@
 /// Unit tests για τα StreamProviders (stream_providers.dart) — Φάση 2, Βήμα 3.
 ///
 /// Μέρος 1/3 — catalog streams + family list: κατηγορίες, υποκατηγορίες,
-/// μονάδες, είδη, προμηθευτές + `subCategoriesByCategoryProvider`. Τα
+/// τμήματα, μονάδες, είδη, προμηθευτές + `subCategoriesByCategoryProvider` +
+/// `itemGroupsBySubCategoryProvider` + `itemGroupSearchProvider`. Τα
 /// search families ζουν στο `stream_providers_search_test.dart` και τα
 /// receipts στο `stream_providers_receipts_test.dart`.
 ///
 /// Riverpod 3.4.3: το `.future` του StreamProvider ΔΕΝ πιάνει την πρώτη
 /// εκπομπή drift stream queries (hang μέχρι timeout) → `container.listen` +
 /// `Completer` με predicate (επιλεκτική ακρόαση).
+///
+/// Refactor 4 επιπέδων (27-09-2026): είδη μέσω Τμήματος
+/// (`itemGroupId:`) + streams τμημάτων.
 library;
 
 import 'dart:async';
@@ -47,6 +51,24 @@ void main() {
     return ProviderContainer.test(
       overrides: [appDatabaseProvider.overrideWithValue(db)],
     );
+  }
+
+  /// Αλυσίδα 4 επιπέδων: category → sub → group. Επιστρέφει το groupId.
+  Future<int> seedGroup(
+    ProviderContainer container,
+    String categoryName,
+    String subName,
+    String groupName,
+  ) async {
+    final categoryId = await container
+        .read(categoryRepositoryProvider)
+        .insert(name: categoryName);
+    final subId = await container
+        .read(subCategoryRepositoryProvider)
+        .insert(categoryId: categoryId, name: subName);
+    return container
+        .read(itemGroupRepositoryProvider)
+        .insert(subCategoryId: subId, name: groupName);
   }
 
   group('categoryStreamProvider', () {
@@ -94,6 +116,28 @@ void main() {
     });
   });
 
+  /// Streams τμημάτων (27-09-2026).
+  group('itemGroupsStreamProvider', () {
+    test('εκπέμπει όλα τα τμήματα αλφαβητικά', () async {
+      final container = containerWithDb();
+      final catId = await container
+          .read(categoryRepositoryProvider)
+          .insert(name: 'ΤΡΟΦΙΜΑ');
+      final subId = await container
+          .read(subCategoryRepositoryProvider)
+          .insert(categoryId: catId, name: 'Γαλακτοκομικά');
+      final groupRepo = container.read(itemGroupRepositoryProvider);
+      await groupRepo.insert(subCategoryId: subId, name: 'Φέτα');
+      await groupRepo.insert(subCategoryId: subId, name: 'Γραβιέρα');
+
+      final rows = await waitForValue<List<ItemGroup>>(
+        (listen) => container.listen(itemGroupsStreamProvider, listen),
+        (v) => v.length == 2,
+      );
+      expect(rows.map((r) => r.name), ['Γραβιέρα', 'Φέτα']);
+    });
+  });
+
   group('unitsStreamProvider', () {
     test('εκπέμπει τις μονάδες', () async {
       final container = containerWithDb();
@@ -112,15 +156,10 @@ void main() {
   group('itemsStreamProvider', () {
     test('εκπέμπει τα είδη (με σειρά normalizedName)', () async {
       final container = containerWithDb();
-      final categoryId = await container
-          .read(categoryRepositoryProvider)
-          .insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId = await container
-          .read(subCategoryRepositoryProvider)
-          .insert(categoryId: categoryId, name: 'Φρούτα');
+      final groupId = await seedGroup(container, 'ΤΡΟΦΙΜΑ', 'Φρούτα', 'Μήλα');
       await container
           .read(itemRepositoryProvider)
-          .insert(subCategoryId: subId, name: 'Μήλο');
+          .insert(itemGroupId: groupId, name: 'Μήλο');
 
       final rows = await waitForValue<List<Item>>(
         (listen) => container.listen(itemsStreamProvider, listen),
@@ -165,6 +204,84 @@ void main() {
         (v) => v.length == 1,
       );
       expect(rows.map((r) => r.name), ['Μήλα']);
+    });
+  });
+
+  /// Τμήματα ανά υποκατηγορία (27-09-2026).
+  group('itemGroupsBySubCategoryProvider (family)', () {
+    test('επιστρέφει ΜΟΝΟ τα τμήματα της υποκατηγορίας', () async {
+      final container = containerWithDb();
+      final catId = await container
+          .read(categoryRepositoryProvider)
+          .insert(name: 'ΤΡΟΦΙΜΑ');
+      final subA = await container
+          .read(subCategoryRepositoryProvider)
+          .insert(categoryId: catId, name: 'Γαλακτοκομικά');
+      final subB = await container
+          .read(subCategoryRepositoryProvider)
+          .insert(categoryId: catId, name: 'Κρέας');
+      final groupRepo = container.read(itemGroupRepositoryProvider);
+      await groupRepo.insert(subCategoryId: subA, name: 'Φέτα');
+      await groupRepo.insert(subCategoryId: subB, name: 'Μπριζόλα');
+
+      final rows = await waitForValue<List<ItemGroup>>(
+        (listen) =>
+            container.listen(itemGroupsBySubCategoryProvider(subA), listen),
+        (v) => v.length == 1,
+      );
+      expect(rows.map((r) => r.name), ['Φέτα']);
+    });
+  });
+
+  /// LIVE αναζήτηση τμημάτων (27-09-2026) — in-memory filter ανά
+  /// `({subCategoryId, query})`, κενό query → `[]`.
+  group('itemGroupSearchProvider (family)', () {
+    test('κενό query → άμεσα [] (χωρίς DB access)', () async {
+      final container = containerWithDb();
+      final catId = await container
+          .read(categoryRepositoryProvider)
+          .insert(name: 'ΤΡΟΦΙΜΑ');
+      final subId = await container
+          .read(subCategoryRepositoryProvider)
+          .insert(categoryId: catId, name: 'Γαλακτοκομικά');
+      await container
+          .read(itemGroupRepositoryProvider)
+          .insert(subCategoryId: subId, name: 'Φέτα');
+
+      final rows = await waitForValue<List<ItemGroup>>(
+        (listen) => container.listen(
+          itemGroupSearchProvider((subCategoryId: subId, query: '')),
+          listen,
+        ),
+        (v) => v.isEmpty,
+      );
+      expect(rows, isEmpty);
+    });
+
+    test('in-memory filter ανά subCategoryId + query', () async {
+      final container = containerWithDb();
+      final catId = await container
+          .read(categoryRepositoryProvider)
+          .insert(name: 'ΤΡΟΦΙΜΑ');
+      final subA = await container
+          .read(subCategoryRepositoryProvider)
+          .insert(categoryId: catId, name: 'Γαλακτοκομικά');
+      final subB = await container
+          .read(subCategoryRepositoryProvider)
+          .insert(categoryId: catId, name: 'Κρέας');
+      final groupRepo = container.read(itemGroupRepositoryProvider);
+      await groupRepo.insert(subCategoryId: subA, name: 'Φέτα');
+      await groupRepo.insert(subCategoryId: subA, name: 'Γραβιέρα');
+      await groupRepo.insert(subCategoryId: subB, name: 'Μπριζόλα');
+
+      final rows = await waitForValue<List<ItemGroup>>(
+        (listen) => container.listen(
+          itemGroupSearchProvider((subCategoryId: subA, query: 'φετ')),
+          listen,
+        ),
+        (v) => v.length == 1,
+      );
+      expect(rows.map((g) => g.name), ['Φέτα']);
     });
   });
 }

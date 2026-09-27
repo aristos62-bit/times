@@ -13,11 +13,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_messages.dart';
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/router/app_router.dart';
+import 'package:times/data/local/app_database.dart';
+import 'package:times/data/models/category_tree_node.dart';
+import 'package:times/data/models/chart_totals.dart';
 import 'package:times/data/models/receipt_summary.dart';
+import 'package:times/data/providers/settings_providers.dart';
 import 'package:times/data/providers/stream_providers.dart';
 import 'package:times/presentation/price_entry/controllers/receipt_form_controller.dart';
 import 'package:times/presentation/price_entry/price_entry_page.dart';
@@ -27,6 +32,15 @@ import 'package:times/presentation/price_entry/widgets/receipt_header_section.da
 import 'package:times/presentation/shared/confirm_dialog.dart';
 
 void main() {
+  // Mock prefs για τον πραγματικό router: η SettingsPage χτίζεται στο launch
+  // (IndexedStack, όλες οι branches ζωντανές) → ο themeModeProvider λύνεται
+  // χωρίς πραγματικά prefs (πρότυπο app_router_test, Φάση 4 Β1).
+  late SharedPreferences prefs;
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
+  });
+
   Widget wrap(Size size) {
     return ProviderScope(
       overrides: [
@@ -130,10 +144,39 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            // Χωρίς DB access (hermetic, ίδιο override με το wrap()).
+            // Hermetic: ΚΑΜΙΑ πραγματική βάση — όλες οι DB-backed streams των
+            // 3 branches (IndexedStack) δίνονται κενές one-shot
+            // (`Stream.value`, όχι `Stream.empty()` — θα έμενε loading).
+            // Πρότυπο app_router_test (Φάση 4 Β1 + Φάση 5 charts + δέντρο
+            // κατηγοριών 4 επιπέδων 27-09-2026).
             recentReceiptsStreamProvider.overrideWith(
               (ref) => Stream.value(const <ReceiptSummary>[]),
             ),
+            categoryTreeStreamProvider.overrideWith(
+              (ref) => Stream.value(const <CategoryTreeNode>[]),
+            ),
+            suppliersStreamProvider.overrideWith(
+              (ref) => Stream.value(const <Supplier>[]),
+            ),
+            itemsStreamProvider.overrideWith(
+              (ref) => Stream.value(const <Item>[]),
+            ),
+            unitsStreamProvider.overrideWith(
+              (ref) => Stream.value(const <Unit>[]),
+            ),
+            supplierTotalsProvider.overrideWith(
+              (ref, query) => Stream.value(const <ChartSlice>[]),
+            ),
+            categoryTotalsProvider.overrideWith(
+              (ref, query) => Stream.value(const <ChartSlice>[]),
+            ),
+            itemGroupTotalsProvider.overrideWith(
+              (ref, query) => Stream.value(const <ChartSlice>[]),
+            ),
+            topItemsTotalsProvider.overrideWith(
+              (ref, query) => Stream.value(const <ChartSlice>[]),
+            ),
+            sharedPreferencesProvider.overrideWithValue(prefs),
           ],
           child: MaterialApp.router(routerConfig: buildAppRouter()),
         ),

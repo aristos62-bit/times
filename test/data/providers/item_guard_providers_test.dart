@@ -4,6 +4,9 @@
 /// `itemLinesCountProvider` (πλήθος για tooltip). `ProviderContainer.test()`
 /// + in-memory DB. Για τα families αρκεί το `.future` (το hang αφορούσε
 /// ΜΟΝΟ StreamProvider + drift — pattern `category_guard_providers_test`).
+///
+/// Refactor 4 επιπέδων (27-09-2026): το είδος ζουν σε Τμήμα — seed
+/// category → subCategory → itemGroup → item.
 library;
 
 import 'dart:async';
@@ -15,6 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -22,6 +26,7 @@ import 'package:times/data/local/daos/supplier_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/providers/settings_providers.dart';
+import 'package:times/data/repositories/item_group_repository_impl.dart';
 import 'package:times/data/repositories/receipt_repository_impl.dart';
 
 import '../local/helpers/in_memory_db.dart';
@@ -36,10 +41,21 @@ class _FailingCountLineDao extends ReceiptLineDao {
       Future.error(SqliteException(extendedResultCode: 1, message: 'test'));
 }
 
+/// DAO double που αποτυγχάνει στο count τμήματος — mapping check της
+/// πύλης τμήματος (`Future.error`, pattern guard test).
+class _FailingCountItemGroupDao extends ItemGroupDao {
+  _FailingCountItemGroupDao(super.db);
+
+  @override
+  Future<int> countItemsInUseByItemGroupId(int itemGroupId) =>
+      Future.error(SqliteException(extendedResultCode: 1, message: 'test'));
+}
+
 void main() {
   late dynamic db;
 
   late int itemId;
+  late int groupId;
   late int unitId;
   late int supplierId;
 
@@ -49,7 +65,9 @@ void main() {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    groupId =
+        await ItemGroupDao(db).insert(subCategoryId: subId, name: 'Φέτα');
+    itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
     supplierId = await SupplierDao(db).insert(name: 'Μάρκος');
   });
 
@@ -103,6 +121,65 @@ void main() {
       // NOTE: όχι `.future`+throwsA — Riverpod 3 retry (εύρημα Βήματος 3).
       final completer = Completer<Object?>();
       final sub = c.listen(canDeleteItemProvider(itemId), (prev, next) {
+        if (next.hasError && !completer.isCompleted) {
+          completer.complete(next.error);
+        }
+      });
+      addTearDown(sub.close);
+      expect(
+        await completer.future.timeout(const Duration(seconds: 5)),
+        isA<DataLoadException>(),
+      );
+    });
+  });
+
+  /// Πύλη διαγραφής τμήματος (27-09-2026) — συμμετρική με κατηγορίας.
+  /// `canDeleteItemGroupProvider` (`countItemsInUse == 0`) +
+  /// `inUseCountItemGroupProvider` (πλήθος για tooltip).
+  group('canDeleteItemGroupProvider / inUseCountItemGroupProvider', () {
+    test('κενό τμήμα → true / 0', () async {
+      final c = container();
+
+      expect(
+        await c.read(canDeleteItemGroupProvider(groupId).future),
+        isTrue,
+      );
+      expect(await c.read(inUseCountItemGroupProvider(groupId).future), 0);
+    });
+
+    test('είδος με γραμμή → false / πλήθος', () async {
+      final c = container();
+      final receiptId = await ReceiptDao(db).insert(
+        date: DateTime(2026, 1, 1),
+        supplierId: supplierId,
+      );
+      await ReceiptLineDao(db).insert(
+        receiptId: receiptId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 1,
+        priceCents: 100,
+      );
+
+      expect(
+        await c.read(canDeleteItemGroupProvider(groupId).future),
+        isFalse,
+      );
+      expect(await c.read(inUseCountItemGroupProvider(groupId).future), 1);
+    });
+
+    test('σφάλμα count → DataLoadException (mapping, listen — E1)', () async {
+      final c = ProviderContainer.test(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          itemGroupRepositoryProvider.overrideWithValue(
+            ItemGroupRepositoryImpl(_FailingCountItemGroupDao(db)),
+          ),
+        ],
+      );
+      // NOTE: όχι `.future`+throwsA — Riverpod 3 retry (εύρημα Βήματος 3).
+      final completer = Completer<Object?>();
+      final sub = c.listen(canDeleteItemGroupProvider(1), (prev, next) {
         if (next.hasError && !completer.isCompleted) {
           completer.complete(next.error);
         }

@@ -1,17 +1,22 @@
 /// Unit tests για το `SubCategoryRepositoryImpl` (Φάση 2, Βήμα 2) — mapping.
 ///
 /// CRUD + streams (watchAll, watchByCategoryId) με `DataLoadException`
-/// mapping: FK RESTRICT (items σε υποκατηγορία) στη διαγραφή + stream error
+/// mapping: FK RESTRICT (τμήματα σε υποκατηγορία) στη διαγραφή + stream error
 /// μετά από close.
+///
+/// Refactor 4 επιπέδων (27-09-2026): τα είδη ζουν σε Τμήματα — τα είδη των
+/// tests δημιουργούνται μέσω `ItemGroupDao`.
 library;
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/errors/app_exceptions.dart';
+import 'package:times/core/utils/greek_text_normalizer.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -45,15 +50,21 @@ void main() {
   late SubCategoryRepositoryImpl repo;
   late CategoryDao categoryDao;
   late ItemDao itemDao;
+  late ItemGroupDao groupDao;
 
   setUp(() {
     db = inMemoryDb();
     repo = SubCategoryRepositoryImpl(SubCategoryDao(db));
     categoryDao = CategoryDao(db);
     itemDao = ItemDao(db);
+    groupDao = ItemGroupDao(db);
   });
 
   tearDown(() async => await db.close());
+
+  /// Δημιουργεί τμήμα κάτω από την υποκατηγορία (για inserts ειδών).
+  Future<int> seedGroup(int subId, String name) =>
+      groupDao.insert(subCategoryId: subId, name: name);
 
   group('SubCategoryRepositoryImpl.insert/getById', () {
     test('insert + getById', () async {
@@ -68,6 +79,29 @@ void main() {
 
     test('getById ανύπαρκτο id → null', () async {
       expect(await repo.getById(999), isNull);
+    });
+  });
+
+  /// Αναζήτηση exact-match στο κανονικοποιημένο όνομα (soft dup-check
+  /// §2.2 — UNIQUE `normalizedName`, §3). Υπογραφές άθικτες — μόνο
+  /// προσθήκη coverage.
+  group('SubCategoryRepositoryImpl.getByNormalizedName', () {
+    test('exact-match βρίσκει την υποκατηγορία', () async {
+      final categoryId = await categoryDao.insert(name: 'ΤΡΟΦΙΜΑ');
+      final id =
+          await repo.insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+      final row = await repo.getByNormalizedName(
+        GreekTextNormalizer.normalize('Γαλακτοκομικά'),
+      );
+
+      expect(row, isNotNull);
+      expect(row!.id, id);
+    });
+
+    test('καμία αντιστοίχιση → null', () async {
+      final categoryId = await categoryDao.insert(name: 'ΤΡΟΦΙΜΑ');
+      await repo.insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+      expect(await repo.getByNormalizedName('ανυπαρκτο'), isNull);
     });
   });
 
@@ -112,7 +146,7 @@ void main() {
   });
 
   group('SubCategoryRepositoryImpl.deleteById', () {
-    test('διαγράφει χωρίς items → getById null', () async {
+    test('διαγράφει χωρίς τμήματα → getById null', () async {
       final categoryId = await categoryDao.insert(name: 'Α');
       final id = await repo.insert(categoryId: categoryId, name: 'Μόνη');
 
@@ -120,11 +154,11 @@ void main() {
       expect(await repo.getById(id), isNull);
     });
 
-    test('FK RESTRICT: με items → DataLoadException', () async {
+    test('FK RESTRICT: με τμήματα → DataLoadException', () async {
       final categoryId = await categoryDao.insert(name: 'Α');
       final id =
-          await repo.insert(categoryId: categoryId, name: 'Με Items');
-      await itemDao.insert(subCategoryId: id, name: 'Γάλα');
+          await repo.insert(categoryId: categoryId, name: 'Με Τμήματα');
+      await seedGroup(id, 'Φέτα');
 
       await expectLater(
         repo.deleteById(id),
@@ -171,11 +205,13 @@ void main() {
       );
     }
 
+    /// Υποκατηγορία + τμήμα + είδος (4 επίπεδα).
     Future<({int subId, int itemId})> seedSubWithMilk(String name) async {
       final categoryId = await categoryDao.insert(name: 'ΤΡΟΦΙΜΑ $name');
       final subId = await repo.insert(categoryId: categoryId, name: name);
+      final groupId = await seedGroup(subId, 'Τμήμα $name');
       final itemId =
-          await itemDao.insert(subCategoryId: subId, name: 'Γάλα $name');
+          await itemDao.insert(itemGroupId: groupId, name: 'Γάλα $name');
       return (subId: subId, itemId: itemId);
     }
 

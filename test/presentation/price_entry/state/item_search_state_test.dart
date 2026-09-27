@@ -13,7 +13,7 @@ import 'package:times/presentation/price_entry/state/item_search_state.dart';
 void main() {
   Item item({int id = 1, String name = 'Γάλα'}) => Item(
         id: id,
-        subCategoryId: 1,
+        itemGroupId: 1,
         name: name,
         normalizedName: 'γαλα',
       );

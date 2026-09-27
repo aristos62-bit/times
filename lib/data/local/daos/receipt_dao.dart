@@ -188,8 +188,9 @@ class ReceiptDao extends BaseDao {
 
   /// Παρακολουθεί τα σύνολα ανά κατηγορία σε περίοδο (§2.1 · Φάση 5).
   ///
-  /// Ίδιο contract με [watchTotalsBySupplier] — 5 joins
-  /// (categories → sub_categories → items → receipt_lines → receipts).
+  /// Ίδιο contract με [watchTotalsBySupplier] — 6 joins
+  /// (categories → sub_categories → item_groups → items → receipt_lines
+  /// → receipts).
   Stream<List<CategoryTotal>> watchTotalsByCategory({
     required DateTime from,
     required DateTime to,
@@ -204,7 +205,8 @@ class ReceiptDao extends BaseDao {
                COALESCE(SUM(rl.line_total_cents), 0) AS totalCents
         FROM categories c
         INNER JOIN sub_categories sc ON sc.category_id = c.id
-        INNER JOIN items i           ON i.sub_category_id = sc.id
+        INNER JOIN item_groups ig    ON ig.sub_category_id = sc.id
+        INNER JOIN items i           ON i.item_group_id = ig.id
         INNER JOIN receipt_lines rl  ON rl.item_id = i.id
         INNER JOIN receipts r        ON r.id = rl.receipt_id
         WHERE r.date >= ? AND r.date < ?
@@ -218,6 +220,7 @@ class ReceiptDao extends BaseDao {
               readsFrom: {
                 db.categories,
                 db.subCategories,
+                db.itemGroups,
                 db.items,
                 db.receiptLines,
                 db.receipts,
@@ -237,36 +240,37 @@ class ReceiptDao extends BaseDao {
             ),
       );
 
-  /// Παρακολουθεί τα σύνολα ανά υποκατηγορία σε περίοδο (§2.1 · Φάση 5).
+  /// Παρακολουθεί τα σύνολα ανά τμήμα σε περίοδο (§2.1 · 4 επίπεδα).
   ///
   /// Ίδιο contract με [watchTotalsBySupplier] — 4 joins
-  /// (sub_categories → items → receipt_lines → receipts).
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
+  /// (item_groups → items → receipt_lines → receipts). Αντικαθιστά την
+  /// παλιά πίτα υποκατηγορίας (απόφαση «Αντικατάσταση», 27-09-2026).
+  Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,
   }) =>
       guardStream(
-        'Ανάγνωση συνόλων υποκατηγοριών',
+        'Ανάγνωση συνόλων τμημάτων',
         () => db
             .customSelect(
               '''
-        SELECT sc.id AS id,
-               sc.name AS name,
+        SELECT ig.id AS id,
+               ig.name AS name,
                COALESCE(SUM(rl.line_total_cents), 0) AS totalCents
-        FROM sub_categories sc
-        INNER JOIN items i          ON i.sub_category_id = sc.id
+        FROM item_groups ig
+        INNER JOIN items i          ON i.item_group_id = ig.id
         INNER JOIN receipt_lines rl ON rl.item_id = i.id
         INNER JOIN receipts r       ON r.id = rl.receipt_id
         WHERE r.date >= ? AND r.date < ?
-        GROUP BY sc.id, sc.name
-        ORDER BY totalCents DESC, sc.name ASC
+        GROUP BY ig.id, ig.name
+        ORDER BY totalCents DESC, ig.name ASC
       ''',
               variables: [
                 Variable.withDateTime(from),
                 Variable.withDateTime(to),
               ],
               readsFrom: {
-                db.subCategories,
+                db.itemGroups,
                 db.items,
                 db.receiptLines,
                 db.receipts,
@@ -277,8 +281,8 @@ class ReceiptDao extends BaseDao {
               (rows) => rows
                   .map(
                     (row) => (
-                      subCategoryId: row.read<int>('id'),
-                      subCategoryName: row.read<String>('name'),
+                      itemGroupId: row.read<int>('id'),
+                      itemGroupName: row.read<String>('name'),
                       totalCents: row.read<int>('totalCents'),
                     ),
                   )

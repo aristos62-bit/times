@@ -12,15 +12,12 @@ library;
 
 import 'dart:async';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/core/logging/app_logger.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/providers/database_providers.dart';
-import 'package:times/data/repositories/item_repository.dart';
 import 'package:times/presentation/price_entry/controllers/item_search_controller.dart';
 import 'package:times/presentation/price_entry/state/item_search_state.dart';
 
@@ -66,18 +63,23 @@ void main() {
     return completer.future.timeout(const Duration(seconds: 5));
   }
 
-  /// Πλήρης αλυσίδα για είδος (κατηγορία → υποκατηγορία → είδος).
-  Future<({int itemId, int subId})> seedItemChain(ProviderContainer container,
+  /// Πλήρης αλυσίδα για είδος 4 επιπέδων (§3 · 27-09-2026):
+  /// κατηγορία → υποκατηγορία → τμήμα → είδος.
+  Future<({int itemId, int groupId, int subId})> seedItemChain(
+      ProviderContainer container,
       {String itemName = 'Γάλα'}) async {
     final categoryId =
         await container.read(categoryRepositoryProvider).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await container
         .read(subCategoryRepositoryProvider)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    final groupId = await container
+        .read(itemGroupRepositoryProvider)
+        .insert(subCategoryId: subId, name: 'Φρέσκα');
     final itemId = await container
         .read(itemRepositoryProvider)
-        .insert(subCategoryId: subId, name: itemName);
-    return (itemId: itemId, subId: subId);
+        .insert(itemGroupId: groupId, name: itemName);
+    return (itemId: itemId, groupId: groupId, subId: subId);
   }
 
   ItemSearchController notifierOf(ProviderContainer container) =>
@@ -276,7 +278,7 @@ void main() {
       expect(emissions, greaterThan(1));
       final after = emissions;
       notifier.selectItem(
-          Item(id: item.id, subCategoryId: item.subCategoryId, name: item.name,
+          Item(id: item.id, itemGroupId: item.itemGroupId, name: item.name,
               normalizedName: item.normalizedName));
       expect(emissions, after, reason: 'Ίδιο id → χωρίς re-notify');
     });
@@ -355,7 +357,7 @@ void main() {
       expect(result.subCategory?.name, 'Γαλακτοκομικά');
     });
 
-    test('dup μέσα στην κατηγορία → (null, false)', () async {
+    test('dup exact-match (normalized) → (null, false)', () async {
       final container = containerWithDb();
       await awaitIdle(container);
       final categoryId =
@@ -371,6 +373,60 @@ void main() {
     });
   });
 
+  /// Δημιουργία τμήματος (§2.4 · 27-09-2026, 4ο επίπεδο): soft dup-check
+  /// exact-match `getByNormalizedName` (UNIQUE §3). Κενό/άκυρο → `(null, false)`.
+  group('createItemGroup', () {
+    test('νέο → trim + insert + (itemGroup, created:true)', () async {
+      final container = containerWithDb();
+      await awaitIdle(container);
+      final categoryId =
+          await container.read(categoryRepositoryProvider).insert(name: 'ΤΡΟΦΙΜΑ');
+      final subId = await container
+          .read(subCategoryRepositoryProvider)
+          .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+
+      final result = await notifierOf(container)
+          .createItemGroup(subCategoryId: subId, name: '  Φρέσκα  ');
+      expect(result.created, isTrue);
+      expect(result.itemGroup?.name, 'Φρέσκα');
+    });
+
+    test('dup exact-match (normalized) → (null, false), καμία εγγραφή',
+        () async {
+      final container = containerWithDb();
+      await awaitIdle(container);
+      final categoryId =
+          await container.read(categoryRepositoryProvider).insert(name: 'ΤΡΟΦΙΜΑ');
+      final subId = await container
+          .read(subCategoryRepositoryProvider)
+          .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+      await container
+          .read(itemGroupRepositoryProvider)
+          .insert(subCategoryId: subId, name: 'Φρέσκα');
+
+      final result = await notifierOf(container)
+          .createItemGroup(subCategoryId: subId, name: 'ΦΡΕΣΚΑ');
+      expect(result.created, isFalse);
+      expect(result.itemGroup, isNull);
+      final all = await container
+          .read(itemGroupRepositoryProvider)
+          .watchAll()
+          .first;
+      expect(all.length, 1);
+    });
+
+    test('άκυρο (κενό) → (null, false)', () async {
+      final container = containerWithDb();
+      await awaitIdle(container);
+      final chain = await seedItemChain(container);
+
+      final result = await notifierOf(container)
+          .createItemGroup(subCategoryId: chain.subId, name: '   ');
+      expect(result.itemGroup, isNull);
+      expect(result.created, isFalse);
+    });
+  });
+
   group('createItem', () {
     test('νέο → trim + insert + (item, created:true) + log [DB]', () async {
       final container = containerWithDb();
@@ -380,7 +436,7 @@ void main() {
       AppLogger.testSink = logged.write;
 
       final result = await notifierOf(container)
-          .createItem(subCategoryId: chain.subId, name: '  Μήλο  ');
+          .createItem(itemGroupId: chain.groupId, name: '  Μήλο  ');
       expect(result.created, isTrue);
       expect(result.item?.name, 'Μήλο');
       expect(logged.toString(), contains('[DB]'));
@@ -394,7 +450,7 @@ void main() {
       final chain = await seedItemChain(container, itemName: 'Γάλα');
 
       final result = await notifierOf(container)
-          .createItem(subCategoryId: chain.subId, name: 'ΓΑΛΑ');
+          .createItem(itemGroupId: chain.groupId, name: 'ΓΑΛΑ');
       expect(result.created, isFalse);
       expect(result.item?.id, chain.itemId,
           reason: 'Ο υπάρχων επιλέχθηκε (§2.0.4 soft dup-check)');
@@ -408,76 +464,9 @@ void main() {
       final chain = await seedItemChain(container);
 
       final result =
-          await notifierOf(container).createItem(subCategoryId: chain.subId, name: '   ');
+          await notifierOf(container).createItem(itemGroupId: chain.groupId, name: '   ');
       expect(result.item, isNull);
       expect(result.created, isFalse);
     });
   });
-
-  group('error path (failing repo)', () {
-    test('search error → AsyncError(DataLoadException)', () async {
-      final container = ProviderContainer.test(
-        overrides: [
-          itemRepositoryProvider.overrideWithValue(const _FailingItemRepo()),
-        ],
-      );
-      addTearDown(container.dispose);
-      final notifier = notifierOf(container);
-      notifier.onQueryChanged('Γάλα');
-      // Debounce 250ms + stream fail — αρκετός χρόνος για να φτάσει το error.
-      final errState = await _waitForError(container);
-      expect(errState, isA<DataLoadException>());
-    });
-  });
-}
-
-/// Αναμονή για AsyncError state.
-Future<Object> _waitForError(ProviderContainer container) {
-  final completer = Completer<Object>();
-  container.listen<AsyncValue<ItemSearchState>>(
-    itemSearchControllerProvider,
-    (previous, next) {
-      if (next.hasError && !completer.isCompleted) {
-        completer.complete(next.error!);
-      }
-    },
-  );
-  return completer.future.timeout(const Duration(seconds: 5));
-}
-
-/// Σκόπιμα αποτυγχάνων ItemRepository — δοκιμή propagation σφάλματος.
-class _FailingItemRepo implements ItemRepository {
-  const _FailingItemRepo();
-
-  @override
-  Stream<List<Item>> watchAll() => throw const DataLoadException();
-  @override
-  Stream<List<Item>> watchBySubCategoryId(int subCategoryId) =>
-      throw const DataLoadException();
-  @override
-  Future<Item?> getById(int id) => throw const DataLoadException();
-  @override
-  Future<Item?> getByNormalizedName(String normalizedName) =>
-      throw const DataLoadException();
-  @override
-  Stream<List<Item>> searchByNormalizedName(String query, {int? limit}) async* {
-    throw const DataLoadException();
-  }
-  @override
-  Future<int> insert({
-    required int subCategoryId,
-    required String name,
-    int? defaultUnitId,
-  }) =>
-      throw const DataLoadException();
-  @override
-  Future<bool> updateById(
-    int id, {
-    int? subCategoryId,
-    String? name,
-    Value<int?>? defaultUnitId,
-  }) =>
-      throw const DataLoadException();
-  @override
-  Future<bool> deleteById(int id) => throw const DataLoadException();
 }

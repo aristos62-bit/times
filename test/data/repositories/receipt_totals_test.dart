@@ -1,6 +1,10 @@
 /// Unit tests για τα totals passthrough του `ReceiptRepositoryImpl`
 /// (§2.1 · Φάση 5 Βήμα 2) — τιμές από το DAO + stream mapping σε
 /// `DataLoadException` (pattern `watchLines`).
+///
+/// Refactor 4 επιπέδων (27-09-2026): η πίτα υποκατηγορίας αντικαταστάθηκε
+/// από πίτα Τμήματος — `watchTotalsByItemGroup` + `ItemGroupTotal`
+/// (το `SubCategoryTotal` ΔΕΝ υπάρχει πια). Τα category totals ίδια.
 library;
 
 import 'package:drift/native.dart';
@@ -9,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -38,7 +43,7 @@ class _FailingTotalsReceiptDao extends ReceiptDao {
       Stream.error(SqliteException(extendedResultCode: 1, message: 'test'));
 
   @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
+  Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,
   }) =>
@@ -64,11 +69,14 @@ void main() {
     db = inMemoryDb();
     repo = ReceiptRepositoryImpl(ReceiptDao(db), ReceiptLineDao(db));
 
+    // Αλυσίδα 4 επιπέδων: unit → category → sub → group → item.
     unitId = await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    final groupId =
+        await ItemGroupDao(db).insert(subCategoryId: subId, name: 'Φέτα');
+    itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
     supplierId = await SupplierDao(db).insert(name: 'Μάρκος');
   });
 
@@ -99,10 +107,44 @@ void main() {
       expect(rows.single.supplierName, 'Μάρκος');
     });
 
-    test('watchTotalsByCategory/Category/SubCategory/TopItems — κενά', () async {
+    test('watchTotalsByCategory — τιμές DAO (ίδια)', () async {
+      final receiptId =
+          await repo.insert(date: DateTime(2026, 1, 5), supplierId: supplierId);
+      await ReceiptLineDao(db).insert(
+        receiptId: receiptId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 2,
+        priceCents: 199,
+      );
+
+      final rows = await repo.watchTotalsByCategory(from: from, to: to).first;
+      expect(rows.single.totalCents, 199 * 2);
+      expect(rows.single.categoryName, 'ΤΡΟΦΙΜΑ');
+    });
+
+    test('watchTotalsByItemGroup — τιμές DAO (4 επίπεδα)', () async {
+      final receiptId =
+          await repo.insert(date: DateTime(2026, 1, 5), supplierId: supplierId);
+      await ReceiptLineDao(db).insert(
+        receiptId: receiptId,
+        itemId: itemId,
+        unitId: unitId,
+        quantity: 2,
+        priceCents: 199,
+      );
+
+      final rows =
+          await repo.watchTotalsByItemGroup(from: from, to: to).first;
+      expect(rows.single.totalCents, 199 * 2);
+      expect(rows.single.itemGroupName, 'Φέτα');
+      expect(rows.single.itemGroupId, isNotNull);
+    });
+
+    test('watchTotalsByCategory/ItemGroup/TopItems — κενά', () async {
       expect(await repo.watchTotalsByCategory(from: from, to: to).first, isEmpty);
       expect(
-        await repo.watchTotalsBySubCategory(from: from, to: to).first,
+        await repo.watchTotalsByItemGroup(from: from, to: to).first,
         isEmpty,
       );
       expect(await repo.watchTopItems(from: from, to: to).first, isEmpty);
@@ -120,7 +162,7 @@ void main() {
         emitsError(isA<DataLoadException>()),
       );
       await expectLater(
-        failing.watchTotalsBySubCategory(from: from, to: to),
+        failing.watchTotalsByItemGroup(from: from, to: to),
         emitsError(isA<DataLoadException>()),
       );
       await expectLater(

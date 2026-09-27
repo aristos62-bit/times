@@ -27,8 +27,9 @@ abstract final class AppStrings {
   static const String chartSupplierTitle = 'Ανά προμηθευτή';
   /// Τίτλος κάρτας «Ανά κατηγορία» (§2.1 · Φάση 5).
   static const String chartCategoryTitle = 'Ανά κατηγορία';
-  /// Τίτλος κάρτας «Ανά υποκατηγορία» (§2.1 · Φάση 5).
-  static const String chartSubCategoryTitle = 'Ανά υποκατηγορία';
+  /// Τίτλος κάρτας «Ανά τμήμα» (§2.1 · 4 επίπεδα 27-09-2026 — αντικαθιστά
+  /// την πίτα υποκατηγορίας).
+  static const String chartItemGroupTitle = 'Ανά τμήμα';
   /// Τίτλος κάρτας Top-10 ειδών (§2.1 · Φάση 5).
   static const String chartTopItemsTitle = 'Top-10 είδη';
   /// Label περιόδου «Ημέρα» (per-chart selector, §2.1 · Φάση 5).
@@ -118,6 +119,9 @@ abstract final class AppStrings {
   /// Label της inline επιλογής «+» για δημιουργία νέας υποκατηγορίας — το
   /// query αποδίδεται δυναμικά δίπλα («Νέα υποκατηγορία "x"», Βήμα 4).
   static const String addNewSubCategory = 'Νέα υποκατηγορία';
+  /// Label της inline επιλογής «+» για δημιουργία νέου τμήματος — το query
+  /// αποδίδεται δυναμικά δίπλα («Νέο τμήμα "x"», 27-09-2026).
+  static const String addNewItemGroup = 'Νέο τμήμα';
   /// Label της inline επιλογής «+» για δημιουργία νέου είδους — το query
   /// αποδίδεται δυναμικά δίπλα («Νέο είδος "x"», Βήμα 4).
   static const String addNewItem = 'Νέο είδος';
@@ -128,6 +132,8 @@ abstract final class AppStrings {
   /// Labels πεδίων στο popup δημιουργίας νέου είδους (dialog, Βήμα 4).
   static const String fieldCategory = 'Κατηγορία';
   static const String fieldSubCategory = 'Υποκατηγορία';
+  /// Label πεδίου τμήματος (ορατό όνομα UI του ItemGroup — «Τμήμα»).
+  static const String fieldItemGroup = 'Τμήμα';
   static const String fieldItemName = 'Όνομα είδους';
   /// Τίτλος του popup δημιουργίας νέου είδους (Βήμα 4).
   static const String newItemDialogTitle = 'Νέο είδος';

@@ -32,6 +32,7 @@ import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/models/receipt_summary.dart';
@@ -71,13 +72,16 @@ void main() {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    // Αλυσίδα 4 επιπέδων (§3 · 27-09-2026): τα είδη ανήκουν σε τμήμα.
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φρέσκα');
     await ItemDao(db).insert(
-      subCategoryId: subId,
+      itemGroupId: groupId,
       name: 'Γάλα',
       defaultUnitId: kiloId,
     );
     await ItemDao(db).insert(
-      subCategoryId: subId,
+      itemGroupId: groupId,
       name: 'Ψωμί',
       defaultUnitId: pieceId,
     );
@@ -400,11 +404,11 @@ class _BlockingReceiptRepo implements ReceiptRepository {
   }) =>
       inner.watchTotalsByCategory(from: from, to: to);
   @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
+  Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,
   }) =>
-      inner.watchTotalsBySubCategory(from: from, to: to);
+      inner.watchTotalsByItemGroup(from: from, to: to);
   @override
   Stream<List<ItemTotal>> watchTopItems({
     required DateTime from,

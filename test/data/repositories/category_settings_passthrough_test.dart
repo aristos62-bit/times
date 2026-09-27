@@ -4,6 +4,9 @@
 /// σε transaction) για Category/SubCategory: τιμές + error mapping σε
 /// `DataLoadException` (ποτέ raw SqliteException). In-memory βάση
 /// (pattern `category_repository_impl_test`).
+///
+/// Refactor 4 επιπέδων (27-09-2026): τα είδη ζουν σε Τμήματα — κάθε sub
+/// συνοδεύεται από group πριν τα inserts ειδών.
 library;
 
 import 'package:drift/native.dart';
@@ -13,6 +16,7 @@ import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/repositories/category_repository_impl.dart';
 import 'package:times/data/repositories/sub_category_repository_impl.dart';
@@ -49,15 +53,21 @@ void main() {
   late CategoryRepositoryImpl catRepo;
   late SubCategoryRepositoryImpl subRepo;
   late ItemDao itemDao;
+  late ItemGroupDao groupDao;
 
   setUp(() {
     db = inMemoryDb();
     catRepo = CategoryRepositoryImpl(CategoryDao(db));
     subRepo = SubCategoryRepositoryImpl(SubCategoryDao(db));
     itemDao = ItemDao(db);
+    groupDao = ItemGroupDao(db);
   });
 
   tearDown(() async => await db.close());
+
+  /// Δημιουργεί τμήμα κάτω από το sub (για inserts ειδών, 4 επίπεδα).
+  Future<int> seedGroup(int subId, String name) =>
+      groupDao.insert(subCategoryId: subId, name: name);
 
   group('CategoryRepository.countItems/deleteWithContents (Βήμα 4)', () {
     test('countItems: 0 → N (σύνολο, όχι DISTINCT)', () async {
@@ -67,8 +77,9 @@ void main() {
         categoryId: catId,
         name: 'Γαλακτοκομικά',
       );
-      await itemDao.insert(subCategoryId: subId, name: 'Γάλα');
-      await itemDao.insert(subCategoryId: subId, name: 'Τυρί');
+      final groupId = await seedGroup(subId, 'Φέτα');
+      await itemDao.insert(itemGroupId: groupId, name: 'Γάλα');
+      await itemDao.insert(itemGroupId: groupId, name: 'Τυρί');
       expect(await catRepo.countItems(catId), 2);
     });
 
@@ -78,7 +89,8 @@ void main() {
         categoryId: catId,
         name: 'Γαλακτοκομικά',
       );
-      await itemDao.insert(subCategoryId: subId, name: 'Γάλα');
+      final groupId = await seedGroup(subId, 'Φέτα');
+      await itemDao.insert(itemGroupId: groupId, name: 'Γάλα');
 
       expect(await catRepo.deleteWithContents(catId), isTrue);
       expect(await catRepo.getById(catId), isNull);
@@ -109,8 +121,9 @@ void main() {
         categoryId: catId,
         name: 'Γαλακτοκομικά',
       );
+      final groupId = await seedGroup(subId, 'Φέτα');
       expect(await subRepo.countItems(subId), 0);
-      await itemDao.insert(subCategoryId: subId, name: 'Γάλα');
+      await itemDao.insert(itemGroupId: groupId, name: 'Γάλα');
       expect(await subRepo.countItems(subId), 1);
     });
 
@@ -120,8 +133,9 @@ void main() {
         categoryId: catId,
         name: 'Γαλακτοκομικά',
       );
+      final groupId = await seedGroup(subId, 'Φέτα');
       final itemId = await itemDao.insert(
-        subCategoryId: subId,
+        itemGroupId: groupId,
         name: 'Γάλα',
       );
 

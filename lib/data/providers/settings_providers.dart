@@ -101,47 +101,46 @@ class ThemeModeController extends Notifier<ThemeMode> {
 
 // ─── Βήμα 3 — Providers ελέγχου (DESIGN §2.3:274-275 · §4:463) ───────────────
 
-/// Ζωντανό δέντρο «Κατηγορία ▸ Υποκατηγορίες» για τον tree editor (Βήμα 4).
+/// Ζωντανό δέντρο «Κατηγορία ▸ Υποκατηγορία ▸ Τμήματα» (27-09-2026).
 ///
 /// Σύνθεση in-memory πάνω στα ήδη-φορτωμένα `categoryStreamProvider` +
-/// `subCategoriesStreamProvider` — ΚΑΝΕΝΑ νέο DB query (§3: μικρές λίστες).
-/// Κάθε εκπομπή upstream ξανατρέχει το body και δίνει νέο single-value
-/// stream (`Stream.value` — precedent `categorySearchProvider`): τα δεδομένα
-/// ανανεώνονται χωρίς νέο subscription. Όσο κάποιο upstream φορτώνει,
-/// επιστρέφεται `Stream.empty()` (μένει σε loading — σκόπιμα, όχι `[]` που
-/// θα έδειχνε ψευδώς άδειο δέντρο).
-///
-/// Προτεραιότητα σφάλματος (εύρημα Βήματος 3 — Riverpod 3 retry): σε
-/// αποτυχία το upstream μένει `AsyncLoading` με συνημμένο σφάλμα (το
-/// Riverpod ξαναπροσπαθεί αυτόματα) και το σκέτο `.when` θα έπαιρνε το
-/// `loading` branch → `Stream.empty()` → το δέντρο θα έμενε loading ΓΙΑ
-/// ΠΑΝΤΑ σε μόνιμη βλάβη. Γι' αυτό το `hasError` (χωρίς τιμή) προηγείται
-/// με `Stream.error` (ήδη-mapαρισμένο `DataLoadException` — προβολή στο
-/// Βήμα 4 με `AsyncValue.when`: `AppErrors.loadDataFailed` + Επανάληψη).
-/// Χωρίς logging εδώ (τα σφάλματα λογκάρονται μία φορά στον DAO guard).
+/// `subCategoriesStreamProvider` + `itemGroupsStreamProvider` — ΚΑΝΕΝΑ νέο
+/// DB query (§3: μικρές λίστες). Προτεραιότητα σφάλματος (Riverpod 3 retry):
+/// `hasError` χωρίς τιμή → `Stream.error` (όχι αιώνιο loading).
 /// NON-autoDispose (σύμβαση DI δέντρου).
 final categoryTreeStreamProvider = StreamProvider<List<CategoryTreeNode>>(
   (ref) {
     final categories = ref.watch(categoryStreamProvider);
     final subs = ref.watch(subCategoriesStreamProvider);
-    if (categories.hasError && !categories.hasValue) {
-      return Stream.error(categories.error!, categories.stackTrace);
-    }
-    if (subs.hasError && !subs.hasValue) {
-      return Stream.error(subs.error!, subs.stackTrace);
+    final groups = ref.watch(itemGroupsStreamProvider);
+    for (final upstream in [categories, subs, groups]) {
+      if (upstream.hasError && !upstream.hasValue) {
+        return Stream.error(upstream.error!, upstream.stackTrace);
+      }
     }
     return categories.when(
       data: (cats) => subs.when(
-        data: (subList) => Stream.value([
-          for (final cat in cats)
-            (
-              category: cat,
-              subCategories: [
-                for (final sub in subList)
-                  if (sub.categoryId == cat.id) sub,
-              ],
-            ),
-        ]),
+        data: (subList) => groups.when(
+          data: (groupList) => Stream.value([
+            for (final cat in cats)
+              (
+                category: cat,
+                subNodes: [
+                  for (final sub in subList)
+                    if (sub.categoryId == cat.id)
+                      (
+                        subCategory: sub,
+                        itemGroups: [
+                          for (final g in groupList)
+                            if (g.subCategoryId == sub.id) g,
+                        ],
+                      ),
+                ],
+              ),
+          ]),
+          loading: () => const Stream.empty(),
+          error: (e, s) => Stream.error(e, s),
+        ),
         loading: () => const Stream.empty(),
         error: (e, s) => Stream.error(e, s),
       ),
@@ -198,6 +197,24 @@ final canDeleteSubCategoryProvider = FutureProvider.family<bool, int>(
 final inUseCountSubCategoryProvider = FutureProvider.family<int, int>(
   (ref, subCategoryId) =>
       ref.watch(subCategoryRepositoryProvider).countItemsInUse(subCategoryId),
+);
+
+// ─── Τμήματα — πύλη διαγραφής (§2.3 · 27-09-2026) ──────────────────────────
+
+/// Προ-έλεγχος διαγραφής τμήματος — συμμετρικό με κατηγορίας/υποκατηγορίας.
+/// `true` = καθαρό (`countItemsInUse == 0`, επιτρέπεται cascade).
+final canDeleteItemGroupProvider = FutureProvider.family<bool, int>(
+  (ref, itemGroupId) async =>
+      await ref.watch(itemGroupRepositoryProvider).countItemsInUse(
+            itemGroupId,
+          ) ==
+      0,
+);
+
+/// Πλήθος ειδών του τμήματος με ≥1 γραμμή — sibling για το tooltip.
+final inUseCountItemGroupProvider = FutureProvider.family<int, int>(
+  (ref, itemGroupId) =>
+      ref.watch(itemGroupRepositoryProvider).countItemsInUse(itemGroupId),
 );
 
 // ─── CRUD προμηθευτών — πύλη διαγραφής (§2.3 · 24-09-2026) ─────────────────

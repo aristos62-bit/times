@@ -113,7 +113,8 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
   /// Ανανέωση stale πυλών διαγραφής (§2.3:299 — one-shot families, IndexedStack).
   ///
   /// Καλείται ΜΟΝΟ μετά από επιτυχημένη μετάλλαξη γραμμών (save/delete):
-  /// τα families δεν ξανατρέχουν μόνα τους σε αλλαγή tab. Αποτυχία
+  /// τα families δεν ξανατρέχουν μόνα τους σε αλλαγή tab. 4 επίπεδα
+  /// (27-09-2026): είδος → τμήμα → υποκατηγορία → κατηγορία. Αποτυχία
   /// resolution → log + swallow (οι πύλες μένουν stale = σημερινή
   /// συμπεριφορά, το «↻» καλύπτει)· το save/delete έχει ήδη πετύχει.
   /// `null` resolutions → skip (defensive, pattern `loadReceiptForEdit`).
@@ -127,12 +128,20 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
         ref.invalidate(receiptCountSupplierProvider(supplierId));
       }
       final itemRepo = ref.read(itemRepositoryProvider);
+      final groupRepo = ref.read(itemGroupRepositoryProvider);
       final subRepo = ref.read(subCategoryRepositoryProvider);
       for (final itemId in itemIds.toSet()) {
         if (!ref.mounted) return;
         final item = await itemRepo.getById(itemId);
         if (item == null) continue;
-        final sub = await subRepo.getById(item.subCategoryId);
+        ref.invalidate(canDeleteItemProvider(itemId));
+        ref.invalidate(itemLinesCountProvider(itemId));
+        final group = await groupRepo.getById(item.itemGroupId);
+        if (group == null) continue;
+        if (!ref.mounted) return;
+        ref.invalidate(canDeleteItemGroupProvider(group.id));
+        ref.invalidate(inUseCountItemGroupProvider(group.id));
+        final sub = await subRepo.getById(group.subCategoryId);
         if (sub == null) continue;
         if (!ref.mounted) return;
         ref.invalidate(canDeleteSubCategoryProvider(sub.id));

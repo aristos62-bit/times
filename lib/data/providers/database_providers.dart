@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../local/app_database.dart';
 import '../local/daos/category_dao.dart';
 import '../local/daos/item_dao.dart';
+import '../local/daos/item_group_dao.dart';
 import '../local/daos/receipt_dao.dart';
 import '../local/daos/receipt_line_dao.dart';
 import '../local/daos/sub_category_dao.dart';
@@ -24,6 +25,8 @@ import '../local/daos/supplier_dao.dart';
 import '../local/daos/unit_dao.dart';
 import '../repositories/category_repository.dart';
 import '../repositories/category_repository_impl.dart';
+import '../repositories/item_group_repository.dart';
+import '../repositories/item_group_repository_impl.dart';
 import '../repositories/item_repository.dart';
 import '../repositories/item_repository_impl.dart';
 import '../repositories/receipt_repository.dart';
@@ -53,6 +56,12 @@ final categoryRepositoryProvider = Provider<CategoryRepository>(
 final subCategoryRepositoryProvider = Provider<SubCategoryRepository>(
   (ref) =>
       SubCategoryRepositoryImpl(SubCategoryDao(ref.watch(appDatabaseProvider))),
+);
+
+/// Singleton `ItemGroupRepository` (Τμήματα, 27-09-2026).
+final itemGroupRepositoryProvider = Provider<ItemGroupRepository>(
+  (ref) =>
+      ItemGroupRepositoryImpl(ItemGroupDao(ref.watch(appDatabaseProvider))),
 );
 
 /// Singleton `UnitRepository`.

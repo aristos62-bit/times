@@ -13,6 +13,7 @@ import 'package:times/core/constants/app_errors.dart';
 import 'package:times/core/logging/app_logger.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
@@ -38,6 +39,8 @@ void main() {
   }
 
   /// Seed: προμηθευτής + μονάδα + 2 είδη — επιστρέφει τα ids.
+  /// Αλυσίδα 4 επιπέδων (§3 · 27-09-2026): κατηγορία → υποκατηγορία →
+  /// τμήμα → είδος.
   Future<({int supplierId, int unitId, int itemId, int secondItemId})> seed(
     ProviderContainer container,
   ) async {
@@ -52,9 +55,11 @@ void main() {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    final itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φρέσκα');
+    final itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
     final secondItemId =
-        await ItemDao(db).insert(subCategoryId: subId, name: 'Τυρί');
+        await ItemDao(db).insert(itemGroupId: groupId, name: 'Τυρί');
     return (
       supplierId: supplierId,
       unitId: unitId,

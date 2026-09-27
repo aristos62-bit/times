@@ -4,6 +4,10 @@
 /// Search contract: input ήδη-normalized (προσομοίωση με GreekTextNormalizer),
 /// escape `%`/`_` literal (drift `escapeChar`), default/ατομικό limit,
 /// ordering normalizedName, κενό query → αμέσως `[]`.
+///
+/// Refactor 4 επιπέδων (27-09-2026): το είδος ανήκει σε Τμήμα
+/// (`itemGroupId:` αντί `subCategoryId:`) — η αλυσίδα seed είναι
+/// category → subCategory → itemGroup → item.
 library;
 
 import 'package:drift/drift.dart' show Value;
@@ -15,6 +19,7 @@ import 'package:times/core/utils/greek_text_normalizer.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -40,9 +45,11 @@ void main() {
   late ItemRepositoryImpl repo;
   late CategoryDao categoryDao;
   late SubCategoryDao subDao;
+  late ItemGroupDao groupDao;
   late SupplierDao supplierDao;
   late ReceiptDao receiptDao;
   late ReceiptLineDao lineDao;
+  late int itemGroupId;
   late int subCategoryId;
 
   setUp(() async {
@@ -50,25 +57,29 @@ void main() {
     repo = ItemRepositoryImpl(ItemDao(db));
     categoryDao = CategoryDao(db);
     subDao = SubCategoryDao(db);
+    groupDao = ItemGroupDao(db);
     supplierDao = SupplierDao(db);
     receiptDao = ReceiptDao(db);
     lineDao = ReceiptLineDao(db);
 
+    // Αλυσίδα 4 επιπέδων: category → subCategory → itemGroup.
     final categoryId = await categoryDao.insert(name: 'ΤΡΟΦΙΜΑ');
     subCategoryId =
         await subDao.insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    itemGroupId =
+        await groupDao.insert(subCategoryId: subCategoryId, name: 'Φέτα');
   });
 
   tearDown(() async => await db.close());
 
   group('ItemRepositoryImpl.insert/getById', () {
     test('insert + getById', () async {
-      final id = await repo.insert(subCategoryId: subCategoryId, name: 'Γάλα');
+      final id = await repo.insert(itemGroupId: itemGroupId, name: 'Γάλα');
       final row = await repo.getById(id);
 
       expect(row, isNotNull);
       expect(row!.name, 'Γάλα');
-      expect(row.subCategoryId, subCategoryId);
+      expect(row.itemGroupId, itemGroupId);
     });
 
     test('getById ανύπαρκτο id → null', () async {
@@ -76,21 +87,41 @@ void main() {
     });
 
     test('UNIQUE normalizedName: «Γάλα» vs «γαλα» → DataLoadException', () async {
-      await repo.insert(subCategoryId: subCategoryId, name: 'Γάλα');
+      await repo.insert(itemGroupId: itemGroupId, name: 'Γάλα');
 
       await expectLater(
-        repo.insert(subCategoryId: subCategoryId, name: 'γαλα'),
+        repo.insert(itemGroupId: itemGroupId, name: 'γαλα'),
         throwsA(isA<DataLoadException>()),
       );
     });
   });
 
+  /// Παρακολούθηση ειδών ανά τμήμα (4 επίπεδα — αντικαθιστά το
+  /// `watchBySubCategoryId`).
+  group('ItemRepositoryImpl.watchByItemGroupId', () {
+    test('φιλτράρει μόνο του ζητούμενου τμήματος', () async {
+      final otherGroupId = await groupDao.insert(
+        subCategoryId: subCategoryId,
+        name: 'Γραβιέρα',
+      );
+      await repo.insert(itemGroupId: itemGroupId, name: 'Γάλα');
+      await repo.insert(itemGroupId: otherGroupId, name: 'Τυρί');
+
+      final rows = await repo.watchByItemGroupId(itemGroupId).first;
+      expect(rows.map((i) => i.name), ['Γάλα']);
+    });
+
+    test('άδειο τμήμα → []', () async {
+      expect(await repo.watchByItemGroupId(9999).first, isEmpty);
+    });
+  });
+
   group('ItemRepositoryImpl.searchByNormalizedName', () {
     Future<void> seedTypical() async {
-      await repo.insert(subCategoryId: subCategoryId, name: 'Γάλα');
-      await repo.insert(subCategoryId: subCategoryId, name: 'Γάλα σκόνη');
-      await repo.insert(subCategoryId: subCategoryId, name: 'Γαλακτομπούρεκο');
-      await repo.insert(subCategoryId: subCategoryId, name: 'Ψωμί');
+      await repo.insert(itemGroupId: itemGroupId, name: 'Γάλα');
+      await repo.insert(itemGroupId: itemGroupId, name: 'Γάλα σκόνη');
+      await repo.insert(itemGroupId: itemGroupId, name: 'Γαλακτομπούρεκο');
+      await repo.insert(itemGroupId: itemGroupId, name: 'Ψωμί');
     }
 
     test('partial match από κανονικοποιημένο input (case/tone) ', () async {
@@ -119,16 +150,16 @@ void main() {
     });
 
     test('escape `%`: «100% φυσικό» αλλά ΟΧΙ «100x»', () async {
-      await repo.insert(subCategoryId: subCategoryId, name: '100% φυσικό');
-      await repo.insert(subCategoryId: subCategoryId, name: '100x');
+      await repo.insert(itemGroupId: itemGroupId, name: '100% φυσικό');
+      await repo.insert(itemGroupId: itemGroupId, name: '100x');
 
       final results = await repo.searchByNormalizedName('100%').first;
       expect(results.map((i) => i.name), ['100% φυσικό']);
     });
 
     test('escape `_`: «a_b» αλλά ΟΧΙ «aXb»', () async {
-      await repo.insert(subCategoryId: subCategoryId, name: 'a_b');
-      await repo.insert(subCategoryId: subCategoryId, name: 'aXb');
+      await repo.insert(itemGroupId: itemGroupId, name: 'a_b');
+      await repo.insert(itemGroupId: itemGroupId, name: 'aXb');
 
       final results = await repo.searchByNormalizedName('a_b').first;
       expect(results.map((i) => i.name), ['a_b']);
@@ -136,7 +167,7 @@ void main() {
 
     test('default limit AppConstants.searchResultsLimit (15)', () async {
       for (var i = 1; i <= 20; i++) {
-        await repo.insert(subCategoryId: subCategoryId, name: 'Α αλφα $i');
+        await repo.insert(itemGroupId: itemGroupId, name: 'Α αλφα $i');
       }
 
       final results = await repo.searchByNormalizedName('α αλφα').first;
@@ -145,7 +176,7 @@ void main() {
 
     test('limit: ατομικό όριο 5', () async {
       for (var i = 1; i <= 10; i++) {
-        await repo.insert(subCategoryId: subCategoryId, name: 'Α αλφα $i');
+        await repo.insert(itemGroupId: itemGroupId, name: 'Α αλφα $i');
       }
 
       final results = await repo.searchByNormalizedName('α αλφα', limit: 5).first;
@@ -154,7 +185,7 @@ void main() {
 
     test('limit ≤ 0 → πέφτει στο default (15)', () async {
       for (var i = 1; i <= 20; i++) {
-        await repo.insert(subCategoryId: subCategoryId, name: 'Α αλφα $i');
+        await repo.insert(itemGroupId: itemGroupId, name: 'Α αλφα $i');
       }
 
       final viaZero = await repo.searchByNormalizedName('α αλφα', limit: 0).first;
@@ -162,9 +193,9 @@ void main() {
     });
 
     test('ordering: normalizedName asc στο match', () async {
-      await repo.insert(subCategoryId: subCategoryId, name: 'Α ωμέγα');
-      await repo.insert(subCategoryId: subCategoryId, name: 'Α βήτα');
-      await repo.insert(subCategoryId: subCategoryId, name: 'Α άλφα');
+      await repo.insert(itemGroupId: itemGroupId, name: 'Α ωμέγα');
+      await repo.insert(itemGroupId: itemGroupId, name: 'Α βήτα');
+      await repo.insert(itemGroupId: itemGroupId, name: 'Α άλφα');
 
       final results = await repo.searchByNormalizedName('α ').first;
       expect(
@@ -184,7 +215,7 @@ void main() {
 
   group('ItemRepositoryImpl.updateById', () {
     test('αλλάζει name και ξανα-κανονικοποιεί (SPoT §3)', () async {
-      final id = await repo.insert(subCategoryId: subCategoryId, name: 'Γάλα');
+      final id = await repo.insert(itemGroupId: itemGroupId, name: 'Γάλα');
       expect(await repo.updateById(id, name: 'Γάλα πλήρες'), isTrue);
 
       final row = await repo.getById(id);
@@ -192,11 +223,21 @@ void main() {
       expect(row.normalizedName, GreekTextNormalizer.normalize('Γάλα πλήρες'));
     });
 
+    test('αλλάζει itemGroupId (μετακίνηση τμήματος)', () async {
+      final otherGroupId = await groupDao.insert(
+        subCategoryId: subCategoryId,
+        name: 'Γραβιέρα',
+      );
+      final id = await repo.insert(itemGroupId: itemGroupId, name: 'Γάλα');
+      expect(await repo.updateById(id, itemGroupId: otherGroupId), isTrue);
+      expect((await repo.getById(id))!.itemGroupId, otherGroupId);
+    });
+
     test('defaultUnitId: Value(null) καθαρίζει, Value.absent() αφήνει', () async {
       final unitDao = UnitDao(db);
       final unitId = await unitDao.insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
       final id = await repo.insert(
-        subCategoryId: subCategoryId,
+        itemGroupId: itemGroupId,
         name: 'Γάλα',
         defaultUnitId: unitId,
       );
@@ -218,13 +259,13 @@ void main() {
 
   group('ItemRepositoryImpl.deleteById', () {
     test('διαγράφει ελεύθερο είδος → getById null', () async {
-      final id = await repo.insert(subCategoryId: subCategoryId, name: 'Γάλα');
+      final id = await repo.insert(itemGroupId: itemGroupId, name: 'Γάλα');
       expect(await repo.deleteById(id), isTrue);
       expect(await repo.getById(id), isNull);
     });
 
     test('RESTRICT: με receipt lines → DataLoadException', () async {
-      final itemId = await repo.insert(subCategoryId: subCategoryId, name: 'Γάλα');
+      final itemId = await repo.insert(itemGroupId: itemGroupId, name: 'Γάλα');
       final unitId = await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
       final supplierId = await supplierDao.insert(name: 'Μάρκος');
       final receiptId =
@@ -246,9 +287,9 @@ void main() {
   });
 
   group('ItemRepositoryImpl error mapping', () {
-    test('insert με ανύπαρκτο subCategoryId → DataLoadException', () async {
+    test('insert με ανύπαρκτο itemGroupId → DataLoadException', () async {
       await expectLater(
-        repo.insert(subCategoryId: 9999, name: 'Χ'),
+        repo.insert(itemGroupId: 9999, name: 'Χ'),
         throwsA(isA<DataLoadException>()),
       );
     });

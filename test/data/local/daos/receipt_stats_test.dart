@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -29,6 +30,7 @@ void main() {
   late int unitId;
   late int categoryId;
   late int subId;
+  late int groupId;
   late int itemId;
   late int secondItemId;
   late int supplierId;
@@ -43,9 +45,10 @@ void main() {
     categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    groupId = await ItemGroupDao(db).insert(subCategoryId: subId, name: 'Φέτα');
+    itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
     secondItemId =
-        await ItemDao(db).insert(subCategoryId: subId, name: 'Τυρί');
+        await ItemDao(db).insert(itemGroupId: groupId, name: 'Τυρί');
     supplierId = await SupplierDao(db).insert(name: 'Μάρκος');
     secondSupplierId = await SupplierDao(db).insert(name: 'Ερμής');
   });
@@ -240,8 +243,10 @@ void main() {
       final otherCategoryId = await CategoryDao(db).insert(name: 'ΠΟΤΑ');
       final otherSubId = await SubCategoryDao(db)
           .insert(categoryId: otherCategoryId, name: 'Καφές');
+      final otherGroupId = await ItemGroupDao(db)
+          .insert(subCategoryId: otherSubId, name: 'Εσπρέσο τμήμα');
       final otherItemId =
-          await ItemDao(db).insert(subCategoryId: otherSubId, name: 'Εσπρέσο');
+          await ItemDao(db).insert(itemGroupId: otherGroupId, name: 'Εσπρέσο');
       await seedReceipt(date: DateTime(2026, 1, 5), supplier: supplierId, item: itemId);
       await seedReceipt(
         date: DateTime(2026, 1, 6),
@@ -283,12 +288,12 @@ void main() {
     });
   });
 
-  group('watchTotalsBySubCategory', () {
-    test('αθροίζει είδη υποκατηγορίας · άλλη υποκατηγορία εκτός', () async {
-      final otherSubId = await SubCategoryDao(db)
-          .insert(categoryId: categoryId, name: 'Αλλαντικά');
+  group('watchTotalsByItemGroup (4 επίπεδα · αντικαθιστά πίτα sub)', () {
+    test('αθροίζει είδη τμήματος · άλλο τμήμα εκτός', () async {
+      final otherGroupId = await ItemGroupDao(db)
+          .insert(subCategoryId: subId, name: 'Γιαούρτια');
       final otherItemId =
-          await ItemDao(db).insert(subCategoryId: otherSubId, name: 'Ζαμπόν');
+          await ItemDao(db).insert(itemGroupId: otherGroupId, name: 'Γιαούρτι');
       await seedReceipt(date: DateTime(2026, 1, 5), supplier: supplierId, item: itemId);
       await seedReceipt(
         date: DateTime(2026, 1, 6),
@@ -299,16 +304,19 @@ void main() {
       );
 
       final rows = await dao
-          .watchTotalsBySubCategory(
+          .watchTotalsByItemGroup(
             from: DateTime(2026, 1, 1),
             to: DateTime(2026, 2, 1),
           )
           .first;
 
       expect(rows.length, 2);
-      expect(rows.singleWhere((r) => r.subCategoryId == subId).totalCents, 199 * 2);
       expect(
-        rows.singleWhere((r) => r.subCategoryId == otherSubId).totalCents,
+        rows.singleWhere((r) => r.itemGroupId == groupId).totalCents,
+        199 * 2,
+      );
+      expect(
+        rows.singleWhere((r) => r.itemGroupId == otherGroupId).totalCents,
         250,
       );
     });

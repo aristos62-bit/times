@@ -81,11 +81,11 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
           );
 
   @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
+  Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,
   }) =>
-      _receiptDao.watchTotalsBySubCategory(from: from, to: to).handleError(
+      _receiptDao.watchTotalsByItemGroup(from: from, to: to).handleError(
             (Object e, StackTrace s) =>
                 Error.throwWithStackTrace(const DataLoadException(), s),
           );

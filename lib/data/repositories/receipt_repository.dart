@@ -54,9 +54,9 @@ abstract interface class ReceiptRepository {
     required DateTime to,
   });
 
-  /// Παρακολουθεί τα σύνολα ανά υποκατηγορία σε περίοδο (§2.1 · Φάση 5).
+  /// Παρακολουθεί τα σύνολα ανά τμήμα σε περίοδο (§2.1 · 4 επίπεδα).
   /// Passthrough στο DAO (Βήμα 2).
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
+  Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,
   });

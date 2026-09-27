@@ -61,15 +61,15 @@ class ItemManagementController extends Notifier<SettingsState> {
     }
   }
 
-  /// Ενημερώνει είδος (όνομα/υποκατηγορία/προτεινόμενη μονάδα). Validation/
+  /// Ενημερώνει είδος (όνομα/τμήμα/προτεινόμενη μονάδα). Validation/
   /// dup → `(ok:false, error:)` χωρίς DB access· καμία αλλαγή → no-op
   /// επιτυχία (χωρίς write)· ανύπαρκτο id → `loadDataFailed` (race §2.3).
-  /// Μετά το write ανανεώνει τις πύλες παλιάς + νέας υποκατηγορίας
-  /// (η μετακίνηση αλλάζει τα `inUse` counts — §2.3:299).
+  /// Μετά το write ανανεώνει τις πύλες παλιού + νέου τμήματος/υποκατηγορίας/
+  /// κατηγορίας (η μετακίνηση αλλάζει τα `inUse` counts — §2.3:299).
   Future<({bool ok, String? error})> updateItem({
     required int id,
     required String name,
-    required int subCategoryId,
+    required int itemGroupId,
     Value<int?>? defaultUnitId,
   }) =>
       _guarded(() async {
@@ -84,7 +84,7 @@ class ItemManagementController extends Notifier<SettingsState> {
           return (ok: false, error: AppErrors.loadDataFailed);
         }
         if (trimmed == current.name &&
-            subCategoryId == current.subCategoryId &&
+            itemGroupId == current.itemGroupId &&
             _sameUnit(defaultUnitId, current.defaultUnitId)) {
           return (ok: true, error: null); // no-op — καμία αλλαγή
         }
@@ -101,7 +101,7 @@ class ItemManagementController extends Notifier<SettingsState> {
         final updated = await repo.updateById(
           id,
           name: trimmed,
-          subCategoryId: subCategoryId,
+          itemGroupId: itemGroupId,
           defaultUnitId: defaultUnitId,
         );
         if (!updated) {
@@ -109,7 +109,7 @@ class ItemManagementController extends Notifier<SettingsState> {
         }
         await _refreshItemGuards(
           itemId: id,
-          subCategoryIds: {current.subCategoryId, subCategoryId},
+          itemGroupIds: {current.itemGroupId, itemGroupId},
         );
         AppLogger.info(LogTag.db, 'Ενημέρωση είδους #$id: $trimmed');
         return (ok: true, error: null);
@@ -134,7 +134,7 @@ class ItemManagementController extends Notifier<SettingsState> {
         ref.invalidate(canDeleteItemProvider(id));
         ref.invalidate(itemLinesCountProvider(id));
         if (item != null) {
-          await _refreshGuardsForSubs({item.subCategoryId});
+          await _refreshGuardsForGroups({item.itemGroupId});
         }
         // Επιλογή του σβησμένου στο root search → αποεπιλογή.
         final search = ref.read(itemSearchControllerProvider);
@@ -165,25 +165,33 @@ class ItemManagementController extends Notifier<SettingsState> {
     return requested.value == current;
   }
 
-  /// Ανανέωση πυλών είδους + υποκατηγοριών/κατηγοριών που το περιέχουν.
+  /// Ανανέωση πυλών είδους + τμημάτων/υποκατηγοριών/κατηγοριών που το
+  /// περιέχουν (27-09-2026, 4 επίπεδα).
   Future<void> _refreshItemGuards({
     required int itemId,
-    required Set<int> subCategoryIds,
+    required Set<int> itemGroupIds,
   }) async {
     ref.invalidate(canDeleteItemProvider(itemId));
     ref.invalidate(itemLinesCountProvider(itemId));
-    await _refreshGuardsForSubs(subCategoryIds);
+    await _refreshGuardsForGroups(itemGroupIds);
   }
 
-  /// Invalidate `canDelete*/inUseCount*` για υποκατηγορίες + γονικές
-  /// κατηγορίες (οι μετρήσεις τους αλλάζουν σε move/delete είδους).
-  Future<void> _refreshGuardsForSubs(Set<int> subCategoryIds) async {
+  /// Invalidate `canDelete*/inUseCount*` για τμήματα + γονικές
+  /// υποκατηγορίες + κατηγορίες (οι μετρήσεις τους αλλάζουν σε
+  /// move/delete είδους).
+  Future<void> _refreshGuardsForGroups(Set<int> itemGroupIds) async {
+    final groupRepo = ref.read(itemGroupRepositoryProvider);
     final subRepo = ref.read(subCategoryRepositoryProvider);
-    for (final subId in subCategoryIds) {
+    for (final groupId in itemGroupIds) {
       if (!ref.mounted) return;
-      ref.invalidate(canDeleteSubCategoryProvider(subId));
-      ref.invalidate(inUseCountSubCategoryProvider(subId));
-      final sub = await subRepo.getById(subId);
+      ref.invalidate(canDeleteItemGroupProvider(groupId));
+      ref.invalidate(inUseCountItemGroupProvider(groupId));
+      final group = await groupRepo.getById(groupId);
+      if (group == null) continue;
+      if (!ref.mounted) return;
+      ref.invalidate(canDeleteSubCategoryProvider(group.subCategoryId));
+      ref.invalidate(inUseCountSubCategoryProvider(group.subCategoryId));
+      final sub = await subRepo.getById(group.subCategoryId);
       if (sub == null) continue;
       if (!ref.mounted) return;
       ref.invalidate(canDeleteCategoryProvider(sub.categoryId));

@@ -19,6 +19,10 @@ abstract interface class CategoryRepository {
   /// Διαβάζει μία κατηγορία ή null αν δεν υπάρχει.
   Future<Category?> getById(int id);
 
+  /// Διαβάζει κατηγορία με βάση το κανονικοποιημένο όνομα (exact-match,
+  /// soft dup-check §2.2 — ο πίνακας ΕΧΕΙ UNIQUE `normalizedName`, §3).
+  Future<Category?> getByNormalizedName(String normalizedName);
+
   /// Εισάγει κατηγορία· επιστρέφει το νέο id.
   Future<int> insert({required String name});
 

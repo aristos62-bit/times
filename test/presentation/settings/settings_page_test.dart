@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/theme/app_theme.dart';
+import 'package:times/core/utils/greek_text_normalizer.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/providers/settings_providers.dart';
@@ -168,14 +169,36 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('δέντρο με δεδομένα: κατηγορία + υποκατηγορία', (tester) async {
-      // Η βάση είναι κενή (skipSeed=true) — insert 1 κατηγορίας + 1 υποκατ.
+    testWidgets('δέντρο με δεδομένα: κατηγορία + υποκατηγορία + τμήμα',
+        (tester) async {
+      // Η βάση είναι κενή (skipSeed=true) — insert αλυσίδας 3 επιπέδων
+      // (οι 3 streams του tree — categories/subs/groups — συντίθενται).
       final catId = await db
           .into(db.categories)
-          .insert(CategoriesCompanion.insert(name: 'ΤΡΟΦΙΜΑ'));
-      await db
+          .insert(
+            CategoriesCompanion.insert(
+              name: 'ΤΡΟΦΙΜΑ',
+              normalizedName: GreekTextNormalizer.normalize('ΤΡΟΦΙΜΑ'),
+            ),
+          );
+      final subId = await db
           .into(db.subCategories)
-          .insert(SubCategoriesCompanion.insert(categoryId: catId, name: 'Γάλα'));
+          .insert(
+            SubCategoriesCompanion.insert(
+              categoryId: catId,
+              name: 'Γαλακτοκομικά',
+              normalizedName: GreekTextNormalizer.normalize('Γαλακτοκομικά'),
+            ),
+          );
+      await db
+          .into(db.itemGroups)
+          .insert(
+            ItemGroupsCompanion.insert(
+              subCategoryId: subId,
+              name: 'Φρέσκα',
+              normalizedName: GreekTextNormalizer.normalize('Φρέσκα'),
+            ),
+          );
       await pumpAt(tester, const Size(800, 600));
       await tester.tap(find.text(AppStrings.titleCategoriesSection));
       await tester.pumpAndSettle();

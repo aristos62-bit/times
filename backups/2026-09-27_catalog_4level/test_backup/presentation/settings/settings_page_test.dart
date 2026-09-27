@@ -1,0 +1,194 @@
+/// Widget tests — `SettingsPage` (Φάση 4, Βήμα 1 · §2.3 DESIGN).
+///
+/// Η σελίδα είναι ConsumerWidget (watches `themeModeProvider`) → χρειάζεται
+/// ProviderScope με override των SharedPreferences (setMockInitialValues).
+/// Responsive §1.4: 3 μεγέθη (mobile/tablet/desktop) — κανένα overflow.
+/// Dark §1.5 (πρότυπο V12).
+library;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:times/core/constants/app_constants.dart';
+import 'package:times/core/constants/app_strings.dart';
+import 'package:times/core/theme/app_theme.dart';
+import 'package:times/data/local/app_database.dart';
+import 'package:times/data/providers/database_providers.dart';
+import 'package:times/data/providers/settings_providers.dart';
+import 'package:times/presentation/settings/settings_page.dart';
+
+import '../../data/local/helpers/in_memory_db.dart';
+
+void main() {
+  late SharedPreferences prefs;
+  late AppDatabase db;
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    prefs = await SharedPreferences.getInstance();
+    db = inMemoryDb();
+  });
+
+  tearDown(() async => await db.close());
+
+  Widget wrap(Size size, {ThemeData? theme}) {
+    return ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        // Βήμα 4: το section «Κατηγορίες» βλέπει DB providers (tree) —
+        // in-memory βάση, όχι real file (Α1 εξέλιξη).
+        appDatabaseProvider.overrideWithValue(db),
+      ],
+      child: MaterialApp(
+        theme: theme,
+        home: MediaQuery(
+          data: MediaQueryData(size: size),
+          child: const SettingsPage(),
+        ),
+      ),
+    );
+  }
+
+  /// Θέτει το μέγεθος θύρας (logical pixels, dpr=1) και περιμένει.
+  Future<void> pumpAt(WidgetTester tester, Size size, {ThemeData? theme}) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(wrap(size, theme: theme));
+    await tester.pumpAndSettle();
+  }
+
+  group('SettingsPage', () {
+    // ─── Περιεχόμενο ─────────────────────────────────────────────────────────
+    testWidgets('εμφανίζει AppBar «Ρυθμίσεις» + section «Θέμα» με 3 επιλογές',
+        (tester) async {
+      await pumpAt(tester, const Size(800, 600));
+      expect(find.byType(AppBar), findsOneWidget);
+      expect(find.text(AppStrings.titleSettings), findsOneWidget);
+      expect(find.text(AppStrings.titleThemeSection), findsOneWidget);
+      expect(find.text(AppStrings.themeModeLight), findsOneWidget);
+      expect(find.text(AppStrings.themeModeDark), findsOneWidget);
+      expect(find.text(AppStrings.themeModeSystem), findsOneWidget);
+      // Το παλιό placeholder «...σύντομα» δεν υπάρχει πλέον (§Q2: αφαίρεση
+      // settingsComingSoon — το section «Θέμα» το αντικατέστησε).
+      expect(find.textContaining('σύντομα'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('αλλαγή επιλογής ενημερώνει τον provider + persists στα prefs',
+        (tester) async {
+      await pumpAt(tester, const Size(800, 600));
+      await tester.tap(find.text(AppStrings.themeModeDark));
+      await tester.pumpAndSettle();
+      expect(prefs.getString(AppConstants.themeModeKey), 'dark');
+      expect(tester.takeException(), isNull);
+    });
+
+    // ─── Responsive (§1.4) ───────────────────────────────────────────────────
+    testWidgets('mobile (320×568) — κανένα overflow', (tester) async {
+      await pumpAt(tester, const Size(320, 568));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('tablet (800×600) — κανένα overflow', (tester) async {
+      await pumpAt(tester, const Size(800, 600));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('desktop (1200×800) — κανένα overflow', (tester) async {
+      await pumpAt(tester, const Size(1200, 800));
+      expect(tester.takeException(), isNull);
+    });
+
+    // ─── Dark (§1.5, πρότυπο V12) ────────────────────────────────────────────
+    testWidgets('dark: η σελίδα αποδίδεται σωστά', (tester) async {
+      await pumpAt(tester, const Size(800, 600), theme: AppTheme.dark);
+      expect(find.text(AppStrings.titleThemeSection), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    // ─── Categories section (§2.3 · Φάση 4 Βήμα 4) ───────────────────────────
+    testWidgets('sections κλειστά by default',
+        (tester) async {
+      await pumpAt(tester, const Size(800, 600));
+      expect(find.text(AppStrings.titleItemsSection), findsOneWidget);
+      expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
+      expect(find.text(AppStrings.titleSuppliersSection), findsOneWidget);
+      expect(find.text(AppStrings.titleReceiptsSection), findsOneWidget);
+      expect(find.text(AppStrings.titleBackupSection), findsOneWidget);
+      expect(find.byType(ExpansionTile), findsNWidgets(5));
+      // Περιεχόμενο κρυμμένο μέχρι tap (collapsible 24-09-2026).
+      expect(find.text(AppStrings.itemsEmpty), findsNothing);
+      expect(find.text(AppStrings.categoriesEmpty), findsNothing);
+      expect(find.text(AppStrings.suppliersEmpty), findsNothing);
+      expect(find.text(AppStrings.addNewCategory), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('expand → περιεχόμενο → collapse (round-trip)', (tester) async {
+      await pumpAt(tester, const Size(800, 600));
+      await tester.tap(find.text(AppStrings.titleCategoriesSection));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.categoriesEmpty), findsOneWidget);
+      await tester.tap(find.text(AppStrings.titleCategoriesSection));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.categoriesEmpty), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('εμφανίζει section «Κατηγορίες» με κενό δέντρο', (tester) async {
+      await pumpAt(tester, const Size(800, 600));
+      await tester.tap(find.text(AppStrings.titleCategoriesSection));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
+      expect(find.text(AppStrings.categoriesEmpty), findsOneWidget);
+      expect(find.text(AppStrings.addNewCategory), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('expand «Αποδείξεις» → φαίνεται το φίλτρο ημέρας', (tester) async {
+      await pumpAt(tester, const Size(800, 600));
+      await tester.tap(find.text(AppStrings.titleReceiptsSection));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.fieldDate), findsOneWidget);
+      expect(find.text(AppStrings.recentReceiptsEmpty), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('expand «Αντίγραφα» → φαίνονται τα 2 κουμπιά (§2.3 · Βήμα 5)',
+        (tester) async {
+      await pumpAt(tester, const Size(800, 600));
+      await tester.tap(find.text(AppStrings.titleBackupSection));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.backupExportAction), findsOneWidget);
+      expect(find.text(AppStrings.backupRestoreAction), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('δέντρο με δεδομένα: κατηγορία + υποκατηγορία', (tester) async {
+      // Η βάση είναι κενή (skipSeed=true) — insert 1 κατηγορίας + 1 υποκατ.
+      final catId = await db
+          .into(db.categories)
+          .insert(CategoriesCompanion.insert(name: 'ΤΡΟΦΙΜΑ'));
+      await db
+          .into(db.subCategories)
+          .insert(SubCategoriesCompanion.insert(categoryId: catId, name: 'Γάλα'));
+      await pumpAt(tester, const Size(800, 600));
+      await tester.tap(find.text(AppStrings.titleCategoriesSection));
+      await tester.pumpAndSettle();
+      expect(find.text('ΤΡΟΦΙΜΑ'), findsOneWidget);
+      expect(find.text(AppStrings.categoriesEmpty), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('dark: το section «Κατηγορίες» αποδίδεται σωστά',
+        (tester) async {
+      await pumpAt(tester, const Size(800, 600), theme: AppTheme.dark);
+      expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+}

@@ -31,7 +31,7 @@ class _ThrowingItemRepo implements ItemRepository {
   @override
   Stream<List<Item>> watchAll() => throw UnimplementedError();
   @override
-  Stream<List<Item>> watchBySubCategoryId(int subCategoryId) =>
+  Stream<List<Item>> watchByItemGroupId(int itemGroupId) =>
       throw UnimplementedError();
   @override
   Future<Item?> getByNormalizedName(String normalizedName) =>
@@ -41,7 +41,7 @@ class _ThrowingItemRepo implements ItemRepository {
       throw UnimplementedError();
   @override
   Future<int> insert({
-    required int subCategoryId,
+    required int itemGroupId,
     required String name,
     int? defaultUnitId,
   }) =>
@@ -49,7 +49,7 @@ class _ThrowingItemRepo implements ItemRepository {
   @override
   Future<bool> updateById(
     int id, {
-    int? subCategoryId,
+    int? itemGroupId,
     String? name,
     Value<int?>? defaultUnitId,
   }) =>
@@ -65,6 +65,7 @@ void main() {
   late int unitId;
   late int catId;
   late int subId;
+  late int groupId;
   late int itemId;
 
   setUp(() async {
@@ -85,9 +86,13 @@ void main() {
     subId = await container
         .read(subCategoryRepositoryProvider)
         .insert(categoryId: catId, name: 'Γάλα');
+    // Αλυσίδα 4 επιπέδων (§3 · 27-09-2026): το είδος ανήκει σε τμήμα.
+    groupId = await container
+        .read(itemGroupRepositoryProvider)
+        .insert(subCategoryId: subId, name: 'Φρέσκα');
     itemId = await container
         .read(itemRepositoryProvider)
-        .insert(subCategoryId: subId, name: 'Γάλα 1λ');
+        .insert(itemGroupId: groupId, name: 'Γάλα 1λ');
   });
 
   /// Γεμίζει τη φόρμα με 1 έγκυρη γραμμή (supplier + draft).
@@ -125,29 +130,41 @@ void main() {
       );
     });
 
-    test('save → rebuild πυλών κατηγορίας/υποκατηγορίας', () async {
-      var catBuilds = 0;
+    test('save → rebuild πυλών τμήματος/υποκατηγορίας/κατηγορίας (2-hop)',
+        () async {
+      var groupBuilds = 0;
       var subBuilds = 0;
+      var catBuilds = 0;
       container.listen(
-        canDeleteCategoryProvider(catId),
-        (_, _) => catBuilds++,
+        canDeleteItemGroupProvider(groupId),
+        (_, _) => groupBuilds++,
       );
       container.listen(
         canDeleteSubCategoryProvider(subId),
         (_, _) => subBuilds++,
       );
+      container.listen(
+        canDeleteCategoryProvider(catId),
+        (_, _) => catBuilds++,
+      );
       await fillForm();
       await container.read(receiptFormControllerProvider.notifier).saveReceipt();
-      await container.read(canDeleteCategoryProvider(catId).future);
+      await container.read(canDeleteItemGroupProvider(groupId).future);
       await container.read(canDeleteSubCategoryProvider(subId).future);
-      expect(catBuilds, greaterThanOrEqualTo(2));
+      await container.read(canDeleteCategoryProvider(catId).future);
+      expect(groupBuilds, greaterThanOrEqualTo(2));
       expect(subBuilds, greaterThanOrEqualTo(2));
+      expect(catBuilds, greaterThanOrEqualTo(2));
       expect(
-        container.read(canDeleteCategoryProvider(catId)).value,
+        container.read(canDeleteItemGroupProvider(groupId)).value,
         isFalse,
       );
       expect(
         container.read(canDeleteSubCategoryProvider(subId)).value,
+        isFalse,
+      );
+      expect(
+        container.read(canDeleteCategoryProvider(catId)).value,
         isFalse,
       );
     });
@@ -162,10 +179,15 @@ void main() {
       );
       addTearDown(throwing.dispose);
       var supplierBuilds = 0;
+      var groupBuilds = 0;
       var catBuilds = 0;
       throwing.listen(
         canDeleteSupplierProvider(supplierId),
         (_, _) => supplierBuilds++,
+      );
+      throwing.listen(
+        canDeleteItemGroupProvider(groupId),
+        (_, _) => groupBuilds++,
       );
       throwing.listen(
         canDeleteCategoryProvider(catId),
@@ -188,8 +210,10 @@ void main() {
       // Δεν ρίχνει — το swallow κρατά το save πράσινο.
       await form.saveReceipt();
       await throwing.read(canDeleteSupplierProvider(supplierId).future);
-      // Supplier (πριν το failing lookup) ανανεώθηκε· κατηγορία έμεινε stale.
+      // Supplier (πριν το failing lookup) ανανεώθηκε· τμήμα + κατηγορία
+      // έμειναν stale (το failing getById διέκοψε πριν τα invalidates).
       expect(supplierBuilds, greaterThanOrEqualTo(2));
+      expect(groupBuilds, equals(1));
       expect(catBuilds, equals(1));
     });
   });
@@ -203,10 +227,15 @@ void main() {
       expect(receipts, hasLength(1));
 
       var supplierBuilds = 0;
+      var groupBuilds = 0;
       var catBuilds = 0;
       container.listen(
         canDeleteSupplierProvider(supplierId),
         (_, _) => supplierBuilds++,
+      );
+      container.listen(
+        canDeleteItemGroupProvider(groupId),
+        (_, _) => groupBuilds++,
       );
       container.listen(
         canDeleteCategoryProvider(catId),
@@ -217,11 +246,17 @@ void main() {
           .deleteReceipt(receipts.single.id);
       expect(result.ok, isTrue);
       await container.read(canDeleteSupplierProvider(supplierId).future);
+      await container.read(canDeleteItemGroupProvider(groupId).future);
       await container.read(canDeleteCategoryProvider(catId).future);
       expect(supplierBuilds, greaterThanOrEqualTo(2));
+      expect(groupBuilds, greaterThanOrEqualTo(2));
       expect(catBuilds, greaterThanOrEqualTo(2));
       expect(
         container.read(canDeleteSupplierProvider(supplierId)).value,
+        isTrue,
+      );
+      expect(
+        container.read(canDeleteItemGroupProvider(groupId)).value,
         isTrue,
       );
       expect(

@@ -13,6 +13,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:sqlite3/sqlite3.dart';
 
 import 'package:times/core/errors/app_exceptions.dart';
+import 'package:times/core/utils/greek_text_normalizer.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/domain/services/backup_service.dart';
 
@@ -73,7 +74,10 @@ void main() {
     test('exportSnapshot → αρχείο + validate ΟΚ', () async {
       final db = openFileDb('a.sqlite');
       await db.into(db.categories).insert(
-            CategoriesCompanion.insert(name: 'ΤΡΟΦΙΜΑ'),
+            CategoriesCompanion.insert(
+              name: 'ΤΡΟΦΙΜΑ',
+              normalizedName: GreekTextNormalizer.normalize('ΤΡΟΦΙΜΑ'),
+            ),
           );
       final service = BackupService(db);
       final target = '${tmpRoot.path}/snap.sqlite';
@@ -103,7 +107,10 @@ void main() {
         () async {
       final dbA = openFileDb('ra.sqlite');
       await dbA.into(dbA.categories).insert(
-            CategoriesCompanion.insert(name: 'ALPHA'),
+            CategoriesCompanion.insert(
+              name: 'ALPHA',
+              normalizedName: GreekTextNormalizer.normalize('ALPHA'),
+            ),
           );
       final serviceA = BackupService(dbA);
       final snap = '${tmpRoot.path}/ra_snap.sqlite';
@@ -159,6 +166,41 @@ void main() {
       );
       expect(target.readAsStringSync(), 'old-content');
       expect(sidecar.existsSync(), isTrue);
+    });
+  });
+
+  group('BackupService.expectedTables (4 επίπεδα · 27-09-2026)', () {
+    test('8 πίνακες με `item_groups` (SPoT §3)', () {
+      expect(BackupService.expectedTables.length, 8);
+      expect(
+        BackupService.expectedTables,
+        containsAll([
+          'categories',
+          'sub_categories',
+          'item_groups',
+          'units',
+          'items',
+          'suppliers',
+          'receipts',
+          'receipt_lines',
+        ]),
+      );
+    });
+
+    test('παλιό backup 7 πινάκων (χωρίς item_groups) → invalid', () {
+      final db = openFileDb('old7.sqlite');
+      final service = BackupService(db);
+      final thin7 = '${tmpRoot.path}/thin7.sqlite';
+      final raw = sqlite3.open(thin7, mode: OpenMode.readWriteCreate);
+      for (final table in BackupService.expectedTables) {
+        if (table == 'item_groups') continue;
+        raw.execute('CREATE TABLE $table (id INTEGER PRIMARY KEY)');
+      }
+      raw.close();
+      expect(
+        service.validateBackupFile(thin7),
+        throwsA(isA<InvalidBackupFileException>()),
+      );
     });
   });
 

@@ -83,6 +83,42 @@ final subCategorySearchProvider =
   },
 );
 
+/// Όλα τα τμήματα, αλφαβητικά (27-09-2026).
+final itemGroupsStreamProvider = StreamProvider<List<ItemGroup>>(
+  (ref) => ref.watch(itemGroupRepositoryProvider).watchAll(),
+);
+
+/// Τμήματα μιας υποκατηγορίας — `.family` ανά [subCategoryId].
+final itemGroupsBySubCategoryProvider =
+    StreamProvider.family<List<ItemGroup>, int>(
+  (ref, subCategoryId) => ref
+      .watch(itemGroupRepositoryProvider)
+      .watchBySubCategoryId(subCategoryId),
+);
+
+/// LIVE αναζήτηση τμημάτων για το new-item dialog (27-09-2026).
+/// `.family` ανά `({int subCategoryId, String query})`.
+/// In-memory filter πάνω σε `watchBySubCategoryId` — χωρίς νέα DB query.
+/// Κενό query → `[]` (Stream.value). Non-autoDispose.
+final itemGroupSearchProvider =
+    StreamProvider.family<List<ItemGroup>, ({int subCategoryId, String query})>(
+  (ref, params) {
+    final normalized = GreekTextNormalizer.normalize(params.query.trim());
+    if (normalized.isEmpty) return Stream.value(const []);
+    return ref
+        .watch(itemGroupRepositoryProvider)
+        .watchBySubCategoryId(params.subCategoryId)
+        .map(
+          (groups) => groups
+              .where(
+                (g) =>
+                    GreekTextNormalizer.normalize(g.name).contains(normalized),
+              )
+              .toList(),
+        );
+  },
+);
+
 /// Όλες οι μονάδες μέτρησης, αλφαβητικά.
 final unitsStreamProvider = StreamProvider<List<Unit>>(
   (ref) => ref.watch(unitRepositoryProvider).watchAll(),
@@ -209,16 +245,17 @@ final categoryTotalsProvider =
       ),
 );
 
-/// Φέτες «Ανά υποκατηγορία» — top `pieMaxSlices` + «Λοιπά».
-final subCategoryTotalsProvider =
+/// Φέτες «Ανά τμήμα» — top `pieMaxSlices` + «Λοιπά» (27-09-2026,
+/// αντικαθιστά την πίτα υποκατηγορίας).
+final itemGroupTotalsProvider =
     StreamProvider.family<List<ChartSlice>, ChartQuery>(
   (ref, query) => ref
       .watch(receiptRepositoryProvider)
-      .watchTotalsBySubCategory(from: query.from, to: query.to)
+      .watchTotalsByItemGroup(from: query.from, to: query.to)
       .map(
         (rows) => toChartSlices(
           rows,
-          labelOf: (row) => row.subCategoryName,
+          labelOf: (row) => row.itemGroupName,
           totalOf: (row) => row.totalCents,
           limit: AppConstants.pieMaxSlices,
           othersLabel: AppStrings.othersSliceLabel,

@@ -15,6 +15,7 @@ import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
@@ -25,8 +26,9 @@ import 'package:times/presentation/price_entry/widgets/recent_receipts_list.dart
 import '../../../data/local/helpers/in_memory_db.dart';
 
 void main() {
-  /// Seed αλυσίδας (unit → category → sub → item → supplier) + 1 απόδειξη
-  /// 1 γραμμής. Επιστρέφει (receiptId, supplierId, itemId, unitId).
+  /// Seed αλυσίδας (unit → category → sub → group → item → supplier) +
+  /// 1 απόδειξη 1 γραμμής. Αλυσίδα 4 επιπέδων (§3 · 27-09-2026).
+  /// Επιστρέφει (receiptId, supplierId, itemId, unitId).
   Future<({int receiptId, int supplierId, int itemId, int unitId})>
   seedOneReceipt(ProviderContainer container) async {
     final db = container.read(appDatabaseProvider);
@@ -38,7 +40,9 @@ void main() {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    final itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φρέσκα');
+    final itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
     final supplierId =
         await container.read(supplierRepositoryProvider).insert(name: 'Μάρκος');
     final receiptId = await container

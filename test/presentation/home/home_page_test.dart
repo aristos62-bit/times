@@ -1,9 +1,10 @@
-/// Widget tests — `HomePage` (§2.1 · Φάση 5 Βήμα 5).
+/// Widget tests — `HomePage` (§2.1 · Φάση 5 Βήμα 5 · 4 επίπεδα 27-09-2026).
 ///
 /// Real σελίδα (ConsumerWidget): prefs mock (config, Βήμα 3) + overrides
 /// των 4 families με canned streams (hermetic, ΚΑΝΕΝΑ DB — idiom λίστας
-/// Βήματος 7). Καλύπτονται: 4 τίτλοι + Προσαρμογή · κενά → empty msgs ·
-/// data → πίτες · responsive 3 μεγέθη · dark · semantics.
+/// Βήματος 7). Καλύπτονται: 4 τίτλοι («Ανά τμήμα» αντί υποκατηγορίας) +
+/// Προσαρμογή (4 γραμμές) · κενά → empty msgs · data → πίτες ·
+/// responsive 3 μεγέθη · dark · semantics.
 /// Pattern `theme_mode_selector_test` (pump helper + scaler + dispose).
 library;
 
@@ -46,7 +47,7 @@ void main() {
         categoryTotalsProvider.overrideWith(
           (ref, query) => Stream.value(slices),
         ),
-        subCategoryTotalsProvider.overrideWith(
+        itemGroupTotalsProvider.overrideWith(
           (ref, query) => Stream.value(slices),
         ),
         topItemsTotalsProvider.overrideWith(
@@ -96,7 +97,7 @@ const Size tallSize = Size(800, 2500);
         findsOneWidget,
       );
       expect(
-        find.text(AppStrings.chartSubCategoryTitle, skipOffstage: false),
+        find.text(AppStrings.chartItemGroupTitle, skipOffstage: false),
         findsOneWidget,
       );
       expect(
@@ -130,6 +131,30 @@ const Size tallSize = Size(800, 2500);
       expect(
         find.byType(Pie3dChart, skipOffstage: false),
         findsNWidgets(4),
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Προσαρμογή: expand → 4 γραμμές (με «Ανά τμήμα»)',
+        (tester) async {
+      await pumpPage(tester, wrap(), tallSize);
+      await tester.tap(
+        find.text(AppStrings.homeCustomizationTitle, skipOffstage: false),
+      );
+      await tester.pumpAndSettle();
+      // Μία γραμμή ανά γράφημα (switch ορατότητας το καθένα).
+      expect(
+        find.byType(SwitchListTile, skipOffstage: false),
+        findsNWidgets(4),
+      );
+      // Το «Ανά τμήμα» εμφανίζεται 2 φορές: κάρτα + γραμμή προσαρμογής.
+      expect(
+        find.text(AppStrings.chartItemGroupTitle, skipOffstage: false),
+        findsNWidgets(2),
+      );
+      expect(
+        find.text(AppStrings.chartSupplierTitle, skipOffstage: false),
+        findsNWidgets(2),
       );
       expect(tester.takeException(), isNull);
     });
@@ -177,6 +202,10 @@ const Size tallSize = Size(800, 2500);
       // 1 ανά κάρτα (ο τίτλος-Text έχει δικό του node).
       expect(
         find.bySemanticsLabel(AppStrings.chartSupplierTitle),
+        findsWidgets,
+      );
+      expect(
+        find.bySemanticsLabel(AppStrings.chartItemGroupTitle),
         findsWidgets,
       );
       expect(

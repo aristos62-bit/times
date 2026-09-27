@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -28,7 +29,7 @@ void main() {
   late int unitId;
   late int itemId;
 
-  // Πλήρης αλυσίδα: unit, category→subcategory→item, supplier→receipt.
+  // Πλήρης αλυσίδα: unit, category→subcategory→group→item, supplier→receipt.
   Future<void> seed() async {
     final unitDao = UnitDao(db);
     unitId = await unitDao.insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
@@ -36,8 +37,10 @@ void main() {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φέτα');
     itemId = await ItemDao(db).insert(
-      subCategoryId: subId,
+      itemGroupId: groupId,
       name: 'Γάλα',
       defaultUnitId: unitId,
     );

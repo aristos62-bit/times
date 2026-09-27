@@ -42,6 +42,10 @@ final class CategoryRepositoryImpl implements CategoryRepository {
   Future<Category?> getById(int id) => _guard(() => _dao.getById(id));
 
   @override
+  Future<Category?> getByNormalizedName(String normalizedName) =>
+      _guard(() => _dao.getByNormalizedName(normalizedName));
+
+  @override
   Future<int> insert({required String name}) =>
       _guard(() => _dao.insert(name: name));
 

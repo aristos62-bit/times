@@ -55,7 +55,7 @@ void main() {
           categoryTotalsProvider.overrideWith(
             (ref, query) => Stream.value(const <ChartSlice>[]),
           ),
-          subCategoryTotalsProvider.overrideWith(
+          itemGroupTotalsProvider.overrideWith(
             (ref, query) => Stream.value(const <ChartSlice>[]),
           ),
           topItemsTotalsProvider.overrideWith(

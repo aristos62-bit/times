@@ -1,8 +1,12 @@
-/// Unit tests — `ItemManagementController` (§2.3 · ενότητα Ειδών).
+/// Unit tests — `ItemManagementController` (§2.3 · ενότητα Ειδών · 4 επίπεδα).
 ///
-/// update (ok/no-op/dup/missing/unit) · delete (ok/blocked/missing +
+/// update (ok/no-op/dup/missing/unit/move) · delete (ok/blocked/missing +
 /// καθάρισμα επιλογής) · refreshGuards. `ProviderContainer.test()` +
 /// in-memory DB (pattern supplier controller test).
+///
+/// Το είδος ανήκει σε ΤΜΗΜΑ (`itemGroupId` — 27-09-2026): η μετακίνηση
+/// ανανεώνει τις πύλες παλιού + νέου τμήματος ΚΑΙ των γονικών
+/// υποκατηγοριών/κατηγοριών (2-hop guard refresh).
 library;
 
 import 'package:drift/drift.dart' show Value;
@@ -10,8 +14,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_errors.dart';
+import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -25,22 +31,26 @@ import 'package:times/presentation/settings/controllers/item_management_controll
 import '../../../data/local/helpers/in_memory_db.dart';
 
 void main() {
-  late dynamic db;
+  late AppDatabase db;
 
   late int itemId;
+  late int groupId;
   late int subId;
+  late int categoryId;
   late int unitId;
 
   setUp(() async {
     db = inMemoryDb();
+    addTearDown(db.close);
     unitId = await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
-    final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
+    categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    itemId = await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+    groupId = await ItemGroupDao(
+      db,
+    ).insert(subCategoryId: subId, name: 'Φρέσκα');
+    itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
   });
-
-  tearDown(() async => await db.close());
 
   ProviderContainer container() => ProviderContainer.test(
         overrides: [appDatabaseProvider.overrideWithValue(db)],
@@ -49,12 +59,13 @@ void main() {
   group('ItemManagementController.updateItem', () {
     test('rename ΟΚ + dup/κενό/ανύπαρκτο', () async {
       final c = container();
+      addTearDown(c.dispose);
       final notifier = c.read(itemManagementControllerProvider.notifier);
 
       var result = await notifier.updateItem(
         id: itemId,
         name: 'Γάλα φρέσκο',
-        subCategoryId: subId,
+        itemGroupId: groupId,
       );
       expect(result.ok, isTrue);
       expect(await ItemDao(db).getById(itemId), isNotNull);
@@ -63,7 +74,7 @@ void main() {
       result = await notifier.updateItem(
         id: itemId,
         name: 'Γάλα φρέσκο',
-        subCategoryId: subId,
+        itemGroupId: groupId,
       );
       expect(result.ok, isTrue);
 
@@ -71,7 +82,7 @@ void main() {
       result = await notifier.updateItem(
         id: itemId,
         name: '   ',
-        subCategoryId: subId,
+        itemGroupId: groupId,
       );
       expect(result.ok, isFalse);
       expect(result.error, AppErrors.nameRequired);
@@ -80,25 +91,25 @@ void main() {
       result = await notifier.updateItem(
         id: 9999,
         name: 'Χ',
-        subCategoryId: subId,
+        itemGroupId: groupId,
       );
       expect(result.ok, isFalse);
       expect(result.error, AppErrors.loadDataFailed);
     });
 
     test('dup προς άλλο είδος → nameExists (εαυτός εξαιρείται)', () async {
-      final otherId = await ItemDao(db).insert(
-        subCategoryId: subId,
-        name: 'Τυρί',
-      );
+      final otherId = await ItemDao(
+        db,
+      ).insert(itemGroupId: groupId, name: 'Τυρί');
       final c = container();
+      addTearDown(c.dispose);
       final notifier = c.read(itemManagementControllerProvider.notifier);
 
       // Αλλαγή μόνο τόνων στον εαυτό → γράφεται (όχι dup).
       var result = await notifier.updateItem(
         id: itemId,
         name: 'ΓΑΛΑ',
-        subCategoryId: subId,
+        itemGroupId: groupId,
       );
       expect(result.ok, isTrue);
 
@@ -106,7 +117,7 @@ void main() {
       result = await notifier.updateItem(
         id: otherId,
         name: 'γάλα',
-        subCategoryId: subId,
+        itemGroupId: groupId,
       );
       expect(result.ok, isFalse);
       expect(result.error, AppErrors.nameExists);
@@ -114,12 +125,13 @@ void main() {
 
     test('defaultUnitId: θέτει + καθαρίζει (Value pattern)', () async {
       final c = container();
+      addTearDown(c.dispose);
       final notifier = c.read(itemManagementControllerProvider.notifier);
 
       var result = await notifier.updateItem(
         id: itemId,
         name: 'Γάλα',
-        subCategoryId: subId,
+        itemGroupId: groupId,
         defaultUnitId: Value(unitId),
       );
       expect(result.ok, isTrue);
@@ -128,31 +140,68 @@ void main() {
       result = await notifier.updateItem(
         id: itemId,
         name: 'Γάλα',
-        subCategoryId: subId,
+        itemGroupId: groupId,
         defaultUnitId: const Value(null),
       );
       expect(result.ok, isTrue);
       expect((await ItemDao(db).getById(itemId))!.defaultUnitId, isNull);
     });
 
-    test('μετακίνηση υποκατηγορίας ανανεώνει πύλες (λειτουργικό)', () async {
-      final otherSubId = await SubCategoryDao(db).insert(
-        categoryId: 1,
-        name: 'Αλλαντικά',
-      );
+    test('μετακίνηση τμήματος ανανεώνει πύλες 2-hop (group+sub+cat)',
+        () async {
+      final otherGroupId = await ItemGroupDao(
+        db,
+      ).insert(subCategoryId: subId, name: 'Κατεψυγμένα');
       final c = container();
+      addTearDown(c.dispose);
       final notifier = c.read(itemManagementControllerProvider.notifier);
 
       final result = await notifier.updateItem(
         id: itemId,
         name: 'Γάλα',
-        subCategoryId: otherSubId,
+        itemGroupId: otherGroupId,
       );
       expect(result.ok, isTrue);
-      expect((await ItemDao(db).getById(itemId))!.subCategoryId, otherSubId);
-      // Οι πύλες ξανατρέχουν (invalidate) — τιμές σωστές.
+      expect((await ItemDao(db).getById(itemId))!.itemGroupId, otherGroupId);
+      // Οι πύλες νέου + παλιού τμήματος ξανατρέχουν (invalidate) — καθαρές.
       expect(
-        await c.read(canDeleteSubCategoryProvider(otherSubId).future),
+        await c.read(canDeleteItemGroupProvider(otherGroupId).future),
+        isTrue,
+      );
+      expect(await c.read(canDeleteItemGroupProvider(groupId).future), isTrue);
+      // 2-hop: η γονική υποκατηγορία + κατηγορία παραμένουν καθαρές.
+      expect(await c.read(canDeleteSubCategoryProvider(subId).future), isTrue);
+      expect(
+        await c.read(canDeleteCategoryProvider(categoryId).future),
+        isTrue,
+      );
+    });
+
+    test('μετακίνηση σε τμήμα άλλης υποκατηγορίας/κατηγορίας', () async {
+      final otherCat = await CategoryDao(db).insert(name: 'ΟΙΚΙΑΚΑ');
+      final otherSub = await SubCategoryDao(
+        db,
+      ).insert(categoryId: otherCat, name: 'Καθαριστικά');
+      final otherGroup = await ItemGroupDao(
+        db,
+      ).insert(subCategoryId: otherSub, name: 'Υγρά');
+      final c = container();
+      addTearDown(c.dispose);
+      final notifier = c.read(itemManagementControllerProvider.notifier);
+
+      final result = await notifier.updateItem(
+        id: itemId,
+        name: 'Γάλα',
+        itemGroupId: otherGroup,
+      );
+      expect(result.ok, isTrue);
+      expect((await ItemDao(db).getById(itemId))!.itemGroupId, otherGroup);
+      // Παλιό δέντρο άδειο + καθαρό, νέο καθαρό.
+      expect(await c.read(canDeleteItemGroupProvider(groupId).future), isTrue);
+      expect(await c.read(canDeleteItemGroupProvider(otherGroup).future), isTrue);
+      expect(await c.read(canDeleteSubCategoryProvider(subId).future), isTrue);
+      expect(
+        await c.read(canDeleteSubCategoryProvider(otherSub).future),
         isTrue,
       );
     });
@@ -161,6 +210,7 @@ void main() {
   group('ItemManagementController.deleteItem', () {
     test('καθαρό → ok + εξαφανίζεται', () async {
       final c = container();
+      addTearDown(c.dispose);
       final result = await c
           .read(itemManagementControllerProvider.notifier)
           .deleteItem(itemId);
@@ -182,6 +232,7 @@ void main() {
         priceCents: 100,
       );
       final c = container();
+      addTearDown(c.dispose);
       final result = await c
           .read(itemManagementControllerProvider.notifier)
           .deleteItem(itemId);
@@ -191,6 +242,7 @@ void main() {
 
     test('ανύπαρκτο → loadDataFailed', () async {
       final c = container();
+      addTearDown(c.dispose);
       final result = await c
           .read(itemManagementControllerProvider.notifier)
           .deleteItem(9999);
@@ -200,6 +252,7 @@ void main() {
 
     test('καθαρίζει root επιλογή του σβησμένου', () async {
       final c = container();
+      addTearDown(c.dispose);
       final item = await ItemDao(db).getById(itemId);
       c.read(itemSearchControllerProvider.notifier).selectItem(item!);
       await c
@@ -215,6 +268,7 @@ void main() {
   group('ItemManagementController.refreshGuards', () {
     test('τρέχει χωρίς σφάλμα', () {
       final c = container();
+      addTearDown(c.dispose);
       c
           .read(itemManagementControllerProvider.notifier)
           .refreshGuards(itemIds: [itemId]);

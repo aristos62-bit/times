@@ -157,8 +157,8 @@ class ItemSearchController extends AsyncNotifier<ItemSearchState> {
   }
 
   /// Δημιουργία κατηγορίας από το «+» του dialog (§2.4). Soft dup-check:
-  /// in-memory (χωρίς UNIQUE στη βάση — όριο Βήμα 4). Κενό/άκυρο όνομα →
-  /// `(null, false)` χωρίς DB access.
+  /// exact-match `getByNormalizedName` (UNIQUE §3, 27-09-2026). Κενό/άκυρο
+  /// όνομα → `(null, false)` χωρίς DB access.
   Future<({Category? category, bool created})> createCategory(
     String name,
   ) async {
@@ -167,18 +167,19 @@ class ItemSearchController extends AsyncNotifier<ItemSearchState> {
     if (error != null) return (category: null, created: false);
 
     final repo = ref.read(categoryRepositoryProvider);
-    final existing = await repo.watchAll().first;
-    if (NameValidator.isDuplicate(trimmed, existing.map((c) => c.name))) {
-      return (category: null, created: false);
-    }
+    final existing = await repo.getByNormalizedName(
+      GreekTextNormalizer.normalize(trimmed),
+    );
+    if (existing != null) return (category: null, created: false);
 
     final id = await repo.insert(name: trimmed);
     final created = await repo.getById(id);
     return (category: created, created: true);
   }
 
-  /// Δημιουργία υποκατηγορίας στο dialog (§2.4). Soft dup-check εντός της
-  /// κατηγορίας (in-memory). Κενό/άκυρο → `(null, false)`.
+  /// Δημιουργία υποκατηγορίας στο dialog (§2.4). Soft dup-check exact-match
+  /// (UNIQUE §3, 27-09-2026 — όχι πλέον in-memory scan). Κενό/άκυρο →
+  /// `(null, false)`.
   Future<({SubCategory? subCategory, bool created})> createSubCategory({
     required int categoryId,
     required String name,
@@ -188,21 +189,42 @@ class ItemSearchController extends AsyncNotifier<ItemSearchState> {
     if (error != null) return (subCategory: null, created: false);
 
     final repo = ref.read(subCategoryRepositoryProvider);
-    final existing = await repo.watchByCategoryId(categoryId).first;
-    if (NameValidator.isDuplicate(trimmed, existing.map((s) => s.name))) {
-      return (subCategory: null, created: false);
-    }
+    final existing = await repo.getByNormalizedName(
+      GreekTextNormalizer.normalize(trimmed),
+    );
+    if (existing != null) return (subCategory: null, created: false);
 
     final id = await repo.insert(categoryId: categoryId, name: trimmed);
     final created = await repo.getById(id);
     return (subCategory: created, created: true);
   }
 
+  /// Δημιουργία τμήματος στο dialog (§2.4 · 27-09-2026). Soft dup-check
+  /// exact-match (UNIQUE §3). Κενό/άκυρο → `(null, false)`.
+  Future<({ItemGroup? itemGroup, bool created})> createItemGroup({
+    required int subCategoryId,
+    required String name,
+  }) async {
+    final trimmed = name.trim();
+    final error = NameValidator.validate(trimmed);
+    if (error != null) return (itemGroup: null, created: false);
+
+    final repo = ref.read(itemGroupRepositoryProvider);
+    final existing = await repo.getByNormalizedName(
+      GreekTextNormalizer.normalize(trimmed),
+    );
+    if (existing != null) return (itemGroup: null, created: false);
+
+    final id = await repo.insert(subCategoryId: subCategoryId, name: trimmed);
+    final created = await repo.getById(id);
+    return (itemGroup: created, created: true);
+  }
+
   /// Δημιουργία είναι (§2.4 · Βήμα 4, χωρίς defaultUnitId — scope Βήμα 5).
   /// Soft dup-check exact-match `getByNormalizedName` (§2.0.4). Κενό/άκυρο
   /// → `(null, false)`.
   Future<({Item? item, bool created})> createItem({
-    required int subCategoryId,
+    required int itemGroupId,
     required String name,
   }) async {
     final trimmed = name.trim();
@@ -215,7 +237,7 @@ class ItemSearchController extends AsyncNotifier<ItemSearchState> {
     );
     if (existing != null) return (item: existing, created: false);
 
-    final id = await repo.insert(subCategoryId: subCategoryId, name: trimmed);
+    final id = await repo.insert(itemGroupId: itemGroupId, name: trimmed);
     final created = await repo.getById(id);
     if (created != null) {
       AppLogger.info(LogTag.db, 'Δημιουργία είδους: ${created.name} (#$id)');

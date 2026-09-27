@@ -26,6 +26,7 @@ import 'package:times/core/constants/app_strings.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/models/receipt_summary.dart';
@@ -59,13 +60,20 @@ Widget wrap({AppDatabase? db, required Widget child}) {
 /// Θέτει τη θύρα 800×600 (logical, dpr=1) και ενεργοποιεί τα semantics.
 /// Επιστρέφει το handle — ο καλών πρέπει να το κλείσει (`dispose`) ΠΡΙΝ το
 /// τέλος του test (ο ελεγκτής semantics-handles τρέχει πριν τα tearDowns).
-Future<SemanticsHandle> pumpWithSemantics(WidgetTester tester, Widget child) async {
+/// Προαιρετικό [db]: όταν το widget διαβάζει streams (π.χ. section μονάδων),
+/// δίνεται η in-memory βάση — αλλιώς θα χτιζόταν η ΠΡΑΓΜΑΤΙΚΗ βάση και το
+/// `closeSafely` θα άφηνε pending timer (§2.0.1, hermetic tests).
+Future<SemanticsHandle> pumpWithSemantics(
+  WidgetTester tester,
+  Widget child, {
+  AppDatabase? db,
+}) async {
   tester.view.physicalSize = const Size(800, 600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   final handle = tester.ensureSemantics();
-  await tester.pumpWidget(wrap(child: child));
+  await tester.pumpWidget(wrap(db: db, child: child));
   await tester.pumpAndSettle();
   return handle;
 }
@@ -78,7 +86,8 @@ bool hasLiveRegion(WidgetTester tester, String text) {
 }
 
 void main() {
-  /// Seed: κατηγορία → υποκατηγορία → μονάδα (Κιλό) → είδος. Επιστρέφει
+  /// Seed: κατηγορία → υποκατηγορία → τμήμα → μονάδα (Κιλό) → είδος.
+  /// Αλυσίδα 4 επιπέδων (§3 · 27-09-2026). Επιστρέφει
   /// record `{ item, kiloId }` — default unit προαιρετικό (§2.2 Δ8).
   Future<({Item item, int kiloId})> seedItem(
     AppDatabase db, {
@@ -87,13 +96,15 @@ void main() {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φρέσκα');
     final kiloId = await UnitDao(db).insert(
       name: 'Κιλό',
       abbreviation: 'κιλ',
       allowsDecimal: true,
     );
     final itemId = await ItemDao(db).insert(
-      subCategoryId: subId,
+      itemGroupId: groupId,
       name: 'Γάλα',
       defaultUnitId: withDefaultUnit ? kiloId : null,
     );
@@ -182,6 +193,7 @@ void main() {
       final db = inMemoryDb();
       addTearDown(db.close);
       // Χωρίς default unit → κενό dropdown → η τιμή χωρίς μονάδα δίνει hint.
+      // Hermetic: η in-memory βάση δίνεται στο δέντρο (§2.0.1).
       final seeded = await seedItem(db, withDefaultUnit: false);
       final handle = await pumpWithSemantics(
         tester,
@@ -189,6 +201,7 @@ void main() {
           key: ValueKey(seeded.item.id),
           item: seeded.item,
         ),
+        db: db,
       );
 
       await tester.enterText(

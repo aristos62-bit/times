@@ -1,9 +1,9 @@
 /// Widget tests — `NewItemFlowDialog` (Φάση 3, Βήμα 4 · §2.4 DESIGN).
 ///
-/// Γραμμικός 3-βημάτων wizard (Κατηγορία → Υποκατηγορία → Όνομα) ΜΕΣΑ σε
-/// `AlertDialog` + `showDialog`. Κανένα «πίσω» κουμπί (§2.4). Οι ενδιάμεσες
-/// δημιουργίες (silent) και το τελικό save γίνονται μέσω
-/// `itemSearchControllerProvider` (πραγματική in-memory Drift βάση, όχι
+/// Γραμμικός 4-βημάτων wizard (Κατηγορία → Υποκατηγορία → Τμήμα → Όνομα,
+/// 27-09-2026) ΜΕΣΑ σε `AlertDialog` + `showDialog`. Κανένα «πίσω» κουμπί
+/// (§2.4). Οι ενδιάμεσες δημιουργίες (silent) και το τελικό save γίνονται
+/// μέσω `itemSearchControllerProvider` (πραγματική in-memory Drift βάση, όχι
 /// fakeAsync). Το feedback γίνεται ΠΑΝΤΑ από τον καλόντα μέσω του sealed
 /// `NewItemDialogResult` — το ίδιο το dialog ΔΕΝ εμφανίζει snackbars.
 ///
@@ -26,6 +26,7 @@ import 'package:times/core/utils/greek_text_normalizer.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/repositories/item_repository.dart';
@@ -101,8 +102,16 @@ void main() {
   }
 
   /// Περνά πέρα από τον debounce (250ms) + streams.
+  ///
+  /// TO-SPECIFIC (idiom item_search_field_test): η NativeDatabase τρέχει σε
+  /// background isolate (πραγματικός χρόνος) — μετά το debounce αφήνουμε
+  /// πραγματικό χρόνο (`runAsync`) ώστε να έρθουν τα αποτελέσματα, και ΜΟΝΟ
+  /// ΤΟΤΕ `pumpAndSettle`.
   Future<void> settleSearch(WidgetTester tester) async {
     await tester.pump(const Duration(milliseconds: 300));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 150)),
+    );
     await tester.pumpAndSettle();
   }
 
@@ -133,18 +142,30 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Seed: κατηγορία + υποκατηγορία (είδος όπου χρειάζεται).
+  /// Βήμα 3 (27-09-2026): το πεδίο τμήματος είναι το 3ο ενεργό (index 2 —
+  /// κατηγορία + υποκατηγορία «κλειδωμένα» με label μετά τα βήματα 1-2).
+  Future<void> selectItemGroup(
+      WidgetTester tester, String label) async {
+    await typeInNthField(tester, label.toLowerCase(), 2);
+    await tester.tap(find.text(label).last);
+    await tester.pumpAndSettle();
+  }
+
+  /// Seed: κατηγορία + υποκατηγορία + τμήμα (4 επίπεδα §3 · 27-09-2026)
+  /// + είδος όπου χρειάζεται.
   Future<void> seedChain(AppDatabase db, {String? itemName}) async {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φρέσκα');
     if (itemName != null) {
-      await ItemDao(db).insert(subCategoryId: subId, name: itemName);
+      await ItemDao(db).insert(itemGroupId: groupId, name: itemName);
     }
   }
 
   group('NewItemFlowDialog', () {
-    testWidgets('γωλμένη σε δημιουργία αρχικά δείχνει ΜΟΝΟ Βήμα 1'
+    testWidgets('ανοιγμένο dialog αρχικά δείχνει ΜΟΝΟ Βήμα 1'
         ' (linear, κανένα πίσω κουμπί)', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
@@ -157,18 +178,19 @@ void main() {
       expect(find.byType(NewItemFlowDialog), findsOneWidget);
       // labelText+hintText → 2 matches (label floated + hint στο πεδίο).
       expect(find.text(AppStrings.fieldCategory), findsWidgets);
-      // Βήματα 2-3 ΔΕΝ εμφανίζονται ακόμα.
+      // Βήματα 2-4 ΔΕΝ εμφανίζονται ακόμα.
       expect(find.text(AppStrings.fieldSubCategory), findsNothing);
+      expect(find.text(AppStrings.fieldItemGroup), findsNothing);
       expect(find.text(AppStrings.fieldItemName), findsNothing);
       // Το «Προσθήκη» υπάρχει στο action row αλλά ΕΙΝΑΙ disabled (δεν έχει
-      // υποκατηγορία/όνομα ακόμα — §2.4 linear flow).
+      // τμήμα/όνομα ακόμα — §2.4 linear flow).
       final save = tester.widget<FilledButton>(
           find.widgetWithText(FilledButton, AppStrings.newItemSave));
       expect(save.onPressed, isNull);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('επιλογή κατηγορίας → εμφανίζεται Βήμα 2, το 3 όχι ακόμα',
+    testWidgets('επιλογή κατηγορίας → εμφανίζεται Βήμα 2, τα 3-4 όχι ακόμα',
         (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
@@ -180,7 +202,28 @@ void main() {
       await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
 
       expect(find.text(AppStrings.fieldSubCategory), findsWidgets);
+      expect(find.text(AppStrings.fieldItemGroup), findsNothing);
       expect(find.text(AppStrings.fieldItemName), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('επιλογή υποκατηγορίας → εμφανίζεται Βήμα 3 (τμήμα), '
+        'το όνομα όχι ακόμα', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await seedChain(db);
+      await pumpHost(tester, const Size(800, 600), db: db, results: []);
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
+      await selectSubCategory(tester, 'Γαλακτοκομικά');
+
+      expect(find.text(AppStrings.fieldItemGroup), findsWidgets);
+      expect(find.text(AppStrings.fieldItemName), findsNothing);
+      final save = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, AppStrings.newItemSave));
+      expect(save.onPressed, isNull, reason: 'χωρίς τμήμα → disabled');
       expect(tester.takeException(), isNull);
     });
 
@@ -195,13 +238,14 @@ void main() {
 
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
-      // prefill του ονόματος εμφανίζεται ΜΟΝΟ αφού υπάρξει υποκατηγορία.
+      // prefill του ονόματος εμφανίζεται ΜΟΝΟ αφού υπάρξει τμήμα.
       expect(find.text('Κριτσίνια'), findsNothing);
 
       await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
       await selectSubCategory(tester, 'Γαλακτοκομικά');
+      await selectItemGroup(tester, 'Φρέσκα');
 
-      // Βήμα 3 με prefill «Κριτσίνια» + κουμπί «Προσθήκη».
+      // Βήμα 4 με prefill «Κριτσίνια» + κουμπί «Προσθήκη».
       expect(find.text('Κριτσίνια'), findsOneWidget);
       await tester.tap(find.widgetWithText(FilledButton, AppStrings.newItemSave));
       await tester.pumpAndSettle();
@@ -233,6 +277,7 @@ void main() {
       await tester.pumpAndSettle();
       await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
       await selectSubCategory(tester, 'Γαλακτοκομικά');
+      await selectItemGroup(tester, 'Φρέσκα');
 
       await tester.tap(find.widgetWithText(FilledButton, AppStrings.newItemSave));
       await tester.pumpAndSettle();
@@ -277,6 +322,7 @@ void main() {
       // Περνάμε τα δύο πρώτα βήματα χωρίς prefill στη γραμμή.
       await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
       await selectSubCategory(tester, 'Γαλακτοκομικά');
+      await selectItemGroup(tester, 'Φρέσκα');
 
       final save = tester.widget<FilledButton>(
           find.widgetWithText(FilledButton, AppStrings.newItemSave));
@@ -303,6 +349,7 @@ void main() {
       await tester.pumpAndSettle();
       await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
       await selectSubCategory(tester, 'Γαλακτοκομικά');
+      await selectItemGroup(tester, 'Φρέσκα');
 
       await tester.tap(find.widgetWithText(FilledButton, AppStrings.newItemSave));
       await tester.pumpAndSettle();
@@ -341,7 +388,9 @@ void main() {
       await tester.pumpAndSettle();
       await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
       await selectSubCategory(tester, 'Γαλακτοκομικά');
+      await selectItemGroup(tester, 'Φρέσκα');
 
+      expect(find.text(AppStrings.fieldItemGroup), findsWidgets);
       expect(find.text(AppStrings.fieldItemName), findsWidgets);
       expect(tester.takeException(), isNull);
     });
@@ -355,7 +404,7 @@ class _FailingItemRepo implements ItemRepository {
   @override
   Stream<List<Item>> watchAll() => throw const DataLoadException();
   @override
-  Stream<List<Item>> watchBySubCategoryId(int subCategoryId) =>
+  Stream<List<Item>> watchByItemGroupId(int itemGroupId) =>
       throw const DataLoadException();
   @override
   Future<Item?> getById(int id) => throw const DataLoadException();
@@ -367,14 +416,14 @@ class _FailingItemRepo implements ItemRepository {
       throw const DataLoadException();
   @override
   Future<int> insert({
-    required int subCategoryId,
+    required int itemGroupId,
     required String name,
     int? defaultUnitId,
   }) =>
       throw const DataLoadException();
   @override
   Future<bool> updateById(int id,
-      {int? subCategoryId, String? name, Value<int?>? defaultUnitId}) =>
+      {int? itemGroupId, String? name, Value<int?>? defaultUnitId}) =>
       throw const DataLoadException();
   @override
   Future<bool> deleteById(int id) => throw const DataLoadException();

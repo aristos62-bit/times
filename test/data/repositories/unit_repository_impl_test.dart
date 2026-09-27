@@ -13,6 +13,7 @@ import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -120,13 +121,19 @@ void main() {
   });
 
   group('UnitRepositoryImpl FK behavior (tables → units)', () {
-    test('SET NULL: διαγραφή μονάδας που είναι item.defaultUnitId', () async {
-      final unitId = await repo.insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
+    /// Αλυσίδα 4 επιπέδων: category → sub → group (για inserts ειδών).
+    Future<int> seedGroup() async {
       final categoryId = await categoryDao.insert(name: 'ΤΡΟΦΙΜΑ');
       final subId =
           await subDao.insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+      return ItemGroupDao(db).insert(subCategoryId: subId, name: 'Φέτα');
+    }
+
+    test('SET NULL: διαγραφή μονάδας που είναι item.defaultUnitId', () async {
+      final unitId = await repo.insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
+      final groupId = await seedGroup();
       final itemId =
-          await itemDao.insert(subCategoryId: subId, name: 'Γάλα', defaultUnitId: unitId);
+          await itemDao.insert(itemGroupId: groupId, name: 'Γάλα', defaultUnitId: unitId);
 
       expect(await repo.deleteById(unitId), isTrue);
       // SET NULL: το item μένει, χωρίς προτεινόμενη μονάδα.
@@ -136,10 +143,8 @@ void main() {
     test('RESTRICT: διαγραφή μονάδας σε ΓΡΑΜΜΗ ΑΠΟΔΕΙΞΗΣ → DataLoadException',
         () async {
       final unitId = await repo.insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
-      final categoryId = await categoryDao.insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId =
-          await subDao.insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-      final itemId = await itemDao.insert(subCategoryId: subId, name: 'Γάλα');
+      final groupId = await seedGroup();
+      final itemId = await itemDao.insert(itemGroupId: groupId, name: 'Γάλα');
       final supplierId = await supplierDao.insert(name: 'Μάρκος');
       final receiptId =
           await receiptDao.insert(date: DateTime(2026, 1, 1), supplierId: supplierId);

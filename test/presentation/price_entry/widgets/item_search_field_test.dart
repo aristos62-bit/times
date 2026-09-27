@@ -26,6 +26,7 @@ import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/repositories/item_repository.dart';
@@ -108,17 +109,21 @@ void main() {
     return container.read(itemSearchControllerProvider).value!;
   }
 
-  /// Seed: κατηγορία → υποκατηγορία → (προαιρετικό) είδος (μέσω DAOs — τα
-  /// Repositories είναι abstract interfaces).
+  /// Seed: κατηγορία → υποκατηγορία → τμήμα → (προαιρετικό) είδος
+  /// (4 επίπεδα §3 · 27-09-2026 — μέσω DAOs, τα Repositories είναι
+  /// abstract interfaces).
   Future<void> seedChain(AppDatabase db,
       {String category = 'ΤΡΟΦΙΜΑ',
       String sub = 'Γαλακτοκομικά',
+      String group = 'Φρέσκα',
       String? itemName}) async {
     final categoryId = await CategoryDao(db).insert(name: category);
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: sub);
+    final groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: group);
     if (itemName != null) {
-      await ItemDao(db).insert(subCategoryId: subId, name: itemName);
+      await ItemDao(db).insert(itemGroupId: groupId, name: itemName);
     }
   }
 
@@ -220,7 +225,7 @@ void main() {
 
     // ─── dialog → created / cancelled ────────────────────────────────────────
     testWidgets(
-        'δημιουργία μέσω dialog (category+sub+name) → itemAdded snackbar + '
+        'δημιουργία μέσω dialog (category+sub+group+name) → itemAdded snackbar + '
         'είδος εμφανίζεται στο banner', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
@@ -257,7 +262,20 @@ void main() {
       await tester.tap(find.text('Γαλακτοκομικά'));
       await tester.pumpAndSettle();
 
-      // Βήμα 3: prefill «Κριτσίνια» + «Προσθήκη».
+      // Βήμα 3: επιλογή τμήματος (index 2 — κατηγορία + υποκατηγορία
+      // «κλειδωμένες» με label μετά τα βήματα 1-2).
+      await tester.enterText(
+          find
+              .descendant(
+                  of: find.byType(NewItemFlowDialog),
+                  matching: find.byType(TextField))
+              .at(2),
+          'φρέσκα');
+      await settleSearch(tester);
+      await tester.tap(find.text('Φρέσκα'));
+      await tester.pumpAndSettle();
+
+      // Βήμα 4: prefill «Κριτσίνια» + «Προσθήκη».
       expect(
           find.descendant(
               of: find.byType(NewItemFlowDialog),
@@ -357,7 +375,7 @@ class _FailingItemRepo implements ItemRepository {
   @override
   Stream<List<Item>> watchAll() => throw const DataLoadException();
   @override
-  Stream<List<Item>> watchBySubCategoryId(int subCategoryId) =>
+  Stream<List<Item>> watchByItemGroupId(int itemGroupId) =>
       throw const DataLoadException();
   @override
   Future<Item?> getById(int id) => throw const DataLoadException();
@@ -369,14 +387,14 @@ class _FailingItemRepo implements ItemRepository {
       throw const DataLoadException();
   @override
   Future<int> insert({
-    required int subCategoryId,
+    required int itemGroupId,
     required String name,
     int? defaultUnitId,
   }) =>
       throw const DataLoadException();
   @override
   Future<bool> updateById(int id,
-      {int? subCategoryId, String? name, Value<int?>? defaultUnitId}) =>
+      {int? itemGroupId, String? name, Value<int?>? defaultUnitId}) =>
       throw const DataLoadException();
   @override
   Future<bool> deleteById(int id) => throw const DataLoadException();

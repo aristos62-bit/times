@@ -3,15 +3,20 @@
 /// Καθαρό CRUD + streams πάνω στον CategoryDao, με τη διαφορά ότι τα
 /// σφάλματα φτάνουν ΕΔΩ ως `DataLoadException` (ποτέ raw SqliteException):
 /// FK RESTRICT (υποκατηγορίες) στη διαγραφή + stream error μετά από close.
+///
+/// Refactor 4 επιπέδων (27-09-2026): τα είδη ζουν σε Τμήματα — η αλυσίδα
+/// seed είναι category → subCategory → itemGroup → item.
 library;
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/errors/app_exceptions.dart';
+import 'package:times/core/utils/greek_text_normalizer.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/receipt_dao.dart';
 import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
@@ -46,14 +51,26 @@ void main() {
   late dynamic db;
   late CategoryRepositoryImpl repo;
   late SubCategoryDao subDao;
+  late ItemGroupDao groupDao;
 
   setUp(() {
     db = inMemoryDb();
     repo = CategoryRepositoryImpl(CategoryDao(db));
     subDao = SubCategoryDao(db);
+    groupDao = ItemGroupDao(db);
   });
 
   tearDown(() async => await db.close());
+
+  /// Αλυσίδα 4 επιπέδων: sub + group κάτω από την κατηγορία, επιστρέφει
+  /// το groupId για inserts ειδών.
+  Future<int> seedGroup(int categoryId, String subName) async {
+    final subId = await subDao.insert(
+      categoryId: categoryId,
+      name: subName,
+    );
+    return groupDao.insert(subCategoryId: subId, name: 'Τμήμα $subName');
+  }
 
   group('CategoryRepositoryImpl.insert/getById', () {
     test('επιστρέφει id και η εγγραφή διαβάζεται', () async {
@@ -66,6 +83,35 @@ void main() {
 
     test('getById ανύπαρκτο id → null', () async {
       expect(await repo.getById(999), isNull);
+    });
+  });
+
+  /// Αναζήτηση exact-match στο κανονικοποιημένο όνομα (soft dup-check
+  /// §2.2 — ο πίνακας ΕΧΕΙ UNIQUE `normalizedName`, §3).
+  group('CategoryRepositoryImpl.getByNormalizedName', () {
+    test('exact-match βρίσκει την κατηγορία', () async {
+      final id = await repo.insert(name: 'ΤΡΟΦΙΜΑ');
+      final row = await repo.getByNormalizedName(
+        GreekTextNormalizer.normalize('ΤΡΟΦΙΜΑ'),
+      );
+
+      expect(row, isNotNull);
+      expect(row!.id, id);
+    });
+
+    test('case/tone-insensitive (ήδη-normalized input)', () async {
+      await repo.insert(name: 'Γαλακτοκομικά');
+      final row = await repo.getByNormalizedName(
+        GreekTextNormalizer.normalize('ΓΑΛΑΚΤΟΚΟΜΙΚΑ'),
+      );
+
+      expect(row, isNotNull);
+      expect(row!.name, 'Γαλακτοκομικά');
+    });
+
+    test('καμία αντιστοίχιση → null', () async {
+      await repo.insert(name: 'ΤΡΟΦΙΜΑ');
+      expect(await repo.getByNormalizedName('ανυπαρκτο'), isNull);
     });
   });
 
@@ -160,11 +206,8 @@ void main() {
 
     test('είδη χωρίς γραμμές → 0', () async {
       final categoryId = await repo.insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId = await subDao.insert(
-        categoryId: categoryId,
-        name: 'Γαλακτοκομικά',
-      );
-      await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+      final groupId = await seedGroup(categoryId, 'Γαλακτοκομικά');
+      await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
 
       expect(await repo.countItemsInUse(categoryId), 0);
     });
@@ -172,12 +215,9 @@ void main() {
     test('είδος με γραμμή → 1', () async {
       final seed = await seedUnitAndSupplier();
       final categoryId = await repo.insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId = await subDao.insert(
-        categoryId: categoryId,
-        name: 'Γαλακτοκομικά',
-      );
+      final groupId = await seedGroup(categoryId, 'Γαλακτοκομικά');
       final itemId =
-          await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+          await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
       await seedReceiptLine(
         itemId: itemId,
         unitId: seed.unitId,

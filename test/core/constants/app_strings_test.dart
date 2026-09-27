@@ -35,10 +35,10 @@ void main() {
       expect(AppStrings.retryButton, 'Επανάληψη');
     });
 
-    test('chart titles — 4 κάρτες (§2.1 · Φάση 5)', () {
+    test('chart titles — 4 κάρτες (§2.1 · Φάση 5 · 4 επίπεδα 27-09-2026)', () {
       expect(AppStrings.chartSupplierTitle, 'Ανά προμηθευτή');
       expect(AppStrings.chartCategoryTitle, 'Ανά κατηγορία');
-      expect(AppStrings.chartSubCategoryTitle, 'Ανά υποκατηγορία');
+      expect(AppStrings.chartItemGroupTitle, 'Ανά τμήμα');
       expect(AppStrings.chartTopItemsTitle, 'Top-10 είδη');
     });
 
@@ -148,9 +148,10 @@ void main() {
       );
     });
 
-    test('labels inline «+» — κατηγορία/υποκατηγορία/είδος (§2.4)', () {
+    test('labels inline «+» — κατηγορία/υποκατηγορία/τμήμα/είδος (§2.4)', () {
       expect(AppStrings.addNewCategory, 'Νέα κατηγορία');
       expect(AppStrings.addNewSubCategory, 'Νέα υποκατηγορία');
+      expect(AppStrings.addNewItemGroup, 'Νέο τμήμα');
       expect(AppStrings.addNewItem, 'Νέο είδος');
     });
 
@@ -159,9 +160,10 @@ void main() {
       expect(AppStrings.itemSearchRetry, 'Δοκιμή ξανά');
     });
 
-    test('labels νέου είδους dialog — κατηγορία/υποκατηγορία/όνομα (§2.4)', () {
+    test('labels νέου είδους dialog — κατηγορία/υποκατηγορία/τμήμα/όνομα (§2.4)', () {
       expect(AppStrings.fieldCategory, 'Κατηγορία');
       expect(AppStrings.fieldSubCategory, 'Υποκατηγορία');
+      expect(AppStrings.fieldItemGroup, 'Τμήμα');
       expect(AppStrings.fieldItemName, 'Όνομα είδους');
     });
 
@@ -254,7 +256,7 @@ const List<String> _allStrings = [
   AppStrings.retryButton,
   AppStrings.chartSupplierTitle,
   AppStrings.chartCategoryTitle,
-  AppStrings.chartSubCategoryTitle,
+  AppStrings.chartItemGroupTitle,
   AppStrings.chartTopItemsTitle,
   AppStrings.periodDay,
   AppStrings.periodWeek,
@@ -293,11 +295,13 @@ const List<String> _allStrings = [
   AppStrings.itemSearchIdle,
   AppStrings.addNewCategory,
   AppStrings.addNewSubCategory,
+  AppStrings.addNewItemGroup,
   AppStrings.addNewItem,
   AppStrings.changeItem,
   AppStrings.itemSearchRetry,
   AppStrings.fieldCategory,
   AppStrings.fieldSubCategory,
+  AppStrings.fieldItemGroup,
   AppStrings.fieldItemName,
   AppStrings.newItemDialogTitle,
   AppStrings.newItemNextStep,

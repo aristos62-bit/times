@@ -23,6 +23,7 @@ import 'package:times/core/logging/app_logger.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
+import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/models/receipt_summary.dart';
@@ -74,6 +75,8 @@ void main() {
         );
 
     /// Seed: προμηθευτής + μονάδα + είδος (για FK-safe save).
+    /// Αλυσίδα 4 επιπέδων (§3 · 27-09-2026): κατηγορία → υποκατηγορία →
+    /// τμήμα → είδος.
     Future<({Supplier supplier, int unitId, int itemId})> seed(
       ProviderContainer container,
     ) async {
@@ -90,8 +93,10 @@ void main() {
       final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
       final subId = await SubCategoryDao(db)
           .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
+      final groupId = await ItemGroupDao(db)
+          .insert(subCategoryId: subId, name: 'Φρέσκα');
       final itemId =
-          await ItemDao(db).insert(subCategoryId: subId, name: 'Γάλα');
+          await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
       return (supplier: supplier!, unitId: unitId, itemId: itemId);
     }
 
@@ -367,7 +372,7 @@ class _FailingReceiptRepo implements ReceiptRepository {
   }) =>
       throw const DataLoadException();
   @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
+  Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,
   }) =>
@@ -452,11 +457,11 @@ class _BlockingReceiptRepo implements ReceiptRepository {
   }) =>
       inner.watchTotalsByCategory(from: from, to: to);
   @override
-  Stream<List<SubCategoryTotal>> watchTotalsBySubCategory({
+  Stream<List<ItemGroupTotal>> watchTotalsByItemGroup({
     required DateTime from,
     required DateTime to,
   }) =>
-      inner.watchTotalsBySubCategory(from: from, to: to);
+      inner.watchTotalsByItemGroup(from: from, to: to);
   @override
   Stream<List<ItemTotal>> watchTopItems({
     required DateTime from,
