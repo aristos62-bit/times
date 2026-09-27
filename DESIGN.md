@@ -332,6 +332,7 @@ presentation/settings/
 1. **Export**: tap → snapshot μέσω `VACUUM INTO` temp αρχείου (WAL-safe) → bytes → `file_picker` save dialog (`saveFile(fileName, bytes)`, προτεινόμενο filename από `AppConstants.backupFileNamePattern` + timestamp) → `AppFeedback.showSuccess`. Προσαρμογή 25-09 (Βήμα 5): το `file_picker` 12 ΔΕΝ δίνει path (θέλει bytes) — το παλιό «save dialog → path → VACUUM INTO» δεν υλοποιείται. ΠΟΤΕ γραφή στο `backups/` του project (μόνο αρχεία βημάτων).
 2. **Restore**: tap → επιλογή αρχείου → **validation ΠΡΙΝ από οτιδήποτε** (SQLite header magic + αναμενόμενοι πίνακες) → αν άκυρο, error χωρίς αλλαγή.
 3. Αν έγκυρο → **confirm dialog** με ρητή προειδοποίηση αντικατάστασης → OK → **υποχρεωτικό auto-backup** τρέχουσας βάσης (safety net §1.9) → `closeSafely()` (idempotent) → αντικατάσταση αρχείου (+ καθαρισμός stale sidecars `-wal`/`-shm`/`-journal`, best-effort, μετά το copy) → **restart providers** (`ref.invalidate(appDatabaseProvider)`) ώστε όλο το UI να διαβάσει τα νέα δεδομένα.
+4. **Android Auto Backup ΑΠΕΝΕΡΓΟΠΟΙΗΜΕΝΟ** (`android:allowBackup="false"` στο manifest, 27-09-2026): το cloud restore θα επανέφερε ασύμβατη παλιά βάση μετά από reinstall (βλ. Ε3 κεφ. 54) — το μόνο αντίγραφο είναι το in-app export.
 
 ---
 

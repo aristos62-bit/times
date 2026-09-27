@@ -27,5 +27,9 @@
   διορθώθηκε με επιλογή μονάδας.
 - Ε2: «κόλλημα» V12 — ψευδές, contention από υπολείμματα σκοτωμένου run
   (μόνο του 24/24). Κανόνας: ένα run τη φορά, σκοτώνουμε υπολείμματα.
+- Ε3 (συσκευή): φάντασμα παλιάς βάσης μετά από reinstall — Android Auto Backup
+  επανέφερε το v1 `times.sqlite` (manifest χωρίς `allowBackup`) → v4 throw →
+  αιώνιο loading. Fix: `android:allowBackup="false"` στο manifest (μόνο
+  manifest, 0 Dart/tests). Μετά: απεγκατάσταση + reinstall = φρέσκια v4.
 - Τελικός έλεγχος από χρήστη: **1252/1252** ✓ · `flutter analyze` No issues.
 - Backup `backups/2026-09-27_item_unit_step/`.
