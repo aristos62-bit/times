@@ -5,10 +5,7 @@
 /// Φάση 3) διαχειρίζεται data/loading/error. Τα σφάλματα είναι ήδη
 /// `AppException` (repository mapping, Βήμα 2) → εδώ ΔΕΝ προσθέτουμε logging.
 ///
-/// Εξαίρεση (27-09-2026): οι 5 chart families είναι `autoDispose` — τα
-/// παραμετρικά queries (περίοδος/custom-range/rollover ημέρας) θα
-/// συσσώρευαν instances με ζωντανά DB watches (leak). Όλα τα υπόλοιπα
-/// NON-autoDispose: τα streams ζουν όσο η εφαρμογή (χωρίς churn).
+/// Όλοι NON-autoDispose: τα streams ζουν όσο η εφαρμογή (χωρίς churn).
 /// Σύμβαση ονομασίας §2.0.2: `xxxStreamProvider`. Τα δύο παραμετρικά
 /// (ανά category / ανά receipt) είναι `.family`.
 library;
@@ -210,17 +207,16 @@ final receiptLinesStreamProvider =
 
 // ─── Φάση 5 — Chart streams (§2.1 · Βήμα 3) ─────────────────────────────────
 //
-// 5 families `autoDispose` παραμετροποιημένες ανά [ChartQuery] (`{from, to}` — το `limit`
+// 5 families παραμετροποιημένες ανά [ChartQuery] (`{from, to}` — το `limit`
 // εφαρμόζεται στο slice, Q1 Βήματος 2). Slice top-N + «Λοιπά» in-memory
 // (precedent `categoryTreeStreamProvider`): η SQL επιστρέφει την πλήρη
 // ordered λίστα (ΧΩΡΙΣ LIMIT) και ο `toChartSlices` κρατά top-N + exact
 // υπόλοιπο. Σφάλματα ήδη `DataLoadException` (repo mapping) — εδώ ΔΕΝ
-// προσθέτουμε logging. `autoDispose` (εξαίρεση §2.1, 27-09-2026): κάθε query
-// που παύει να παρακολουθείται αποδεσμεύει το DB watch του (όχι leak).
+// προσθέτουμε logging. Όλα NON-autoDispose (σύμβαση DI δέντρου).
 
 /// Φέτες «Ανά προμηθευτή» — top `pieMaxSlices` + «Λοιπά».
 final supplierTotalsProvider =
-    StreamProvider.autoDispose.family<List<ChartSlice>, ChartQuery>(
+    StreamProvider.family<List<ChartSlice>, ChartQuery>(
   (ref, query) => ref
       .watch(receiptRepositoryProvider)
       .watchTotalsBySupplier(from: query.from, to: query.to)
@@ -237,7 +233,7 @@ final supplierTotalsProvider =
 
 /// Φέτες «Ανά κατηγορία» — top `pieMaxSlices` + «Λοιπά».
 final categoryTotalsProvider =
-    StreamProvider.autoDispose.family<List<ChartSlice>, ChartQuery>(
+    StreamProvider.family<List<ChartSlice>, ChartQuery>(
   (ref, query) => ref
       .watch(receiptRepositoryProvider)
       .watchTotalsByCategory(from: query.from, to: query.to)
@@ -254,7 +250,7 @@ final categoryTotalsProvider =
 
 /// Φέτες «Ανά υποκατηγορία» — top `pieMaxSlices` + «Λοιπά».
 final subCategoryTotalsProvider =
-    StreamProvider.autoDispose.family<List<ChartSlice>, ChartQuery>(
+    StreamProvider.family<List<ChartSlice>, ChartQuery>(
   (ref, query) => ref
       .watch(receiptRepositoryProvider)
       .watchTotalsBySubCategory(from: query.from, to: query.to)
@@ -271,7 +267,7 @@ final subCategoryTotalsProvider =
 
 /// Φέτες «Ανά τμήμα» — top `pieMaxSlices` + «Λοιπά».
 final itemGroupTotalsProvider =
-    StreamProvider.autoDispose.family<List<ChartSlice>, ChartQuery>(
+    StreamProvider.family<List<ChartSlice>, ChartQuery>(
   (ref, query) => ref
       .watch(receiptRepositoryProvider)
       .watchTotalsByItemGroup(from: query.from, to: query.to)
@@ -288,7 +284,7 @@ final itemGroupTotalsProvider =
 
 /// Φέτες Top-10 ειδών — top `topItemsLimit` + «Λοιπά».
 final topItemsTotalsProvider =
-    StreamProvider.autoDispose.family<List<ChartSlice>, ChartQuery>(
+    StreamProvider.family<List<ChartSlice>, ChartQuery>(
   (ref, query) => ref
       .watch(receiptRepositoryProvider)
       .watchTopItems(from: query.from, to: query.to)
@@ -368,8 +364,9 @@ final receiptsByDayStreamProvider = StreamProvider<List<ReceiptSummary>>(
 // ξανα-επιλύονται, custom άθικτο). Καθαρό Dart day-truncation (όχι flutter
 // `DateUtils`: το data layer δεν εξαρτάται από το UI, precedent
 // `watchSummariesByDay`). Αποδέσμευση του `Timer` με `ref.onDispose`
-// (precedent `ItemSearchController`). Τα παλιά chart family instances
-// αποδεσμεύονται αυτόματα (`autoDispose` families, 27-09-2026).
+// (precedent `ItemSearchController`).
+// Σημ.: τα παλιά chart family instances μένουν (NON-autoDispose σύμβαση) —
+// 4/ημέρα, αμελητέο για προσωπική χρήση (follow-up: autoDispose families).
 // NON-autoDispose (σύμβαση DI δέντρου).
 final todayProvider = NotifierProvider<TodayController, DateTime>(
   TodayController.new,
