@@ -52,6 +52,8 @@ abstract final class AppStrings {
   static const String chartMoveUp = 'Μετακίνηση πάνω';
   /// Tooltip/semantics του βέλους «κάτω» στην Προσαρμογή Οθόνης (§2.1 · Βήμα 5).
   static const String chartMoveDown = 'Μετακίνηση κάτω';
+  /// Placeholder text στη σελίδα στατιστικών (μέχρι Φάση 5).
+  static const String statsComingSoon = 'Τα στατιστικά θα εμφανιστούν σύντομα';
 
   // ─── Price entry (§2.2) ───────────────────────────────────────────────────
   /// Τίτλος AppBar στη σελίδα εισαγωγής τιμών.

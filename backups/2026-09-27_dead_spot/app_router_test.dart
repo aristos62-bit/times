@@ -99,6 +99,7 @@ void main() {
       expect(find.byType(HomePage), findsOneWidget);
       // 1η κάρτα (οι κάτω/Προσαρμογή εκτός cache-extent — βλ. home_page_test).
       expect(find.text(AppStrings.chartSupplierTitle), findsOneWidget);
+      expect(find.text(AppStrings.statsComingSoon), findsNothing);
       expect(tester.takeException(), isNull);
     });
 

@@ -80,6 +80,7 @@ void main() {
       find.text(AppStrings.chartSupplierTitle, skipOffstage: false),
       findsOneWidget,
     );
+    expect(find.text(AppStrings.statsComingSoon), findsNothing);
     // App Shell: NavigationBar (Material 3) με 3 destinations.
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationDestination), findsNWidgets(3));

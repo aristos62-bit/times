@@ -64,6 +64,10 @@ void main() {
       expect(AppStrings.chartMoveDown, 'Μετακίνηση κάτω');
     });
 
+    test('statsComingSoon — placeholder στατιστικών (§2.1 · Φάση 5)', () {
+      expect(AppStrings.statsComingSoon, 'Τα στατιστικά θα εμφανιστούν σύντομα');
+    });
+
     // ─── Price entry (§2.2) ──────────────────────────────────────────────────
     test('titlePriceEntry = «Εισαγωγή Τιμών» (§2.2)', () {
       expect(AppStrings.titlePriceEntry, 'Εισαγωγή Τιμών');
@@ -264,6 +268,7 @@ const List<String> _allStrings = [
   AppStrings.chartTotalLabel,
   AppStrings.chartMoveUp,
   AppStrings.chartMoveDown,
+  AppStrings.statsComingSoon,
   AppStrings.titlePriceEntry,
   AppStrings.saveReceipt,
   AppStrings.updateReceipt,

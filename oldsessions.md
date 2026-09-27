@@ -73,9 +73,12 @@
 | 53 | [Seed καταλόγου v3](oldsessions/2026-09-27_catalog_v3_seed.md) | 27-09-2026 | Κλειστό | Προσαρμογή `supermarket_categories_v3.md` (6/28/183/0) · διπλοεγγραφές λυμένες στο .md · **1249/1249** ✓ (+3) · analyze καθαρό |
 | 54 | [Υποχρεωτική μονάδα στη δημιουργία είδους](oldsessions/2026-09-27_item_unit_step.md) | 27-09-2026 | Κλειστό | Dropdown μονάδας στο Βήμα 4 → `defaultUnitId` → προεπιλογή entry · +5 tests · **1252/1252** ✓ (επαλήθευση χρήστη) · analyze καθαρό |
 | 55 | [SPoT τρέχουσα ημέρα Κεντρικής](oldsessions/2026-09-27_home_today.md) | 27-09-2026 | Κλειστό | `todayProvider` (day-gate Notifier, ενημέρωση `stream_providers`) + `clockCheckSeconds` · Ε1 foundation/Category clash · Ε2 pending-timer override · **1258/1258** ✓ (+6) · analyze καθαρό |
+| 56 | [Καθαρισμός νεκρού SPoT](oldsessions/2026-09-27_dead_spot.md) | 27-09-2026 | Κλειστό | Διαγραφή `statsComingSoon` + `priceUp`/`priceDown` (0 χρήσεις στο `lib/`) · DESIGN αμετάβλητο (0 αναφορές) · **1254/1254** ✓ (−4) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
+
+- **Καθαρισμός νεκρού SPoT (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #56): διαγραφή `statsComingSoon` + `priceUp`/`priceDown` (0 χρήσεις στο `lib/`, μόνο tests) · DESIGN αμετάβλητο (0 αναφορές) · **1254/1254** ✓ (−4) · analyze καθαρό · backup `backups/2026-09-27_dead_spot/`.
 
 - **SPoT τρέχουσα ημέρα Κεντρικής (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #55): `todayProvider` (day-gate `Notifier<DateTime>` σε `stream_providers`, `clockCheckSeconds`=60) · `HomePage` rebuild ΜΟΝΟ σε αλλαγή ημέρας (stale `now` τα μεσάνυχτα) · Ε1/E2 (foundation clash, pending-timer override) · **1258/1258** ✓ (+6) · analyze καθαρό · DESIGN §2.1 · backup `backups/2026-09-27_home_today/`.
 

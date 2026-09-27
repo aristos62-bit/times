@@ -110,6 +110,7 @@ const Size tallSize = Size(800, 2500);
         find.text(AppStrings.homeCustomizationTitle, skipOffstage: false),
         findsOneWidget,
       );
+      expect(find.text(AppStrings.statsComingSoon), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
