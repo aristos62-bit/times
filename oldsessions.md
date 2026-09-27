@@ -71,6 +71,7 @@
 | 51 | [Restore: timeout στο `close()`](oldsessions/2026-09-27_restore_close_timeout.md) | 27-09-2026 | Κλειστό | Hang μετά το confirm → αποδείχθηκε drift `close()` (streams false, SELECT 1 OK) · timeout 5'' SPoT + συνέχεια · test hanging-close · επαλήθευση συσκευής · targeted 27/27 + analyze καθαρό · DESIGN αμετάβλητο |
 | 52 | [Refactor καταλόγου 4 επιπέδων](oldsessions/2026-09-27_catalog_4level.md) | 27-09-2026 | Κλειστό | Cat▸Sub▸Τμήμα▸Item · UNIQUE παντού · wipe+fresh v4 · seed χωρίς είδη · πίτα «Ανά τμήμα» · Ε1 ValueKey crash fix · **1246/1246** ✓ · analyze καθαρό |
 | 53 | [Seed καταλόγου v3](oldsessions/2026-09-27_catalog_v3_seed.md) | 27-09-2026 | Κλειστό | Προσαρμογή `supermarket_categories_v3.md` (6/28/183/0) · διπλοεγγραφές λυμένες στο .md · **1249/1249** ✓ (+3) · analyze καθαρό |
+| 54 | [Υποχρεωτική μονάδα στη δημιουργία είδους](oldsessions/2026-09-27_item_unit_step.md) | 27-09-2026 | Κλειστό | Dropdown μονάδας στο Βήμα 4 → `defaultUnitId` → προεπιλογή entry · +5 tests · **1252/1252** ✓ (επαλήθευση χρήστη) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)

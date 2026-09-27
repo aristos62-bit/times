@@ -17,10 +17,12 @@
 ///     → found (results) / notFound (κενή λίστα) / AsyncError
 ///     (DataLoadException → retry).
 ///   * `selectItem`/`clearSelection` → ITEM_SELECTED banner / επιστροφή.
-///   * `createCategory`/`createSubCategory`/`createItemGroup`/`createItem` →
-///     record `{ entity, created }` (soft dup-check §2.0.4 + `NameValidator`).
-///     Το `createItem` απαιτεί `defaultUnitId` (προτεινόμενη μονάδα §2.2 —
-///     προεπιλέγεται στο entry μέσω `_applyDefaultUnit`).
+///   * `createCategory`/`createSubCategory`/`createItem` → record
+///     `{ entity, created }` (soft dup-check §2.0.4). Για Κατηγορία/
+///     Υποκατηγορία το dup-check είναι in-memory (`watchAll().first` /
+///     `watchByCategoryId(...).first`) — η βάση ΔΕΝ έχει UNIQUE σε αυτούς
+///     τους πίνακες (τεκμηριωμένο όριο Βήμα 4)· για Είδος exact-match
+///     `getByNormalizedName`. Τα ονόματα επικυρώνονται με `NameValidator`.
 library;
 
 import 'dart:async';
@@ -218,20 +220,16 @@ class ItemSearchController extends AsyncNotifier<ItemSearchState> {
     return (itemGroup: created, created: true);
   }
 
-  /// Δημιουργία είδους (§2.4 · με defaultUnitId 27-09-2026).
+  /// Δημιουργία είναι (§2.4 · Βήμα 4, χωρίς defaultUnitId — scope Βήμα 5).
   /// Soft dup-check exact-match `getByNormalizedName` (§2.0.4). Κενό/άκυρο
-  /// όνομα Ή null μονάδα → `(null, false)` χωρίς DB access (safety-net —
-  /// το dialog απενεργοποιεί το «Προσθήκη», εδώ guard για programmatic).
+  /// → `(null, false)`.
   Future<({Item? item, bool created})> createItem({
     required int itemGroupId,
     required String name,
-    int? defaultUnitId,
   }) async {
     final trimmed = name.trim();
     final error = NameValidator.validate(trimmed);
-    if (error != null || defaultUnitId == null) {
-      return (item: null, created: false);
-    }
+    if (error != null) return (item: null, created: false);
 
     final repo = ref.read(itemRepositoryProvider);
     final existing = await repo.getByNormalizedName(
@@ -239,17 +237,10 @@ class ItemSearchController extends AsyncNotifier<ItemSearchState> {
     );
     if (existing != null) return (item: existing, created: false);
 
-    final id = await repo.insert(
-      itemGroupId: itemGroupId,
-      name: trimmed,
-      defaultUnitId: defaultUnitId,
-    );
+    final id = await repo.insert(itemGroupId: itemGroupId, name: trimmed);
     final created = await repo.getById(id);
     if (created != null) {
-      AppLogger.info(
-        LogTag.db,
-        'Δημιουργία είδους: ${created.name} (#$id, μονάδα #$defaultUnitId)',
-      );
+      AppLogger.info(LogTag.db, 'Δημιουργία είδους: ${created.name} (#$id)');
     }
     return (item: created, created: created != null);
   }

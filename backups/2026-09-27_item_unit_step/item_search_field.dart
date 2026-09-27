@@ -4,8 +4,8 @@
 /// γίνεται σε ΔΙΚΟ ΤΟΥ inline panel (όχι SearchableDropdownField) με δικό του
 /// `itemSearchControllerProvider` (AsyncNotifier). Λόγοι: (α) το είδος έχει
 /// σύνθετη κατάσταση (found/notFound/idle/searching/error) που δεν «χωράει»
-/// στο dropdown-field· (β) το «+» εδώ ανοίγει το 4-βημάτο dialog
-/// `NewItemFlowDialog` (γραμμική ροή + μονάδα), όχι inline create.
+/// στο dropdown-field· (β) το «+» εδώ ανοίγει το 3-βήματο dialog
+/// `NewItemFlowDialog` (γραμμική ροή), όχι inline create.
 ///
 /// STATUS-DRIVEN RENDERING (Αρχή: ένα block ανά status):
 ///   * idle → hint `itemSearchIdle`.
@@ -57,7 +57,7 @@ class _ItemSearchFieldState extends ConsumerState<ItemSearchField> {
     super.dispose();
   }
 
-  /// Ανοιγμα του 4-βήματου dialog (§2.4 + μονάδα). Post-pop feedback:
+  /// Ανοιγμα του 3-βήματου dialog (§2.4). Post-pop feedback:
   /// dinner party rule — όλα τα SnackBar εδώ, ΠΟΤΕ μέσα στο dialog.
   Future<void> _openNewItemDialog() async {
     final query = _textController.text.trim();

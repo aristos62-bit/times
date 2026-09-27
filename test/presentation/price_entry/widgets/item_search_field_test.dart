@@ -28,6 +28,7 @@ import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
 import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
+import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/repositories/item_repository.dart';
 import 'package:times/presentation/price_entry/controllers/item_search_controller.dart';
@@ -229,8 +230,9 @@ void main() {
         'είδος εμφανίζεται στο banner', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
-      // Κατηγορία + υποκατηγορία υπάρχουν· το είδος δεν υπάρχει ακόμα.
+      // Κατηγορία + υποκατηγορία + μονάδα υπάρχουν· το είδος δεν υπάρχει ακόμα.
       await seedChain(db);
+      await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
       await pumpAt(tester, const Size(800, 600), db: db);
 
       // notFound → «+» → dialog με prefill το query.
@@ -275,12 +277,21 @@ void main() {
       await tester.tap(find.text('Φρέσκα'));
       await tester.pumpAndSettle();
 
-      // Βήμα 4: prefill «Κριτσίνια» + «Προσθήκη».
+      // Βήμα 4: prefill «Κριτσίνια» + υποχρεωτική μονάδα + «Προσθήκη».
       expect(
           find.descendant(
               of: find.byType(NewItemFlowDialog),
               matching: find.text('Κριτσίνια')),
           findsOneWidget);
+      // Μονάδα: 5ο πεδίο (index 4, show-all-on-focus) + tap «Τεμάχιο».
+      await tester.tap(find
+          .descendant(
+              of: find.byType(NewItemFlowDialog),
+              matching: find.byType(TextField))
+          .at(4));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Τεμάχιο').last);
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(
           FilledButton, AppStrings.newItemSave));
       await tester.pumpAndSettle();
@@ -288,6 +299,8 @@ void main() {
       // After-pop: selectItem + snackbar itemAdded + banner.
       final state = stateOf(tester);
       expect(state.selectedItem?.name, 'Κριτσίνια');
+      expect(state.selectedItem?.defaultUnitId, isNotNull,
+          reason: 'Η μονάδα θυμάται (§2.2)');
       expect(find.text(AppMessages.itemAdded), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

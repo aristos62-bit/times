@@ -28,7 +28,6 @@ import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
 import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
-import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/repositories/item_repository.dart';
 import 'package:times/presentation/price_entry/widgets/new_item_flow_dialog.dart';
@@ -153,34 +152,16 @@ void main() {
   }
 
   /// Seed: κατηγορία + υποκατηγορία + τμήμα (4 επίπεδα §3 · 27-09-2026)
-  /// + μονάδα + είδος όπου χρειάζεται.
-  Future<({int groupId, int unitId})> seedChain(AppDatabase db,
-      {String? itemName}) async {
+  /// + είδος όπου χρειάζεται.
+  Future<void> seedChain(AppDatabase db, {String? itemName}) async {
     final categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     final subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
     final groupId = await ItemGroupDao(db)
         .insert(subCategoryId: subId, name: 'Φρέσκα');
-    final unitId =
-        await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
     if (itemName != null) {
       await ItemDao(db).insert(itemGroupId: groupId, name: itemName);
     }
-    return (groupId: groupId, unitId: unitId);
-  }
-
-  /// Επιλογή μονάδας στο Βήμα 4 (27-09-2026): tap στο 5ο πεδίο (index 4 —
-  /// show-all-on-focus) + tap στη γραμμή του overlay.
-  Future<void> selectUnit(WidgetTester tester, String label) async {
-    final field = find
-        .descendant(
-            of: find.byType(NewItemFlowDialog),
-            matching: find.byType(TextField))
-        .at(4);
-    await tester.tap(field);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(label).last);
-    await tester.pumpAndSettle();
   }
 
   group('NewItemFlowDialog', () {
@@ -264,10 +245,8 @@ void main() {
       await selectSubCategory(tester, 'Γαλακτοκομικά');
       await selectItemGroup(tester, 'Φρέσκα');
 
-      // Βήμα 4 με prefill «Κριτσίνια» + μονάδα + κουμπί «Προσθήκη».
+      // Βήμα 4 με prefill «Κριτσίνια» + κουμπί «Προσθήκη».
       expect(find.text('Κριτσίνια'), findsOneWidget);
-      expect(find.text(AppStrings.fieldUnit), findsOneWidget);
-      await selectUnit(tester, 'Τεμάχιο');
       await tester.tap(find.widgetWithText(FilledButton, AppStrings.newItemSave));
       await tester.pumpAndSettle();
 
@@ -277,72 +256,11 @@ void main() {
       final created = result! as NewItemDialogCreated;
       expect(created.item.name, 'Κριτσίνια');
       expect(created.created, isTrue);
-      expect(created.item.defaultUnitId, isNotNull,
-          reason: 'Η μονάδα αποθηκεύεται ως πρόταση (§2.2)');
       // Το είδος υπάρχει πραγματικά στη βάση (query normalized — §2.0.4).
       expect(
           await ItemDao(db)
               .getByNormalizedName(GreekTextNormalizer.normalize('Κριτσίνια')),
           isNotNull);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('χωρίς μονάδα → «Προσθήκη» disabled (υποχρεωτική §2.2)',
-        (tester) async {
-      final db = inMemoryDb();
-      addTearDown(db.close);
-      await seedChain(db);
-      final results = <NewItemDialogResult?>[];
-      await pumpHost(tester, const Size(800, 600),
-          db: db, results: results, initialName: 'Κριτσίνια');
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-      await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
-      await selectSubCategory(tester, 'Γαλακτοκομικά');
-      await selectItemGroup(tester, 'Φρέσκα');
-
-      // Όνομα έγκυρο (prefill) αλλά καμία μονάδα → disabled.
-      final save = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, AppStrings.newItemSave));
-      expect(save.onPressed, isNull, reason: 'χωρίς μονάδα → disabled');
-      expect(results, isEmpty);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('καθάρισμα μονάδας (onCleared) → «Προσθήκη» disabled ξανά',
-        (tester) async {
-      final db = inMemoryDb();
-      addTearDown(db.close);
-      await seedChain(db);
-      final results = <NewItemDialogResult?>[];
-      await pumpHost(tester, const Size(800, 600),
-          db: db, results: results, initialName: 'Κριτσίνια');
-
-      await tester.tap(find.text('open'));
-      await tester.pumpAndSettle();
-      await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
-      await selectSubCategory(tester, 'Γαλακτοκομικά');
-      await selectItemGroup(tester, 'Φρέσκα');
-      await selectUnit(tester, 'Τεμάχιο');
-
-      var save = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, AppStrings.newItemSave));
-      expect(save.onPressed, isNotNull);
-
-      // Σβήσιμο κειμένου μονάδας → αποεπιλογή → disabled ξανά.
-      final unitField = find
-          .descendant(
-              of: find.byType(NewItemFlowDialog),
-              matching: find.byType(TextField))
-          .at(4);
-      await tester.enterText(unitField, '');
-      await tester.pumpAndSettle();
-
-      save = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, AppStrings.newItemSave));
-      expect(save.onPressed, isNull, reason: 'μετά onCleared → disabled');
-      expect(results, isEmpty);
       expect(tester.takeException(), isNull);
     });
 
@@ -360,7 +278,6 @@ void main() {
       await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
       await selectSubCategory(tester, 'Γαλακτοκομικά');
       await selectItemGroup(tester, 'Φρέσκα');
-      await selectUnit(tester, 'Τεμάχιο');
 
       await tester.tap(find.widgetWithText(FilledButton, AppStrings.newItemSave));
       await tester.pumpAndSettle();
@@ -433,7 +350,6 @@ void main() {
       await selectCategory(tester, 'ΤΡΟΦΙΜΑ');
       await selectSubCategory(tester, 'Γαλακτοκομικά');
       await selectItemGroup(tester, 'Φρέσκα');
-      await selectUnit(tester, 'Τεμάχιο');
 
       await tester.tap(find.widgetWithText(FilledButton, AppStrings.newItemSave));
       await tester.pumpAndSettle();
@@ -476,7 +392,6 @@ void main() {
 
       expect(find.text(AppStrings.fieldItemGroup), findsWidgets);
       expect(find.text(AppStrings.fieldItemName), findsWidgets);
-      expect(find.text(AppStrings.fieldUnit), findsWidgets);
       expect(tester.takeException(), isNull);
     });
   });

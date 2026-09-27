@@ -432,35 +432,15 @@ void main() {
       final container = containerWithDb();
       await awaitIdle(container);
       final chain = await seedItemChain(container);
-      final unitId = await container
-          .read(unitRepositoryProvider)
-          .insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
       final logged = StringBuffer();
       AppLogger.testSink = logged.write;
 
-      final result = await notifierOf(container).createItem(
-          itemGroupId: chain.groupId, name: '  Μήλο  ', defaultUnitId: unitId);
+      final result = await notifierOf(container)
+          .createItem(itemGroupId: chain.groupId, name: '  Μήλο  ');
       expect(result.created, isTrue);
       expect(result.item?.name, 'Μήλο');
-      expect(result.item?.defaultUnitId, unitId,
-          reason: 'Η μονάδα αποθηκεύεται ως πρόταση (§2.2)');
       expect(logged.toString(), contains('[DB]'));
       expect(logged.toString(), contains('Δημιουργία είδους'));
-    });
-
-    test('null μονάδα → (null, false) χωρίς DB access', () async {
-      final container = containerWithDb();
-      await awaitIdle(container);
-      final chain = await seedItemChain(container);
-
-      final result = await notifierOf(container)
-          .createItem(itemGroupId: chain.groupId, name: 'Μήλο');
-      expect(result.item, isNull);
-      expect(result.created, isFalse);
-      final all =
-          await container.read(itemRepositoryProvider).watchAll().first;
-      expect(all.where((i) => i.name == 'Μήλο'), isEmpty,
-          reason: 'Καμία νέα εγγραφή χωρίς μονάδα');
     });
 
     test('dup exact-normalized → (υπάρχων, created:false), καμία εγγραφή',
@@ -468,12 +448,9 @@ void main() {
       final container = containerWithDb();
       await awaitIdle(container);
       final chain = await seedItemChain(container, itemName: 'Γάλα');
-      final unitId = await container
-          .read(unitRepositoryProvider)
-          .insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
 
-      final result = await notifierOf(container).createItem(
-          itemGroupId: chain.groupId, name: 'ΓΑΛΑ', defaultUnitId: unitId);
+      final result = await notifierOf(container)
+          .createItem(itemGroupId: chain.groupId, name: 'ΓΑΛΑ');
       expect(result.created, isFalse);
       expect(result.item?.id, chain.itemId,
           reason: 'Ο υπάρχων επιλέχθηκε (§2.0.4 soft dup-check)');
@@ -486,8 +463,8 @@ void main() {
       await awaitIdle(container);
       final chain = await seedItemChain(container);
 
-      final result = await notifierOf(container).createItem(
-          itemGroupId: chain.groupId, name: '   ', defaultUnitId: 1);
+      final result =
+          await notifierOf(container).createItem(itemGroupId: chain.groupId, name: '   ');
       expect(result.item, isNull);
       expect(result.created, isFalse);
     });

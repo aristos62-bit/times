@@ -1,6 +1,6 @@
 /// Popup «Νέο είδος» (4-βημάτων, γραμμικό) — §2.4 DESIGN / 27-09-2026.
 ///
-/// ΡΟΗ: Κατηγορία → Υποκατηγορία → Τμήμα → Όνομα + Μονάδα. ΑΥΣΤΗΡΑ ΓΡΑΜΜΙΚΟ (§2.4):
+/// ΡΟΗ: Κατηγορία → Υποκατηγορία → Τμήμα → Όνομα. ΑΥΣΤΗΡΑ ΓΡΑΜΜΙΚΟ (§2.4):
 /// το επόμενο βήμα εμφανίζεται ΜΟΝΟ αφού επιλεγεί/δημιουργηθεί το
 /// προηγούμενο — κανένα «πίσω» κουμπί (self-reinforcing linear flow).
 ///
@@ -8,11 +8,6 @@
 ///   * Βήματα 1-3 χρησιμοποιούν το generic `SearchableDropdownField<T>`
 ///     (§2.4) + τα search families `categorySearchProvider` /
 ///     `subCategorySearchProvider` / `itemGroupSearchProvider`.
-///   * Βήμα 4 (όνομα + μονάδα, 27-09-2026): το TextField ονόματος + dropdown
-///     μονάδας (`unitSearchProvider`/`unitsStreamProvider`, show-all — ίδιο
-///     call-pattern με το `item_edit_dialog`, χωρίς «+»). Η μονάδα είναι
-///     ΥΠΟΧΡΕΩΤΙΚΗ («Προσθήκη» disabled χωρίς αυτή) και αποθηκεύεται ως
-///     `Item.defaultUnitId` — προεπιλέγεται στο entry (`_applyDefaultUnit`).
 ///   * Όλες οι δημιουργίες (κατηγορία/υποκατηγορία/τμήμα) γίνονται σιωπηλά
 ///     (silent intermediate creates — §2.4 απόφαση): ΚΑΝΕΝΑ snackbar μέσα
 ///     στο dialog. Μόνο το τελικό Είδος «γυρίζει» πίσω με το result.
@@ -86,11 +81,6 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
 
   /// Επιλεγμένο (ή νέο-δημιουργημένο) τμήμα — «null» = Βήμα 3 pending.
   ItemGroup? _itemGroup;
-
-  /// Επιλεγμένη προτεινόμενη μονάδα του νέου είδους (Βήμα 4, 27-09-2026) —
-  /// `null` = καμία (το «Προσθήκη» μένει ανενεργό). Αποθηκεύεται ως
-  /// `Item.defaultUnitId` και προεπιλέγεται στο entry (`_applyDefaultUnit`).
-  Unit? _unit;
 
   /// Controller του πεδίου ονόματος (Βήμα 3) — prefill από [initialName].
   late final TextEditingController _nameController;
@@ -237,19 +227,13 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
 
   /// Βήμα 4: αποθήκευση — αλυσιδωτό save, pop με το αποτέλεσμα. Μόνο το
   /// `NewItemDialogCreated` «επιστρέφει» Είδος· DB error → pop failed.
-  /// Η μονάδα είναι υποχρεωτική (27-09-2026): null → no-op (το κουμπί είναι
-  /// ήδη ανενεργό — guard για programmatic κλήσεις, pattern `_save`).
   Future<void> _save() async {
-    if (_isSaving || !_nameIsValid || _unit == null) return;
+    if (_isSaving || !_nameIsValid) return;
     setState(() => _isSaving = true);
     try {
       final result = await ref
           .read(itemSearchControllerProvider.notifier)
-          .createItem(
-            itemGroupId: _itemGroup!.id,
-            name: _nameController.text,
-            defaultUnitId: _unit!.id,
-          );
+          .createItem(itemGroupId: _itemGroup!.id, name: _nameController.text);
       if (!mounted) return;
       if (result.item == null) {
         setState(() => _isSaving = false);
@@ -327,46 +311,22 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
     );
   }
 
-  /// Βήμα 4 (όνομα + μονάδα + save) — ΜΟΝΟ όταν υπάρχει τμήμα.
-  ///
-  /// Η μονάδα είναι υποχρεωτική (27-09-2026): αποθηκεύεται ως
-  /// `Item.defaultUnitId` (πρόταση entry, §2.2). Χωρίς «+» — οι μονάδες
-  /// διαχειρίζονται από τις Ρυθμίσεις (ίδιο με το entry §2.2:236).
+  /// Βήμα 4 (όνομα + save) — ΜΟΝΟ όταν υπάρχει τμήμα.
   Widget _buildNameStep() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextField(
-          controller: _nameController,
-          autofocus: true,
-          maxLength: AppConstants.maxItemNameLength,
-          inputFormatters: [LengthLimitingTextInputFormatter(AppConstants.maxItemNameLength)],
-          decoration: InputDecoration(
-            labelText: AppStrings.fieldItemName,
-            hintText: AppStrings.addNewItem,
-            border: const OutlineInputBorder(),
-            errorText: _nameError,
-            isDense: true,
-          ),
-          onChanged: (_) => setState(() {}), // refresh disabled/error state
-          onSubmitted: (_) => _save(),
-        ),
-        const SizedBox(height: AppConstants.spacingM),
-        SearchableDropdownField<Unit>(
-          labelText: AppStrings.fieldUnit,
-          hintText: AppStrings.unitSearchHint,
-          searchProvider: unitSearchProvider.call,
-          labelOf: (unit) => unit.name,
-          onSelected: (unit) => setState(() => _unit = unit),
-          onCleared: () => setState(() => _unit = null),
-          showAllWhenEmpty: true,
-          allOptionsProvider: () => unitsStreamProvider,
-          initialValue: _unit,
-          prefixIcon: const Icon(Icons.straighten_outlined),
-          resultLeadingIcon: const Icon(Icons.straighten_outlined),
-        ),
-      ],
+    return TextField(
+      controller: _nameController,
+      autofocus: true,
+      maxLength: AppConstants.maxItemNameLength,
+      inputFormatters: [LengthLimitingTextInputFormatter(AppConstants.maxItemNameLength)],
+      decoration: InputDecoration(
+        labelText: AppStrings.fieldItemName,
+        hintText: AppStrings.addNewItem,
+        border: const OutlineInputBorder(),
+        errorText: _nameError,
+        isDense: true,
+      ),
+      onChanged: (_) => setState(() {}), // refresh disabled/error state
+      onSubmitted: (_) => _save(),
     );
   }
 
@@ -429,9 +389,8 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
           child: const Text(AppMessages.confirmDialogCancel),
         ),
         FilledButton(
-          onPressed: (_isSaving || _itemGroup == null || !_nameIsValid || _unit == null
-              ? null
-              : _save),
+          onPressed:
+              (_isSaving || _itemGroup == null || !_nameIsValid ? null : _save),
           child: _isSaving
               ? SizedBox(
                   width: AppConstants.dialogSpinnerSize,
