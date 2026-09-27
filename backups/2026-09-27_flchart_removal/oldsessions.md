@@ -74,12 +74,9 @@
 | 54 | [Υποχρεωτική μονάδα στη δημιουργία είδους](oldsessions/2026-09-27_item_unit_step.md) | 27-09-2026 | Κλειστό | Dropdown μονάδας στο Βήμα 4 → `defaultUnitId` → προεπιλογή entry · +5 tests · **1252/1252** ✓ (επαλήθευση χρήστη) · analyze καθαρό |
 | 55 | [SPoT τρέχουσα ημέρα Κεντρικής](oldsessions/2026-09-27_home_today.md) | 27-09-2026 | Κλειστό | `todayProvider` (day-gate Notifier, ενημέρωση `stream_providers`) + `clockCheckSeconds` · Ε1 foundation/Category clash · Ε2 pending-timer override · **1258/1258** ✓ (+6) · analyze καθαρό |
 | 56 | [Καθαρισμός νεκρού SPoT](oldsessions/2026-09-27_dead_spot.md) | 27-09-2026 | Κλειστό | Διαγραφή `statsComingSoon` + `priceUp`/`priceDown` (0 χρήσεις στο `lib/`) · DESIGN αμετάβλητο (0 αναφορές) · **1254/1254** ✓ (−4) · analyze καθαρό |
-| 57 | [Αφαίρεση dependency `fl_chart`](oldsessions/2026-09-27_flchart_removal.md) | 27-09-2026 | Κλειστό | 0 imports σε `lib/`/`test/` (custom `Pie3dPainter`) · DESIGN §4 Φάση 0 ενημερώθηκε · tests/analyze αμετάβλητα |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
-
-- **Αφαίρεση dependency `fl_chart` (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #57): 0 imports σε `lib/`/`test/` (custom `Pie3dPainter`) · −1 γραμμή `pubspec.yaml` + lock cleanup · DESIGN §4 Φάση 0 ενημερώθηκε (rationale σχόλια άθικτα) · backup `backups/2026-09-27_flchart_removal/`.
 
 - **Καθαρισμός νεκρού SPoT (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #56): διαγραφή `statsComingSoon` + `priceUp`/`priceDown` (0 χρήσεις στο `lib/`, μόνο tests) · DESIGN αμετάβλητο (0 αναφορές) · **1254/1254** ✓ (−4) · analyze καθαρό · backup `backups/2026-09-27_dead_spot/`.
 
