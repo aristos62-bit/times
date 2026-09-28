@@ -1,8 +1,11 @@
-/// Section «Στατιστικά» (§2.3 · 28-09-2026).
+/// Section «Στατιστικά» — 1η ανάλυση: καρτέλα είδους (§2.3 · 28-09-2026).
 ///
-/// Μενού αναλύσεων + detail ανά ανάλυση (όχι στοίβα — κλιμακώνεται σε Ν
-/// αναλύσεις: νέα = νέα γραμμή στο `_entries`). 1η ανάλυση: «Ιστορικό
-/// αγορών είδους» (`_LedgerAnalysis`, καρτέλα + export Excel/PDF).
+/// `ConsumerStatefulWidget` με τοπικό state (επιλογή + περίοδος — ad-hoc
+/// ανάλυση, όχι persist, Q5): dropdown αναζήτησης (`SearchableDropdownField`,
+/// χωρίς «+») + locked banner (pattern §2.4) + `ChartPeriodSelector` (reuse
+/// Home) + `StatisticsTable` + Wrap εξαγωγής (Excel/PDF, pattern backup
+/// section). Gated watches (§2.0.1): λίστες/ledger ΜΟΝΟ με επιλογή.
+/// Feedback ΜΟΝΟ από εδώ μέσω `AppFeedback` (§2.4).
 library;
 
 import 'package:flutter/material.dart';
@@ -26,10 +29,7 @@ import '../../shared/controller_op_runner.dart';
 import '../controllers/statistics_controller.dart';
 import 'statistics_table.dart';
 
-/// Καταχώρηση μενού (τίτλος + περιγραφή · νέα ανάλυση = νέα γραμμή).
-typedef _StatsEntry = ({String title, String description});
-
-/// Section «Στατιστικά» — μενού αναλύσεων (§2.3).
+/// Section καρτέλας είδους (§2.3 · 1η ανάλυση).
 class StatisticsSection extends ConsumerStatefulWidget {
   const StatisticsSection({super.key});
 
@@ -38,95 +38,6 @@ class StatisticsSection extends ConsumerStatefulWidget {
 }
 
 class _StatisticsSectionState extends ConsumerState<StatisticsSection> {
-  /// Ανοιχτή ανάλυση (null = μενού) — τοπικό, όχι persist (Q5).
-  int? _openIndex;
-
-  /// Μενού (κλιμακώνεται — 29-09-2026: 1 γραμμή).
-  static const _entries = <_StatsEntry>[
-    (
-      title: AppStrings.statsLedgerTitle,
-      description: AppStrings.statsLedgerDescription,
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final open = _openIndex;
-    if (open == null) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < _entries.length; i++)
-            ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                _entries[i].title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Text(
-                _entries[i].description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: const Icon(Icons.arrow_forward_outlined),
-              onTap: () {
-                setState(() => _openIndex = i);
-                AppLogger.info(
-                  LogTag.ui,
-                  'Άνοιγμα ανάλυσης: ${_entries[i].title}',
-                );
-              },
-            ),
-        ],
-      );
-    }
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back_outlined),
-              tooltip: AppStrings.statsBackAction,
-              onPressed: () => setState(() => _openIndex = null),
-            ),
-            Expanded(
-              child: Text(
-                _entries[open].title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppConstants.spacingS),
-        const _LedgerAnalysis(),
-      ],
-    );
-  }
-}
-
-/// Ανάλυση «Ιστορικό αγορών είδους» — καρτέλα + export (§2.3 · 1η ανάλυση).
-///
-/// `ConsumerStatefulWidget` με τοπικό state (επιλογή + περίοδος — ad-hoc,
-/// όχι persist, Q5): dropdown αναζήτησης (`SearchableDropdownField`, χωρίς
-/// «+») + locked banner (pattern §2.4) + `ChartPeriodSelector` (reuse Home)
-/// + `StatisticsTable` + Wrap εξαγωγής (Excel/PDF, pattern backup section).
-/// Gated watches (§2.0.1): λίστες/ledger ΜΟΝΟ με επιλογή. Feedback ΜΟΝΟ από
-/// εδώ μέσω `AppFeedback` (§2.4).
-class _LedgerAnalysis extends ConsumerStatefulWidget {
-  const _LedgerAnalysis();
-
-  @override
-  ConsumerState<_LedgerAnalysis> createState() => _LedgerAnalysisState();
-}
-
-class _LedgerAnalysisState extends ConsumerState<_LedgerAnalysis> {
   /// Επιλεγμένο είδος (null = idle) — τοπικό, όχι persist (Q5).
   int? _itemId;
 

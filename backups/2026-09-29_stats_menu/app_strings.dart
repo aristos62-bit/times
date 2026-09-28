@@ -204,16 +204,9 @@ abstract final class AppStrings {
   static const String noReceiptsForDay =
       'Δεν υπάρχουν αποδείξεις αυτή την ημέρα';
 
-  // ─── Statistics section (§2.3 · 28-09-2026 + μενού 29-09-2026) ────────────
+  // ─── Statistics section (§2.3 · 28-09-2026) ───────────────────────────────
   /// Τίτλος του section «Στατιστικά» στη σελίδα ρυθμίσεων (§2.3).
   static const String titleStatisticsSection = 'Στατιστικά';
-  /// Τίτλος 1ης ανάλυσης «Ιστορικό αγορών είδους» (μενού + detail §2.3).
-  static const String statsLedgerTitle = 'Ιστορικό αγορών είδους';
-  /// Περιγραφή 1ης ανάλυσης στο μενού (§2.3 · 29-09-2026).
-  static const String statsLedgerDescription =
-      'Αναλυτική καρτέλα αγορών είδους με εξαγωγή Excel/PDF';
-  /// Label κουμπιού επιστροφής από ανάλυση στο μενού (§2.3 · 29-09-2026).
-  static const String statsBackAction = 'Πίσω';
   /// Headers στηλών καρτέλας είδους (§2.3 · 1η ανάλυση).
   static const String statsColumnDate = 'Ημερομηνία';
   static const String statsColumnReceipt = 'Απόδειξη';

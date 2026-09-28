@@ -142,12 +142,6 @@ void main() {
             widget.decoration?.labelText == AppStrings.fieldItemName,
       );
 
-  /// Ανοίγει την 1η ανάλυση από το μενού (tap γραμμής).
-  Future<void> openLedger(WidgetTester tester) async {
-    await tester.tap(find.text(AppStrings.statsLedgerTitle));
-    await tester.pumpAndSettle();
-  }
-
   /// Πλήρης ροή επιλογής μέσω αναζήτησης (DB + debounce).
   Future<void> selectViaSearch(WidgetTester tester) async {
     await tester.enterText(searchField(), 'γαλ');
@@ -158,35 +152,8 @@ void main() {
   }
 
   group('StatisticsSection', () {
-    testWidgets('μενού: 1 γραμμή («Ιστορικό αγορών είδους») + περιγραφή',
-        (tester) async {
+    testWidgets('idle: dropdown + hint, όχι πίνακας', (tester) async {
       await pumpSized(tester, wrap(), const Size(800, 600));
-      expect(find.text(AppStrings.statsLedgerTitle), findsOneWidget);
-      expect(find.text(AppStrings.statsLedgerDescription), findsOneWidget);
-      // Detail κρυμμένο (ούτε dropdown ούτε πίνακας).
-      expect(find.text(AppStrings.trendItemSearchHint), findsNothing);
-      expect(find.byType(StatisticsTable), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('πίσω → επιστροφή στο μενού', (tester) async {
-      final db = inMemoryDb();
-      addTearDown(db.close);
-      await seedDb(db);
-      await pumpSized(tester, wrap(db: db), const Size(800, 600));
-      await openLedger(tester);
-      expect(find.text(AppStrings.trendItemSearchHint), findsOneWidget);
-
-      await tester.tap(find.byTooltip(AppStrings.statsBackAction));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.statsLedgerTitle), findsOneWidget);
-      expect(find.text(AppStrings.trendItemSearchHint), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('detail idle: dropdown + hint, όχι πίνακας', (tester) async {
-      await pumpSized(tester, wrap(), const Size(800, 600));
-      await openLedger(tester);
       expect(find.text(AppStrings.trendItemSearchHint), findsOneWidget);
       expect(find.text(AppStrings.trendNoItemSelected), findsOneWidget);
       expect(find.byType(StatisticsTable), findsNothing);
@@ -199,7 +166,6 @@ void main() {
       addTearDown(db.close);
       await seedDb(db);
       await pumpSized(tester, wrap(db: db), const Size(800, 600));
-      await openLedger(tester);
       await selectViaSearch(tester);
 
       expect(find.text('Γάλα'), findsOneWidget);
@@ -217,7 +183,6 @@ void main() {
       addTearDown(db.close);
       await seedDb(db);
       await pumpSized(tester, wrap(db: db), const Size(800, 600));
-      await openLedger(tester);
       await selectViaSearch(tester);
       expect(find.byType(StatisticsTable), findsOneWidget);
 
@@ -248,7 +213,6 @@ void main() {
         defaultUnitId: kiloId,
       );
       await pumpSized(tester, wrap(db: db), const Size(800, 600));
-      await openLedger(tester);
       await selectViaSearch(tester);
 
       expect(find.text(AppStrings.noPricesForPeriod), findsOneWidget);
@@ -287,7 +251,6 @@ void main() {
         ),
         const Size(800, 600),
       );
-      await openLedger(tester);
       await selectViaSearch(tester);
 
       expect(find.text(AppErrors.loadDataFailed), findsOneWidget);
@@ -302,7 +265,6 @@ void main() {
       addTearDown(db.close);
       await seedDb(db);
       await pumpSized(tester, wrap(db: db), const Size(800, 600));
-      await openLedger(tester);
       await selectViaSearch(tester);
 
       await tester.tap(find.text(AppStrings.statsExportExcelAction));
@@ -318,7 +280,6 @@ void main() {
       addTearDown(db.close);
       await seedDb(db);
       await pumpSized(tester, wrap(db: db), const Size(800, 600));
-      await openLedger(tester);
       await selectViaSearch(tester);
 
       await tester.tap(find.text(AppStrings.statsExportPdfAction));
@@ -335,7 +296,6 @@ void main() {
       addTearDown(db.close);
       await seedDb(db);
       await pumpSized(tester, wrap(db: db), const Size(800, 600));
-      await openLedger(tester);
       await selectViaSearch(tester);
 
       await tester.tap(find.text(AppStrings.statsExportExcelAction));
@@ -350,7 +310,6 @@ void main() {
       addTearDown(db.close);
       await seedDb(db);
       await pumpSized(tester, wrap(db: db), const Size(800, 600));
-      await openLedger(tester);
       await selectViaSearch(tester);
       expect(find.byType(StatisticsTable), findsOneWidget);
 
@@ -373,8 +332,7 @@ void main() {
         Size(1200, 800),
       ]) {
         await pumpSized(tester, wrap(db: db), size);
-        await openLedger(tester);
-      await selectViaSearch(tester);
+        await selectViaSearch(tester);
         expect(tester.takeException(), isNull, reason: 'overflow σε $size');
         // Επαναφορά σε idle για το επόμενο μέγεθος (τοπικό state).
         await tester.tap(find.text(AppStrings.changeItem));
@@ -392,7 +350,6 @@ void main() {
         wrap(db: db, theme: AppTheme.dark),
         const Size(800, 600),
       );
-      await openLedger(tester);
       await selectViaSearch(tester);
       expect(find.byType(StatisticsTable), findsOneWidget);
       expect(

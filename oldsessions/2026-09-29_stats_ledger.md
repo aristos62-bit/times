@@ -45,7 +45,7 @@
   (`scrollUntilVisible`, όχι `ensureVisible` σε unbuilt node).
 - Ε7 analyzer: unused import · `'$x'` interpolation info.
 
-## Tests (+43 → 1356/1356)
+## Tests (+45 → 1358/1358)
 
 - Νέα: DAO ledger 5 · repo ledger 3 · provider ledger 4 (search n/a —
   reuse) · service 7 (round-trip/`%PDF`/mapping) · controller 5 (fake
@@ -54,5 +54,15 @@
   exceptions +1.
 - Ενημερωμένα: settings_page (6 tiles + τίτλος) · receipts_management
   (scroll) · 6 fakes · SPoT registries.
-- Full suite **1356/1356** ✓ · `flutter analyze` No issues ✓.
-- DESIGN §2.3/§4 (ενότητα + deps) · backup `backups/2026-09-29_stats_ledger/`.
+## Follow-up 29-09 (μενού αναλύσεων + ονομασία)
+
+> Αίτημα χρήστη: οι αναλύσεις ανοίγουν χωριστά (όχι στοίβα) · η 1η
+> ονομάζεται «Ιστορικό αγορών είδους».
+
+- Section → μενού (`_openIndex`, 1 γραμμή τίτλος+περιγραφή+βέλος) + detail
+  με «Πίσω» (χωρίς route — τοπικό state, κλιμακώνεται με νέες γραμμές).
+- SPoT +3 (`statsLedgerTitle/Description/BackAction`) · υπάρχον περιεχόμενο
+  αυτούσιο στο `_LedgerAnalysis` · tests: menu/back/detail-idle (+2 net).
+- Full suite **1358/1358** ✓ · `flutter analyze` No issues ✓.
+- DESIGN §2.3/§4 (ενότητα + deps + μενού) · backups
+  `backups/2026-09-29_stats_ledger/` + `backups/2026-09-29_stats_menu/`.
