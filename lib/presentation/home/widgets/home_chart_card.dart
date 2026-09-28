@@ -134,16 +134,6 @@ class ChartPeriodSelector extends StatelessWidget {
       children: [
         DropdownMenu<PeriodType>(
           initialSelection: selected,
-          // Στενό ύψος (29-09-2026 — το default είναι αφύσικα ψηλό):
-          // πυκνό πεδίο + SPoT padding, κείμενο από το theme (όχι νούμερα).
-          textStyle: Theme.of(context).textTheme.bodyMedium,
-          inputDecorationTheme: const InputDecorationTheme(
-            isDense: true,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: AppConstants.spacingM,
-              vertical: AppConstants.spacingS,
-            ),
-          ),
           onSelected: (value) {
             if (value != null) onSelected(value);
           },
