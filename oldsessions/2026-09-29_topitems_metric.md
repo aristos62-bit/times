@@ -35,5 +35,8 @@
   qty chart 6 · card 8 · settings repo 4 · SPoT +5 · customization +1.
 - Ενημερωμένα: home_page (dark) · customization (subtitle) · controller
   (last) · 6 fakes · SPoT registries · card refactor (υπάρχοντα περνούν).
+- Follow-up 29-09 (αίτημα χρήστη): metric ΔΙΠΛΑ στο period (Row+Expanded —
+  ellipsis σε 320px, όχι overflow).
 - Full suite **1429/1429** ✓ · `flutter analyze` No issues ✓.
-- DESIGN §2.1 (μετρικές) · backup `backups/2026-09-29_topitems_metric/`.
+- DESIGN §2.1 (μετρικές) · backups `backups/2026-09-29_topitems_metric/`
+  + `backups/2026-09-29_metric_side/`.
