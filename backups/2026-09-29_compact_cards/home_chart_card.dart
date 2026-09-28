@@ -106,7 +106,6 @@ class ChartPeriodSelector extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     this.customSubtitle,
-    this.dense = false,
   });
 
   /// Τρέχουσα περίοδος (από το config).
@@ -117,10 +116,6 @@ class ChartPeriodSelector extends StatelessWidget {
 
   /// Υπότιτλος custom range (ημερομηνίες) — ορατός μόνο σε `custom`.
   final String? customSubtitle;
-
-  /// Πυκνή εμφάνιση (μικρότερο ύψος πεδίου — κάρτες 5+6, 29-09-2026).
-  /// Default `false` = υπάρχουσες κάρτες (πίτες) άθικτες.
-  final bool dense;
 
   /// SPoT label περιόδου (§1.1).
   static String labelOf(PeriodType period) => switch (period) {
@@ -139,10 +134,6 @@ class ChartPeriodSelector extends StatelessWidget {
       children: [
         DropdownMenu<PeriodType>(
           initialSelection: selected,
-          // Πυκνό πεδίο (μικρότερο ύψος) όπου ζητείται — default αμετάβλητο.
-          inputDecorationTheme: dense
-              ? const InputDecorationTheme(isDense: true)
-              : null,
           onSelected: (value) {
             if (value != null) onSelected(value);
           },

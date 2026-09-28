@@ -53,11 +53,7 @@ class TopItemsCard extends ConsumerWidget {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
-        // Σφιχτό κάθετο padding (29-09-2026 — η κάρτα είχε αέρα πάνω/κάτω).
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppConstants.spacingL,
-          vertical: AppConstants.spacingM,
-        ),
+        padding: const EdgeInsets.all(AppConstants.spacingL),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -79,7 +75,6 @@ class TopItemsCard extends ConsumerWidget {
                     selected: period,
                     onSelected: onPeriodChanged,
                     customSubtitle: customSubtitle,
-                    dense: true,
                   ),
                 ),
                 const SizedBox(width: AppConstants.spacingM),
@@ -88,9 +83,6 @@ class TopItemsCard extends ConsumerWidget {
                     key: ValueKey(metric),
                     label: const Text(AppStrings.topItemsMetricLabel),
                     initialSelection: metric,
-                    // Πυκνό πεδίο (ίδιο με period — 29-09-2026).
-                    inputDecorationTheme:
-                        const InputDecorationTheme(isDense: true),
                     onSelected: (value) {
                       if (value != null) {
                         ref
