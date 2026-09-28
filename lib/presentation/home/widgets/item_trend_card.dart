@@ -75,11 +75,7 @@ class _ItemTrendCardState extends ConsumerState<ItemTrendCard> {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
-        // Σφιχτό κάθετο padding (29-09-2026 — η κάρτα είχε αέρα πάνω/κάτω).
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppConstants.spacingL,
-          vertical: AppConstants.spacingM,
-        ),
+        padding: const EdgeInsets.all(AppConstants.spacingL),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -100,7 +96,6 @@ class _ItemTrendCardState extends ConsumerState<ItemTrendCard> {
               selected: widget.period,
               onSelected: widget.onPeriodChanged,
               customSubtitle: widget.customSubtitle,
-              dense: true,
             ),
             const SizedBox(height: AppConstants.spacingS),
             if (selectedId == null)
