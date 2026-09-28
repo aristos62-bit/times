@@ -12,11 +12,11 @@ import '../../../core/constants/app_enums.dart';
 
 part 'home_chart_config.freezed.dart';
 
-/// Γράφημα Κεντρικής — οι 5 κάρτες (§2.1: supplier/category/subCategory/
-/// itemGroup/topItems · 27-09-2026: η υποκατηγορία επέστρεψε ως 5η πίτα).
+/// Γράφημα Κεντρικής — οι 6 κάρτες (§2.1: supplier/category/subCategory/
+/// itemGroup/topItems + itemTrend πορείας 28-09-2026).
 /// Home-specific enum (όχι SPoT `app_enums` — το χρησιμοποιεί
 /// μόνο η Κεντρική).
-enum ChartId { supplier, category, subCategory, itemGroup, topItems }
+enum ChartId { supplier, category, subCategory, itemGroup, topItems, itemTrend }
 
 /// Ρύθμιση ενός γραφήματος: ορατότητα + σειρά + περίοδος.
 @freezed
@@ -33,7 +33,7 @@ abstract class ChartEntry with _$ChartEntry {
   }) = _ChartEntry;
 }
 
-/// Ρύθμιση και των 5 γραφημάτων — state του `homeChartConfigProvider`.
+/// Ρύθμιση και των 6 γραφημάτων — state του `homeChartConfigProvider`.
 @freezed
 abstract class HomeChartConfig with _$HomeChartConfig {
   const factory HomeChartConfig({
@@ -42,19 +42,21 @@ abstract class HomeChartConfig with _$HomeChartConfig {
     required ChartEntry subCategory,
     required ChartEntry itemGroup,
     required ChartEntry topItems,
+    required ChartEntry itemTrend,
   }) = _HomeChartConfig;
 
-  /// Defaults §2.1: και τα 5 ορατά, Μήνας, σειρά 1-2-3-4-5 (order 0-based).
+  /// Defaults §2.1: και τα 6 ορατά, Μήνας, σειρά 1-2-3-4-5-6 (order 0-based).
   factory HomeChartConfig.defaults() => const HomeChartConfig(
         supplier: ChartEntry(order: 0),
         category: ChartEntry(order: 1),
         subCategory: ChartEntry(order: 2),
         itemGroup: ChartEntry(order: 3),
         topItems: ChartEntry(order: 4),
+        itemTrend: ChartEntry(order: 5),
       );
 }
 
-/// Επιστρέφει την entry του [id] (switch — 5 κάρτες, §2.1).
+/// Επιστρέφει την entry του [id] (switch — 6 κάρτες, §2.1).
 extension HomeChartConfigById on HomeChartConfig {
   ChartEntry entryOf(ChartId id) => switch (id) {
         ChartId.supplier => supplier,
@@ -62,6 +64,7 @@ extension HomeChartConfigById on HomeChartConfig {
         ChartId.subCategory => subCategory,
         ChartId.itemGroup => itemGroup,
         ChartId.topItems => topItems,
+        ChartId.itemTrend => itemTrend,
       };
 
   /// Αντίγραφο με αντικατεστημένη την entry του [id].
@@ -71,5 +74,6 @@ extension HomeChartConfigById on HomeChartConfig {
         ChartId.subCategory => copyWith(subCategory: entry),
         ChartId.itemGroup => copyWith(itemGroup: entry),
         ChartId.topItems => copyWith(topItems: entry),
+        ChartId.itemTrend => copyWith(itemTrend: entry),
       };
 }

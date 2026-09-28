@@ -77,9 +77,15 @@
 | 57 | [Αφαίρεση dependency `fl_chart`](oldsessions/2026-09-27_flchart_removal.md) | 27-09-2026 | Κλειστό | 0 imports σε `lib/`/`test/` (custom `Pie3dPainter`) · DESIGN §4 Φάση 0 ενημερώθηκε · tests/analyze αμετάβλητα |
 | 58 | [5η πίτα «Ανά υποκατηγορία»](oldsessions/2026-09-27_subcategory_pie.md) | 27-09-2026 | Κλειστό | DAO 5-joins + repo + family + config (0-4) + migration 4→5-key · Ε1 overflow-harness · Ε2 closeSafely-timer overrides · DESIGN §2.1/§4 · **1258/1258** ✓ (+4) · analyze καθαρό |
 | 59 | [Chart families `autoDispose`](oldsessions/2026-09-27_chart_autodispose.md) | 27-09-2026 | Κλειστό | 5 families autoDispose (leak stale DB watches) · disposal test 1→2 · DESIGN αμετάβλητο · **1259/1259** ✓ (+1) · analyze καθαρό |
+| 60 | [Κλειδωμένη μονάδα είδους](oldsessions/2026-09-28_unit_lock.md) | 28-09-2026 | Κλειστό | Μονάδα γραμμής ΜΟΝΟ από `defaultUnitId` (locked banner, αλλαγή από Ρυθμίσεις) · 9 tests ενημερωμένα (0 net) · DESIGN §2.2/§2.4/§4 + CORRECTION · **1259/1259** ✓ · analyze καθαρό |
+| 61 | [6ο γράφημα «Πορεία τιμής είδους»](oldsessions/2026-09-28_item_trend.md) | 28-09-2026 | Κλειστό | Γραμμή καθαρής €/μονάδα (search + locked φίλτρο + cap 200 + persist) · custom painter, 0 packages · Προσαρμογή αυτόματα · **1313/1313** ✓ (+54) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
+
+- **6ο γράφημα «Πορεία τιμής» (28-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #61): γραμμή καθαρής €/μονάδα (Q1–Q6 α) · `watchItemHistory` + passthrough + families + persisted επιλογή · custom painter + fallback (0 packages) · Προσαρμογή 6η γραμμή αυτόματα · ευρήματα Ε1–Ε5 · **1313/1313** ✓ (+54) · analyze καθαρό · backup `backups/2026-09-28_item_trend/` (21 αρχεία).
+
+- **Κλειδωμένη μονάδα είδους (28-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #60): μονάδα γραμμής ΑΠΟΚΛΕΙΣΤΙΚΑ από `Item.defaultUnitId` (locked banner, αλλαγή ΜΟΝΟ από Ρυθμίσεις → Είδη) · «πρόταση, όχι δέσμευση» αποσύρθηκε (CORRECTION DESIGN) · 9 tests ενημερωμένα (S1/S3/S4/S6/S8 · V7/V9b/V10/V13 · P2, 0 net) · εύρημα formatter (κόβει κόμμα σε integer-only) · **1259/1259** ✓ · analyze καθαρό · backup `backups/2026-09-28_unit_lock/`.
 
 - **Chart families `autoDispose` (27-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #59): 5 families autoDispose (stale DB watches leak) · disposal test (builds 1→2) · DESIGN αμετάβλητο · **1259/1259** ✓ (+1) · analyze καθαρό · backup `backups/2026-09-27_chart_autodispose/`.
 

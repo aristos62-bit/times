@@ -30,4 +30,12 @@ abstract interface class SettingsRepository {
   /// Αποθηκεύει τη ρύθμιση γραφημάτων στον SPoT key
   /// `AppConstants.homeChartConfigKey` (JSON — mapping ΜΟΝΟ στο impl).
   Future<void> saveHomeChartConfig(HomeChartConfig config);
+
+  /// Διαβάζει το επιλεγμένο είδος πορείας ΣΥΓΧΡΟΝΩΣ (itemId ή null ·
+  /// §2.1 · 28-09-2026, Q5 — pattern `readThemeMode`).
+  int? readTrendItemId();
+
+  /// Αποθηκεύει το επιλεγμένο είδος πορείας στον SPoT key
+  /// `AppConstants.trendSelectedItemKey` (null = καθάρισμα).
+  Future<void> saveTrendItemId(int? id);
 }

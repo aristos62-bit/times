@@ -384,6 +384,13 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
   Future<ReceiptLine?> getLatestByItemId(int itemId) =>
       throw UnimplementedError();
   @override
+  Stream<List<ItemPricePoint>> watchItemHistory({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      throw UnimplementedError();
+  @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,
     required int limit,

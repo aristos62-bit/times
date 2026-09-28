@@ -50,9 +50,9 @@ final class SettingsRepositoryImpl implements SettingsRepository {
 
   /// Διαβάζει τη ρύθμιση γραφημάτων ΣΥΓΧΡΟΝΩΣ (memory-read, pattern
   /// `readThemeMode`): κενό → defaults · corrupt → defaults στην οικεία
-  /// entry. 27-09-2026 (5η πίτα): key `subCategory` — παλιό 4-key JSON
-  /// (χωρίς `subCategory`) → default entry (order 2) + shift +1 στις
-  /// έγκυρες entries με order ≥ 2 (κρατά custom σειρά + ζητούμενη θέση).
+  /// entry. 28-09-2026 (6η κάρτα πορείας): key `itemTrend` — παλιό 5-key
+  /// JSON (χωρίς `itemTrend`) → default entry (order 5, τελευταία — κανένα
+  /// shift, σε αντίθεση με τη migration 4→5 που έβαζε τη νέα πίτα στη μέση).
   @override
   HomeChartConfig readHomeChartConfig() {
     final raw = _prefs.getString(AppConstants.homeChartConfigKey);
@@ -67,6 +67,7 @@ final class SettingsRepositoryImpl implements SettingsRepository {
         subCategory: _entryFromJson(migrated['subCategory'], 2),
         itemGroup: _entryFromJson(migrated['itemGroup'], 3),
         topItems: _entryFromJson(migrated['topItems'], 4),
+        itemTrend: _entryFromJson(migrated['itemTrend'], 5),
       );
     } catch (_) {
       return HomeChartConfig.defaults();
@@ -106,8 +107,24 @@ final class SettingsRepositoryImpl implements SettingsRepository {
         'subCategory': _entryToJson(config.subCategory),
         'itemGroup': _entryToJson(config.itemGroup),
         'topItems': _entryToJson(config.topItems),
+        'itemTrend': _entryToJson(config.itemTrend),
       }),
     );
+  }
+
+  /// Διαβάζει το επιλεγμένο είδος πορείας ΣΥΓΧΡΟΝΩΣ (memory-read, pattern
+  /// `readThemeMode`): κενό → null (idle).
+  @override
+  int? readTrendItemId() => _prefs.getInt(AppConstants.trendSelectedItemKey);
+
+  /// Αποθηκεύει το επιλεγμένο είδος (null = αφαίρεση key).
+  @override
+  Future<void> saveTrendItemId(int? id) async {
+    if (id == null) {
+      await _prefs.remove(AppConstants.trendSelectedItemKey);
+    } else {
+      await _prefs.setInt(AppConstants.trendSelectedItemKey, id);
+    }
   }
 
   /// SPoT mapping περιόδου (§2.1): γράφουμε `period.name`, διαβάζουμε από

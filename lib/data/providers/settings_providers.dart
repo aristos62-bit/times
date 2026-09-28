@@ -278,3 +278,65 @@ final backupServiceProvider = Provider<BackupService>(
 final backupFilePickerProvider = Provider<BackupFilePicker>(
   (ref) => FilePickerBackupPicker(),
 );
+
+// ─── Επιλεγμένο είδος πορείας (§2.1 · 28-09-2026, Q5) ────────────────────────
+
+/// Επιλεγμένο είδος κάρτας πορείας (itemId) — `null` = κανένα (idle hint).
+/// Plain `Notifier` (pattern `SelectedReceiptDay`/`ThemeModeController`):
+/// σύγχρονο nullable state + persist `trendSelectedItemKey` μέσω
+/// `SettingsRepository` (sync read, async save με δική του μεταχείριση).
+/// Ζει εδώ (όχι στο stream_providers — το repository είναι ορατό μόνο από
+/// αυτό το αρχείο, αλλιώς κυκλικό import). NON-autoDispose.
+final selectedTrendItemProvider = NotifierProvider<SelectedTrendItem, int?>(
+  SelectedTrendItem.new,
+);
+
+/// Controller επιλογής είδους πορείας — βλ. `selectedTrendItemProvider`.
+class SelectedTrendItem extends Notifier<int?> {
+  /// Σύγχρονο read (pattern theme Βήματος 1): memory-read, ορατό στο πρώτο
+  /// frame· σφάλμα → null (idle, κανένα crash).
+  @override
+  int? build() {
+    try {
+      return ref.read(settingsRepositoryProvider).readTrendItemId();
+    } catch (e, s) {
+      AppLogger.error(
+        LogTag.ui,
+        'Ανάγνωση επιλεγμένου είδους πορείας απέτυχε',
+        e,
+        s,
+      );
+      return null;
+    }
+  }
+
+  /// Επιλογή είδους. Equality gate: ίδιο id → no-op (χωρίς re-notify/save).
+  void select(int id) {
+    if (state == id) return;
+    state = id;
+    AppLogger.info(LogTag.ui, 'Επιλογή είδους πορείας: #$id');
+    unawaited(_save(id));
+  }
+
+  /// Αποεπιλογή → idle hint. Ήδη null → no-op.
+  void clear() {
+    if (state == null) return;
+    state = null;
+    AppLogger.info(LogTag.ui, 'Αποεπιλογή είδους πορείας');
+    unawaited(_save(null));
+  }
+
+  Future<void> _save(int? id) async {
+    if (!ref.mounted) return;
+    try {
+      await ref.read(settingsRepositoryProvider).saveTrendItemId(id);
+    } catch (e, s) {
+      AppLogger.error(
+        LogTag.ui,
+        'Αποθήκευση είδους πορείας απέτυχε',
+        e,
+        s,
+      );
+    }
+  }
+}

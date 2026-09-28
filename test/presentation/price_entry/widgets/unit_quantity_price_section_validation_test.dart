@@ -2,9 +2,10 @@
 /// (§2.2 · Φάση 3 Βήμα 6δ). Νέο αρχείο (το section test έχει ήδη 359 γρ.).
 ///
 /// Καλύπτει: σφάλματα τιμής/ποσότητας (0, πάνω από όριο) · καμία ειδοποίηση
-/// σε κενό πεδίο ή αριθμό «υπό πληκτρολόγηση» («5,») · hint μονάδας +
-/// απόκρυψή του με πληκτρολόγηση (Βήμα 21) ·
-/// `unitAllowsDecimal` στη draft γραμμή · περικοπή + σφάλμα · responsive
+/// σε κενό πεδίο ή αριθμό «υπό πληκτρολόγηση» («5,») · hint μονάδας όταν
+/// το είδος δεν έχει default (κλειδωμένο 28-09-2026 — δεν επιλέγεται) ·
+/// `unitAllowsDecimal` στη draft γραμμή · δεκαδικά σε κλειδωμένη
+/// integer-only μονάδα → σφάλμα · responsive
 /// (3 μεγέθη) και dark theme χωρίς overflow. Πραγματική in-memory Drift βάση
 /// (μοτίβο Βημάτων 4/5).
 library;
@@ -99,8 +100,10 @@ void main() {
       );
 
   /// Seed: κατηγορία → υποκατηγορία → τμήμα → μονάδες → είδος.
-  /// Αλυσίδα 4 επιπέδων (§3 · 27-09-2026).
-  Future<({Item item, int kiloId, int pieceId})> seed(
+  /// Αλυσίδα 4 επιπέδων (§3 · 27-09-2026). Επιστρέφει record
+  /// `{ item, kiloId, pieceId, groupId }` (το groupId για είδη με άλλη
+  /// κλειδωμένη μονάδα — π.χ. Τεμάχιο).
+  Future<({Item item, int kiloId, int pieceId, int groupId})> seed(
       AppDatabase db, {
         bool withDefaultUnit = true,
       }) async {
@@ -124,7 +127,7 @@ void main() {
       defaultUnitId: withDefaultUnit ? kiloId : null,
     );
     final item = await ItemDao(db).getById(itemId);
-    return (item: item!, kiloId: kiloId, pieceId: pieceId);
+    return (item: item!, kiloId: kiloId, pieceId: pieceId, groupId: groupId);
   }
 
   group('UnitQuantityPriceSection — validation (Βήμα 6δ)', () {
@@ -226,8 +229,8 @@ void main() {
           expect(tester.takeException(), isNull);
         });
 
-    testWidgets('V7: χωρίς μονάδα + τιμή → hint unitRequired · επιλογή '
-        'μονάδας → φεύγει', (tester) async {
+    testWidgets('V7: χωρίς μονάδα + τιμή → hint unitRequired · παραμένει '
+        '(μονάδα μόνο από Ρυθμίσεις)', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
       final seeded = await seed(db, withDefaultUnit: false);
@@ -237,13 +240,14 @@ void main() {
       expect(find.text(AppErrors.unitRequired), findsOneWidget);
       expect(addEnabled(tester), isFalse);
 
-      await tester.tap(find.byWidget(fieldByLabel(tester, AppStrings.fieldUnit)));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Τεμάχιο'));
-      await tester.pumpAndSettle();
-
-      expect(find.text(AppErrors.unitRequired), findsNothing);
-      expect(addEnabled(tester), isTrue);
+      // Κλείδωμα (28-09-2026): δεν υπάρχει πεδίο μονάδας για επιλογή —
+      // το hint παραμένει και το Add μένει ανενεργό.
+      final unitFields = tester
+          .widgetList<TextField>(find.byType(TextField))
+          .where((f) => f.decoration?.labelText == AppStrings.fieldUnit);
+      expect(unitFields, isEmpty, reason: 'Καμία επεξεργάσιμη μονάδα');
+      expect(find.text(AppErrors.unitRequired), findsOneWidget);
+      expect(addEnabled(tester), isFalse);
       expect(tester.takeException(), isNull);
     });
 
@@ -278,17 +282,21 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('V9b: integer-only μονάδα (Τεμάχιο) → draft '
+    testWidgets('V9b: κλειδωμένη integer-only μονάδα (Τεμάχιο) → draft '
         'unitAllowsDecimal false', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
-      final seeded = await seed(db, withDefaultUnit: false);
-      await pumpAt(tester, seeded.item, db);
+      final seeded = await seed(db);
+      // Είδος με κλειδωμένο Τεμάχιο (αλλαγή μόνο από Ρυθμίσεις).
+      final pieceItemId = await ItemDao(db).insert(
+        itemGroupId: seeded.groupId,
+        name: 'Ψωμί',
+        defaultUnitId: seeded.pieceId,
+      );
+      final pieceItem = await ItemDao(db).getById(pieceItemId);
+      await pumpAt(tester, pieceItem!, db);
 
-      await tester.tap(find.byWidget(fieldByLabel(tester, AppStrings.fieldUnit)));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Τεμάχιο'));
-      await tester.pumpAndSettle();
+      expect(find.text('${AppStrings.fieldUnit}: Τεμάχιο'), findsOneWidget);
       await enter(tester, AppStrings.fieldQuantity, '3');
       await enter(tester, AppStrings.fieldPrice, '1,20');
       await tester.tap(
@@ -304,32 +312,32 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('V10: «0,5» + αλλαγή σε integer-only → περικοπή σε «0» + '
-        'ειδοποίηση ΚΑΙ quantityMustBePositive', (tester) async {
+    testWidgets('V10: «0,5» σε κλειδωμένη integer-only μονάδα → '
+        'ο formatter κόβει το κόμμα («05»), χωρίς περικοπή', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
-      final seeded = await seed(db); // default = Κιλό (δεκαδική)
-      await pumpAt(tester, seeded.item, db);
+      final seeded = await seed(db);
+      // Είδος με κλειδωμένο Τεμάχιο (αλλαγή μόνο από Ρυθμίσεις).
+      final pieceItemId = await ItemDao(db).insert(
+        itemGroupId: seeded.groupId,
+        name: 'Ψωμί',
+        defaultUnitId: seeded.pieceId,
+      );
+      final pieceItem = await ItemDao(db).getById(pieceItemId);
+      await pumpAt(tester, pieceItem!, db);
 
       await enter(tester, AppStrings.fieldQuantity, '0,5');
-      await tester.enterText(
-        find.byWidget(fieldByLabel(tester, AppStrings.fieldUnit)),
-        'τεμ',
-      );
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Τεμάχιο'));
-      await tester.pumpAndSettle();
 
-      expect(textOf(tester, AppStrings.fieldQuantity), '0');
-      expect(find.text(AppStrings.quantityTruncatedForUnit), findsOneWidget);
-      expect(find.text(AppErrors.quantityMustBePositive), findsOneWidget);
-      expect(addEnabled(tester), isFalse);
+      // Κλείδωμα (28-09-2026): καμία αλλαγή μονάδας → καμία περικοπή·
+      // ο formatter (allowDecimal=false) κόβει το κόμμα («05» = 5, έγκυρο).
+      expect(textOf(tester, AppStrings.fieldQuantity), '05');
+      expect(find.text(AppStrings.quantityTruncatedForUnit), findsNothing);
+      expect(find.text(AppErrors.quantityMustBePositive), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('V13: χωρίς μονάδα + τιμή → unitRequired · πληκτρολόγηση '
-        'στο unit → φεύγει χωρίς επιλογή (Βήμα 21)', (tester) async {
+    testWidgets('V13: χωρίς μονάδα + τιμή → unitRequired · παραμένει '
+        '(28-09-2026: κανένα πεδίο μονάδας)', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
       final seeded = await seed(db, withDefaultUnit: false);
@@ -339,15 +347,13 @@ void main() {
       expect(find.text(AppErrors.unitRequired), findsOneWidget);
       expect(addEnabled(tester), isFalse);
 
-      // Μόνο πληκτρολόγηση στο unit πεδίο — χωρίς επιλογή μονάδας.
-      await tester.enterText(
-        find.byWidget(fieldByLabel(tester, AppStrings.fieldUnit)),
-        'τ',
-      );
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pumpAndSettle();
-
-      expect(find.text(AppErrors.unitRequired), findsNothing);
+      // Κλείδωμα (28-09-2026): δεν υπάρχει πεδίο μονάδας για πληκτρολόγηση —
+      // το hint παραμένει και το Add μένει ανενεργό.
+      final unitFields = tester
+          .widgetList<TextField>(find.byType(TextField))
+          .where((f) => f.decoration?.labelText == AppStrings.fieldUnit);
+      expect(unitFields, isEmpty, reason: 'Καμία επεξεργάσιμη μονάδα');
+      expect(find.text(AppErrors.unitRequired), findsOneWidget);
       expect(addEnabled(tester), isFalse,
           reason: 'Καμία μονάδα επιλεγμένη — το Add παραμένει ανενεργό');
       expect(tester.takeException(), isNull);

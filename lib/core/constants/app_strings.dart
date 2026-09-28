@@ -55,6 +55,15 @@ abstract final class AppStrings {
   static const String chartMoveUp = 'Μετακίνηση πάνω';
   /// Tooltip/semantics του βέλους «κάτω» στην Προσαρμογή Οθόνης (§2.1 · Βήμα 5).
   static const String chartMoveDown = 'Μετακίνηση κάτω';
+  /// Τίτλος κάρτας «Πορεία τιμής» (§2.1 · 28-09-2026 — 6ο γράφημα, γραμμή).
+  static const String chartItemTrendTitle = 'Πορεία τιμής';
+  /// Hint αναζήτησης είδους στην κάρτα πορείας (§2.1 · 28-09-2026).
+  static const String trendItemSearchHint = 'Αναζήτηση είδους';
+  /// Idle κάρτας πορείας — κανένα είδος επιλεγμένο (όχι σφάλμα, όχι DB access).
+  static const String trendNoItemSelected =
+      'Επιλέξτε είδος για προβολή πορείας';
+  /// Μονάδα άξονα Υ πορείας (καθαρή €/μονάδα, Δ-stat §3).
+  static const String trendAxisUnit = '€/μονάδα';
 
   // ─── Price entry (§2.2) ───────────────────────────────────────────────────
   /// Τίτλος AppBar στη σελίδα εισαγωγής τιμών.

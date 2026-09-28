@@ -35,12 +35,20 @@ void main() {
       expect(AppStrings.retryButton, 'Επανάληψη');
     });
 
-    test('chart titles — 5 κάρτες (§2.1 · Φάση 5 · 5η πίτα 27-09-2026)', () {
+    test('chart titles — 6 κάρτες (§2.1 · Φάση 5 · 6η πορεία 28-09-2026)', () {
       expect(AppStrings.chartSupplierTitle, 'Ανά προμηθευτή');
       expect(AppStrings.chartCategoryTitle, 'Ανά κατηγορία');
       expect(AppStrings.chartSubCategoryTitle, 'Ανά υποκατηγορία');
       expect(AppStrings.chartItemGroupTitle, 'Ανά τμήμα');
       expect(AppStrings.chartTopItemsTitle, 'Top-10 είδη');
+      expect(AppStrings.chartItemTrendTitle, 'Πορεία τιμής');
+    });
+
+    test('trend strings — hint/idle/άξονας (§2.1 · 28-09-2026)', () {
+      expect(AppStrings.trendItemSearchHint, 'Αναζήτηση είδους');
+      expect(AppStrings.trendNoItemSelected,
+          'Επιλέξτε είδος για προβολή πορείας');
+      expect(AppStrings.trendAxisUnit, '€/μονάδα');
     });
 
     test('period labels — Η/Ε/Μ/Ε/Προσαρμοσμένο (§2.1 · Φάση 5)', () {
@@ -256,6 +264,10 @@ const List<String> _allStrings = [
   AppStrings.chartSubCategoryTitle,
   AppStrings.chartItemGroupTitle,
   AppStrings.chartTopItemsTitle,
+  AppStrings.chartItemTrendTitle,
+  AppStrings.trendItemSearchHint,
+  AppStrings.trendNoItemSelected,
+  AppStrings.trendAxisUnit,
   AppStrings.periodDay,
   AppStrings.periodWeek,
   AppStrings.periodMonth,

@@ -93,8 +93,33 @@ void main() {
       final notifier = c.read(homeChartConfigProvider.notifier);
       final before = c.read(homeChartConfigProvider);
       notifier.moveUp(ChartId.supplier);
-      notifier.moveDown(ChartId.topItems);
+      notifier.moveDown(ChartId.itemTrend);
       expect(c.read(homeChartConfigProvider), before);
+    });
+
+    test('itemTrend (6η κάρτα): visible/period/order', () {
+      final c = container();
+      final notifier = c.read(homeChartConfigProvider.notifier);
+      expect(
+        c.read(homeChartConfigProvider).itemTrend,
+        const ChartEntry(order: 5),
+      );
+      notifier.setVisible(ChartId.itemTrend, false);
+      expect(c.read(homeChartConfigProvider).itemTrend.visible, isFalse);
+      notifier.setPeriod(ChartId.itemTrend, PeriodType.year);
+      expect(
+        c.read(homeChartConfigProvider).itemTrend.period,
+        PeriodType.year,
+      );
+      // itemTrend τελευταία (order 5): moveUp ανταλλάσσει με topItems.
+      notifier.moveUp(ChartId.itemTrend);
+      var state = c.read(homeChartConfigProvider);
+      expect(state.itemTrend.order, 4);
+      expect(state.topItems.order, 5);
+      notifier.moveDown(ChartId.itemTrend);
+      state = c.read(homeChartConfigProvider);
+      expect(state.itemTrend.order, 5);
+      expect(state.topItems.order, 4);
     });
 
     test('resetDefaults επαναφέρει + no-op όταν ήδη defaults', () {

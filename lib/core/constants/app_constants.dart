@@ -169,6 +169,28 @@ abstract final class AppConstants {
   // (ορατότητα/περίοδος/σειρά ανά γράφημα, §2.1 · pattern themeModeKey).
   static const String homeChartConfigKey = 'home_chart_config';
 
+  // ─── Item trend (§2.1 · 28-09-2026) ──────────────────────────────────────
+  // Ύψος γραφήματος πορείας τιμής (συμμετρικό του `pieChartHeight`).
+  static const double trendChartHeight = 220.0;
+
+  // Key της SharedPreferences για το επιλεγμένο είδος πορείας (itemId,
+  // pattern `themeModeKey` — persist επιλογής, §2.1 Q5).
+  static const String trendSelectedItemKey = 'home_trend_item_id';
+
+  // Safety cap σημείων γραμμής πορείας — πάνω από αυτό κρατιούνται τα
+  // νεότερα (τεκμηριωμένο όριο προσωπικής χρήσης, §2.1 Q4).
+  static const int trendMaxPoints = 200;
+
+  // ─── Item trend painter (§2.1 · 28-09-2026) ───────────────────────────────
+  // Αριστερό περιθώριο ετικετών Υ + κάτω περιθώριο ετικετών Χ (fixed px —
+  // χώρος κειμένου, όχι layout περιεχομένου).
+  static const double trendAxisGutterLeft = 56.0;
+  static const double trendAxisGutterBottom = 22.0;
+
+  // Πάχος γραμμής πορείας + ακτίνα dots.
+  static const double trendLineWidth = 2.0;
+  static const double trendDotRadius = 3.0;
+
   // Ύψος κάρτας πίτας (auto-size πλάτος μέσω LayoutBuilder, §1.4).
   static const double pieChartHeight = 220.0;
 

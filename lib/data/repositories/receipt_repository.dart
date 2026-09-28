@@ -108,6 +108,14 @@ abstract interface class ReceiptRepository {
   /// δεν έχει κινηθεί ποτέ. Passthrough στο DAO.
   Future<ReceiptLine?> getLatestByItemId(int itemId);
 
+  /// Παρακολουθεί το ιστορικό γραμμών είδους σε περίοδο (§2.1 · 28-09-2026 —
+  /// 6ο γράφημα). Passthrough στο DAO (Βήμα 2).
+  Stream<List<ItemPricePoint>> watchItemHistory({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  });
+
   /// Εισάγει απόδειξη με όλες τις γραμμές σε μία transaction (atomicity).
   /// Επιστρέφει το id της απόδειξης. Αποτυχία → SaveReceiptException.
   Future<int> insertReceiptWithLines({

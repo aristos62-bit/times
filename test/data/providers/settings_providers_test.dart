@@ -139,4 +139,11 @@ class FailingRepository implements SettingsRepository {
   @override
   Future<void> saveHomeChartConfig(HomeChartConfig config) =>
       throw UnimplementedError('save fail');
+
+  @override
+  int? readTrendItemId() => throw UnimplementedError('read fail');
+
+  @override
+  Future<void> saveTrendItemId(int? id) =>
+      throw UnimplementedError('save fail');
 }

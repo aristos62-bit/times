@@ -148,6 +148,19 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
       _guard(() => _lineDao.getLatestByItemId(itemId));
 
   @override
+  Stream<List<ItemPricePoint>> watchItemHistory({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      _lineDao
+          .watchItemHistory(itemId: itemId, from: from, to: to)
+          .handleError(
+            (Object e, StackTrace s) =>
+                Error.throwWithStackTrace(const DataLoadException(), s),
+          );
+
+  @override
   Future<int> insertReceiptWithLines({
     required DateTime date,
     required int supplierId,

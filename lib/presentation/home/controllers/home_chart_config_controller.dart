@@ -86,7 +86,7 @@ class HomeChartConfigController extends Notifier<HomeChartConfig> {
     _swap(id, current, below.$1, below.$2, 'Σειρά γραφημάτων');
   }
 
-  /// Επαναφέρει τα defaults §2.1 (4 ορατά/Μήνας/1-2-3-4). Ήδη defaults → no-op.
+  /// Επαναφέρει τα defaults §2.1 (6 ορατά/Μήνας/1-2-3-4-5-6). Ήδη defaults → no-op.
   void resetDefaults() {
     final defaults = HomeChartConfig.defaults();
     if (state == defaults) return;

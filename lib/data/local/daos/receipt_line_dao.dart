@@ -9,6 +9,7 @@ library;
 
 import 'package:drift/drift.dart';
 
+import '../../models/chart_totals.dart';
 import '../app_database.dart';
 import '../base_dao.dart';
 
@@ -68,6 +69,60 @@ class ReceiptLineDao extends BaseDao {
           final row = await query.getSingleOrNull();
           return row?.readTable(db.receiptLines);
         },
+      );
+
+  /// Παρακολουθεί το ιστορικό γραμμών ενός είδους σε περίοδο (§2.1 ·
+  /// 28-09-2026 — 6ο γράφημα «Πορεία τιμής»).
+  ///
+  /// Custom SQL (precedent totals `ReceiptDao`): INNER JOIN αποδείξεων (+
+  /// προμηθευτών για το label) με `WHERE item_id = ? AND r.date >= from AND
+  /// r.date < to` (όρια resolver Βήματος 3, ως δίνονται). `netPriceCents`
+  /// computed `price_cents − discount_cents` (Δ-stat §3 — ποτέ σκέτο price).
+  /// Σειρά: ημερομηνία ASC, id ASC (backdated/edit-reinsert, precedent
+  /// `getLatestByItemId`). Πλήρης λίστα (χωρίς LIMIT — το cap Q4 γίνεται
+  /// στον provider). `readsFrom` → auto-refresh μετά από save/update/delete.
+  Stream<List<ItemPricePoint>> watchItemHistory({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      guardStream(
+        'Ανάγνωση ιστορικού είδους',
+        () => db
+            .customSelect(
+              '''
+        SELECT r.date AS date,
+               (rl.price_cents - rl.discount_cents) AS netPrice,
+               rl.quantity AS quantity,
+               rl.unit_id AS unitId,
+               s.name AS supplierName
+        FROM receipt_lines rl
+        INNER JOIN receipts r ON r.id = rl.receipt_id
+        INNER JOIN suppliers s ON s.id = r.supplier_id
+        WHERE rl.item_id = ? AND r.date >= ? AND r.date < ?
+        ORDER BY r.date ASC, rl.id ASC
+      ''',
+              variables: [
+                Variable.withInt(itemId),
+                Variable.withDateTime(from),
+                Variable.withDateTime(to),
+              ],
+              readsFrom: {db.receiptLines, db.receipts, db.suppliers},
+            )
+            .watch()
+            .map(
+              (rows) => rows
+                  .map(
+                    (row) => (
+                      date: row.read<DateTime>('date'),
+                      netPriceCents: row.read<int>('netPrice'),
+                      quantity: row.read<double>('quantity'),
+                      unitId: row.read<int>('unitId'),
+                      supplierName: row.read<String>('supplierName'),
+                    ),
+                  )
+                  .toList(),
+            ),
       );
 
   /// Εισάγει γραμμή. Το `lineTotalCents` υπολογίζεται ΕΔΩ (SPoT §3):

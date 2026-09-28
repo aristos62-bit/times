@@ -428,6 +428,13 @@ class _FailingReceiptRepo implements ReceiptRepository {
   Future<ReceiptLine?> getLatestByItemId(int itemId) =>
       throw const DataLoadException();
   @override
+  Stream<List<ItemPricePoint>> watchItemHistory({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      throw const DataLoadException();
+  @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,
     required int limit,
@@ -517,6 +524,13 @@ class _BlockingReceiptRepo implements ReceiptRepository {
   @override
   Future<ReceiptLine?> getLatestByItemId(int itemId) =>
       inner.getLatestByItemId(itemId);
+  @override
+  Stream<List<ItemPricePoint>> watchItemHistory({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      inner.watchItemHistory(itemId: itemId, from: from, to: to);
   @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,

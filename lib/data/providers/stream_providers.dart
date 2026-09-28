@@ -303,6 +303,52 @@ final topItemsTotalsProvider =
       ),
 );
 
+// ─── Πορεία τιμής είδους (§2.1 · 28-09-2026, 6ο γράφημα) ─────────────────────
+
+/// LIVE αναζήτηση ειδών για την κάρτα πορείας (§2.1 · 28-09-2026). `.family`
+/// παραμετροποιημένο ανά [query] — thin wrapper πάνω στο
+/// `ItemRepository.searchByNormalizedName` (ακριβές αντίγραφο του
+/// `supplierSearchProvider`): normalize+trim ΕΔΩ εσωτερικά· κενό query →
+/// κενή λίστα χωρίς DB access (short-circuit του repository).
+/// NON-autoDispose (σύμβαση search families).
+final itemTrendSearchProvider = StreamProvider.family<List<Item>, String>(
+  (ref, query) {
+    final normalized = GreekTextNormalizer.normalize(query.trim());
+    return ref.watch(itemRepositoryProvider).searchByNormalizedName(
+          normalized,
+          limit: AppConstants.searchResultsLimit,
+        );
+  },
+);
+
+/// Δεδομένα γραμμής πορείας — `autoDispose.family` ανά [ItemTrendQuery]
+/// (εξαίρεση §2.1, 27-09-2026: αποδέσμευση DB watch σε αλλαγή
+/// είδους/μονάδας/περιόδου/ημέρας).
+///
+/// Split in-provider (precedent slice top-N Βήματος 3): φίλτρο κλειδωμένης
+/// μονάδας (Q2 — οι ξένες μετριούνται, δεν σχεδιάζονται) + cap νεότερα
+/// `trendMaxPoints` (Q4). Σφάλματα ήδη `DataLoadException` (repo mapping).
+final itemTrendProvider =
+    StreamProvider.autoDispose.family<ItemTrendData, ItemTrendQuery>(
+  (ref, query) => ref
+      .watch(receiptRepositoryProvider)
+      .watchItemHistory(
+        itemId: query.itemId,
+        from: query.from,
+        to: query.to,
+      )
+      .map((rows) {
+    final points = [
+      for (final row in rows)
+        if (row.unitId == query.unitId) row,
+    ];
+    final capped = points.length > AppConstants.trendMaxPoints
+        ? points.sublist(points.length - AppConstants.trendMaxPoints)
+        : points;
+    return (points: capped, otherUnitCount: rows.length - points.length);
+  }),
+);
+
 /// Τελευταία γραμμή είδους για prefill τιμής/έκπτωσης (§2.2) — `.family`
 /// παραμετροποιημένο ανά [itemId]. One-shot FutureProvider (όχι stream — η
 /// τιμή διαβάζεται μία φορά στην επιλογή είδους, precedent `canDelete*`

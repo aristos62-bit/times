@@ -1,9 +1,9 @@
 /// Widget tests — `HomePage` (§2.1 · Φάση 5 Βήμα 5 · 4 επίπεδα 27-09-2026).
 ///
 /// Real σελίδα (ConsumerWidget): prefs mock (config, Βήμα 3) + overrides
-/// των 4 families με canned streams (hermetic, ΚΑΝΕΝΑ DB — idiom λίστας
-/// Βήματος 7). Καλύπτονται: 4 τίτλοι («Ανά τμήμα» αντί υποκατηγορίας) +
-/// Προσαρμογή (4 γραμμές) · κενά → empty msgs · data → πίτες ·
+/// των 5 families με canned streams (hermetic, ΚΑΝΕΝΑ DB — idiom λίστας
+/// Βήματος 7). Καλύπτονται: 6 τίτλοι (5 πίτες + πορεία 28-09-2026) +
+/// Προσαρμογή (6 γραμμές) · κενά → empty msgs · data → πίτες ·
 /// responsive 3 μεγέθη · dark · semantics.
 /// Pattern `theme_mode_selector_test` (pump helper + scaler + dispose).
 library;
@@ -88,7 +88,7 @@ const Size tallSize = Size(800, 2500);
   }
 
   group('HomePage (Βήμα 5)', () {
-    testWidgets('AppBar «Τιμές» + 4 τίτλοι + Προσαρμογή', (tester) async {
+    testWidgets('AppBar «Τιμές» + 6 τίτλοι + Προσαρμογή', (tester) async {
       await pumpPage(tester, wrap(), tallSize);
       expect(find.byType(AppBar), findsOneWidget);
       expect(find.text(AppStrings.appTitle), findsOneWidget);
@@ -114,13 +114,17 @@ const Size tallSize = Size(800, 2500);
         findsOneWidget,
       );
       expect(
+        find.text(AppStrings.chartItemTrendTitle, skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(
         find.text(AppStrings.homeCustomizationTitle, skipOffstage: false),
         findsOneWidget,
       );
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('κενά streams → 4 empty msgs (noPricesForPeriod)', (tester) async {
+    testWidgets('κενά streams → 5 empty msgs (noPricesForPeriod)', (tester) async {
       await pumpPage(tester, wrap(), tallSize);
       expect(
         find.text(AppStrings.noPricesForPeriod, skipOffstage: false),
@@ -130,7 +134,7 @@ const Size tallSize = Size(800, 2500);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('data → 4 πίτες', (tester) async {
+    testWidgets('data → 5 πίτες (η πορεία μένει idle)', (tester) async {
       await pumpPage(
         tester,
         wrap(slices: const [(label: 'Μάρκος', totalCents: 398)]),
@@ -143,7 +147,7 @@ const Size tallSize = Size(800, 2500);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('Προσαρμογή: expand → 4 γραμμές (με «Ανά τμήμα»)',
+    testWidgets('Προσαρμογή: expand → 6 γραμμές (με «Πορεία τιμής»)',
         (tester) async {
       await pumpPage(tester, wrap(), tallSize);
       await tester.tap(
@@ -153,7 +157,7 @@ const Size tallSize = Size(800, 2500);
       // Μία γραμμή ανά γράφημα (switch ορατότητας το καθένα).
       expect(
         find.byType(SwitchListTile, skipOffstage: false),
-        findsNWidgets(5),
+        findsNWidgets(6),
       );
       // Το «Ανά τμήμα» εμφανίζεται 2 φορές: κάρτα + γραμμή προσαρμογής.
       expect(
@@ -167,6 +171,11 @@ const Size tallSize = Size(800, 2500);
       );
       expect(
         find.text(AppStrings.chartSupplierTitle, skipOffstage: false),
+        findsNWidgets(2),
+      );
+      // Η «Πορεία τιμής» εμφανίζεται 2 φορές: κάρτα + γραμμή προσαρμογής.
+      expect(
+        find.text(AppStrings.chartItemTrendTitle, skipOffstage: false),
         findsNWidgets(2),
       );
       expect(tester.takeException(), isNull);

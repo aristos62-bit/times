@@ -177,18 +177,63 @@ void main() {
         subCategory: const ChartEntry(order: 4),
         itemGroup: const ChartEntry(order: 1, period: PeriodType.year),
         topItems: const ChartEntry(order: 3, visible: false),
+        itemTrend: const ChartEntry(order: 5, visible: false),
       );
       await repo.saveHomeChartConfig(config);
       expect(repo.readHomeChartConfig(), config);
     });
 
-    test('γράφει στον SPoT key με 5 keys (με `subCategory`)', () async {
+    test('γράφει στον SPoT key με 6 keys (με `itemTrend`)', () async {
       await newRepo().saveHomeChartConfig(HomeChartConfig.defaults());
       final stored = prefs.getString(AppConstants.homeChartConfigKey);
       expect(stored, isNotNull);
       expect(stored, contains('supplier'));
       expect(stored, contains('subCategory'));
       expect(stored, contains('itemGroup'));
+      expect(stored, contains('itemTrend'));
+    });
+
+    test('παλιό 5-key JSON (χωρίς itemTrend) → default entry θέση 5',
+        () async {
+      await prefs.setString(
+        AppConstants.homeChartConfigKey,
+        jsonEncode({
+          'supplier': {'visible': true, 'order': 0, 'period': 'month'},
+          'category': {'visible': true, 'order': 1, 'period': 'month'},
+          'subCategory': {'visible': true, 'order': 2, 'period': 'month'},
+          'itemGroup': {'visible': true, 'order': 3, 'period': 'month'},
+          'topItems': {'visible': true, 'order': 4, 'period': 'month'},
+        }),
+      );
+      final config = newRepo().readHomeChartConfig();
+      // 6η κάρτα στο τέλος (Q6) — κανένα shift υπαρχουσών (σε αντίθεση 4→5).
+      expect(config.itemTrend, const ChartEntry(order: 5));
+      expect(config.supplier.order, 0);
+      expect(config.topItems.order, 4);
+    });
+
+    // ─── readTrendItemId/saveTrendItemId (§2.1 · 28-09-2026, Q5) ─────────────
+    test('χωρίς τιμή → null (idle)', () {
+      expect(newRepo().readTrendItemId(), isNull);
+    });
+
+    test('round-trip: id αποθηκεύεται και διαβάζεται', () async {
+      final repo = newRepo();
+      await repo.saveTrendItemId(42);
+      expect(repo.readTrendItemId(), 42);
+    });
+
+    test('γράφει στον SPoT key AppConstants.trendSelectedItemKey', () async {
+      await newRepo().saveTrendItemId(7);
+      expect(prefs.getInt(AppConstants.trendSelectedItemKey), 7);
+    });
+
+    test('null → αφαίρεση key (clear)', () async {
+      final repo = newRepo();
+      await repo.saveTrendItemId(7);
+      await repo.saveTrendItemId(null);
+      expect(repo.readTrendItemId(), isNull);
+      expect(prefs.containsKey(AppConstants.trendSelectedItemKey), isFalse);
     });
   });
 }

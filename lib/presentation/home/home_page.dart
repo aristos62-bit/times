@@ -24,6 +24,7 @@ import 'controllers/home_chart_config_controller.dart';
 import 'state/home_chart_config.dart';
 import 'widgets/home_chart_card.dart';
 import 'widgets/home_customization_section.dart';
+import 'widgets/item_trend_card.dart';
 
 /// Σελίδα στατιστικών (§2.1) — 5 πίτες + Προσαρμογή Οθόνης.
 class HomePage extends ConsumerWidget {
@@ -36,6 +37,7 @@ class HomePage extends ConsumerWidget {
         ChartId.subCategory => AppStrings.chartSubCategoryTitle,
         ChartId.itemGroup => AppStrings.chartItemGroupTitle,
         ChartId.topItems => AppStrings.chartTopItemsTitle,
+        ChartId.itemTrend => AppStrings.chartItemTrendTitle,
       };
 
   /// Family ανά γράφημα επιλύεται στο `_ChartCard` (switch) — εδώ μόνο τίτλοι.
@@ -134,6 +136,30 @@ class _ChartCard extends ConsumerWidget {
       customTo: entry.customTo,
       now: now,
     );
+    final customSubtitle = entry.period == PeriodType.custom &&
+            entry.customFrom != null &&
+            entry.customTo != null
+        ? '${MaterialLocalizations.of(context).formatMediumDate(entry.customFrom!)}'
+            ' – ${MaterialLocalizations.of(context).formatMediumDate(entry.customTo!)}'
+        : null;
+    void handlePeriod(PeriodType period) {
+      if (period == PeriodType.custom) {
+        onCustom(context, ref, id);
+      } else {
+        ref.read(homeChartConfigProvider.notifier).setPeriod(id, period);
+      }
+    }
+
+    // Πορεία τιμής (28-09-2026): δική της κάρτα (γραμμή + επιλογή είδους) —
+    // οι 5 πίτες μοιράζονται την `HomeChartCard`.
+    if (id == ChartId.itemTrend) {
+      return ItemTrendCard(
+        range: (from: range.from, to: range.to),
+        period: entry.period,
+        customSubtitle: customSubtitle,
+        onPeriodChanged: handlePeriod,
+      );
+    }
     final query = (from: range.from, to: range.to);
     final family = switch (id) {
       ChartId.supplier => supplierTotalsProvider(query),
@@ -141,25 +167,14 @@ class _ChartCard extends ConsumerWidget {
       ChartId.subCategory => subCategoryTotalsProvider(query),
       ChartId.itemGroup => itemGroupTotalsProvider(query),
       ChartId.topItems => topItemsTotalsProvider(query),
+      ChartId.itemTrend => throw StateError('unreachable'),
     };
-    final customSubtitle = entry.period == PeriodType.custom &&
-            entry.customFrom != null &&
-            entry.customTo != null
-        ? '${MaterialLocalizations.of(context).formatMediumDate(entry.customFrom!)}'
-            ' – ${MaterialLocalizations.of(context).formatMediumDate(entry.customTo!)}'
-        : null;
     return HomeChartCard(
       title: HomePage.titleOf(id),
       slicesProvider: family,
       period: entry.period,
       customSubtitle: customSubtitle,
-      onPeriodChanged: (period) {
-        if (period == PeriodType.custom) {
-          onCustom(context, ref, id);
-        } else {
-          ref.read(homeChartConfigProvider.notifier).setPeriod(id, period);
-        }
-      },
+      onPeriodChanged: handlePeriod,
     );
   }
 }

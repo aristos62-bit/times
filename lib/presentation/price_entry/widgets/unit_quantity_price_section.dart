@@ -1,34 +1,37 @@
 /// Ενότητα μονάδας/ποσότητας/τιμής για το επιλεγμένο είδος (§2.2 DESIGN /
-/// Φάση 3 Βήμα 5γ).
+/// Φάση 3 Βήμα 5γ · κλείδωμα μονάδας 28-09-2026).
 ///
 /// Εμφανίζεται ΜΟΝΟ όταν υπάρχει επιλεγμένο είδος (`selectedItem != null`) —
 /// η σελίδα την τοποθετεί με `key: ValueKey(item.id)` ώστε κάθε είδος να έχει
 /// ΦΡΕΣΚΙΑ κατάσταση (controllers/μονάδα από την αρχή — απόφαση Δ8).
 ///
+/// ΜΟΝΑΔΑ ΚΛΕΙΔΩΜΕΝΗ (28-09-2026): η μονάδα προκύπτει ΑΠΟΚΛΕΙΣΤΙΚΑ από το
+/// `Item.defaultUnitId` και εμφανίζεται σε locked banner (pattern προμηθευτή/
+/// είδους §2.4) — η αλλαγή μονάδας γίνεται ΜΟΝΟ από Ρυθμίσεις → Είδη
+/// (`ItemEditDialog`), ποτέ στη φόρμα. Χωρίς `defaultUnitId` (null —
+/// seed/καθαρισμένα είδη) το «Προσθήκη» μένει ανενεργό με `unitRequired`.
+///
 /// ΡΟΗ (§2.2 state machine):
-///   * Unit dropdown (`SearchableDropdownField`, show-all-on-focus Δ1) με
-///     προεπιλογή `Item.defaultUnitId` αν υπάρχει (§2.2:236 — πρόταση, όχι
-///     δέσμευση· αλλαγή ΔΕΝ γράφει πίσω στο Item).
+///   * Κλειδωμένη μονάδα (`Item.defaultUnitId`, §2.2 — δέσμευση, όχι πρόταση).
 ///   * Ποσότητα (`QuantityTextField`, `allowsDecimal` από `Unit.allowsDecimal`,
 ///     suffix = συντομογραφία μονάδας) — prefill `defaultReceiptQuantity`
-///     στην πρώτη επιλογή μονάδας (Δ8).
+///     στην ανάλυση του default (Δ8).
 ///   * Τιμή (`CurrencyTextField`, suffix = `currencySymbol`) — SPoT
 ///     parse/format, ΚΑΝΕΝΑ double ενδιάμεσο (απόφαση Βήμα 5).
 ///   * «Προσθήκη γραμμής» (ανενεργό ΟΤΑΝ unit null Ή ποσότητα/τιμή άκυρη —
 ///     OR) → `addDraftLine` + `clearSelection` (το search field καθαρίζει και
 ///     επιστρέφει σε IDLE, §2.2:206 — έτοιμο για επόμενο είδος).
 ///
-/// Δεκαδική ποσότητα + integer-only μονάδα (§2.2:218): η αλλαγή μονάδας
-/// περικόπτει ΑΥΤΟΜΑΤΑ στο ακέραιο μέρος + inline ειδοποίηση
-/// (`quantityTruncatedForUnit`) — απόρριψη «2.5 τεμάχια» (απόφαση Δ).
+/// Δεκαδική ποσότητα + integer-only μονάδα (§2.2:218): δεκαδική είσοδος σε
+/// κλειδωμένη μονάδα χωρίς κλάσματα απορρίπτεται με `quantityMustBeInteger`
+/// (απόφαση Δ — validation, όχι περικοπή: η μονάδα δεν αλλάζει πια).
 ///
 /// VALIDATION (Βήμα 6δ): όλοι οι κανόνες (τιμή/ποσότητα/μονάδα) προέρχονται
 /// από τον SPoT `ReceiptValidator` — το section δεν έχει δικά του όρια.
 /// Inline σφάλμα (`errorText` των fields) ΜΟΝΟ σε μη-κενή, ολοκληρωμένη
 /// είσοδο: το κενό πεδίο και ο αριθμός «υπό πληκτρολόγηση» («5,») δεν
 /// δείχνουν σφάλμα (το Add μένει απλώς ανενεργό). Hint μονάδας όταν έχει
-/// ήδη γραφτεί τιμή χωρίς μονάδα — κρύβεται μόλις αρχίσει πληκτρολόγηση στο
-/// unit dropdown (onChanged · Βήμα 21).
+/// ήδη γραφτεί τιμή χωρίς μονάδα (είδος χωρίς `defaultUnitId`).
 ///
 /// ΣΥΝΟΛΙΚΗ ΤΙΜΗ (24-09-2026): διακόπτης `_isTotal` — ΟΝ = το πεδίο Τιμή
 /// είναι το σύνολο της ποσότητας (π.χ. 0,350 κιλ = 12 €) και η μοναδιαία
@@ -62,7 +65,6 @@ import '../../../data/providers/stream_providers.dart';
 import '../../../domain/validators/receipt_validator.dart';
 import '../../shared/currency_text_field.dart';
 import '../../shared/quantity_text_field.dart';
-import '../../shared/searchable_dropdown_field.dart';
 import '../controllers/item_search_controller.dart';
 import '../controllers/receipt_form_controller.dart';
 import '../state/receipt_form_state.dart';
@@ -85,19 +87,12 @@ class UnitQuantityPriceSection extends ConsumerStatefulWidget {
 
 class _UnitQuantityPriceSectionState
     extends ConsumerState<UnitQuantityPriceSection> {
-  /// Επιλεγμένη μονάδα — `null` = καμία (κουμπί ανενεργό).
+  /// Κλειδωμένη μονάδα του είδους (`Item.defaultUnitId`) — `null` = το είδος
+  /// δεν έχει μονάδα (Add ανενεργό + `unitRequired` hint).
   Unit? _unit;
 
-  /// Έγινε η (μία) απόπειρα προεπιλογής default — δεν ξανατρέχει.
+  /// Έγινε η (μία) απόπειρα ανάλυσης του default — δεν ξανατρέχει.
   bool _defaultResolved = false;
-
-  /// Inline ειδοποίηση περικοπής (§2.2:218) — `null` = καμία.
-  String? _quantityNotice;
-
-  /// Κρύβει το hint `unitRequired` μόλις ο χρήστης πληκτρολογήσει στο unit
-  /// dropdown (Βήμα 21) — η σύσταση εξυπηρετήθηκε. Δεν ξανασβήνει: φρέσκια
-  /// κατάσταση ανά είδος μέσω `ValueKey(item.id)` (Δ8).
-  bool _unitTyping = false;
 
   /// Λειτουργία συνολικής τιμής (24-09-2026): false (default) = το πεδίο
   /// Τιμή είναι μοναδιαία· true = το πεδίο Τιμή είναι το σύνολο της
@@ -126,7 +121,8 @@ class _UnitQuantityPriceSectionState
     super.dispose();
   }
 
-  /// Προεπιλογή `Item.defaultUnitId` (§2.2:236) + prefill ποσότητας (Δ8).
+  /// Αναλύει την κλειδωμένη μονάδα από το `Item.defaultUnitId` (§2.2 —
+  /// δέσμευση 28-09-2026) + prefill ποσότητας (Δ8).
   /// Τρέχει ΜΙΑ φορά, με την πρώτη άφιξη της λίστας units.
   void _applyDefaultUnit(List<Unit> units) {
     final defaultId = widget.item.defaultUnitId;
@@ -149,38 +145,8 @@ class _UnitQuantityPriceSectionState
     });
   }
 
-  /// Επιλογή μονάδας από το dropdown (προεπιλογή ή χειροκίνητη).
-  void _onUnitSelected(Unit unit) {
-    setState(() {
-      _unit = unit;
-      // Prefill ποσότητας στην πρώτη επιλογή, ΜΟΝΟ σε άδειο πεδίο (Δ8) —
-      // ό,τι έγραψε ο χρήστης ΔΕΝ σβήνεται ποτέ.
-      if (_quantityController.text.isEmpty) {
-        _quantityController.text = QuantityTextField.formatQuantity(
-          AppConstants.defaultReceiptQuantity,
-        );
-        _quantityNotice = null;
-        return;
-      }
-      // Integer-only μονάδα + δεκαδικό κείμενο → αυτόματη περικοπή +
-      // ειδοποίηση (§2.2:218, απόφαση Δ). Το αντίστροφο (επιστροφή σε
-      // δεκαδική μονάδα) καθαρίζει την ειδοποίηση.
-      if (!unit.allowsDecimal) {
-        final current = QuantityTextField.parseQuantity(
-          _quantityController.text,
-          allowsDecimal: true,
-        );
-        if (current != null && current != current.truncateToDouble()) {
-          _quantityController.text = QuantityTextField.formatQuantity(
-            current.truncateToDouble(),
-          );
-          _quantityNotice = AppStrings.quantityTruncatedForUnit;
-          return;
-        }
-      }
-      _quantityNotice = null;
-    });
-  }
+  /// Κλειδωμένη μονάδα (28-09-2026): καμία χειροκίνητη επιλογή — η μονάδα
+  /// προκύπτει μόνο από το `_applyDefaultUnit` (αλλαγή μόνο από Ρυθμίσεις).
 
   /// Prefill τιμής/έκπτωσης από την τελευταία γραμμή του είδους (§2.2).
   ///
@@ -285,9 +251,9 @@ class _UnitQuantityPriceSectionState
 
   @override
   Widget build(BuildContext context) {
-    // ΜΟΝΗ ανάγνωση λίστας units: για την προεπιλογή default (user action =
-    // η επιλογή είδους, §2.0.1). Το ίδιο το dropdown κάνει δικό του gated
-    // watch (πληκτρολόγηση/focus) — όχι διπλό άνοιγμα βάσης στο launch.
+    // ΜΟΝΗ ανάγνωση λίστας units: για την ανάλυση της κλειδωμένης μονάδας
+    // (user action = η επιλογή είδους, §2.0.1). Η βάση δεν ανοίγει στο launch
+    // για τη μονάδα — μόνο με επιλεγμένο είδος.
     final units = ref.watch(unitsStreamProvider).value;
     if (units != null && !_defaultResolved) {
       _defaultResolved = true;
@@ -371,9 +337,10 @@ class _UnitQuantityPriceSectionState
         quantity.value != null &&
         unitPriceCents != null &&
         discount.value != null;
-    // Hint μονάδας: μόνο όταν ο χρήστης έχει ήδη αρχίσει να γράφει τιμή ΚΑΙ
-    // δεν έχει αρχίσει να πληκτρολογεί στο unit dropdown (Βήμα 21).
-    final unitHint = !_unitTyping && _priceController.text.isNotEmpty
+    // Hint μονάδας (κλειδωμένη 28-09-2026): μόνο όταν ο χρήστης έχει ήδη
+    // αρχίσει να γράφει τιμή και το είδος δεν έχει `defaultUnitId` —
+    // η μονάδα ορίζεται από Ρυθμίσεις → Είδη.
+    final unitHint = _priceController.text.isNotEmpty
         ? ReceiptValidator.validateUnit(_unit != null)
         : null;
 
@@ -385,23 +352,22 @@ class _UnitQuantityPriceSectionState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SearchableDropdownField<Unit>(
-              labelText: AppStrings.fieldUnit,
-              hintText: AppStrings.unitSearchHint,
-              searchProvider: unitSearchProvider.call,
-              labelOf: (unit) => unit.name,
-              // Χωρίς «+»: οι μονάδες διαχειρίζονται από τις Ρυθμίσεις (Φάση 4/6).
-              onSelected: _onUnitSelected,
-              // Β5ε-1: σβήσιμο/αλλαγή κειμένου → μονάδα null (Add ανενεργό).
-              onCleared: () => setState(() => _unit = null),
-              // Βήμα 21: πληκτρολόγηση → κρύβεται το hint unitRequired.
-              onChanged: (_) => setState(() => _unitTyping = true),
-              showAllWhenEmpty: true,
-              allOptionsProvider: () => unitsStreamProvider,
-              initialValue: _unit,
-              prefixIcon: const Icon(Icons.straighten_outlined),
-              resultLeadingIcon: const Icon(Icons.straighten_outlined),
-            ),
+            // Κλειδωμένη μονάδα είδους (28-09-2026, pattern locked banner
+            // προμηθευτή/είδους §2.4): προβολή μόνο — αλλαγή από Ρυθμίσεις.
+            // Χωρίς `defaultUnitId` → κενό + `unitRequired` hint (βλ. unitHint).
+            if (_unit != null)
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.straighten_outlined),
+                title: Text(
+                  '${AppStrings.fieldUnit}: ${_unit!.name}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              )
+            else
+              const SizedBox.shrink(),
             if (unitHint != null)
               Padding(
                 padding: const EdgeInsets.only(top: AppConstants.spacingS),
@@ -425,16 +391,6 @@ class _UnitQuantityPriceSectionState
               onChanged: (_) => setState(() {}),
               prefixIcon: const Icon(Icons.scale_outlined),
             ),
-            if (_quantityNotice != null)
-              Padding(
-                padding: const EdgeInsets.only(top: AppConstants.spacingS),
-                child: Text(
-                  _quantityNotice!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
-              ),
             const SizedBox(height: AppConstants.spacingM),
             CurrencyTextField(
               controller: _priceController,

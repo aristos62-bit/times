@@ -156,8 +156,8 @@ void main() {
       await seedLine(db, seeded.item, lineUnitId: seeded.pieceId);
       await pumpAt(tester, seeded.item, db);
 
-      // Η ενότητα πρότεινε Κιλό (default) ≠ Τεμάχιο ιστορικού.
-      expect(textOf(tester, AppStrings.fieldUnit), 'Κιλό');
+      // Η ενότητα κλειδώνει Κιλό (default) ≠ Τεμάχιο ιστορικού → no-prefill.
+      expect(find.text('${AppStrings.fieldUnit}: Κιλό'), findsOneWidget);
       expect(textOf(tester, AppStrings.fieldPrice), isEmpty);
       expect(textOf(tester, AppStrings.fieldDiscount), isEmpty);
       expect(tester.takeException(), isNull);

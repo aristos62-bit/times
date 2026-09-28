@@ -231,8 +231,17 @@ void main() {
       expect(AppConstants.homeChartConfigKey, 'home_chart_config');
     });
 
-    test('pieChartHeight = 220 (ύψος κάρτας πίτας)', () {
-      expect(AppConstants.pieChartHeight, 220.0);
+    test('trendChartHeight = 220 (ύψος γραμμής πορείας, §2.1 · 28-09-2026)', () {
+      expect(AppConstants.trendChartHeight, 220.0);
+    });
+
+    test('trendSelectedItemKey = «home_trend_item_id» (§2.1 Q5 — SPoT key)', () {
+      expect(AppConstants.trendSelectedItemKey, 'home_trend_item_id');
+    });
+
+    test('trendMaxPoints = 200 (safety cap πορείας, §2.1 Q4)', () {
+      expect(AppConstants.trendMaxPoints, 200);
+      expect(AppConstants.trendMaxPoints, greaterThan(0));
     });
 
     test('pieFallbackMaxWidth = 300 (fallback πίνακα, §1.4)', () {
@@ -296,4 +305,5 @@ const List<String> _allConstStrings = [
   AppConstants.backupFileNamePattern,
   AppConstants.themeModeKey,
   AppConstants.homeChartConfigKey,
+  AppConstants.trendSelectedItemKey,
 ];

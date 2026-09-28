@@ -179,6 +179,15 @@ void main() {
       );
     });
 
+    // ─── Πορεία τιμής (§2.1 · 28-09-2026) ───────────────────────────────────
+    test('trendItemRemoved — ορφανή επιλογή (§2.1)', () {
+      expect(AppMessages.trendItemRemoved, 'Το είδος διαγράφηκε — επιλέξτε ξανά');
+    });
+
+    test('trendOtherUnitsNote(count) — σημείωση ξένων μονάδων (§2.1 Q2)', () {
+      expect(AppMessages.trendOtherUnitsNote(3), '3 παλιές σε άλλη μονάδα (εκτός)');
+    });
+
     // ─── Καθολικός έλεγχος ποιότητας (ίδιο pattern με app_strings_test) ─────
     test('κανένα const string μη-κενό, χωρίς whitespace στα άκρα, χωρίς \\n', () {
       for (final text in _allConstStrings) {
@@ -218,4 +227,5 @@ const List<String> _allConstStrings = [
   AppMessages.editDiscardDraftsConfirm,
   AppMessages.backupCreated,
   AppMessages.restoreConfirmWithBackup,
+  AppMessages.trendItemRemoved,
 ];

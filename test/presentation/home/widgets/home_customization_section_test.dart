@@ -52,22 +52,23 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('tap ανοίγει: 5 γραμμές + βέλη', (tester) async {
+    testWidgets('tap ανοίγει: 6 γραμμές + βέλη', (tester) async {
       await pumpExpanded(tester);
       expect(find.text(AppStrings.chartSupplierTitle), findsOneWidget);
       expect(find.text(AppStrings.chartTopItemsTitle), findsOneWidget);
+      expect(find.text(AppStrings.chartItemTrendTitle), findsOneWidget);
       expect(
         find.byTooltip(AppStrings.chartMoveUp, skipOffstage: false),
-        findsNWidgets(5),
+        findsNWidgets(6),
       );
       expect(
         find.byTooltip(AppStrings.chartMoveDown, skipOffstage: false),
-        findsNWidgets(5),
+        findsNWidgets(6),
       );
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('άκρα ανενεργά: πάνω στην 1η, κάτω στην 5η', (tester) async {
+    testWidgets('άκρα ανενεργά: πάνω στην 1η, κάτω στην 6η', (tester) async {
       await pumpExpanded(tester);
       // byTooltip βρίσκει το Tooltip — τα κουμπιά με predicate (tooltip).
       Finder upFinder = find.byWidgetPredicate(
@@ -78,11 +79,11 @@ void main() {
         (widget) =>
             widget is IconButton && widget.tooltip == AppStrings.chartMoveDown,
       );
-      expect(upFinder, findsNWidgets(5));
-      expect(downFinder, findsNWidgets(5));
+      expect(upFinder, findsNWidgets(6));
+      expect(downFinder, findsNWidgets(6));
       final upButtons = tester.widgetList<IconButton>(upFinder).toList();
       final downButtons = tester.widgetList<IconButton>(downFinder).toList();
-      // 1η γραμμή (supplier, order 0): πάνω ανενεργό · 5η: κάτω ανενεργό.
+      // 1η γραμμή (supplier, order 0): πάνω ανενεργό · 6η: κάτω ανενεργό.
       expect(upButtons.first.onPressed, isNull);
       expect(downButtons.first.onPressed, isNotNull);
       expect(upButtons.last.onPressed, isNotNull);
@@ -92,7 +93,7 @@ void main() {
 
     testWidgets('switch κρύβει κάρτα (controller + persist)', (tester) async {
       ProviderContainer? captured;
-      // Ψηλό viewport (βλ. pumpExpanded): 5 γραμμές expanded.
+      // Ψηλό viewport (βλ. pumpExpanded): 6 γραμμές expanded.
       tester.view.physicalSize = const Size(800, 2500);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -116,7 +117,7 @@ void main() {
       await tester.tap(find.text(AppStrings.homeCustomizationTitle));
       await tester.pumpAndSettle();
       final switches = find.byType(Switch);
-      expect(switches, findsNWidgets(5));
+      expect(switches, findsNWidgets(6));
       await tester.tap(switches.first);
       await tester.pumpAndSettle();
       expect(

@@ -84,3 +84,45 @@ typedef ChartQuery = ({DateTime from, DateTime to});
 /// Παράγεται από τον `toChartSlices` (top-N + συνθετικό «Λοιπά») — το UI
 /// δείχνει `label` + `formatCents(totalCents)` (SPoT προβολή §2.1:176).
 typedef ChartSlice = ({String label, int totalCents});
+
+/// Σημείο πορείας τιμής είδους (§2.1 · 28-09-2026 — 6ο γράφημα, γραμμή).
+///
+/// Projection (όχι οντότητα): παράγεται από το `watchItemHistory` του
+/// `ReceiptLineDao` (καθαρή μοναδιαία `price_cents − discount_cents`, Δ-stat
+/// §3). Το `unitId` μένει στο point για το φίλτρο κλειδωμένης μονάδας
+/// (Q2 — οι ξένες μονάδες μετριούνται, δεν σχεδιάζονται).
+typedef ItemPricePoint = ({
+  /// Ημερομηνία απόδειξης της γραμμής.
+  DateTime date,
+
+  /// Καθαρή τιμή μονάδας σε λεπτά (`priceCents − discountCents`, §3).
+  int netPriceCents,
+
+  /// Ποσότητα γραμμής (για διάκριση ίδιων ημερών / tooltip).
+  double quantity,
+
+  /// Μονάδα γραμμής (FK → Units.id) — φίλτρο κλειδωμένης μονάδας (Q2).
+  int unitId,
+
+  /// Όνομα προμηθευτή (INNER JOIN — fallback/tooltip).
+  String supplierName,
+});
+
+/// Παράμετρος-κλειδί του trend stream family (§2.1 · 28-09-2026).
+///
+/// Το `unitId` μπαίνει στο κλειδί (αλλαγή μονάδας από Ρυθμίσεις = νέο
+/// instance). Plain record — value equality για το family cache (pattern
+/// `ChartQuery`).
+typedef ItemTrendQuery = ({
+  int itemId,
+  int unitId,
+  DateTime from,
+  DateTime to,
+});
+
+/// Δεδομένα κάρτας πορείας: points κλειδωμένης μονάδας + πλήθος παλιών
+/// γραμμών άλλης μονάδας (σημείωση Q2 — εκτός γραφήματος).
+typedef ItemTrendData = ({
+  List<ItemPricePoint> points,
+  int otherUnitCount,
+});

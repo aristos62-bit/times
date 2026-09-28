@@ -130,10 +130,16 @@ presentation/<screen>/
 ### 2.1 Κεντρική Σελίδα — Γραφήματα & Στατιστικά
 
 **Σκοπός**: σύνολα δαπανών (καθαρά, μετά έκπτωση §3) ανά περίοδο σε 5 πίτες
-με 3D-εφέ + «Προσαρμογή Οθόνης» από τον χρήστη (τελευταία γραμμή).
+με 3D-εφέ + πορεία τιμής είδους (γραμμή, 28-09-2026) + «Προσαρμογή Οθόνης»
+από τον χρήστη (τελευταία γραμμή).
 
 **Γραφήματα (27-09-2026 — όλα pie, σύνολα €, καθαρά §3)**
 1. Ανά προμηθευτή · 2. Ανά κατηγορία · 3. Ανά υποκατηγορία · 4. Ανά τμήμα · 5. Top-10 είδη (κατά σύνολο €).
+6. Πορεία τιμής είδους (28-09-2026 — γραμμή, καθαρή €/μονάδα §3, όχι πίτα):
+επιλογή είδους (search, χωρίς «+») + περίοδος κάρτας· 1 point = 1 γραμμή
+(καμία συγχώνευση §2.2:291)· φίλτρο κλειδωμένης μονάδας (28-09-2026 —
+ξένες γραμμές μετριούνται, δεν σχεδιάζονται)· Χ ομοιόμορφα ανά index
+(ίδιες ημέρες δεν επικαλύπτονται)· cap 200 νεότερα (Q4).
 - 3D = εφέ βάθους (tilt + πάχος φέτας, custom painter): το `fl_chart` ΔΕΝ
   έχει 3D (evidence pub cache 25-09 — 0 results για depth/tilt) → custom
   `Pie3dPainter`, 0 νέα packages. Labels ΠΑΝΤΑ δεξιά της πίτας (custom
@@ -165,10 +171,13 @@ presentation/home/
 ├── controllers/
 │   └── home_chart_config_controller.dart -- plain Notifier, persisted config
 ├── state/
-│   └── home_chart_config.dart         -- Freezed: ανά γράφημα {visible, order, period}
+│   └── home_chart_config.dart         -- Freezed: ανά γράφημα {visible, order, period} (6 entries 28-09-2026)
 └── widgets/
     ├── pie_3d_chart.dart              -- generic πίτα 3D-εφέ + legend δεξιά + auto-size
     ├── home_chart_card.dart           -- τίτλος + period selector + AsyncValue states
+    ├── item_trend_card.dart           -- 6η κάρτα (28-09-2026): επιλογή είδους + locked banner + γραμμή + states
+    ├── item_trend_chart.dart          -- custom line painter + άξονες + auto-size
+    ├── item_trend_fallback_list.dart  -- βλ. §4 Φάση 5 (στενό container safety net, χωρίς σύνολο)
     ├── home_customization_section.dart -- «Προσαρμογή Οθόνης» (visibility/period/order)
     └── chart_fallback_table.dart      -- βλ. §4 Φάση 5 (στενό container safety net)
 ```
@@ -178,7 +187,8 @@ presentation/home/
 - `homeChartConfigProvider` (plain Notifier, persisted SharedPreferences — read στο build, save async όπως theme · equality gate).
 - `todayProvider` (plain `Notifier<DateTime>`, SPoT τρέχουσα ημέρα dayOnly — `Timer.periodic` SPoT `clockCheckSeconds` + day-gate, rebuild Κεντρικής ΜΟΝΟ σε αλλαγή ημέρας · λύνει stale `now` τα μεσάνυχτα, 27-09-2026).
 - 5 streams ( `supplierTotalsStreamProvider` / `categoryTotalsStreamProvider` / `subCategoryTotalsStreamProvider` / `itemGroupTotalsStreamProvider` / `topItemsStreamProvider`, `.family` ανά `ChartQuery{from,to,limit}`) → repo passthrough (error-mapping μόνο) → DAO aggregations (§3).
-- **Κρίσιμο**: άθροιση στο SQL · totals καθαρά (μετά έκπτωση §3) · `formatCents` SPoT προβολή.
+- Πορεία (28-09-2026): `selectedTrendItemProvider` (plain `Notifier<int?>`, persisted `trendSelectedItemKey`) + `itemTrendSearchProvider` (family, LIKE) + `itemTrendProvider` (`autoDispose.family` ανά `ItemTrendQuery{itemId,unitId,from,to}` → split κλειδωμένης μονάδας + cap `trendMaxPoints` in-provider) → repo passthrough → `ReceiptLineDao.watchItemHistory` (§3).
+- **Κρίσιμο**: άθροιση στο SQL · totals/τιμές καθαρά (μετά έκπτωση §3) · `formatCents` SPoT προβολή.
 
 **Καταστάσεις κάρτας**
 - `loading` → skeleton (όχι κενή κάρτα) · `data` κενό → `noPricesForPeriod` (SPoT) · `error` → `loadDataFailed` + «Επανάληψη» (`ref.invalidate` του family instance).
@@ -231,8 +241,10 @@ NEW_ITEM_FLOW: επιλογή Κατηγορίας [υπάρχουσα ▸ ή "+
              → επιλογή Τμήματος [υπάρχον ▸ ή "+" νέο]
              → εισαγωγή ονόματος νέου Είδους + ΥΠΟΧΡΕΩΤΙΚΗ μονάδα (27-09-2026)
              → (save Category/SubCategory/ItemGroup/Item αν χρειάζεται) ──▶ ITEM_SELECTED
-ITEM_SELECTED ──▶ εμφάνιση Unit dropdown (προεπιλογή: Item.defaultUnitId — πάντα
-              ορισμένο για είδη από dialog 27-09-2026+, §2.2:288)
+ITEM_SELECTED ──▶ κλειδωμένη μονάδα είδους (`Item.defaultUnitId`, δέσμευση
+              28-09-2026 — locked banner, όπως προμηθευτής/είδος §2.4· αλλαγή
+              ΜΟΝΟ από Ρυθμίσεις → Είδη· χωρίς `defaultUnitId` το «Προσθήκη»
+              μένει ανενεργό με `unitRequired`)
              → Ποσότητα (input τύπου ανάλογα με Unit.allowsDecimal)
              → Τιμή (μοναδιαία — ή ΣΥΝΟΛΟ ποσότητας με τον διακόπτη
                «Συνολική τιμή» 24-09-2026: η μοναδιαία παράγεται
@@ -287,7 +299,15 @@ ITEM_SELECTED ──▶ εμφάνιση Unit dropdown (προεπιλογή: It
 - **Ημιτελής καταχώρηση κατά την έξοδο — ΥΛΟΠΟΙΗΘΗΚΕ (22-09-2026)**: αν ο χρήστης πιέσει system back (Android/iOS) με μη αποθηκευμένες `draftLines`, το `PopScope` της PriceEntryPage μπλοκάρει το pop και εμφανίζει το generic `ConfirmDialog` (§2.4) με *"Έχετε μη αποθηκευμένες γραμμές. Έξοδος χωρίς αποθήκευση;"*. «Ναι» → καθαρισμός φόρμας (`resetForm` + `clearSelection` — ο χρήστης βρίσκει ΚΑΘΑΡΗ φόρμα αν γυρίσει) + άδεια εξόδου· το **επόμενο** system-back ολοκληρώνει την έξοδο — **ΚΑΝΕΝΑ ρητό `pop`**: η σελίδα είναι η μοναδική route της branch (ρητό pop θα έσπαγε το go_router shell). «Ακύρωση»/dismiss → παραμονή, τα drafts μένουν. **Αλλαγή tab ΔΕΝ ενεργοποιεί τον έλεγχο** (IndexedStack κρατά τα drafts σκόπιμα, §2.2:222). Η «άδεια εξόδου» σβήνει ξανά σε νέο draft (`ref.listen`). **Όρια**: κλείσιμο παραθύρου desktop (X/Alt+F4) και browser-close εκτός ελέγχου Flutter (native listener εκτός MVP)· web back = προαιρετικά αργότερα. Το state του controller έχει `autoDispose: false`, ώστε προσωρινή αλλαγή tab να μην σβήσει drafts.
 - **Race condition αναζήτησης**: κάθε νέο keystroke ακυρώνει το προηγούμενο pending search (§2.0.3) — αλλιώς ένα αργό query για "γ" μπορεί να εμφανιστεί *μετά* το γρήγορο query για "γάλα" και να δείξει λάθος αποτελέσματα.
 - **Διπλή δημιουργία είδους σε γρήγορο double-tap** στο "+": το κουμπί απενεργοποιείται (`isSaving` flag) μέχρι να ολοκληρωθεί το insert.
-- **defaultUnitId vs χειροκίνητη επιλογή**: το dropdown προτείνει το `Item.defaultUnitId` αλλά επιτρέπει αλλαγή· αν αλλάξει ο χρήστης μονάδα σε σχέση με το default, **δεν** ενημερώνεται αυτόματα το `Item.defaultUnitId` (θα ήταν απρόβλεπτη πλευρική ενέργεια) — μόνο από τις Ρυθμίσεις, ρητά. Από 27-09-2026 το `defaultUnitId` ορίζεται ΥΠΟΧΡΕΩΤΙΚΑ στη δημιουργία (dialog «+», §2.4) — είδη χωρίς πρόταση υπάρχουν μόνο από edit-καθάρισμα (Ρυθμίσεις).
+- **Κλειδωμένη μονάδα είδους (28-09-2026)**: η μονάδα γραμμής προκύπτει
+  ΑΠΟΚΛΕΙΣΤΙΚΑ από το `Item.defaultUnitId` και εμφανίζεται σε locked banner
+  (pattern προμηθευτή/είδους §2.4) — καμία χειροκίνητη επιλογή στη φόρμα· η
+  αλλαγή γίνεται ΜΟΝΟ από Ρυθμίσεις → Είδη (`ItemEditDialog`), ρητά. CORRECTION:
+  η συμπεριφορά «πρόταση, όχι δέσμευση» (dropdown με `defaultUnitId` ως
+  προεπιλογή + ελεύθερη αλλαγή χωρίς write-back) αποσύρθηκε — βλ. 28-09-2026.
+  Από 27-09-2026 το `defaultUnitId` ορίζεται ΥΠΟΧΡΕΩΤΙΚΑ στη δημιουργία
+  (dialog «+», §2.4) — είδη χωρίς μονάδα υπάρχουν μόνο από edit-καθάρισμα
+  (Ρυθμίσεις) και δεν δέχονται γραμμές (`unitRequired`) μέχρι να οριστεί.
 - **Πολλαπλές γραμμές ίδιου είδους στην ίδια απόδειξη** (π.χ. 2 διαφορετικές τιμές/συσκευασίες γάλακτος): επιτρέπεται — δεν κάνουμε merge, κάθε γραμμή είναι ανεξάρτητη.
 
 ---
@@ -341,7 +361,7 @@ presentation/settings/
 
 | Widget | Ρόλος | Χρησιμοποιείται σε |
 |---|---|---|
-| `SearchableDropdownField` | Γενικό dropdown με αναζήτηση + slot για "+" νέο | Προμηθευτής, Κατηγορία, Υποκατηγορία, Τμήμα, Unit |
+| `SearchableDropdownField` | Γενικό dropdown με αναζήτηση + slot για "+" νέο | Προμηθευτής, Κατηγορία, Υποκατηγορία, Τμήμα (η μονάδα γραμμής κλειδώθηκε 28-09-2026 — banner, §2.2) |
 | `ConfirmDialog` | Γενικό επιβεβαιωτικό — **ΥΛΟΠΟΙΗΘΗΚΕ**: `showConfirmDialog` → `Future<bool?>` (true/false/`null`=dismiss)· SPoT defaults («Επιβεβαίωση», «Ναι»/«Ακύρωση»)· `isDestructive` (error styling) για διαγραφές· responsive §1.4 | Διαγραφή, Restore, έξοδος με unsaved data |
 | `DeleteGateButton` | Κουμπί πύλης διαγραφής (§2.3:275 · 24-09-2026): ενεργό/greyed+tooltip/retry — dumb, ο γονέας περνά `AsyncValue`s | Tree editor, supplier editor |
 | `runControllerOp` | Helper controller-op → feedback (ok/success, error/snackbar, DB/`userMessage`) — SPoT του pattern (§2.3 editors) | Tree editor, supplier editor |
@@ -398,17 +418,18 @@ presentation/settings/
   καθαρίζει inline μηνύματα που έμειναν από αποτυχημένη δράση (π.χ. `nameExists`,
   `unitRequired`). ΔΕΝ πυροδοτείται από programmatic αλλαγές (prefill, refresh
   overlay, label μετά από επιλογή/«+»): guard `_suppressOnChanged` στο `_onChanged`
-  + όλες οι εσωτερικές γραφές περνούν από τον helper `_writeSilently`. Χρήση:
-  Unit dropdown στο `unit_quantity_price_section.dart` · και στους διαλόγους
-  «+» (Βήμα 21).
+  + όλες οι εσωτερικές γραφές περνούν από τον helper `_writeSilently`. Χρήση
+  (28-09-2026): οι διάλογοι «+» (Βήμα 21) — το unit section κλειδώθηκε
+  (locked banner, §2.2) και δεν το χρησιμοποιεί πια.
 - **Κλείδωμα προμηθευτή (24-09-2026, όπως είδος §2.4)**: στο
   `ReceiptHeaderSection` ο επιλεγμένος προμηθευτής ΔΕΝ μένει σε editable
   πεδίο — το dropdown αντικαθίσταται από locked banner (`ListTile` με όνομα,
   maxLines 1 + ellipsis, + `TextButton` reuse `AppStrings.changeItem`).
   «Αλλαγή» → `setSupplier(null)` + epoch (φρέσκο άδειο dropdown)· καθαρισμός
   φόρμας (save/reset/exit-Ναι) ξεκλειδώνει αυτόματα. Το dropdown υπάρχει ΜΟΝΟ
-  χωρίς επιλογή, άρα το `onCleared` είναι νεκρό και αφαιρέθηκε από αυτό το
-  call-site (το param παραμένει για το unit section, Β5ε-1). CORRECTION: η
+  χωρίς επιλογή, άρα το `onCleared` είναι νεκρό και αφαιρέθηκε και από τα δύο
+  call-sites (προμηθευτής 24-09-2026 · unit section 28-09-2026 με το κλείδωμα).
+  CORRECTION: η
   συμπεριφορά 22-09 (typing-αποεπιλογή με `_clearedFromEdit` flag) αποσύρθηκε —
   βλ. κεφ. 27/24-09-2026.
 - **Κείμενο πεδίου μετά την επιλογή (Βήμα 6ε)**: το `RawAutocomplete` γράφει
@@ -513,7 +534,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 2. Auto αριθμός απόδειξης + date picker.
 3. Supplier search/autocomplete + inline "+" δημιουργία.
 4. Item search/autocomplete με incremental filtering (debounce) + "+" popup ροή (Κατηγορία→Υποκατηγορία→Τμήμα→Είδος).
-5. Unit dropdown, ποσότητα, τιμή, save flow ("καλάθι" απόδειξης — βλ. state machine §2.2).
+5. Κλειδωμένη μονάδα (28-09-2026 — πριν: Unit dropdown), ποσότητα, τιμή, save flow ("καλάθι" απόδειξης — βλ. state machine §2.2).
 6. Validation (π.χ. τιμή > 0, υποχρεωτικά πεδία) μέσω SPoT validators.
 7. **Λίστα πρόσφατων αποδείξεων (read-only) — ΟΛΟΚΛΗΡΩΘΗΚΕ.** `ReceiptSummary` projection + `ReceiptDao.watchRecentSummaries` (ένα watch query πάνω σε stored `lineTotalCents`) · `recentReceiptsStreamProvider` (μη autoDispose, όριο `AppConstants.recentReceiptsLimit` = 20) → **auto-refresh μετά το save** · `recent_receipts_list.dart` (`AsyncValue.when`: loading/error+Επανάληψη/empty, Card+ListTile, responsive + dark/light) · SPoT strings/messages · έγκυρη γραμμή 0,00 € όταν `(priceCents*quantity).round()==0` (§2.2). Tests **699/699** ✓ · analyze καθαρό.
 8. Widget tests στη φόρμα. **ΟΛΟΚΛΗΡΩΘΗΚΕ** (21-09-2026): flow F1/F2 + dark gap-fill + semantics §1.6 + housekeeping splits (κανένα test αρχείο >500 γρ.) · 710/710.
@@ -530,11 +551,12 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 5. **BackupService + UI** (Βήμα 5 — **ΟΛΟΚΛΗΡΩΘΗΚΕ 25-09** ✓): Export = snapshot `VACUUM INTO` temp + `saveFile` bytes (§2.3) · Restore = validate (magic + πίνακες, read-only sqlite3 probe) → **confirm → auto-backup** → `closeSafely()` (idempotent, §2.3) → replace → **restart providers** (`ref.invalidate(appDatabaseProvider)` + reset φορμών, §2.3) · 1024/1024 ✓.
 6. **Housekeeping** (Βήμα 6): splits >500 γρ. (κανόνας 7) · oldsessions.md update (1 κεφάλαιο) · backups recap · `flutter analyze` + full tests.
 
-### Φάση 5 — Κεντρική Σελίδα (5 πίτες 3D-εφέ · 27-09-2026: η υποκατηγορία επέστρεψε ως 3η πίτα)
+### Φάση 5 — Κεντρική Σελίδα (5 πίτες 3D-εφέ + πορεία · 27-09-2026: η υποκατηγορία επέστρεψε ως 3η πίτα · 28-09-2026: 6η κάρτα «Πορεία τιμής»)
 1. DAO aggregations (`SUM(lineTotalCents) GROUP BY` + TOP 10, §3) → repos (error-mapping) → 5 stream families (precedent Βήμα 7, auto-refresh).
 2. 5 pie cards (supplier/category/subCategory/itemGroup/top-10) με per-chart περίοδο (Η/Ε/Μ/Ε/προσαρμοσμένο, default Μήνας) + custom 3D-εφέ painter (`fl_chart` χωρίς 3D — evidence 25-09, 0 νέα packages) + labels δεξιά + auto-size (`LayoutBuilder`) + fallback πίνακα σε στενά (§1.4).
-3. «Προσαρμογή Οθόνης» τελευταία γραμμή (ορατότητα/περίοδος/σειρά ανά γράφημα, persisted SharedPreferences, defaults 5-ορατά/Μήνας/1-2-3-4-5).
+3. «Προσαρμογή Οθόνης» τελευταία γραμμή (ορατότητα/περίοδος/σειρά ανά γράφημα, persisted SharedPreferences, defaults 6-ορατά/Μήνας/1-2-3-4-5-6 από 28-09-2026).
 4. Unit tests (aggregations, config controller, validators ορίων) + widget tests (states/responsive 3 μεγέθη/dark/semantics)· 0 golden tests (brittle cross-platform).
+5. Post-closure 28-09-2026 — 6η κάρτα «Πορεία τιμής» (γραμμή §2.1, deferred trend-line §2.1:175): `ReceiptLineDao.watchItemHistory` + repo passthrough + `itemTrendProvider` (autoDispose family, split μονάδας + cap) + `selectedTrendItemProvider` (persisted) + custom line painter (0 packages) + Προσαρμογή (6η γραμμή αυτόματα).
 
 ### Φάση 6 — Στίλβωση & Επεκτάσεις
 1. Πλήρης έλεγχος responsive/overflow σε real συσκευές/μεγέθη.

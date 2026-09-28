@@ -5,9 +5,10 @@
 /// πραγματική in-memory Drift βάση (μοτίβο Βήματος 4 — NativeDatabase σε
 /// background isolate, πραγματικά delays, όχι fakeAsync).
 ///
-/// Καλύπτονται: prefill defaultUnitId + ποσότητας (Δ8) · Add disabled OR ·
-/// add → draft + clearSelection (§2.2:206) · χειροκίνητη επιλογή μονάδας
-/// (show-all) · περικοπή δεκαδικών σε integer-only μονάδα (§2.2:218).
+/// Καλύπτονται: locked banner μονάδας από defaultUnitId + prefill ποσότητας
+/// (Δ8) · Add disabled OR · add → draft + clearSelection (§2.2:206) ·
+/// χωρίς default → Add ανενεργό + unitRequired (μονάδα μόνο από Ρυθμίσεις) ·
+/// δεκαδικά σε κλειδωμένη integer-only μονάδα → quantityMustBeInteger.
 library;
 
 import 'package:flutter/material.dart';
@@ -92,8 +93,9 @@ void main() {
 
   /// Seed: κατηγορία → υποκατηγορία → τμήμα → μονάδες → είδος.
   /// Αλυσίδα 4 επιπέδων (§3 · 27-09-2026). Επιστρέφει record
-  /// `{ item, kiloId, pieceId }`.
-  Future<({Item item, int kiloId, int pieceId})> seed(
+  /// `{ item, kiloId, pieceId, groupId }` (το groupId για είδη με άλλη
+  /// κλειδωμένη μονάδα — π.χ. Τεμάχιο).
+  Future<({Item item, int kiloId, int pieceId, int groupId})> seed(
     AppDatabase db, {
     bool withDefaultUnit = true,
   }) async {
@@ -117,19 +119,20 @@ void main() {
       defaultUnitId: withDefaultUnit ? kiloId : null,
     );
     final item = await ItemDao(db).getById(itemId);
-    return (item: item!, kiloId: kiloId, pieceId: pieceId);
+    return (item: item!, kiloId: kiloId, pieceId: pieceId, groupId: groupId);
   }
 
   group('UnitQuantityPriceSection (Βήμα 5γ)', () {
-    testWidgets('S1: defaultUnitId → προεπιλογή μονάδας + prefill «1» · '
-        'Add ανενεργό χωρίς τιμή', (tester) async {
+    testWidgets('S1: defaultUnitId → κλειδωμένο banner μονάδας + prefill '
+        '«1» · Add ανενεργό χωρίς τιμή', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
       final seeded = await seed(db);
       await pumpAt(tester, seeded.item, db);
 
-      // Προεπιλογή: το dropdown δείχνει «Κιλό», η ποσότητα «1» (Δ8).
-      expect(textOf(tester, AppStrings.fieldUnit), 'Κιλό');
+      // Κλείδωμα (28-09-2026): banner «Μονάδα: Κιλό» (όχι TextField),
+      // ποσότητα «1» (Δ8).
+      expect(find.text('${AppStrings.fieldUnit}: Κιλό'), findsOneWidget);
       expect(textOf(tester, AppStrings.fieldQuantity), '1');
       // Suffix μονάδας + suffix € παρόντα (×2: Τιμή + Έκπτωση, §2.2).
       expect(find.text('κιλ'), findsOneWidget);
@@ -184,26 +187,17 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('S3: χωρίς default → κενό dropdown · χειροκίνητη επιλογή '
-        'μέσω show-all', (tester) async {
+    testWidgets('S3: χωρίς default → κανένα banner · Add ανενεργό + '
+        'unitRequired με τιμή (μονάδα μόνο από Ρυθμίσεις)', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
       final seeded = await seed(db, withDefaultUnit: false);
       await pumpAt(tester, seeded.item, db);
 
-      expect(textOf(tester, AppStrings.fieldUnit), isEmpty);
+      // Κλείδωμα (28-09-2026): χωρίς defaultUnitId δεν υπάρχει ούτε banner
+      // ούτε πεδίο μονάδας — η μονάδα ορίζεται από Ρυθμίσεις → Είδη.
+      expect(find.textContaining(AppStrings.fieldUnit), findsNothing);
       expect(addEnabled(tester), isFalse);
-
-      // Εστίαση → show-all (Δ1) → επιλογή «Τεμάχιο».
-      await tester.tap(find.byWidget(fieldByLabel(tester, AppStrings.fieldUnit)));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Τεμάχιο'));
-      await tester.pumpAndSettle();
-
-      expect(textOf(tester, AppStrings.fieldUnit), 'Τεμάχιο');
-      expect(textOf(tester, AppStrings.fieldQuantity), '1',
-          reason: 'Prefill στην πρώτη επιλογή (Δ8)');
-      expect(find.text('τεμ'), findsOneWidget);
 
       await tester.enterText(
         find.byWidget(fieldByLabel(tester, AppStrings.fieldQuantity)),
@@ -214,31 +208,36 @@ void main() {
         '1,20',
       );
       await tester.pumpAndSettle();
-      expect(addEnabled(tester), isTrue);
 
-      await tester.tap(
-        find.widgetWithText(FilledButton, AppStrings.addReceiptLine),
-      );
-      await tester.pumpAndSettle();
+      // Ακόμα και με έγκυρη ποσότητα/τιμή το Add μένει ανενεργό (unit null).
+      expect(find.text(AppErrors.unitRequired), findsOneWidget);
+      expect(addEnabled(tester), isFalse);
 
       final container = ProviderScope.containerOf(
         tester.element(find.byType(UnitQuantityPriceSection)),
       );
-      final lines =
-          container.read(receiptFormControllerProvider).draftLines;
-      expect(lines.length, 1);
-      expect(lines[0].unitId, seeded.pieceId);
-      expect(lines[0].quantity, 3.0);
-      expect(lines[0].priceCents, 120);
+      expect(
+        container.read(receiptFormControllerProvider).draftLines,
+        isEmpty,
+      );
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('S4: δεκαδική ποσότητα + integer-only μονάδα → περικοπή + '
-        'ειδοποίηση (§2.2:218)', (tester) async {
+    testWidgets('S4: δεκαδική ποσότητα + κλειδωμένη integer-only μονάδα → '
+        'ο formatter κόβει το κόμμα, χωρίς περικοπή (§2.2:218)', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
-      final seeded = await seed(db); // default = Κιλό (δεκαδική)
-      await pumpAt(tester, seeded.item, db);
+      final seeded = await seed(db);
+      // Είδος με κλειδωμένο Τεμάχιο (αλλαγή μόνο από Ρυθμίσεις).
+      final pieceItemId = await ItemDao(db).insert(
+        itemGroupId: seeded.groupId,
+        name: 'Ψωμί',
+        defaultUnitId: seeded.pieceId,
+      );
+      final pieceItem = await ItemDao(db).getById(pieceItemId);
+      await pumpAt(tester, pieceItem!, db);
+
+      expect(find.text('${AppStrings.fieldUnit}: Τεμάχιο'), findsOneWidget);
 
       await tester.enterText(
         find.byWidget(fieldByLabel(tester, AppStrings.fieldQuantity)),
@@ -246,20 +245,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Αλλαγή σε Τεμάχιο (integer-only): το πεδίο δείχνει «Κιλό» (prefill,
-      // `_selectedLabel` guard — όπως στο SA4) → πληκτρολόγηση φιλτράρει.
-      await tester.enterText(
-        find.byWidget(fieldByLabel(tester, AppStrings.fieldUnit)),
-        'τεμ',
-      );
-      await tester.pump(const Duration(milliseconds: 300));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Τεμάχιο'));
-      await tester.pumpAndSettle();
-
-      expect(textOf(tester, AppStrings.fieldQuantity), '2',
-          reason: 'Αυτόματη περικοπή στο ακέραιο μέρος');
-      expect(find.text(AppStrings.quantityTruncatedForUnit), findsOneWidget);
+      // Κλείδωμα (28-09-2026): ο formatter (allowDecimal=false) κόβει το
+      // διαχωριστικό κατά την πληκτρολόγηση — «2,5» γίνεται «25» (έγκυρο).
+      // Καμία περικοπή, καμία ειδοποίηση.
+      expect(textOf(tester, AppStrings.fieldQuantity), '25');
+      expect(find.text(AppStrings.quantityTruncatedForUnit), findsNothing);
+      expect(find.text(AppErrors.quantityMustBeInteger), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -295,8 +286,8 @@ void main() {
       expect(tester.takeException(), isNull);
         });
 
-    testWidgets('S6 (Β5ε-1): σβήσιμο κειμένου μονάδας → unit null · '
-        'Add ανενεργό', (tester) async {
+    testWidgets('S6: κλειδωμένη μονάδα — δεν υπάρχει πεδίο μονάδας · '
+        'το banner παραμένει', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
       final seeded = await seed(db); // default unit «Κιλό»
@@ -309,13 +300,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(addEnabled(tester), isTrue, reason: 'Κιλό + 1 + 2,50 → έγκυρο');
 
-      await tester.enterText(
-        find.byWidget(fieldByLabel(tester, AppStrings.fieldUnit)),
-        '',
-      );
-      await tester.pumpAndSettle();
-      expect(addEnabled(tester), isFalse,
-          reason: 'Άδειο πεδίο μονάδας → unit null');
+      // Κλείδωμα (28-09-2026): κανένα TextField μονάδας προς σβήσιμο —
+      // το banner μένει και το Add παραμένει ενεργό.
+      final unitFields = tester
+          .widgetList<TextField>(find.byType(TextField))
+          .where((f) => f.decoration?.labelText == AppStrings.fieldUnit);
+      expect(unitFields, isEmpty, reason: 'Καμία επεξεργάσιμη μονάδα');
+      expect(find.text('${AppStrings.fieldUnit}: Κιλό'), findsOneWidget);
+      expect(addEnabled(tester), isTrue);
       expect(tester.takeException(), isNull);
     });
     testWidgets('S7 (Β5ε-2): καλάθι στο όριο → Add ανενεργό + μήνυμα · '
@@ -365,14 +357,14 @@ void main() {
     });
 
     // ─── Dark mode §1.5 ───────────────────────────────────────────────────────
-    testWidgets('S8: dark theme — prefill + Add ανενεργό · χωρίς exception',
-        (tester) async {
+    testWidgets('S8: dark theme — locked banner + Add ανενεργό · '
+        'χωρίς exception', (tester) async {
       final db = inMemoryDb();
       addTearDown(db.close);
       final seeded = await seed(db);
       await pumpAt(tester, seeded.item, db, theme: AppTheme.dark);
 
-      expect(textOf(tester, AppStrings.fieldUnit), 'Κιλό');
+      expect(find.text('${AppStrings.fieldUnit}: Κιλό'), findsOneWidget);
       expect(addEnabled(tester), isFalse);
       expect(tester.takeException(), isNull);
     });
