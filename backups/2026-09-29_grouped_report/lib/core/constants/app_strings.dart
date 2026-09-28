@@ -236,8 +236,6 @@ abstract final class AppStrings {
   static const String statsExportPdfAction = 'Εξαγωγή PDF';
   /// Label γραμμής συνόλων καρτέλας (άθροισμα καθαρών, §2.3 · Q4).
   static const String statsTotalsLabel = 'Σύνολο';
-  /// Πρόθεμα γενικού συνόλου ομαδοποιημένης αναφοράς (§2.3 · 3η ανάλυση).
-  static const String statsGrandTotal = 'ΓΕΝΙΚΟ';
   /// Τίτλος 2ης ανάλυσης «Συνολικές αγορές» (μενού + detail §2.3).
   static const String statsPurchasesTitle = 'Συνολικές αγορές';
   /// Περιγραφή 2ης ανάλυσης στο μενού (§2.3 · 29-09-2026).
@@ -245,20 +243,6 @@ abstract final class AppStrings {
       'Συγκεντρωτικές αγορές περιόδου με ταξινόμηση και εξαγωγή';
   /// Labels ταξινόμησης αγορών (§2.3 · 2η ανάλυση).
   static const String statsSortLabel = 'Ταξινόμηση';
-  /// Label dropdown ομαδοποίησης (§2.3 · 3η ανάλυση).
-  static const String statsGroupLabel = 'Ομαδοποίηση';
-  /// Τίτλος 3ης ανάλυσης «Ομαδοποιημένη αναφορά» (μενού + detail §2.3).
-  static const String statsGroupedTitle = 'Ομαδοποιημένη αναφορά';
-  /// Περιγραφή 3ης ανάλυσης στο μενού (§2.3 · 29-09-2026).
-  static const String statsGroupedDescription =
-      'Σύνολα ανά κατηγορία, προμηθευτή ή ημέρα με προεπισκόπηση';
-  /// Label κουμπιού προεπισκόπησης (§2.3 · 3η ανάλυση).
-  static const String statsPreviewAction = 'Προεπισκόπηση';
-  /// Labels ομαδοποίησης (§2.3 · 3η ανάλυση).
-  static const String statsGroupCategory = 'Κατηγορία';
-  static const String statsGroupSupplier = 'Προμηθευτής';
-  static const String statsGroupDay = 'Ημέρα';
-  static const String statsGroupMonth = 'Μήνας';
   static const String statsSortDateAsc = 'Ημερομηνία (παλιές → νέες)';
   static const String statsSortDateDesc = 'Ημερομηνία (νέες → παλιές)';
   static const String statsSortSupplier = 'Προμηθευτής';

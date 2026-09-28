@@ -294,4 +294,139 @@ void main() {
       expect(excel.tables['Σύνολα']!.rows.length, 2);
     });
   });
+
+  group('StatisticsExportService — ομαδοποίηση (3η ανάλυση · 29-09-2026)', () {
+    PeriodPurchaseRow purchaseRow({
+      String category = 'ΤΡΟΦΙΜΑ',
+      String supplier = 'Μάρκος',
+      DateTime? date,
+    }) =>
+        (
+          receiptId: 12,
+          date: date ?? DateTime(2026, 9, 9),
+          itemName: 'Γάλα',
+          categoryName: category,
+          supplierName: supplier,
+          quantity: 2,
+          unitId: 1,
+          unitAbbreviation: 'κιλ',
+          priceCents: 250,
+          discountCents: 50,
+        );
+
+    test('groupPurchases — keys encounter-order + πλήθος', () {
+      final groups = StatisticsExportService.groupPurchases(
+        [
+          purchaseRow(category: 'Β', supplier: 'Μάρκος'),
+          purchaseRow(category: 'Α', supplier: 'Ερμής'),
+          purchaseRow(category: 'Β', supplier: 'Μάρκος'),
+        ],
+        PurchasesGroup.category,
+      );
+      expect([for (final g in groups) g.key], ['Β', 'Α']);
+      expect(groups.first.rows, hasLength(2));
+      expect(groups.last.rows, hasLength(1));
+    });
+
+    test('groupPurchases — day/month raw keys (mapping στον καλούντα)', () {
+      final rows = [
+        purchaseRow(date: DateTime(2026, 9, 9)),
+        purchaseRow(date: DateTime(2026, 9, 12)),
+      ];
+      final days = StatisticsExportService.groupPurchases(
+        rows,
+        PurchasesGroup.day,
+      );
+      expect([for (final g in days) g.key], ['2026-09-09', '2026-09-12']);
+      final months = StatisticsExportService.groupPurchases(
+        [...rows, purchaseRow(date: DateTime(2026, 10, 1))],
+        PurchasesGroup.month,
+      );
+      expect([for (final g in months) g.key], ['2026-09', '2026-10']);
+    });
+
+    test('groupPurchases — κενές → [] (όχι crash)', () {
+      expect(
+        StatisticsExportService.groupPurchases(const [], PurchasesGroup.day),
+        isEmpty,
+      );
+    });
+
+    test('groupSubtotalLabel — όνομα + σύνολα', () {
+      final kilo = Unit(
+        id: 1,
+        name: 'Κιλό',
+        abbreviation: 'κιλ',
+        allowsDecimal: true,
+      );
+      final totals = StatisticsExportService.purchasesTotalsOf(
+        [purchaseRow()],
+        [kilo],
+      );
+      expect(
+        StatisticsExportService.groupSubtotalLabel('ΤΡΟΦΙΜΑ', totals),
+        startsWith('ΤΡΟΦΙΜΑ · Σύνολο:'),
+      );
+    });
+
+    test('buildPurchasesExcelBytes — groups (blocks + subtotals + grand)',
+        () {
+      final kilo = Unit(
+        id: 1,
+        name: 'Κιλό',
+        abbreviation: 'κιλ',
+        allowsDecimal: true,
+      );
+      final rows = [purchaseRow(), purchaseRow(supplier: 'Ερμής')];
+      final groups = StatisticsExportService.groupPurchases(
+        rows,
+        PurchasesGroup.supplier,
+      );
+      final bytes = StatisticsExportService.buildPurchasesExcelBytes(
+        rows: rows,
+        units: [kilo],
+        groups: groups,
+      );
+      final excel = Excel.decodeBytes(bytes);
+      final sheetRows = excel.tables['Σύνολα']!.rows;
+      // header + [τίτλος + 1 γραμμή + υποσύνολο] ×2 + grand.
+      expect(sheetRows.length, 1 + (1 + 1 + 1) * 2 + 1);
+
+      String textOf(int r, int c) {
+        final value = sheetRows[r][c]?.value;
+        if (value is TextCellValue) return value.value.toString();
+        return fail('όχι κείμενο ($r,$c): $value');
+      }
+
+      expect(textOf(1, 0), 'Μάρκος');
+      expect(textOf(4, 0), 'Ερμής');
+      expect(textOf(3, 0), startsWith('Μάρκος · Σύνολο:'));
+      expect(textOf(7, 0), startsWith('ΓΕΝΙΚΟ Σύνολο:'));
+    });
+
+    test('buildPdfBytes — sections (τίτλοι + υποσύνολα)', () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final (regular, bold) =
+          await StatisticsExportService.loadPdfFonts();
+      final bytes = await StatisticsExportService.buildPdfBytes(
+        title: 'Ομαδοποιημένη αναφορά',
+        headers: const ['Ημερομηνία', 'Καθαρή'],
+        body: const [],
+        totalsLine: 'Σύνολο: (Τεμ: 1): 1,00 €',
+        fontBytes: regular,
+        boldFontBytes: bold,
+        sections: const [
+          (
+            title: 'ΤΡΟΦΙΜΑ',
+            rows: [
+              ['09/09/2026', '4,00 €'],
+            ],
+            subtotal: 'ΤΡΟΦΙΜΑ · Σύνολο: (Τεμ: 1)',
+          ),
+        ],
+      );
+      expect(bytes.lengthInBytes, greaterThan(1000));
+      expect(bytes.sublist(0, 4), [0x25, 0x50, 0x44, 0x46]); // %PDF
+    });
+  });
 }

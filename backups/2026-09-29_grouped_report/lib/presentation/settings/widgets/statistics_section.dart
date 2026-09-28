@@ -26,7 +26,6 @@ import '../../shared/searchable_dropdown_field.dart';
 import '../../shared/controller_op_runner.dart';
 import '../controllers/statistics_controller.dart';
 import 'purchases_table.dart';
-import 'report_preview_dialog.dart';
 import 'statistics_table.dart';
 
 /// SPoT label ταξινόμησης αγορών (§2.3 · 2η ανάλυση).
@@ -36,136 +35,6 @@ String _sortLabel(PurchasesSort sort) => switch (sort) {
       PurchasesSort.supplier => AppStrings.statsSortSupplier,
       PurchasesSort.category => AppStrings.statsSortCategory,
     };
-
-/// SPoT label ομαδοποίησης (§2.3 · 3η ανάλυση).
-String _groupLabel(PurchasesGroup group) => switch (group) {
-      PurchasesGroup.category => AppStrings.statsGroupCategory,
-      PurchasesGroup.supplier => AppStrings.statsGroupSupplier,
-      PurchasesGroup.day => AppStrings.statsGroupDay,
-      PurchasesGroup.month => AppStrings.statsGroupMonth,
-    };
-
-/// Headers πίνακα αγορών (9 στήλες — fixed + δυναμικές μονάδων, §2.3).
-List<String> _purchasesHeaders(List<Unit> units) => [
-      AppStrings.statsColumnDate,
-      AppStrings.statsColumnReceipt,
-      AppStrings.fieldItemName,
-      AppStrings.statsColumnCategory,
-      AppStrings.statsColumnSupplier,
-      for (final unit in units) unit.name,
-      AppStrings.statsColumnPrice,
-      AppStrings.statsColumnDiscount,
-      AppStrings.statsColumnNet,
-    ];
-
-/// Γραμμή strings πίνακα αγορών (presentation SPoT, §2.5 — μία πηγή για
-/// οθόνη-dialog/PDF, όχι αντιγραφή ανά καλούντα).
-List<String> _purchasesBodyRow(
-  PeriodPurchaseRow row,
-  List<Unit> units,
-  MaterialLocalizations localizations,
-) {
-  String money(int cents) =>
-      '${CurrencyTextField.formatCents(cents)} ${AppStrings.currencySymbol}';
-  return [
-    localizations.formatShortDate(row.date),
-    '${row.receiptId}',
-    row.itemName,
-    row.categoryName,
-    row.supplierName,
-    for (final unit in units)
-      if (row.unitId == unit.id)
-        QuantityTextField.formatQuantity(row.quantity)
-      else
-        '',
-    money(row.priceCents),
-    money(row.discountCents),
-    money(row.priceCents - row.discountCents),
-  ];
-}
-
-/// Γραμμή συνόλων («Σύνολο: (...) Χ,ΧΧ €» — μία πηγή, §1.1).
-String _purchasesTotalsLine(PurchasesTotals totals) =>
-    '${totals.label}: ${CurrencyTextField.formatCents(totals.netTotalCents)} '
-    '${AppStrings.currencySymbol}';
-
-/// Dropdown ταξινόμησης (shared 2η/3η ανάλυση — pattern selector §2.1).
-class _SortDropdown extends StatelessWidget {
-  const _SortDropdown({required this.sort, required this.onChanged});
-
-  final PurchasesSort sort;
-  final ValueChanged<PurchasesSort> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownMenu<PurchasesSort>(
-      key: ValueKey(sort),
-      initialSelection: sort,
-      label: const Text(AppStrings.statsSortLabel),
-      onSelected: (value) {
-        if (value != null) onChanged(value);
-      },
-      dropdownMenuEntries: [
-        for (final s in PurchasesSort.values)
-          DropdownMenuEntry(value: s, label: _sortLabel(s)),
-      ],
-    );
-  }
-}
-
-/// Dropdown ομαδοποίησης (3η ανάλυση — pattern selector §2.1).
-class _GroupDropdown extends StatelessWidget {
-  const _GroupDropdown({required this.group, required this.onChanged});
-
-  final PurchasesGroup group;
-  final ValueChanged<PurchasesGroup> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownMenu<PurchasesGroup>(
-      key: ValueKey(group),
-      initialSelection: group,
-      label: const Text(AppStrings.statsGroupLabel),
-      onSelected: (value) {
-        if (value != null) onChanged(value);
-      },
-      dropdownMenuEntries: [
-        for (final g in PurchasesGroup.values)
-          DropdownMenuEntry(value: g, label: _groupLabel(g)),
-      ],
-    );
-  }
-}
-
-/// Προβολή raw group-key (§2.3 · 3η ανάλυση): ονόματα ως έχουν · ημέρα/μήνας
-/// με locale (ο service δεν έχει locale — mapping εδώ, §2.5). Άγνωστο format
-/// → raw (defensive, ποτέ crash).
-String _groupDisplay(
-  PurchasesGroup group,
-  String raw,
-  MaterialLocalizations localizations,
-) {
-  if (group == PurchasesGroup.day) {
-    final parts = raw.split('-');
-    if (parts.length == 3) {
-      final date = DateTime.tryParse(raw);
-      if (date != null) return localizations.formatShortDate(date);
-    }
-    return raw;
-  }
-  if (group == PurchasesGroup.month) {
-    final parts = raw.split('-');
-    if (parts.length == 2) {
-      final year = int.tryParse(parts[0]);
-      final month = int.tryParse(parts[1]);
-      if (year != null && month != null && month >= 1 && month <= 12) {
-        return localizations.formatMonthYear(DateTime(year, month));
-      }
-    }
-    return raw;
-  }
-  return raw;
-}
 
 /// Ανάλυση «Συνολικές αγορές» — πίνακας + export (§2.3 · 2η ανάλυση).
 ///
@@ -225,7 +94,7 @@ class _PurchasesAnalysisState extends ConsumerState<_PurchasesAnalysis> {
     );
   }
 
-  /// Export PDF: προβολή strings (shared helpers §1.1, §2.5) → controller.
+  /// Export PDF: προβολή strings (presentation SPoT, §2.5) → controller.
   Future<void> _exportPdf(
     BuildContext context,
     WidgetRef ref,
@@ -234,17 +103,44 @@ class _PurchasesAnalysisState extends ConsumerState<_PurchasesAnalysis> {
   ) async {
     final localizations = MaterialLocalizations.of(context);
     final totals = StatisticsExportService.purchasesTotalsOf(rows, units);
+    String money(int cents) =>
+        '${CurrencyTextField.formatCents(cents)} ${AppStrings.currencySymbol}';
     await runControllerOp(
       context,
       () => ref.read(statisticsControllerProvider.notifier).exportPurchasesPdf(
             (
               title: AppStrings.statsPurchasesTitle,
-              headers: _purchasesHeaders(units),
+              headers: [
+                AppStrings.statsColumnDate,
+                AppStrings.statsColumnReceipt,
+                AppStrings.fieldItemName,
+                AppStrings.statsColumnCategory,
+                AppStrings.statsColumnSupplier,
+                for (final unit in units) unit.name,
+                AppStrings.statsColumnPrice,
+                AppStrings.statsColumnDiscount,
+                AppStrings.statsColumnNet,
+              ],
               body: [
                 for (final row in rows)
-                  _purchasesBodyRow(row, units, localizations),
+                  [
+                    localizations.formatShortDate(row.date),
+                    '${row.receiptId}',
+                    row.itemName,
+                    row.categoryName,
+                    row.supplierName,
+                    for (final unit in units)
+                      if (row.unitId == unit.id)
+                        QuantityTextField.formatQuantity(row.quantity)
+                      else
+                        '',
+                    money(row.priceCents),
+                    money(row.discountCents),
+                    money(row.priceCents - row.discountCents),
+                  ],
               ],
-              totalsLine: _purchasesTotalsLine(totals),
+              totalsLine:
+                  '${totals.label}: ${money(totals.netTotalCents)}',
             ),
           ),
       AppMessages.statsExported,
@@ -286,9 +182,18 @@ class _PurchasesAnalysisState extends ConsumerState<_PurchasesAnalysis> {
           customSubtitle: customSubtitle,
         ),
         const SizedBox(height: AppConstants.spacingS),
-        _SortDropdown(
-          sort: _sort,
-          onChanged: (sort) => setState(() => _sort = sort),
+        // Ταξινόμηση (DropdownMenu — 4 entries, pattern selector §2.1).
+        DropdownMenu<PurchasesSort>(
+          key: ValueKey(_sort),
+          initialSelection: _sort,
+          label: const Text(AppStrings.statsSortLabel),
+          onSelected: (value) {
+            if (value != null) setState(() => _sort = value);
+          },
+          dropdownMenuEntries: [
+            for (final sort in PurchasesSort.values)
+              DropdownMenuEntry(value: sort, label: _sortLabel(sort)),
+          ],
         ),
         const SizedBox(height: AppConstants.spacingS),
         _PurchasesBody(
@@ -430,7 +335,7 @@ class _StatisticsSectionState extends ConsumerState<StatisticsSection> {
   /// Ανοιχτή ανάλυση (null = μενού) — τοπικό, όχι persist (Q5).
   int? _openIndex;
 
-  /// Μενού (κλιμακώνεται — 29-09-2026: 3 γραμμές).
+  /// Μενού (κλιμακώνεται — 29-09-2026: 2 γραμμές).
   static const _entries = <_StatsEntry>[
     (
       title: AppStrings.statsLedgerTitle,
@@ -439,10 +344,6 @@ class _StatisticsSectionState extends ConsumerState<StatisticsSection> {
     (
       title: AppStrings.statsPurchasesTitle,
       description: AppStrings.statsPurchasesDescription,
-    ),
-    (
-      title: AppStrings.statsGroupedTitle,
-      description: AppStrings.statsGroupedDescription,
     ),
   ];
 
@@ -502,12 +403,7 @@ class _StatisticsSectionState extends ConsumerState<StatisticsSection> {
           ],
         ),
         const SizedBox(height: AppConstants.spacingS),
-        if (open == 0)
-          const _LedgerAnalysis()
-        else if (open == 1)
-          const _PurchasesAnalysis()
-        else
-          const _GroupedAnalysis(),
+        if (open == 0) const _LedgerAnalysis() else const _PurchasesAnalysis(),
       ],
     );
   }
@@ -897,249 +793,6 @@ class _LedgerError extends StatelessWidget {
           child: const Text(AppStrings.retryButton),
         ),
       ],
-    );
-  }
-}
-
-/// Ανάλυση «Ομαδοποιημένη αναφορά» (§2.3 · 3η ανάλυση).
-///
-/// `ConsumerStatefulWidget` με τοπικό state (περίοδος + sort + group —
-/// ad-hoc, όχι persist, Q5): selectors (reuse) + κουμπί «Προεπισκόπηση».
-/// Χωρίς inline πίνακα (dialog-only display — λεπτό detail). Gated watches
-/// (§2.0.1): streams ΜΟΝΟ στο detail. Feedback ΜΟΝΟ από εδώ (§2.4).
-class _GroupedAnalysis extends ConsumerStatefulWidget {
-  const _GroupedAnalysis();
-
-  @override
-  ConsumerState<_GroupedAnalysis> createState() => _GroupedAnalysisState();
-}
-
-class _GroupedAnalysisState extends ConsumerState<_GroupedAnalysis> {
-  /// Περίοδος ανάλυσης (default Μήνας, όπως οι κάρτες §2.1).
-  PeriodType _period = PeriodType.month;
-
-  /// Custom range (μόνο σε `custom`).
-  DateTime? _customFrom;
-  DateTime? _customTo;
-
-  /// Ταξινόμηση εντός ομάδων (default παλιές → νέες, Q2).
-  PurchasesSort _sort = PurchasesSort.dateAsc;
-
-  /// Ομαδοποίηση (default κατηγορία).
-  PurchasesGroup _group = PurchasesGroup.category;
-
-  /// Επιλογή custom range (picker με SPoT όρια· Ακύρωση → καμία αλλαγή).
-  Future<void> _pickCustomRange() async {
-    AppLogger.info(LogTag.ui, 'Άνοιγμα custom range ομαδοποιημένης');
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(AppConstants.datePickerFirstYear),
-      lastDate: DateTime(AppConstants.datePickerLastYear, 12, 31),
-    );
-    if (picked == null || !mounted) return;
-    setState(() {
-      _period = PeriodType.custom;
-      _customFrom = picked.start;
-      _customTo = picked.end;
-    });
-  }
-
-  /// Προεπισκόπηση → export (Excel/PDF) ή τίποτα (dismiss/Κλείσιμο).
-  Future<void> _preview(
-    BuildContext context,
-    WidgetRef ref,
-    List<PeriodPurchaseRow> rows,
-    List<Unit> units,
-  ) async {
-    final localizations = MaterialLocalizations.of(context);
-    final groups = StatisticsExportService.groupPurchases(rows, _group);
-    final grand = StatisticsExportService.purchasesTotalsOf(rows, units);
-    final action = await showReportPreview(
-      context,
-      title: AppStrings.statsGroupedTitle,
-      grandTotals: grand,
-      units: units,
-      sections: [
-        for (final group in groups)
-          (
-            display: _groupDisplay(_group, group.key, localizations),
-            rows: group.rows,
-          ),
-      ],
-    );
-    if (action == null || !context.mounted) return;
-    if (action == ReportPreviewAction.excel) {
-      await runControllerOp(
-        context,
-        () => ref
-            .read(statisticsControllerProvider.notifier)
-            .exportGroupedExcel(
-              rows: rows,
-              groups: [
-                for (final group in groups)
-                  (
-                    key: _groupDisplay(_group, group.key, localizations),
-                    rows: group.rows,
-                  ),
-              ],
-              units: units,
-            ),
-        AppMessages.statsExported,
-      );
-    } else {
-      final headers = _purchasesHeaders(units);
-      await runControllerOp(
-        context,
-        () => ref
-            .read(statisticsControllerProvider.notifier)
-            .exportGroupedPdf(
-              title: AppStrings.statsGroupedTitle,
-              headers: headers,
-              sections: [
-                for (final group in groups)
-                  (
-                    title: _groupDisplay(_group, group.key, localizations),
-                    rows: [
-                      for (final row in group.rows)
-                        _purchasesBodyRow(row, units, localizations),
-                    ],
-                    subtotal: StatisticsExportService.groupSubtotalLabel(
-                      _groupDisplay(_group, group.key, localizations),
-                      StatisticsExportService.purchasesTotalsOf(
-                        group.rows,
-                        units,
-                      ),
-                    ),
-                  ),
-              ],
-              grandTotalsLine: _purchasesTotalsLine(grand),
-            ),
-        AppMessages.statsExported,
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final now = ref.watch(todayProvider);
-    final range = resolvePeriodRange(
-      _period,
-      customFrom: _customFrom,
-      customTo: _customTo,
-      now: now,
-    );
-    final customSubtitle =
-        _period == PeriodType.custom && _customFrom != null && _customTo != null
-            ? '${MaterialLocalizations.of(context).formatMediumDate(_customFrom!)}'
-                ' – ${MaterialLocalizations.of(context).formatMediumDate(_customTo!)}'
-            : null;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ChartPeriodSelector(
-          key: ValueKey(_period),
-          selected: _period,
-          onSelected: (period) {
-            if (period == PeriodType.custom) {
-              _pickCustomRange();
-            } else {
-              setState(() {
-                _period = period;
-                _customFrom = null;
-                _customTo = null;
-              });
-            }
-          },
-          customSubtitle: customSubtitle,
-        ),
-        const SizedBox(height: AppConstants.spacingS),
-        _SortDropdown(
-          sort: _sort,
-          onChanged: (sort) => setState(() => _sort = sort),
-        ),
-        const SizedBox(height: AppConstants.spacingS),
-        _GroupDropdown(
-          group: _group,
-          onChanged: (group) => setState(() => _group = group),
-        ),
-        const SizedBox(height: AppConstants.spacingS),
-        _GroupedBody(
-          query: (from: range.from, to: range.to, sort: _sort),
-          onPreview: (rows, units) => _preview(context, ref, rows, units),
-        ),
-      ],
-    );
-  }
-}
-
-/// Σώμα ομαδοποιημένης: units + rows → κουμπί προεπισκόπησης (§2.3).
-class _GroupedBody extends ConsumerWidget {
-  const _GroupedBody({required this.query, required this.onPreview});
-
-  final PeriodPurchasesQuery query;
-  final Future<void> Function(List<PeriodPurchaseRow>, List<Unit>) onPreview;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final unitsAsync = ref.watch(unitsStreamProvider);
-    final dataAsync = ref.watch(periodPurchasesProvider(query));
-    final instance = periodPurchasesProvider(query);
-    final unitsError = unitsAsync.hasError && !unitsAsync.hasValue;
-    final dataError = dataAsync.hasError && !dataAsync.hasValue;
-    if (unitsError || dataError) {
-      return _LedgerError(
-        onRetry: () {
-          ref.invalidate(unitsStreamProvider);
-          ref.invalidate(instance);
-        },
-      );
-    }
-    final units = unitsAsync.value;
-    final data = dataAsync.value;
-    if (units == null || data == null) {
-      return const Padding(
-        padding: EdgeInsets.all(AppConstants.spacingL),
-        child: Center(
-          child: SizedBox(
-            width: AppConstants.smallSpinnerSize,
-            height: AppConstants.smallSpinnerSize,
-            child: CircularProgressIndicator(
-              strokeWidth: AppConstants.spinnerStrokeWidth,
-            ),
-          ),
-        ),
-      );
-    }
-    return dataAsync.when(
-      data: (result) {
-        if (result.rows.isEmpty) {
-          return Text(
-            AppStrings.noPricesForPeriod,
-            style: Theme.of(context).textTheme.bodyMedium,
-          );
-        }
-        final working = ref.watch(
-          statisticsControllerProvider.select((s) => s.isWorking),
-        );
-        return FilledButton.icon(
-          onPressed:
-              working ? null : () => onPreview(result.rows, units),
-          icon: working
-              ? const SizedBox(
-                  width: AppConstants.smallSpinnerSize,
-                  height: AppConstants.smallSpinnerSize,
-                  child: CircularProgressIndicator(
-                    strokeWidth: AppConstants.spinnerStrokeWidth,
-                  ),
-                )
-              : const Icon(Icons.preview_outlined),
-          label: const Text(AppStrings.statsPreviewAction),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) =>
-          _LedgerError(onRetry: () => ref.invalidate(instance)),
     );
   }
 }

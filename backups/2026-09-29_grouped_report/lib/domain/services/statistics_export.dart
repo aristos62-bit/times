@@ -38,14 +38,6 @@ typedef StatsPdfModel = ({
   String? totalsLine,
 });
 
-/// PDF section ομαδοποιημένης αναφοράς (§2.3 · 3η ανάλυση): τίτλος +
-/// γραμμές + γραμμή υποσυνόλου (έτοιμα strings, όπως `StatsPdfModel`).
-typedef PdfSection = ({
-  String title,
-  List<List<String>> rows,
-  String subtotal,
-});
-
 /// Επέκταση αρχείου ανά μορφή.
 extension StatsExportFormatX on StatsExportFormat {
   String get extension => switch (this) {
@@ -143,42 +135,6 @@ abstract final class StatisticsExportService {
       count: rows.length,
     );
   }
-
-  /// Ομαδοποιεί γραμμές κατά [group] (§2.3 · 3η ανάλυση — pure, testable).
-  ///
-  /// Keys RAW (όχι προβολή): ονόματα ως έχουν · ημέρα `yyyy-MM-dd` · μήνας
-  /// `yyyy-MM` (το mapping σε προβολή το κάνει ο καλούντος — το service δεν
-  /// έχει locale). Διατηρεί τη σειρά encounter (το sort προηγήθηκε στη SQL,
-  /// τεκμηριωμένο)· κενές ομάδες αδύνατες (προκύπτουν από γραμμές).
-  static List<PurchaseGroup> groupPurchases(
-    List<PeriodPurchaseRow> rows,
-    PurchasesGroup group,
-  ) {
-    final order = <String>[];
-    final buckets = <String, List<PeriodPurchaseRow>>{};
-    String keyOf(PeriodPurchaseRow row) => switch (group) {
-          PurchasesGroup.category => row.categoryName,
-          PurchasesGroup.supplier => row.supplierName,
-          PurchasesGroup.day =>
-            '${row.date.year}-${row.date.month.toString().padLeft(2, '0')}-'
-                '${row.date.day.toString().padLeft(2, '0')}',
-          PurchasesGroup.month =>
-            '${row.date.year}-${row.date.month.toString().padLeft(2, '0')}',
-        };
-    for (final row in rows) {
-      final key = keyOf(row);
-      if (!buckets.containsKey(key)) {
-        buckets[key] = [];
-        order.add(key);
-      }
-      buckets[key]!.add(row);
-    }
-    return [for (final key in order) (key: key, rows: buckets[key]!)];
-  }
-
-  /// Label γραμμής υποσυνόλου («ΤΡΟΦΙΜΑ · Σύνολο: (Κιλ: 2)» — §1.1).
-  static String groupSubtotalLabel(String displayName, PurchasesTotals totals) =>
-      '$displayName · ${totals.label}';
 
   /// Χτίζει XLSX bytes (sync CPU). Header bold · ημερομηνία `DateCellValue` ·
   /// αριθμός `Int` · ποσά native doubles (€) · κείμενα `Text` · footer συνόλων.
@@ -294,14 +250,11 @@ abstract final class StatisticsExportService {
 
   /// Χτίζει XLSX συγκεντρωτικών αγορών (sync CPU): fixed στήλες +
   /// μία στήλη ποσότητας ανά μονάδα [units] (δυναμικές, Q3) + Τιμή/Έκπτωση/
-  /// Καθαρή native doubles + footer (sums/μονάδα + σύνολο). Με [groups]
-  /// (3η ανάλυση): blocks τίτλου + υποσύνολο + grand footer — χωρίς groups
-  /// η flat συμπεριφορά (backward compatible). Αποτυχία →
+  /// Καθαρή native doubles + footer (sums/μονάδα + σύνολο). Αποτυχία →
   /// `StatsExportException`.
   static List<int> buildPurchasesExcelBytes({
     required List<PeriodPurchaseRow> rows,
     required List<Unit> units,
-    List<PurchaseGroup>? groups,
   }) {
     try {
       final workbook = _newWorkbook('Σύνολα');
@@ -324,75 +277,56 @@ abstract final class StatisticsExportService {
         cell.value = TextCellValue(headers[c]);
         cell.cellStyle = CellStyle(bold: true);
       }
-      // Γραμμές: flat ή blocks ομάδων (με τίτλο + υποσύνολο ανά block).
-      // Τα display names των groups τα δίνει ο καλών (έχει locale).
-      final blocks = groups ??
-          [
-            (key: '', rows: rows),
-          ];
-      var r = 1;
-      void set(int c, CellValue value) =>
-          sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: r))
-            ..value = value;
-      for (final block in blocks) {
-        if (groups != null) {
-          set(0, TextCellValue(block.key));
-          r++;
-        }
-        for (final row in block.rows) {
-          set(0, DateCellValue(
-            year: row.date.year,
-            month: row.date.month,
-            day: row.date.day,
-          ));
-          set(1, IntCellValue(row.receiptId));
-          set(2, TextCellValue(row.itemName));
-          set(3, TextCellValue(row.categoryName));
-          set(4, TextCellValue(row.supplierName));
-          for (var u = 0; u < units.length; u++) {
-            set(
-              5 + u,
-              DoubleCellValue(
-                row.unitId == units[u].id ? row.quantity : 0,
-              ),
-            );
-          }
-          final priceCol = 5 + units.length;
-          set(priceCol, DoubleCellValue(row.priceCents / 100.0));
-          set(priceCol + 1, DoubleCellValue(row.discountCents / 100.0));
+      for (var i = 0; i < rows.length; i++) {
+        final row = rows[i];
+        final r = i + 1;
+        void set(int c, CellValue value) =>
+            sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: r))
+              ..value = value;
+        set(0, DateCellValue(
+          year: row.date.year,
+          month: row.date.month,
+          day: row.date.day,
+        ));
+        set(1, IntCellValue(row.receiptId));
+        set(2, TextCellValue(row.itemName));
+        set(3, TextCellValue(row.categoryName));
+        set(4, TextCellValue(row.supplierName));
+        for (var u = 0; u < units.length; u++) {
           set(
-            priceCol + 2,
+            5 + u,
             DoubleCellValue(
-              (row.priceCents - row.discountCents) / 100.0,
+              row.unitId == units[u].id ? row.quantity : 0,
             ),
           );
-          r++;
         }
-        if (groups != null) {
-          final sub = purchasesTotalsOf(block.rows, units);
-          setFooterRow(sheet, r, units, groupSubtotalLabel(block.key, sub), sub);
-          r++;
-        }
-      }
-      if (groups == null) {
-        final totals = purchasesTotalsOf(rows, units);
-        setFooterRow(
-          sheet,
-          r,
-          units,
-          totals.label,
-          totals,
-        );
-      } else {
-        final totals = purchasesTotalsOf(rows, units);
-        setFooterRow(
-          sheet,
-          r,
-          units,
-          '${AppStrings.statsGrandTotal} ${totals.label}',
-          totals,
+        final priceCol = 5 + units.length;
+        set(priceCol, DoubleCellValue(row.priceCents / 100.0));
+        set(priceCol + 1, DoubleCellValue(row.discountCents / 100.0));
+        set(
+          priceCol + 2,
+          DoubleCellValue(
+            (row.priceCents - row.discountCents) / 100.0,
+          ),
         );
       }
+      final totals = purchasesTotalsOf(rows, units);
+      final t = rows.length + 1;
+      void setFooter(int c, CellValue value) =>
+          sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: t))
+            ..value = value;
+      setFooter(0, TextCellValue(totals.label));
+      for (var u = 0; u < units.length; u++) {
+        setFooter(
+          5 + u,
+          DoubleCellValue(totals.qtyByUnit[units[u].id] ?? 0),
+        );
+      }
+      final priceCol = 5 + units.length;
+      setFooter(
+        priceCol + 2,
+        DoubleCellValue(totals.netTotalCents / 100.0),
+      );
       return _saveWorkbook(workbook.excel, rows.length);
     } on Object catch (e, s) {
       AppLogger.error(
@@ -405,36 +339,9 @@ abstract final class StatisticsExportService {
     }
   }
 
-  /// Γραμμή footer (label + sums/μονάδα + σύνολο) στη γραμμή [r].
-  static void setFooterRow(
-    Sheet sheet,
-    int r,
-    List<Unit> units,
-    String label,
-    PurchasesTotals totals,
-  ) {
-    void set(int c, CellValue value) =>
-        sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: r))
-          ..value = value;
-    set(0, TextCellValue(label));
-    for (var u = 0; u < units.length; u++) {
-      set(
-        5 + u,
-        DoubleCellValue(totals.qtyByUnit[units[u].id] ?? 0),
-      );
-    }
-    final priceCol = 5 + units.length;
-    set(
-      priceCol + 2,
-      DoubleCellValue(totals.netTotalCents / 100.0),
-    );
-  }
-
   /// Χτίζει PDF bytes (async CPU). `headers`/`body`/`totalsLine` έτοιμα
   /// strings από τον καλούντα (presentation SPoT — το service κάνει μόνο
-  /// layout). Με [sections] (3η ανάλυση): blocks τίτλου + πίνακα + υποσυνόλου
-  /// + grand footer — χωρίς sections η flat συμπεριφορά (backward
-  /// compatible). Αποτυχία → `StatsExportException`.
+  /// layout). Αποτυχία → `StatsExportException`.
   static Future<Uint8List> buildPdfBytes({
     required String title,
     required List<String> headers,
@@ -442,12 +349,24 @@ abstract final class StatisticsExportService {
     required String? totalsLine,
     required Uint8List fontBytes,
     required Uint8List boldFontBytes,
-    List<PdfSection>? sections,
   }) async {
     try {
       final regular = pw.Font.ttf(fontBytes.buffer.asByteData());
       final bold = pw.Font.ttf(boldFontBytes.buffer.asByteData());
       final doc = pw.Document();
+      pw.Widget cell(String text, pw.Font font, {bool boldRow = false}) =>
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(4),
+            child: pw.Text(
+              text,
+              style: pw.TextStyle(
+                font: font,
+                fontSize: 10,
+                fontWeight:
+                    boldRow ? pw.FontWeight.bold : pw.FontWeight.normal,
+              ),
+            ),
+          );
       doc.addPage(
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4.landscape,
@@ -472,36 +391,20 @@ abstract final class StatisticsExportService {
             ],
           ),
           build: (_) => [
-            if (sections == null)
-              _pdfTable(
-                headers: headers,
-                rows: body,
-                regular: regular,
-                bold: bold,
-              )
-            else
-              for (final section in sections) ...[
-                pw.Padding(
-                  padding: const pw.EdgeInsets.only(top: 10, bottom: 4),
-                  child: pw.Text(
-                    section.title,
-                    style: pw.TextStyle(font: bold, fontSize: 11),
+            pw.Table(
+              border: pw.TableBorder.all(),
+              children: [
+                pw.TableRow(
+                  children: [
+                    for (final h in headers) cell(h, bold, boldRow: true),
+                  ],
+                ),
+                for (final row in body)
+                  pw.TableRow(
+                    children: [for (final c in row) cell(c, regular)],
                   ),
-                ),
-                _pdfTable(
-                  headers: headers,
-                  rows: section.rows,
-                  regular: regular,
-                  bold: bold,
-                ),
-                pw.Padding(
-                  padding: const pw.EdgeInsets.only(top: 2, bottom: 6),
-                  child: pw.Text(
-                    section.subtotal,
-                    style: pw.TextStyle(font: bold, fontSize: 10),
-                  ),
-                ),
               ],
+            ),
           ],
         ),
       );
@@ -515,30 +418,6 @@ abstract final class StatisticsExportService {
       AppLogger.error(LogTag.stats, 'Αποτυχία δημιουργίας PDF', e, s);
       throw const StatsExportException();
     }
-  }
-
-  /// Πίνακας PDF (κοινός flat + sections — ίδια όψη: padding 4, plain
-  /// header, border all · `TableHelper.fromTextArray`, 29-09-2026).
-  static pw.Widget _pdfTable({
-    required List<String> headers,
-    required List<List<String>> rows,
-    required pw.Font regular,
-    required pw.Font bold,
-  }) {
-    pw.TextStyle cellStyle(bool header) => pw.TextStyle(
-          font: header ? bold : regular,
-          fontSize: 10,
-          fontWeight:
-              header ? pw.FontWeight.bold : pw.FontWeight.normal,
-        );
-    return pw.TableHelper.fromTextArray(
-      headers: headers,
-      data: rows,
-      headerStyle: cellStyle(true),
-      cellStyle: cellStyle(false),
-      cellPadding: const pw.EdgeInsets.all(4),
-      border: pw.TableBorder.all(),
-    );
   }
 
   /// Γράμμα στήλης (0 → A) — 7 στήλες καρτέλας.

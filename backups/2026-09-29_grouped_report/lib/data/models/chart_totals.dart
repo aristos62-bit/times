@@ -248,13 +248,3 @@ typedef PeriodPurchasesQuery = ({
 
 /// Δεδομένα αγορών: γραμμές + ένδειξη cap (pattern `ItemTrendData`).
 typedef PeriodPurchasesData = ({List<PeriodPurchaseRow> rows, bool truncated});
-
-/// Ομαδοποίηση αναφοράς (§2.3 · 3η ανάλυση «Ομαδοποιημένη αναφορά»).
-///
-/// Εφαρμόζεται client-side πάνω στις φορτωμένες γραμμές (όχι queries —
-/// οι γραμμές είναι ήδη φορτωμένες)· διατηρεί τη σειρά τους (το sort
-/// προηγήθηκε στη SQL, τεκμηριωμένο).
-enum PurchasesGroup { category, supplier, day, month }
-
-/// Ομάδα γραμμών: κλειδί προβολής + γραμμές (σειρά encounter).
-typedef PurchaseGroup = ({String key, List<PeriodPurchaseRow> rows});

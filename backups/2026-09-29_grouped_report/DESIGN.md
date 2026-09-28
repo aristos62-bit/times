@@ -331,10 +331,8 @@ presentation/settings/
 ├── state/settings_state.dart                 (Βήματα 4–5)
 └── widgets/
     ├── theme_mode_selector.dart              (Βήμα 1 ✓)
-    ├── statistics_section.dart               (28-09-2026: καρτέλα είδους + export, §2.3 · μενού 3 αναλύσεων 29-09)
+    ├── statistics_section.dart               (28-09-2026: καρτέλα είδους + export, §2.3)
     ├── statistics_table.dart                 (28-09-2026: dumb DataTable καρτέλας)
-    ├── purchases_table.dart                  (29-09-2026: dumb DataTable αγορών, δυναμικές στήλες)
-    ├── report_preview_dialog.dart            (29-09-2026: preview ομαδοποιημένης + export actions)
     ├── category_tree_editor.dart      -- δέντρο Κατηγορία▸Υποκατηγορία▸Τμήμα με edit/delete εικονίδια
     ├── supplier_list_editor.dart      -- λίστα Προμηθευτών με edit/delete εικονίδια (24-09-2026)
     └── backup_restore_section.dart
@@ -355,7 +353,6 @@ presentation/settings/
 - **Διαχείριση αποδείξεων (Φάση Β · 24-09-2026)**: section «Αποδείξεις» (collapsible Card) — φίλτρο ημέρας (`selectedReceiptDayProvider`, null = όλες· `receiptsByDayStreamProvider`) + λίστα συνόψεων (shared `ReceiptSummaryTile`) + μολύβι (load + `goNamed` Εισαγωγή, reuse controller Φάσης Α) + κάδος (confirm + CASCADE). Data: `ReceiptDao.watchSummariesByDay` (WHERE ημέρας) + `manageReceiptsLimit` (100)· SPoT +3/+1.
 - **Στατιστικά (29-09-2026)**: section «Στατιστικά» (collapsible Card, Θέμα → Στατιστικά → Είδη) — μενού αναλύσεων + detail (29-09-2026: όχι στοίβα — κλιμακώνεται· 1η ανάλυση «Ιστορικό αγορών είδους»): είδος (search, τοπικό state, όχι persist) + περίοδος (`PeriodType`/`ChartPeriodSelector`/`resolvePeriodRange`, reuse Home) + dumb `StatisticsTable` (7 στήλες, footer Σύνολο) + export XLSX/PDF (`StatisticsController` + `StatisticsExportService` + `BackupFilePicker.saveBytes`, deps `excel`/`pdf`, fonts `assets/fonts`). Data: `ReceiptLineDao.watchItemLedger` (joins receipts+suppliers+units) + `itemLedgerProvider` (cap `statsTableMaxRows`)· SPoT consts/strings/messages +1 error (`statsExportFailed` → `StatsExportException`, tag `stats`).
 - **Συνολικές αγορές (29-09-2026 · 2η ανάλυση)**: γραμμές-αγορές περιόδου (όλα τα είδη) + ταξινόμηση (`PurchasesSort`: Ημ/νία↑↓/Προμηθευτής/Κατηγορία + tiebreak, στο SQL) + dumb `PurchasesTable` (δυναμικές στήλες μονάδων από ΒΔ + Τιμή/Έκπτωση/Καθαρή + footer sums/μονάδα + σύνολο) + export (ίδιος controller/service — κοινός πυρήνας workbook, filename slug `_synola`). Data: `watchPeriodPurchases` (8-table join) + `periodPurchasesProvider` ({rows,truncated}).
-- **Ομαδοποιημένη αναφορά (29-09-2026 · 3η ανάλυση)**: μενού + detail (period/sort/group + «Προεπισκόπηση») + preview dialog (grand banner + sections [header + `PurchasesTable`/ομάδα] + Excel/PDF/Κλείσιμο, contract enum/null) + grouped export (extensions builders, όχι νέα). Ομαδοποίηση client-side (`groupPurchases` + labels, Κατηγορία/Προμηθευτής/Ημέρα/Μήνας — sort πρώτα στη SQL, encounter-order τεκμηριωμένο).
 
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
 - Το κουμπί διαγραφής **δεν** εμφανίζεται απλά "με error μετά το tap" — είναι **greyed-out με tooltip** (`AppMessages.itemsInUseTooltip(count)` / `supplierReceiptsTooltip(count)`) όταν `canDelete == false` (§1.4).

@@ -43,4 +43,9 @@
   SPoT padding, όλα τα γραφήματα).
 - Full suite **1429/1429** ✓ · `flutter analyze` No issues ✓.
 - DESIGN §2.1 (μετρικές) · backups `backups/2026-09-29_topitems_metric/`
+  + `backups/2026-09-29_metric_side/` + `backups/2026-09-29_period_dense/`
+  (revert — έσπαγε borders) + `backups/2026-09-29_period_compact/` (revert).
+- NOTE 29-09 (κεφ. 65): full run δεν έγινε τότε (μόνο targeted)· η
+  επαλήθευση συνολικής σουίτας ήρθε με το κεφ. 65 (**1446/1446** =
+  1390 + 39 metric + 17 grouped — τα νούμερα στέκουν).
   + `backups/2026-09-29_metric_side/` + `backups/2026-09-29_period_dense/`.

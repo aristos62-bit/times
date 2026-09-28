@@ -649,4 +649,116 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+
+  group('StatisticsSection — ομαδοποιημένη (3η ανάλυση · 29-09-2026)', () {
+    /// Seed 2 ειδών/κατηγοριών + γραμμές (τρέχων μήνας).
+    Future<void> seedGrouped(AppDatabase db) async {
+      final kiloId = await UnitDao(db).insert(
+        name: 'Κιλό',
+        abbreviation: 'κιλ',
+        allowsDecimal: true,
+      );
+      final foodId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
+      final dairyId = await SubCategoryDao(db)
+          .insert(categoryId: foodId, name: 'Γαλακτοκομικά');
+      final freshId =
+          await ItemGroupDao(db).insert(subCategoryId: dairyId, name: 'Φρέσκα');
+      final milkId = await ItemDao(db).insert(
+        itemGroupId: freshId,
+        name: 'Γάλα',
+        defaultUnitId: kiloId,
+      );
+      final markosId = await SupplierDao(db).insert(name: 'Μάρκος');
+      final now = DateTime.now();
+      final receiptId = await ReceiptDao(db).insert(
+        date: now,
+        supplierId: markosId,
+      );
+      await ReceiptLineDao(db).insert(
+        receiptId: receiptId,
+        itemId: milkId,
+        unitId: kiloId,
+        quantity: 1,
+        priceCents: 100,
+      );
+    }
+
+    /// Ανοίγει την 3η ανάλυση από το μενού.
+    Future<void> openGrouped(WidgetTester tester) async {
+      await tester.tap(find.text(AppStrings.statsGroupedTitle));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('μενού: 3 γραμμές', (tester) async {
+      await pumpSized(tester, wrap(), const Size(800, 600));
+      expect(find.text(AppStrings.statsLedgerTitle), findsOneWidget);
+      expect(find.text(AppStrings.statsPurchasesTitle), findsOneWidget);
+      expect(find.text(AppStrings.statsGroupedTitle), findsOneWidget);
+      expect(
+        find.text(AppStrings.statsGroupedDescription),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('προεπισκόπηση → dialog με σύνολο + ομάδες', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await seedGrouped(db);
+      await pumpSized(tester, wrap(db: db), const Size(800, 600));
+      await openGrouped(tester);
+
+      await tester.tap(find.text(AppStrings.statsPreviewAction));
+      await tester.pumpAndSettle();
+      // Dialog: τίτλος ανάλυσης (×2 — header detail από πίσω + dialog).
+      expect(find.text(AppStrings.statsGroupedTitle), findsNWidgets(2));
+      expect(find.text('ΤΡΟΦΙΜΑ'), findsWidgets);
+      expect(find.text(AppMessages.confirmDialogCancel), findsOneWidget);
+      await tester.tap(find.text(AppMessages.confirmDialogCancel));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.statsExportExcelAction), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('group selector: Προμηθευτής → ξαναχτίζεται', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await seedGrouped(db);
+      await pumpSized(tester, wrap(db: db), const Size(800, 600));
+      await openGrouped(tester);
+
+      await tester.tap(
+        find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Text &&
+                  widget.data == AppStrings.statsGroupCategory,
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.statsGroupSupplier).last);
+      await tester.pumpAndSettle();
+      // Κουμπί προεπισκόπησης παρόν (ροή OK).
+      expect(find.text(AppStrings.statsPreviewAction), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('export από dialog → _grouped.xlsx + snackbar',
+        (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await seedGrouped(db);
+      await pumpSized(tester, wrap(db: db), const Size(800, 600));
+      await openGrouped(tester);
+
+      await tester.tap(find.text(AppStrings.statsPreviewAction));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.statsExportExcelAction));
+      await tester.pumpAndSettle();
+      expect(picker.savedName, endsWith('_grouped.xlsx'));
+      expect(find.text(AppMessages.statsExported), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
 }

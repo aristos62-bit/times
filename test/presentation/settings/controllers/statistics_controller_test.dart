@@ -197,4 +197,64 @@ void main() {
       expect(result, (ok: false, error: null));
     });
   });
+
+  group('StatisticsController — ομαδοποιημένη (3η ανάλυση · 29-09-2026)', () {
+    final kilo = Unit(
+      id: 1,
+      name: 'Κιλό',
+      abbreviation: 'κιλ',
+      allowsDecimal: true,
+    );
+
+    PeriodPurchaseRow purchaseRow() => (
+          receiptId: 12,
+          date: DateTime(2026, 9, 9),
+          itemName: 'Γάλα',
+          categoryName: 'ΤΡΟΦΙΜΑ',
+          supplierName: 'Μάρκος',
+          quantity: 2,
+          unitId: 1,
+          unitAbbreviation: 'κιλ',
+          priceCents: 250,
+          discountCents: 50,
+        );
+
+    test('exportGroupedExcel — ok + slug `_grouped`', () async {
+      final c = container();
+      final result = await c
+          .read(statisticsControllerProvider.notifier)
+          .exportGroupedExcel(
+            rows: [purchaseRow()],
+            groups: const [],
+            units: [kilo],
+          );
+      expect(result, (ok: true, error: null));
+      expect(picker.savedName, endsWith('_grouped.xlsx'));
+      final excel = Excel.decodeBytes(picker.savedBytes!);
+      expect(excel.tables.keys.toList(), ['Σύνολα']);
+    });
+
+    test('exportGroupedPdf — ok + slug `_grouped`', () async {
+      final c = container();
+      final result = await c
+          .read(statisticsControllerProvider.notifier)
+          .exportGroupedPdf(
+            title: 'Ομαδοποιημένη αναφορά',
+            headers: const ['Ημερομηνία'],
+            sections: const [
+              (
+                title: 'ΤΡΟΦΙΜΑ',
+                rows: [
+                  ['09/09/2026'],
+                ],
+                subtotal: 'ΤΡΟΦΙΜΑ · Σύνολο: (Κιλ: 2)',
+              ),
+            ],
+            grandTotalsLine: 'Σύνολο: (Κιλ: 2): 4,00 €',
+          );
+      expect(result, (ok: true, error: null));
+      expect(picker.savedName, endsWith('_grouped.pdf'));
+      expect(picker.savedBytes!.sublist(0, 4), [0x25, 0x50, 0x44, 0x46]);
+    });
+  });
 }

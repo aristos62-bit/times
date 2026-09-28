@@ -207,28 +207,9 @@ void main() {
       expect(AppStrings.statsColumnPrice, 'Τιμή');
       expect(AppStrings.statsColumnDiscount, 'Έκπτωση');
       expect(AppStrings.statsColumnNet, 'Καθαρή');
-      expect(AppStrings.statsColumnCategory, 'Κατηγορία');
-      expect(AppStrings.statsGrandTotal, 'ΓΕΝΙΚΟ');
       expect(AppStrings.statsExportExcelAction, 'Εξαγωγή Excel');
       expect(AppStrings.statsExportPdfAction, 'Εξαγωγή PDF');
       expect(AppStrings.statsTotalsLabel, 'Σύνολο');
-    });
-
-    test('statistics analyses — τίτλοι/περιγραφές/sorts/groups (§2.3)', () {
-      expect(AppStrings.statsLedgerTitle, 'Ιστορικό αγορών είδους');
-      expect(AppStrings.statsPurchasesTitle, 'Συνολικές αγορές');
-      expect(AppStrings.statsGroupedTitle, 'Ομαδοποιημένη αναφορά');
-      expect(
-        AppStrings.statsGroupedDescription,
-        'Σύνολα ανά κατηγορία, προμηθευτή ή ημέρα με προεπισκόπηση',
-      );
-      expect(AppStrings.statsPreviewAction, 'Προεπισκόπηση');
-      expect(AppStrings.statsSortLabel, 'Ταξινόμηση');
-      expect(AppStrings.statsGroupLabel, 'Ομαδοποίηση');
-      expect(AppStrings.statsGroupCategory, 'Κατηγορία');
-      expect(AppStrings.statsGroupSupplier, 'Προμηθευτής');
-      expect(AppStrings.statsGroupDay, 'Ημέρα');
-      expect(AppStrings.statsGroupMonth, 'Μήνας');
     });
 
     // ─── Categories section (§2.3 · Φάση 4 Βήμα 4) ───────────────────────────
@@ -369,26 +350,9 @@ const List<String> _allStrings = [
   AppStrings.statsLedgerTitle,
   AppStrings.statsLedgerDescription,
   AppStrings.statsBackAction,
-  AppStrings.statsPurchasesTitle,
-  AppStrings.statsPurchasesDescription,
-  AppStrings.statsGroupedTitle,
-  AppStrings.statsGroupedDescription,
-  AppStrings.statsPreviewAction,
-  AppStrings.statsSortLabel,
-  AppStrings.statsSortDateAsc,
-  AppStrings.statsSortDateDesc,
-  AppStrings.statsSortSupplier,
-  AppStrings.statsSortCategory,
-  AppStrings.statsGroupLabel,
-  AppStrings.statsGroupCategory,
-  AppStrings.statsGroupSupplier,
-  AppStrings.statsGroupDay,
-  AppStrings.statsGroupMonth,
   AppStrings.statsColumnDate,
   AppStrings.statsColumnReceipt,
   AppStrings.statsColumnSupplier,
-  AppStrings.statsColumnCategory,
-  AppStrings.statsGrandTotal,
   AppStrings.statsColumnQuantity,
   AppStrings.statsColumnPrice,
   AppStrings.statsColumnDiscount,

@@ -82,12 +82,9 @@
 | 62 | [Ενότητα «Στατιστικά» + export Excel/PDF](oldsessions/2026-09-29_stats_ledger.md) | 29-09-2026 | Κλειστό | Καρτέλα είδους (7 στήλες + footer) + XLSX/PDF export (excel+pdf deps, fonts) + μενού αναλύσεων («Ιστορικό αγορών είδους») · **1358/1358** ✓ (+45) · analyze καθαρό |
 | 63 | [2η ανάλυση «Συνολικές αγορές»](oldsessions/2026-09-29_stats_purchases.md) | 29-09-2026 | Κλειστό | Γραμμές περιόδου + 4 sorts + δυναμικές στήλες μονάδων + Τιμή/Έκπτωση/Καθαρή + XLSX/PDF (Σύνολο με σπάσιμο/μονάδα · labels dots πορείας) · **1390/1390** ✓ (+32) · analyze καθαρό |
 | 64 | [Top-10 με μετρική €/Τεμ/Κιλ/Λτ](oldsessions/2026-09-29_topitems_metric.md) | 29-09-2026 | Κλειστό | Dropdown μετρικής (persist) + πίτα ποσοτήτων (reuse painter) · **1429/1429** ✓ (+39) · analyze καθαρό |
-| 65 | [3η ανάλυση «Ομαδοποιημένη αναφορά»](oldsessions/2026-09-29_grouped_report.md) | 29-09-2026 | Κλειστό | Preview dialog + grouped export (extensions, όχι νέα builders) · **1446/1446** ✓ (+56) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
-
-- **3η ανάλυση «Ομαδοποιημένη αναφορά» (29-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #65): preview dialog (grand + sections + Excel/PDF/Κλείσιμο) + grouped export (builder extensions) · Q1–Q6 ✓ · ευρήματα Ε1–Ε5 · **1446/1446** ✓ (+56) · analyze καθαρό · backup `backups/2026-09-29_grouped_report/`.
 
 - **Top-10 με μετρική (29-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #64): dropdown €/Τεμ/Κιλ/Λτ (persist, μία μονάδα/query) + `QtyPieChart` (reuse painter) + shared states · Q1–Q6 ✓ · ευρήματα Ε1–Ε6 · **1429/1429** ✓ (+39) · analyze καθαρό · backup `backups/2026-09-29_topitems_metric/`.
 
