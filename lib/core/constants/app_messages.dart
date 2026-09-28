@@ -170,4 +170,9 @@ abstract final class AppMessages {
   /// Σημείωση παλιών γραμμών άλλης μονάδας (εκτός γραφήματος, §2.1 Q2).
   static String trendOtherUnitsNote(int count) =>
       '$count παλιές σε άλλη μονάδα (εκτός)';
+
+  // ─── Statistics export (§2.3 · 28-09-2026) ─────────────────────────────────
+  /// Επιτυχής εξαγωγή καρτέλας (§2.3 · 1η ανάλυση — συμμετρικό του
+  /// `backupCreated`).
+  static const String statsExported = 'Η εξαγωγή ολοκληρώθηκε';
 }

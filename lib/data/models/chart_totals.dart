@@ -126,3 +126,38 @@ typedef ItemTrendData = ({
   List<ItemPricePoint> points,
   int otherUnitCount,
 });
+
+/// Παράμετρος-κλειδί του ledger stream family (§2.3 · 28-09-2026).
+///
+/// Plain record — value equality για το family cache (pattern `ChartQuery`,
+/// με επιπλέον `itemId`).
+typedef ItemLedgerQuery = ({int itemId, DateTime from, DateTime to});
+
+/// Γραμμή καρτέλας είδους (§2.3 · 28-09-2026 — 1η στατιστική ανάλυση).
+///
+/// Projection (όχι οντότητα): παράγεται από το `watchItemLedger` του
+/// `ReceiptLineDao` (stored τιμές §3 — ποτέ float). Η καθαρή είναι παράγωγη
+/// display (`priceCents − discountCents`, mirror DAO όπως
+/// `DraftReceiptLine.netTotalCents`).
+typedef ItemLedgerRow = ({
+  /// AUTOINCREMENT id απόδειξης = αριθμός απόδειξης (§3).
+  int receiptId,
+
+  /// Ημερομηνία απόδειξης.
+  DateTime date,
+
+  /// Όνομα προμηθευτή (INNER JOIN).
+  String supplierName,
+
+  /// Ποσότητα γραμμής (REAL §3).
+  double quantity,
+
+  /// Συντομογραφία μονάδας γραμμής (JOIN units — προβολή «0,456 κιλ»).
+  String unitAbbreviation,
+
+  /// Τιμή μονάδας σε λεπτά (μικτή, §3).
+  int priceCents,
+
+  /// Έκπτωση μονάδας σε λεπτά (0 = καμία, §2.2).
+  int discountCents,
+});

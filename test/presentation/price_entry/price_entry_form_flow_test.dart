@@ -392,6 +392,13 @@ class _BlockingReceiptRepo implements ReceiptRepository {
   }) =>
       inner.watchItemHistory(itemId: itemId, from: from, to: to);
   @override
+  Stream<List<ItemLedgerRow>> watchItemLedger({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      inner.watchItemLedger(itemId: itemId, from: from, to: to);
+  @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,
     required int limit,

@@ -75,6 +75,13 @@ final class InvalidBackupFileException extends AppException {
         );
 }
 
+// ─── Statistics export (§2.3 · 28-09-2026) ──────────────────────────────────
+/// Αποτυχία εξαγωγής καρτέλας (bytes ή save dialog) → AppErrors.statsExportFailed.
+final class StatsExportException extends AppException {
+  const StatsExportException()
+      : super(userMessage: AppErrors.statsExportFailed, loggingTag: LogTag.stats);
+}
+
 /// Αποτυχία αντικατάστασης/επαναφοράς βάσης (Βήμα 4) → AppErrors.restoreFailed.
 final class RestoreBackupException extends AppException {
   const RestoreBackupException()

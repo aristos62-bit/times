@@ -321,10 +321,13 @@ presentation/settings/
 ├── controllers/                              (Βήματα 4–5 · το Βήμα 1 ΔΕΝ έχει controller — Q1)
 │   ├── category_management_controller.dart
 │   ├── supplier_management_controller.dart   (CRUD προμηθευτών 24-09-2026)
-│   └── backup_restore_controller.dart
+│   ├── backup_restore_controller.dart
+│   └── statistics_controller.dart            (export καρτέλας 29-09-2026)
 ├── state/settings_state.dart                 (Βήματα 4–5)
 └── widgets/
     ├── theme_mode_selector.dart              (Βήμα 1 ✓)
+    ├── statistics_section.dart               (28-09-2026: καρτέλα είδους + export, §2.3)
+    ├── statistics_table.dart                 (28-09-2026: dumb DataTable καρτέλας)
     ├── category_tree_editor.dart      -- δέντρο Κατηγορία▸Υποκατηγορία▸Τμήμα με edit/delete εικονίδια
     ├── supplier_list_editor.dart      -- λίστα Προμηθευτών με edit/delete εικονίδια (24-09-2026)
     └── backup_restore_section.dart
@@ -343,6 +346,7 @@ presentation/settings/
 - `canDeleteSupplierProvider` / `receiptCountSupplierProvider` (`FutureProvider.family`, 24-09-2026) → προ-έλεγχος προμηθευτή (`countBySupplierId == 0`, RESTRICT §3).
 - Scope CRUD: **Κατηγορίες/Υποκατηγορίες/Τμήματα (27-09-2026) + Προμηθευτές (24-09-2026) + Είδη (ενότητα Ειδών)** — το cascade καθαρίζει orphan Items σε transaction ως side-effect. Τα είδη έχουν δικό τους editor (αναζήτηση forked §2.4 + full edit + πύλη `countLinesByItemId`)· η μετακίνηση είδους ανανεώνει τις πύλες παλιάς/νέας κατηγορίας. Οι προμηθευτές ΔΕΝ έχουν cascade (RESTRICT §3 — μόνο καθαροί διαγράφονται)· η μετονομασία τους φαίνεται αυτόματα στις αποδείξεις (join). Το FK `RESTRICT` του §3 παραμένει· οι count/cascade queries ζουν στα **DAOs** (repos = error-mapping μόνο).
 - **Διαχείριση αποδείξεων (Φάση Β · 24-09-2026)**: section «Αποδείξεις» (collapsible Card) — φίλτρο ημέρας (`selectedReceiptDayProvider`, null = όλες· `receiptsByDayStreamProvider`) + λίστα συνόψεων (shared `ReceiptSummaryTile`) + μολύβι (load + `goNamed` Εισαγωγή, reuse controller Φάσης Α) + κάδος (confirm + CASCADE). Data: `ReceiptDao.watchSummariesByDay` (WHERE ημέρας) + `manageReceiptsLimit` (100)· SPoT +3/+1.
+- **Στατιστικά (29-09-2026)**: section «Στατιστικά» (collapsible Card, Θέμα → Στατιστικά → Είδη) — 1η ανάλυση καρτέλα είδους: είδος (search, τοπικό state, όχι persist) + περίοδος (`PeriodType`/`ChartPeriodSelector`/`resolvePeriodRange`, reuse Home) + dumb `StatisticsTable` (7 στήλες, footer Σύνολο) + export XLSX/PDF (`StatisticsController` + `StatisticsExportService` + `BackupFilePicker.saveBytes`, deps `excel`/`pdf`, fonts `assets/fonts`). Data: `ReceiptLineDao.watchItemLedger` (joins receipts+suppliers+units) + `itemLedgerProvider` (cap `statsTableMaxRows`)· SPoT consts/strings/messages +1 error (`statsExportFailed` → `StatsExportException`, tag `stats`).
 
 **Προβλέψεις/παγίδες που αποφεύγουμε ρητά**
 - Το κουμπί διαγραφής **δεν** εμφανίζεται απλά "με error μετά το tap" — είναι **greyed-out με tooltip** (`AppMessages.itemsInUseTooltip(count)` / `supplierReceiptsTooltip(count)`) όταν `canDelete == false` (§1.4).
@@ -501,7 +505,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 > Κάθε φάση κλείνει μόνο όταν: (α) ο κώδικας λειτουργεί, (β) τα tests της φάσης περνάνε, (γ) το DESIGN.md ενημερώνεται, (δ) έχεις δώσει ρητό OK.
 
 ### Φάση 0 — Θεμελίωση Project
-1. Δημιουργία Flutter project, ρύθμιση `pubspec.yaml` (Drift, Riverpod, GoRouter, shared_preferences, file_picker + path_provider + sqlite3 για backup).
+1. Δημιουργία Flutter project, ρύθμιση `pubspec.yaml` (Drift, Riverpod, GoRouter, shared_preferences, file_picker + path_provider + sqlite3 για backup · 29-09-2026: +`excel`/`pdf` για export στατιστικών).
 2. Ορισμός branding: όνομα app, package id, εικονίδιο, splash screen, χρωματική παλέτα.
 3. Δημιουργία δομής φακέλων (§1.2) με κενά αρχεία-σκελετούς.
 4. SPoT σκελετοί (`lib/core/`): `app_constants.dart`, `app_strings.dart`, `app_messages.dart`, `app_errors.dart`, `app_enums.dart`, `app_theme.dart`, `app_colors.dart`, `app_routes.dart`, `app_exceptions.dart`.
@@ -557,6 +561,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 3. «Προσαρμογή Οθόνης» τελευταία γραμμή (ορατότητα/περίοδος/σειρά ανά γράφημα, persisted SharedPreferences, defaults 6-ορατά/Μήνας/1-2-3-4-5-6 από 28-09-2026).
 4. Unit tests (aggregations, config controller, validators ορίων) + widget tests (states/responsive 3 μεγέθη/dark/semantics)· 0 golden tests (brittle cross-platform).
 5. Post-closure 28-09-2026 — 6η κάρτα «Πορεία τιμής» (γραμμή §2.1, deferred trend-line §2.1:175): `ReceiptLineDao.watchItemHistory` + repo passthrough + `itemTrendProvider` (autoDispose family, split μονάδας + cap) + `selectedTrendItemProvider` (persisted) + custom line painter (0 packages) + Προσαρμογή (6η γραμμή αυτόματα).
+6. Post-closure 29-09-2026 — ενότητα «Στατιστικά» (§2.3): καρτέλα είδους + export Excel/PDF (deps `excel`/`pdf` 3.12 + Noto fonts, `BackupFilePicker` reuse, tag `stats`).
 
 ### Φάση 6 — Στίλβωση & Επεκτάσεις
 1. Πλήρης έλεγχος responsive/overflow σε real συσκευές/μεγέθη.

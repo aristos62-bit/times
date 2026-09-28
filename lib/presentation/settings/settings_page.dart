@@ -24,6 +24,7 @@ import 'widgets/backup_restore_section.dart';
 import 'widgets/category_tree_editor.dart';
 import 'widgets/item_list_editor.dart';
 import 'widgets/receipts_management_editor.dart';
+import 'widgets/statistics_section.dart';
 import 'widgets/supplier_list_editor.dart';
 import 'widgets/theme_mode_selector.dart';
 
@@ -64,6 +65,26 @@ class SettingsPage extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+          const SizedBox(height: AppConstants.spacingL),
+          Card(
+            // Collapsible section (§2.3 · 28-09-2026): κλειστό εξ αρχής —
+            // ανάμεσα σε «Θέμα» και «Είδη».
+            child: ExpansionTile(
+              title: Text(
+                AppStrings.titleStatisticsSection,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              childrenPadding: const EdgeInsets.fromLTRB(
+                AppConstants.spacingL,
+                0,
+                AppConstants.spacingL,
+                AppConstants.spacingL,
+              ),
+              // Statistics section (§2.3 · 1η ανάλυση): καρτέλα είδους +
+              // export Excel/PDF (read-only, §2.4).
+              children: const [StatisticsSection()],
             ),
           ),
           const SizedBox(height: AppConstants.spacingL),

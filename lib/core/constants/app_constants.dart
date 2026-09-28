@@ -181,6 +181,15 @@ abstract final class AppConstants {
   // νεότερα (τεκμηριωμένο όριο προσωπικής χρήσης, §2.1 Q4).
   static const int trendMaxPoints = 200;
 
+  // ─── Statistics (§2.3 · 28-09-2026) ──────────────────────────────────────
+  // Pattern ονομασίας αρχείων εξαγωγής καρτέλας (ίδιο template με το backup —
+  // `backupFileNamePattern`, άλλη αρχή· η επέκταση μπαίνει από τον καλούντα).
+  static const String statsFileNamePattern = 'times_stats_yyyyMMdd_HHmmss';
+
+  // Safety cap γραμμών καρτέλας (χωριστό από `trendMaxPoints` — άλλο UI,
+  // §1.1: SPoT ανά χρήση, όχι κοινόχρηστος αριθμός).
+  static const int statsTableMaxRows = 200;
+
   // ─── Item trend painter (§2.1 · 28-09-2026) ───────────────────────────────
   // Αριστερό περιθώριο ετικετών Υ + κάτω περιθώριο ετικετών Χ (fixed px —
   // χώρος κειμένου, όχι layout περιεχομένου).

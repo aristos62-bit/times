@@ -36,6 +36,11 @@ void main() {
       expect(AppErrors.restoreFailed, 'Σφάλμα κατά την επαναφορά αντιγράφου');
     });
 
+    // ─── Statistics export (§2.3 · 28-09-2026) ───────────────────────────────
+    test('statsExportFailed = «Σφάλμα κατά την εξαγωγή» (§2.3)', () {
+      expect(AppErrors.statsExportFailed, 'Σφάλμα κατά την εξαγωγή');
+    });
+
     // ─── Validation (§2.2:214-218 · Φάση 3 Βήμα 4) ───────────────────────────
     test('nameRequired = «Το όνομα είναι υποχρεωτικό» (§2.2)', () {
       expect(AppErrors.nameRequired, 'Το όνομα είναι υποχρεωτικό');
@@ -115,6 +120,7 @@ const List<String> _allConstStrings = [
   AppErrors.backupFailed,
   AppErrors.invalidBackupFile,
   AppErrors.restoreFailed,
+  AppErrors.statsExportFailed,
   AppErrors.nameRequired,
   AppErrors.nameTooLong,
   AppErrors.nameExists,

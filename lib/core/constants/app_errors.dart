@@ -89,6 +89,11 @@ abstract final class AppErrors {
   /// §2.2: δεν έχει επιλεγεί προμηθευτής για την απόδειξη.
   static const String supplierRequired = 'Επιλέξτε προμηθευτή';
 
+  // ─── Statistics export (§2.3 · 28-09-2026) ─────────────────────────────────
+  /// §2.3: αποτυχία εξαγωγής καρτέλας (bytes ή save dialog) → showError.
+  /// Χωριστό από τα backup errors (άλλο domain, §1.1).
+  static const String statsExportFailed = 'Σφάλμα κατά την εξαγωγή';
+
   /// §2.2: κενό «καλάθι» — τουλάχιστον 1 γραμμή. Το πάνω όριο
   /// (`maxReceiptLines`) καλύπτεται από το `AppMessages.receiptLinesLimitReached`.
   static const String receiptLinesRequired =

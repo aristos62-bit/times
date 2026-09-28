@@ -116,6 +116,14 @@ abstract interface class ReceiptRepository {
     required DateTime to,
   });
 
+  /// Παρακολουθεί τις γραμμές είδους με πλήρη στοιχεία καρτέλας (§2.3 ·
+  /// 28-09-2026 — 1η στατιστική ανάλυση). Passthrough στο DAO (Βήμα 2).
+  Stream<List<ItemLedgerRow>> watchItemLedger({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  });
+
   /// Εισάγει απόδειξη με όλες τις γραμμές σε μία transaction (atomicity).
   /// Επιστρέφει το id της απόδειξης. Αποτυχία → SaveReceiptException.
   Future<int> insertReceiptWithLines({

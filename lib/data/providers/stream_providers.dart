@@ -349,6 +349,29 @@ final itemTrendProvider =
   }),
 );
 
+// ─── Καρτέλα είδους (§2.3 · 28-09-2026, 1η στατιστική ανάλυση) ───────────────
+
+/// Γραμμές καρτέλας — `autoDispose.family` ανά [ItemLedgerQuery] (εξαίρεση
+/// §2.1: αποδέσμευση DB watch σε αλλαγή είδους/περιόδου/ημέρας).
+///
+/// Cap in-provider (precedent trend Q4): πάνω από `statsTableMaxRows`
+/// κρατιούνται οι νεότερες (η λίστα είναι ordered — το cap κόβει από την
+/// αρχή). ΟΛΕΣ οι μονάδες (η γραμμή φέρει μονάδα, Q3). Σφάλματα ήδη
+/// `DataLoadException` (repo mapping).
+final itemLedgerProvider =
+    StreamProvider.autoDispose.family<List<ItemLedgerRow>, ItemLedgerQuery>(
+  (ref, query) => ref
+      .watch(receiptRepositoryProvider)
+      .watchItemLedger(
+        itemId: query.itemId,
+        from: query.from,
+        to: query.to,
+      )
+      .map((rows) => rows.length > AppConstants.statsTableMaxRows
+          ? rows.sublist(rows.length - AppConstants.statsTableMaxRows)
+          : rows),
+);
+
 /// Τελευταία γραμμή είδους για prefill τιμής/έκπτωσης (§2.2) — `.family`
 /// παραμετροποιημένο ανά [itemId]. One-shot FutureProvider (όχι stream — η
 /// τιμή διαβάζεται μία φορά στην επιλογή είδους, precedent `canDelete*`

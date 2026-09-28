@@ -204,6 +204,24 @@ abstract final class AppStrings {
   static const String noReceiptsForDay =
       'Δεν υπάρχουν αποδείξεις αυτή την ημέρα';
 
+  // ─── Statistics section (§2.3 · 28-09-2026) ───────────────────────────────
+  /// Τίτλος του section «Στατιστικά» στη σελίδα ρυθμίσεων (§2.3).
+  static const String titleStatisticsSection = 'Στατιστικά';
+  /// Headers στηλών καρτέλας είδους (§2.3 · 1η ανάλυση).
+  static const String statsColumnDate = 'Ημερομηνία';
+  static const String statsColumnReceipt = 'Απόδειξη';
+  static const String statsColumnSupplier = 'Προμηθευτής';
+  static const String statsColumnQuantity = 'Ποσότητα';
+  static const String statsColumnPrice = 'Τιμή';
+  static const String statsColumnDiscount = 'Έκπτωση';
+  static const String statsColumnNet = 'Καθαρή';
+  /// Label κουμπιού εξαγωγής Excel (§2.3 · 1η ανάλυση).
+  static const String statsExportExcelAction = 'Εξαγωγή Excel';
+  /// Label κουμπιού εξαγωγής PDF (§2.3 · 1η ανάλυση).
+  static const String statsExportPdfAction = 'Εξαγωγή PDF';
+  /// Label γραμμής συνόλων καρτέλας (άθροισμα καθαρών, §2.3 · Q4).
+  static const String statsTotalsLabel = 'Σύνολο';
+
   // ─── Backup section (§2.3 · Φάση 4 Βήμα 5) ─────────────────────────────────
   /// Τίτλος του section «Αντίγραφα ασφαλείας» στη σελίδα ρυθμίσεων (§2.3).
   static const String titleBackupSection = 'Αντίγραφα ασφαλείας';

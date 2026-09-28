@@ -79,9 +79,12 @@
 | 59 | [Chart families `autoDispose`](oldsessions/2026-09-27_chart_autodispose.md) | 27-09-2026 | Κλειστό | 5 families autoDispose (leak stale DB watches) · disposal test 1→2 · DESIGN αμετάβλητο · **1259/1259** ✓ (+1) · analyze καθαρό |
 | 60 | [Κλειδωμένη μονάδα είδους](oldsessions/2026-09-28_unit_lock.md) | 28-09-2026 | Κλειστό | Μονάδα γραμμής ΜΟΝΟ από `defaultUnitId` (locked banner, αλλαγή από Ρυθμίσεις) · 9 tests ενημερωμένα (0 net) · DESIGN §2.2/§2.4/§4 + CORRECTION · **1259/1259** ✓ · analyze καθαρό |
 | 61 | [6ο γράφημα «Πορεία τιμής είδους»](oldsessions/2026-09-28_item_trend.md) | 28-09-2026 | Κλειστό | Γραμμή καθαρής €/μονάδα (search + locked φίλτρο + cap 200 + persist) · custom painter, 0 packages · Προσαρμογή αυτόματα · **1313/1313** ✓ (+54) · analyze καθαρό |
+| 62 | [Ενότητα «Στατιστικά» + export Excel/PDF](oldsessions/2026-09-29_stats_ledger.md) | 29-09-2026 | Κλειστό | Καρτέλα είδους (7 στήλες + footer) + XLSX/PDF export (excel+pdf deps, fonts) · **1356/1356** ✓ (+43) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
+
+- **Ενότητα «Στατιστικά» (29-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #62): καρτέλα είδους (7 στήλες + footer Σύνολο) + export Excel/PDF (deps excel+pdf 3.12, Noto fonts, file_picker reuse) · Q1–Q7 α · ευρήματα Ε1–Ε7 · **1356/1356** ✓ (+43) · analyze καθαρό · backup `backups/2026-09-29_stats_ledger/`.
 
 - **6ο γράφημα «Πορεία τιμής» (28-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #61): γραμμή καθαρής €/μονάδα (Q1–Q6 α) · `watchItemHistory` + passthrough + families + persisted επιλογή · custom painter + fallback (0 packages) · Προσαρμογή 6η γραμμή αυτόματα · ευρήματα Ε1–Ε5 · **1313/1313** ✓ (+54) · analyze καθαρό · backup `backups/2026-09-28_item_trend/` (21 αρχεία).
 

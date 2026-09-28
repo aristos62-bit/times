@@ -190,6 +190,21 @@ void main() {
       expect(AppStrings.themeModeSystem, 'Αυτόματο');
     });
 
+    test('statistics section — τίτλος + headers + actions (§2.3 · 28-09-2026)',
+        () {
+      expect(AppStrings.titleStatisticsSection, 'Στατιστικά');
+      expect(AppStrings.statsColumnDate, 'Ημερομηνία');
+      expect(AppStrings.statsColumnReceipt, 'Απόδειξη');
+      expect(AppStrings.statsColumnSupplier, 'Προμηθευτής');
+      expect(AppStrings.statsColumnQuantity, 'Ποσότητα');
+      expect(AppStrings.statsColumnPrice, 'Τιμή');
+      expect(AppStrings.statsColumnDiscount, 'Έκπτωση');
+      expect(AppStrings.statsColumnNet, 'Καθαρή');
+      expect(AppStrings.statsExportExcelAction, 'Εξαγωγή Excel');
+      expect(AppStrings.statsExportPdfAction, 'Εξαγωγή PDF');
+      expect(AppStrings.statsTotalsLabel, 'Σύνολο');
+    });
+
     // ─── Categories section (§2.3 · Φάση 4 Βήμα 4) ───────────────────────────
     test('titleCategoriesSection = «Κατηγορίες» + empty (§2.3 · Βήμα 4)', () {
       expect(AppStrings.titleCategoriesSection, 'Κατηγορίες');
@@ -320,6 +335,17 @@ const List<String> _allStrings = [
   AppStrings.themeModeLight,
   AppStrings.themeModeDark,
   AppStrings.themeModeSystem,
+  AppStrings.titleStatisticsSection,
+  AppStrings.statsColumnDate,
+  AppStrings.statsColumnReceipt,
+  AppStrings.statsColumnSupplier,
+  AppStrings.statsColumnQuantity,
+  AppStrings.statsColumnPrice,
+  AppStrings.statsColumnDiscount,
+  AppStrings.statsColumnNet,
+  AppStrings.statsExportExcelAction,
+  AppStrings.statsExportPdfAction,
+  AppStrings.statsTotalsLabel,
   AppStrings.titleCategoriesSection,
   AppStrings.categoriesEmpty,
   AppStrings.editAction,

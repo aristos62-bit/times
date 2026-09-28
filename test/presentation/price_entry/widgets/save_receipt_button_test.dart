@@ -435,6 +435,13 @@ class _FailingReceiptRepo implements ReceiptRepository {
   }) =>
       throw const DataLoadException();
   @override
+  Stream<List<ItemLedgerRow>> watchItemLedger({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      throw const DataLoadException();
+  @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,
     required int limit,
@@ -531,6 +538,13 @@ class _BlockingReceiptRepo implements ReceiptRepository {
     required DateTime to,
   }) =>
       inner.watchItemHistory(itemId: itemId, from: from, to: to);
+  @override
+  Stream<List<ItemLedgerRow>> watchItemLedger({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      inner.watchItemLedger(itemId: itemId, from: from, to: to);
   @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,

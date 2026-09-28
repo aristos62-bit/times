@@ -245,4 +245,70 @@ class ReceiptLineDao extends BaseDao {
           return rows > 0;
         },
       );
+
+  /// Παρακολουθεί τις γραμμές ενός είδους με πλήρη στοιχεία καρτέλας
+  /// (§2.3 · 28-09-2026 — 1η στατιστική ανάλυση).
+  ///
+  /// Custom SQL (precedent `watchItemHistory`): joins αποδείξεων +
+  /// προμηθευτών + μονάδων (συντομογραφία για «0,456 κιλ») με
+  /// `WHERE item_id = ? AND r.date >= from AND r.date < to` (όρια resolver).
+  /// Stored τιμές §3 (τιμή/έκπτωση χωριστά — η καθαρή παράγεται στην
+  /// προβολή, Δ-stat). ΟΛΕΣ οι μονάδες (η γραμμή φέρει μονάδα, Q3 — αντίθετα
+  /// με το φίλτρο πορείας). Σειρά: ημερομηνία ASC, id ASC (backdated,
+  /// precedent `getLatestByItemId`). Πλήρης λίστα (cap στον provider).
+  /// `readsFrom` → auto-refresh μετά από save/update/delete.
+  Stream<List<ItemLedgerRow>> watchItemLedger({
+    required int itemId,
+    required DateTime from,
+    required DateTime to,
+  }) =>
+      guardStream(
+        'Ανάγνωση καρτέλας είδους',
+        () => db
+            .customSelect(
+              '''
+        SELECT rl.receipt_id AS receiptId,
+               r.date AS date,
+               s.name AS supplierName,
+               rl.quantity AS quantity,
+               u.abbreviation AS unitAbbreviation,
+               rl.price_cents AS priceCents,
+               rl.discount_cents AS discountCents
+        FROM receipt_lines rl
+        INNER JOIN receipts r  ON r.id = rl.receipt_id
+        INNER JOIN suppliers s ON s.id = r.supplier_id
+        INNER JOIN units u     ON u.id = rl.unit_id
+        WHERE rl.item_id = ? AND r.date >= ? AND r.date < ?
+        ORDER BY r.date ASC, rl.id ASC
+      ''',
+              variables: [
+                Variable.withInt(itemId),
+                Variable.withDateTime(from),
+                Variable.withDateTime(to),
+              ],
+              readsFrom: {
+                db.receiptLines,
+                db.receipts,
+                db.suppliers,
+                db.units,
+              },
+            )
+            .watch()
+            .map(
+              (rows) => rows
+                  .map(
+                    (row) => (
+                      receiptId: row.read<int>('receiptId'),
+                      date: row.read<DateTime>('date'),
+                      supplierName: row.read<String>('supplierName'),
+                      quantity: row.read<double>('quantity'),
+                      unitAbbreviation:
+                          row.read<String>('unitAbbreviation'),
+                      priceCents: row.read<int>('priceCents'),
+                      discountCents: row.read<int>('discountCents'),
+                    ),
+                  )
+                  .toList(),
+            ),
+      );
 }

@@ -1,0 +1,128 @@
+/// SPoT: Προβολές αθροισμάτων γραφημάτων Κεντρικής — Φάση 5, Βήμα 2 (§2.1).
+///
+/// Κάθε record είναι **projection**, όχι οντότητα πίνακα: παράγεται
+/// αποκλειστικά από το SQL aggregation του `ReceiptDao.watchTotals*`
+/// (`SUM` του αποθηκευμένου `lineTotalCents` — SPoT: ReceiptLineDao, §3).
+/// Ζουν στον ανοιχτό φάκελο `data/models` (§1.2) ως plain record typedefs —
+/// χωρίς Freezed (pattern `ReceiptSummary`/`CategoryTreeNode`, Φάση 2 Βήμα 1).
+///
+/// Σlicing top-N + «Λοιπά» γίνεται στον provider Βήματος 3 πάνω στην πλήρη
+/// ordered λίστα (ακριβές υπόλοιπο — η SQL δεν κάνει LIMIT, §2.1:183).
+library;
+
+/// Σύνολο προμηθευτή σε περίοδο (καθαρό, μετά έκπτωση §3).
+typedef SupplierTotal = ({
+  /// FK → Suppliers.id.
+  int supplierId,
+
+  /// Όνομα προμηθευτή (INNER JOIN — μόνο με πωλήσεις στην περίοδο).
+  String supplierName,
+
+  /// Συνολικό ποσό σε λεπτά (SUM lineTotalCents).
+  int totalCents,
+});
+
+/// Σύνολο κατηγορίας σε περίοδο (καθαρό, μετά έκπτωση §3).
+typedef CategoryTotal = ({
+  /// FK → Categories.id.
+  int categoryId,
+
+  /// Όνομα κατηγορίας (INNER JOIN — μόνο με πωλήσεις στην περίοδο).
+  String categoryName,
+
+  /// Συνολικό ποσό σε λεπτά (SUM lineTotalCents).
+  int totalCents,
+});
+
+/// Σύνολο υποκατηγορίας σε περίοδο (καθαρό, μετά έκπτωση §3).
+typedef SubCategoryTotal = ({
+  /// FK → SubCategories.id.
+  int subCategoryId,
+
+  /// Όνομα υποκατηγορίας (INNER JOIN — μόνο με πωλήσεις στην περίοδο).
+  String subCategoryName,
+
+  /// Συνολικό ποσό σε λεπτά (SUM lineTotalCents).
+  int totalCents,
+});
+
+/// Σύνολο τμήματος σε περίοδο (καθαρό, μετά έκπτωση §3) — 4 επίπεδα.
+typedef ItemGroupTotal = ({
+  /// FK → ItemGroups.id.
+  int itemGroupId,
+
+  /// Όνομα τμήματος (INNER JOIN — μόνο με πωλήσεις στην περίοδο).
+  String itemGroupName,
+
+  /// Συνολικό ποσό σε λεπτά (SUM lineTotalCents).
+  int totalCents,
+});
+
+/// Σύνολο είδους σε περίοδο (καθαρό, μετά έκπτωση §3) — για το Top-10.
+typedef ItemTotal = ({
+  /// FK → Items.id.
+  int itemId,
+
+  /// Όνομα είδους (INNER JOIN — μόνο με πωλήσεις στην περίοδο).
+  String itemName,
+
+  /// Συνολικό ποσό σε λεπτά (SUM lineTotalCents).
+  int totalCents,
+});
+
+/// Παράμετρος-κλειδί των chart stream families (§2.1 · Φάση 5 Βήμα 3).
+///
+/// ΜΟΝΟ `from`/`to` (start-inclusive/end-exclusive, από τον
+/// `resolvePeriodRange`): το `limit` ΔΕΝ μπαίνει στο κλειδί — εφαρμόζεται στο
+/// slice (SPoT `pieMaxSlices`/`topItemsLimit`, Q1 Βήματος 2). Plain record —
+/// value equality για το family cache (pattern `subCategorySearchProvider`
+/// `({categoryId, query})`).
+typedef ChartQuery = ({DateTime from, DateTime to});
+
+/// Μία φέτα πίτας: έτοιμη για προβολή (§2.1 · Φάση 5 Βήμα 3).
+///
+/// Παράγεται από τον `toChartSlices` (top-N + συνθετικό «Λοιπά») — το UI
+/// δείχνει `label` + `formatCents(totalCents)` (SPoT προβολή §2.1:176).
+typedef ChartSlice = ({String label, int totalCents});
+
+/// Σημείο πορείας τιμής είδους (§2.1 · 28-09-2026 — 6ο γράφημα, γραμμή).
+///
+/// Projection (όχι οντότητα): παράγεται από το `watchItemHistory` του
+/// `ReceiptLineDao` (καθαρή μοναδιαία `price_cents − discount_cents`, Δ-stat
+/// §3). Το `unitId` μένει στο point για το φίλτρο κλειδωμένης μονάδας
+/// (Q2 — οι ξένες μονάδες μετριούνται, δεν σχεδιάζονται).
+typedef ItemPricePoint = ({
+  /// Ημερομηνία απόδειξης της γραμμής.
+  DateTime date,
+
+  /// Καθαρή τιμή μονάδας σε λεπτά (`priceCents − discountCents`, §3).
+  int netPriceCents,
+
+  /// Ποσότητα γραμμής (για διάκριση ίδιων ημερών / tooltip).
+  double quantity,
+
+  /// Μονάδα γραμμής (FK → Units.id) — φίλτρο κλειδωμένης μονάδας (Q2).
+  int unitId,
+
+  /// Όνομα προμηθευτή (INNER JOIN — fallback/tooltip).
+  String supplierName,
+});
+
+/// Παράμετρος-κλειδί του trend stream family (§2.1 · 28-09-2026).
+///
+/// Το `unitId` μπαίνει στο κλειδί (αλλαγή μονάδας από Ρυθμίσεις = νέο
+/// instance). Plain record — value equality για το family cache (pattern
+/// `ChartQuery`).
+typedef ItemTrendQuery = ({
+  int itemId,
+  int unitId,
+  DateTime from,
+  DateTime to,
+});
+
+/// Δεδομένα κάρτας πορείας: points κλειδωμένης μονάδας + πλήθος παλιών
+/// γραμμών άλλης μονάδας (σημείωση Q2 — εκτός γραφήματος).
+typedef ItemTrendData = ({
+  List<ItemPricePoint> points,
+  int otherUnitCount,
+});

@@ -308,7 +308,13 @@ void main() {
         (tester) async {
       final container = await pumpApp(tester);
       await goToSettings(tester);
-      // Section κλειστό by default → expand πρώτα.
+      // Section κλειστό by default → scroll (6η κάρτα 28-09-2026, lazy
+      // ListView — `ensureVisible` θέλει built node) + expand.
+      await tester.scrollUntilVisible(
+        find.text(AppStrings.titleReceiptsSection),
+        300,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.titleReceiptsSection));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.fieldDate), findsOneWidget);

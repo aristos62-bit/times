@@ -188,6 +188,11 @@ void main() {
       expect(AppMessages.trendOtherUnitsNote(3), '3 παλιές σε άλλη μονάδα (εκτός)');
     });
 
+    // ─── Statistics export (§2.3 · 28-09-2026) ───────────────────────────────
+    test('statsExported = «Η εξαγωγή ολοκληρώθηκε» (§2.3)', () {
+      expect(AppMessages.statsExported, 'Η εξαγωγή ολοκληρώθηκε');
+    });
+
     // ─── Καθολικός έλεγχος ποιότητας (ίδιο pattern με app_strings_test) ─────
     test('κανένα const string μη-κενό, χωρίς whitespace στα άκρα, χωρίς \\n', () {
       for (final text in _allConstStrings) {

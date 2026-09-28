@@ -61,6 +61,12 @@ void main() {
       expect(e.loggingTag, LogTag.backup);
     });
 
+    test('StatsExportException → statsExportFailed + LogTag.stats (§2.3)', () {
+      const e = StatsExportException();
+      expect(e.userMessage, AppErrors.statsExportFailed);
+      expect(e.loggingTag, LogTag.stats);
+    });
+
     // ─── SPoT quality ─────────────────────────────────────────────────────────
     test('κανένα userMessage μη-κενό ή με whitespace στα άκρα', () {
       for (final e in _allExceptions) {
@@ -108,4 +114,5 @@ const List<AppException> _allExceptions = [
   BackupCreationException(),
   InvalidBackupFileException(),
   RestoreBackupException(),
+  StatsExportException(),
 ];

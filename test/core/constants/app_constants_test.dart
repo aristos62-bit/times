@@ -244,6 +244,19 @@ void main() {
       expect(AppConstants.trendMaxPoints, greaterThan(0));
     });
 
+    // ─── Statistics (§2.3 · 28-09-2026) ─────────────────────────────────────
+    test('statsFileNamePattern — template ονομασίας (§2.3)', () {
+      expect(
+        AppConstants.statsFileNamePattern,
+        'times_stats_yyyyMMdd_HHmmss',
+      );
+    });
+
+    test('statsTableMaxRows = 200 (safety cap καρτέλας, §2.3)', () {
+      expect(AppConstants.statsTableMaxRows, 200);
+      expect(AppConstants.statsTableMaxRows, greaterThan(0));
+    });
+
     test('pieFallbackMaxWidth = 300 (fallback πίνακα, §1.4)', () {
       expect(AppConstants.pieFallbackMaxWidth, 300.0);
     });
@@ -306,4 +319,5 @@ const List<String> _allConstStrings = [
   AppConstants.themeModeKey,
   AppConstants.homeChartConfigKey,
   AppConstants.trendSelectedItemKey,
+  AppConstants.statsFileNamePattern,
 ];

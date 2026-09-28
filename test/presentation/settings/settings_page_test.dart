@@ -115,12 +115,19 @@ void main() {
     testWidgets('sections κλειστά by default',
         (tester) async {
       await pumpAt(tester, const Size(800, 600));
+      expect(find.text(AppStrings.titleStatisticsSection), findsOneWidget);
       expect(find.text(AppStrings.titleItemsSection), findsOneWidget);
       expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
       expect(find.text(AppStrings.titleSuppliersSection), findsOneWidget);
       expect(find.text(AppStrings.titleReceiptsSection), findsOneWidget);
+      // 6η κάρτα (Στατιστικά 28-09-2026): το «Αντίγραφα» βγήκε εκτός
+      // viewport 600px (lazy ListView) — scroll πριν το assert.
+      await tester.scrollUntilVisible(
+        find.text(AppStrings.titleBackupSection),
+        300,
+      );
       expect(find.text(AppStrings.titleBackupSection), findsOneWidget);
-      expect(find.byType(ExpansionTile), findsNWidgets(5));
+      expect(find.byType(ExpansionTile), findsNWidgets(6));
       // Περιεχόμενο κρυμμένο μέχρι tap (collapsible 24-09-2026).
       expect(find.text(AppStrings.itemsEmpty), findsNothing);
       expect(find.text(AppStrings.categoriesEmpty), findsNothing);
@@ -162,6 +169,11 @@ void main() {
     testWidgets('expand «Αντίγραφα» → φαίνονται τα 2 κουμπιά (§2.3 · Βήμα 5)',
         (tester) async {
       await pumpAt(tester, const Size(800, 600));
+      // 6η κάρτα (28-09-2026): scroll πριν το tap (lazy ListView).
+      await tester.scrollUntilVisible(
+        find.text(AppStrings.titleBackupSection),
+        300,
+      );
       await tester.tap(find.text(AppStrings.titleBackupSection));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.backupExportAction), findsOneWidget);
