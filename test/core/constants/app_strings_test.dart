@@ -51,6 +51,13 @@ void main() {
       expect(AppStrings.trendAxisUnit, '€/μονάδα');
     });
 
+    test('metric strings — label + 4 μετρικές (§2.1 · 29-09-2026)', () {
+      expect(AppStrings.topItemsMetricLabel, 'Μέτρηση');
+      expect(AppStrings.topItemsMetricPieces, 'Τεμ');
+      expect(AppStrings.topItemsMetricKilos, 'Κιλ');
+      expect(AppStrings.topItemsMetricLiters, 'Λιτ');
+    });
+
     test('period labels — Η/Ε/Μ/Ε/Προσαρμοσμένο (§2.1 · Φάση 5)', () {
       expect(AppStrings.periodDay, 'Ημέρα');
       expect(AppStrings.periodWeek, 'Εβδομάδα');
@@ -279,6 +286,10 @@ const List<String> _allStrings = [
   AppStrings.chartSubCategoryTitle,
   AppStrings.chartItemGroupTitle,
   AppStrings.chartTopItemsTitle,
+  AppStrings.topItemsMetricLabel,
+  AppStrings.topItemsMetricPieces,
+  AppStrings.topItemsMetricKilos,
+  AppStrings.topItemsMetricLiters,
   AppStrings.chartItemTrendTitle,
   AppStrings.trendItemSearchHint,
   AppStrings.trendNoItemSelected,

@@ -239,6 +239,10 @@ void main() {
       expect(AppConstants.trendSelectedItemKey, 'home_trend_item_id');
     });
 
+    test('topItemsMetricKey = «top_items_metric» (§2.1 · 29-09-2026)', () {
+      expect(AppConstants.topItemsMetricKey, 'top_items_metric');
+    });
+
     test('trendMaxPoints = 200 (safety cap πορείας, §2.1 Q4)', () {
       expect(AppConstants.trendMaxPoints, 200);
       expect(AppConstants.trendMaxPoints, greaterThan(0));
@@ -319,5 +323,6 @@ const List<String> _allConstStrings = [
   AppConstants.themeModeKey,
   AppConstants.homeChartConfigKey,
   AppConstants.trendSelectedItemKey,
+  AppConstants.topItemsMetricKey,
   AppConstants.statsFileNamePattern,
 ];

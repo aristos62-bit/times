@@ -19,6 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_enums.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/models/chart_totals.dart';
 import '../../presentation/home/state/home_chart_config.dart';
 import 'settings_repository.dart';
 
@@ -125,6 +126,21 @@ final class SettingsRepositoryImpl implements SettingsRepository {
     } else {
       await _prefs.setInt(AppConstants.trendSelectedItemKey, id);
     }
+  }
+
+  /// Διαβάζει τη μετρική Top-10 ΣΥΓΧΡΟΝΩΣ (§2.1 · 29-09-2026): κενό/άγνωστο
+  /// → `TopItemsMetric.euros` (default Q3, pattern `_periodFromString`).
+  @override
+  TopItemsMetric readTopItemsMetric() =>
+      TopItemsMetric.values.asNameMap()[_prefs.getString(
+        AppConstants.topItemsMetricKey,
+      )] ??
+      TopItemsMetric.euros;
+
+  /// Αποθηκεύει τη μετρική Top-10 (τιμή `.name`, pattern theme).
+  @override
+  Future<void> saveTopItemsMetric(TopItemsMetric metric) async {
+    await _prefs.setString(AppConstants.topItemsMetricKey, metric.name);
   }
 
   /// SPoT mapping περιόδου (§2.1): γράφουμε `period.name`, διαβάζουμε από

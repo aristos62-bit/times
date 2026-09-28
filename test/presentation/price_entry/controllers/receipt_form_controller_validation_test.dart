@@ -440,4 +440,11 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
     required DateTime to,
   }) =>
       throw UnimplementedError();
+  @override
+  Stream<List<ItemQtyTotal>> watchTopItemsByUnit({
+    required DateTime from,
+    required DateTime to,
+    required int unitId,
+  }) =>
+      throw UnimplementedError();
 }

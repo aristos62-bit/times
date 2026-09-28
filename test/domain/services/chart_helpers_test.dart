@@ -174,4 +174,70 @@ void main() {
       expect(sum, totals.reduce((a, b) => a + b));
     });
   });
+
+  group('toQtySlices (§2.1 · 29-09-2026 — mirror για doubles)', () {
+    List<({String name, double qty})> rows(List<double> qtys) => [
+          for (var i = 0; i < qtys.length; i++)
+            (name: 'N$i', qty: qtys[i]),
+        ];
+
+    test('κενή λίστα → [] · limit <= 0 → []', () {
+      expect(
+        toQtySlices(
+          rows([]),
+          labelOf: (r) => r.name,
+          qtyOf: (r) => r.qty,
+          limit: 10,
+          othersLabel: 'Λοιπά',
+        ),
+        isEmpty,
+      );
+      expect(
+        toQtySlices(
+          rows([1.5]),
+          labelOf: (r) => r.name,
+          qtyOf: (r) => r.qty,
+          limit: 0,
+          othersLabel: 'Λοιπά',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('λιγότερες από limit → όλες, χωρίς «Λοιπά»', () {
+      final slices = toQtySlices(
+        rows([2.5, 0.456]),
+        labelOf: (r) => r.name,
+        qtyOf: (r) => r.qty,
+        limit: 10,
+        othersLabel: 'Λοιπά',
+      );
+      expect([for (final s in slices) s.qty], [2.5, 0.456]);
+    });
+
+    test('περισσότερες → top-N + «Λοιπά» με ΑΚΡΙΒΕΣ υπόλοιπο', () {
+      final slices = toQtySlices(
+        rows([5, 4, 3, 2, 1]),
+        labelOf: (r) => r.name,
+        qtyOf: (r) => r.qty,
+        limit: 2,
+        othersLabel: 'Λοιπά',
+      );
+      expect(slices.map((s) => s.label), ['N0', 'N1', 'Λοιπά']);
+      expect(slices.last.qty, 3 + 2 + 1);
+    });
+
+    test('άθροισμα φετών = άθροισμα γραμμών (τίποτα δεν χάνεται)', () {
+      const qtys = [5.5, 4.25, 3.125, 2.0, 1.0, 0.5];
+      final slices = toQtySlices(
+        rows(qtys),
+        labelOf: (r) => r.name,
+        qtyOf: (r) => r.qty,
+        limit: 3,
+        othersLabel: 'Λοιπά',
+      );
+      final sum = slices.fold<double>(0, (acc, s) => acc + s.qty);
+      expect(sum, qtys.reduce((a, b) => a + b));
+    });
+  });
 }

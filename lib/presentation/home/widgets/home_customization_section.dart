@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../data/providers/settings_providers.dart';
 import '../controllers/home_chart_config_controller.dart';
 import '../home_page.dart';
 import '../state/home_chart_config.dart';
@@ -76,6 +77,12 @@ class _ChartRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(homeChartConfigProvider.notifier);
+    // Υπότιτλος: περίοδος + (μόνο Top-10) μετρική (29-09-2026).
+    String subtitle = ChartPeriodSelector.labelOf(entry.period);
+    if (id == ChartId.topItems) {
+      final metric = ref.watch(topItemsMetricProvider);
+      subtitle = '$subtitle · ${topItemsMetricLabel(metric)}';
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -84,7 +91,7 @@ class _ChartRow extends ConsumerWidget {
           dense: true,
           contentPadding: EdgeInsets.zero,
           title: Text(HomePage.titleOf(id)),
-          subtitle: Text(ChartPeriodSelector.labelOf(entry.period)),
+          subtitle: Text(subtitle),
           value: entry.visible,
           onChanged: (value) => notifier.setVisible(id, value),
         ),

@@ -126,5 +126,13 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets('γραμμή Top-10: υπότιτλος περίοδος · μετρική (29-09-2026)',
+        (tester) async {
+      await pumpExpanded(tester);
+      // Default: Μήνας + €.
+      expect(find.text('Μήνας · €'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
 }

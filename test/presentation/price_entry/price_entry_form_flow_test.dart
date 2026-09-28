@@ -442,6 +442,13 @@ class _BlockingReceiptRepo implements ReceiptRepository {
     required DateTime to,
   }) =>
       inner.watchTopItems(from: from, to: to);
+  @override
+  Stream<List<ItemQtyTotal>> watchTopItemsByUnit({
+    required DateTime from,
+    required DateTime to,
+    required int unitId,
+  }) =>
+      inner.watchTopItemsByUnit(from: from, to: to, unitId: unitId);
 
   @override
   Future<int> insertReceiptWithLines({

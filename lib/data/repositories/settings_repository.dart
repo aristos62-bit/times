@@ -12,6 +12,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../data/models/chart_totals.dart';
 import '../../presentation/home/state/home_chart_config.dart';
 
 /// Abstract interface — υλοποιείται πάνω σε SharedPreferences.
@@ -30,6 +31,13 @@ abstract interface class SettingsRepository {
   /// Αποθηκεύει τη ρύθμιση γραφημάτων στον SPoT key
   /// `AppConstants.homeChartConfigKey` (JSON — mapping ΜΟΝΟ στο impl).
   Future<void> saveHomeChartConfig(HomeChartConfig config);
+
+  /// Διαβάζει τη μετρική Top-10 ΣΥΓΧΡΟΝΩΣ (§2.1 · 29-09-2026 — default
+  /// `euros`, pattern `readThemeMode`).
+  TopItemsMetric readTopItemsMetric();
+
+  /// Αποθηκεύει τη μετρική Top-10 (τιμή `.name`, pattern theme).
+  Future<void> saveTopItemsMetric(TopItemsMetric metric);
 
   /// Διαβάζει το επιλεγμένο είδος πορείας ΣΥΓΧΡΟΝΩΣ (itemId ή null ·
   /// §2.1 · 28-09-2026, Q5 — pattern `readThemeMode`).

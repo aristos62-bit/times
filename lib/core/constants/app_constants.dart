@@ -177,6 +177,10 @@ abstract final class AppConstants {
   // pattern `themeModeKey` — persist επιλογής, §2.1 Q5).
   static const String trendSelectedItemKey = 'home_trend_item_id';
 
+  // ─── Top-10 metric (§2.1 · 29-09-2026) ───────────────────────────────────
+  // Key μετρικής κάρτας Top-10 (τιμή `.name` του enum, pattern themeModeKey).
+  static const String topItemsMetricKey = 'top_items_metric';
+
   // Safety cap σημείων γραμμής πορείας — πάνω από αυτό κρατιούνται τα
   // νεότερα (τεκμηριωμένο όριο προσωπικής χρήσης, §2.1 Q4).
   static const int trendMaxPoints = 200;

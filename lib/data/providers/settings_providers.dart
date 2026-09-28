@@ -22,9 +22,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/constants/app_strings.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/theme/app_theme.dart';
 import '../models/category_tree_node.dart';
+import '../models/chart_totals.dart';
 import '../repositories/settings_repository.dart';
 import '../repositories/settings_repository_impl.dart';
 import '../../domain/services/backup_service.dart';
@@ -334,6 +336,73 @@ class SelectedTrendItem extends Notifier<int?> {
       AppLogger.error(
         LogTag.ui,
         'Αποθήκευση είδους πορείας απέτυχε',
+        e,
+        s,
+      );
+    }
+  }
+}
+
+// ─── Μετρική Top-10 (§2.1 · 29-09-2026, Q2) ─────────────────────────────────
+
+/// Μετρική κάρτας Top-10 — SPoT (`AppStrings`, §1.1).
+String topItemsMetricLabel(TopItemsMetric metric) => switch (metric) {
+      TopItemsMetric.euros => AppStrings.currencySymbol,
+      TopItemsMetric.pieces => AppStrings.topItemsMetricPieces,
+      TopItemsMetric.kilos => AppStrings.topItemsMetricKilos,
+      TopItemsMetric.liters => AppStrings.topItemsMetricLiters,
+    };
+
+/// Συντομογραφία μονάδας ανά μετρική (lookup στο `unitsStreamProvider` —
+/// stable seeds, §3 · miss → null = empty, όχι crash).
+String? topItemsMetricAbbreviation(TopItemsMetric metric) => switch (metric) {
+      TopItemsMetric.euros => null,
+      TopItemsMetric.pieces => 'τεμ',
+      TopItemsMetric.kilos => 'κιλ',
+      TopItemsMetric.liters => 'λτ',
+    };
+
+/// Επιλεγμένη μετρική Top-10. Plain `Notifier` (pattern `SelectedTrendItem`):
+/// σύγχρονο state + persist `topItemsMetricKey` (sync read, async save).
+/// NON-autoDispose (σύμβαση DI δέντρου).
+final topItemsMetricProvider = NotifierProvider<TopItemsMetricController, TopItemsMetric>(
+  TopItemsMetricController.new,
+);
+
+/// Controller μετρικής Top-10 — βλ. `topItemsMetricProvider`.
+class TopItemsMetricController extends Notifier<TopItemsMetric> {
+  /// Σύγχρονο read (pattern theme): memory-read · σφάλμα → euros (default).
+  @override
+  TopItemsMetric build() {
+    try {
+      return ref.read(settingsRepositoryProvider).readTopItemsMetric();
+    } catch (e, s) {
+      AppLogger.error(
+        LogTag.ui,
+        'Ανάγνωση μετρικής Top-10 απέτυχε — χρήση default',
+        e,
+        s,
+      );
+      return TopItemsMetric.euros;
+    }
+  }
+
+  /// Ορίζει τη μετρική. Equality gate: ίδια → no-op.
+  void setMetric(TopItemsMetric metric) {
+    if (state == metric) return;
+    state = metric;
+    AppLogger.info(LogTag.stats, 'Μετρική Top-10: ${metric.name}');
+    unawaited(_save(metric));
+  }
+
+  Future<void> _save(TopItemsMetric metric) async {
+    if (!ref.mounted) return;
+    try {
+      await ref.read(settingsRepositoryProvider).saveTopItemsMetric(metric);
+    } catch (e, s) {
+      AppLogger.error(
+        LogTag.ui,
+        'Αποθήκευση μετρικής Top-10 απέτυχε',
         e,
         s,
       );

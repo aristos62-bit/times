@@ -25,6 +25,7 @@ import 'state/home_chart_config.dart';
 import 'widgets/home_chart_card.dart';
 import 'widgets/home_customization_section.dart';
 import 'widgets/item_trend_card.dart';
+import 'widgets/top_items_card.dart';
 
 /// Σελίδα στατιστικών (§2.1) — 5 πίτες + Προσαρμογή Οθόνης.
 class HomePage extends ConsumerWidget {
@@ -150,11 +151,20 @@ class _ChartCard extends ConsumerWidget {
       }
     }
 
-    // Πορεία τιμής (28-09-2026): δική της κάρτα (γραμμή + επιλογή είδους) —
-    // οι 5 πίτες μοιράζονται την `HomeChartCard`.
+    // Πορεία τιμής (28-09-2026): δική της κάρτα (γραμμή + επιλογή είδους).
     if (id == ChartId.itemTrend) {
       return ItemTrendCard(
         range: (from: range.from, to: range.to),
+        period: entry.period,
+        customSubtitle: customSubtitle,
+        onPeriodChanged: handlePeriod,
+      );
+    }
+    // Top-10 (29-09-2026): δική της κάρτα (μετρική €/μονάδες) — οι 4 πίτες
+    // μοιράζονται την `HomeChartCard`.
+    if (id == ChartId.topItems) {
+      return TopItemsCard(
+        query: (from: range.from, to: range.to),
         period: entry.period,
         customSubtitle: customSubtitle,
         onPeriodChanged: handlePeriod,
@@ -166,7 +176,7 @@ class _ChartCard extends ConsumerWidget {
       ChartId.category => categoryTotalsProvider(query),
       ChartId.subCategory => subCategoryTotalsProvider(query),
       ChartId.itemGroup => itemGroupTotalsProvider(query),
-      ChartId.topItems => topItemsTotalsProvider(query),
+      ChartId.topItems => throw StateError('unreachable'),
       ChartId.itemTrend => throw StateError('unreachable'),
     };
     return HomeChartCard(

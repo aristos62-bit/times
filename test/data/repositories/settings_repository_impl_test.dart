@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/constants/app_enums.dart';
+import 'package:times/data/models/chart_totals.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/repositories/settings_repository.dart';
 import 'package:times/data/repositories/settings_repository_impl.dart';
@@ -234,6 +235,27 @@ void main() {
       await repo.saveTrendItemId(null);
       expect(repo.readTrendItemId(), isNull);
       expect(prefs.containsKey(AppConstants.trendSelectedItemKey), isFalse);
+    });
+
+    // ─── readTopItemsMetric/saveTopItemsMetric (§2.1 · 29-09-2026) ───────────
+    test('χωρίς τιμή → euros (default Q3)', () {
+      expect(newRepo().readTopItemsMetric(), TopItemsMetric.euros);
+    });
+
+    test('άγνωστη τιμή → euros', () async {
+      await prefs.setString(AppConstants.topItemsMetricKey, 'λίτρα');
+      expect(newRepo().readTopItemsMetric(), TopItemsMetric.euros);
+    });
+
+    test('round-trip: metric αποθηκεύεται και διαβάζεται', () async {
+      final repo = newRepo();
+      await repo.saveTopItemsMetric(TopItemsMetric.kilos);
+      expect(repo.readTopItemsMetric(), TopItemsMetric.kilos);
+    });
+
+    test('γράφει στον SPoT key AppConstants.topItemsMetricKey', () async {
+      await newRepo().saveTopItemsMetric(TopItemsMetric.pieces);
+      expect(prefs.getString(AppConstants.topItemsMetricKey), 'pieces');
     });
   });
 }

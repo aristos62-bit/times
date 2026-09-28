@@ -64,6 +64,12 @@ abstract final class AppStrings {
       'Επιλέξτε είδος για προβολή πορείας';
   /// Μονάδα άξονα Υ πορείας (καθαρή €/μονάδα, Δ-stat §3).
   static const String trendAxisUnit = '€/μονάδα';
+  /// Label dropdown μετρικής κάρτας Top-10 (§2.1 · 29-09-2026, a11y §1.6).
+  static const String topItemsMetricLabel = 'Μέτρηση';
+  /// Επιλογές μετρικής Top-10 (§2.1 · 29-09-2026 — σταθερές 4, Q1).
+  static const String topItemsMetricPieces = 'Τεμ';
+  static const String topItemsMetricKilos = 'Κιλ';
+  static const String topItemsMetricLiters = 'Λιτ';
 
   // ─── Price entry (§2.2) ───────────────────────────────────────────────────
   /// Τίτλος AppBar στη σελίδα εισαγωγής τιμών.

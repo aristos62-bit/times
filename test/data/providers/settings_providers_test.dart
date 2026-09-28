@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/theme/app_theme.dart';
+import 'package:times/data/models/chart_totals.dart';
 import 'package:times/data/providers/settings_providers.dart';
 import 'package:times/data/repositories/settings_repository.dart';
 import 'package:times/presentation/home/state/home_chart_config.dart';
@@ -145,5 +146,13 @@ class FailingRepository implements SettingsRepository {
 
   @override
   Future<void> saveTrendItemId(int? id) =>
+      throw UnimplementedError('save fail');
+
+  @override
+  TopItemsMetric readTopItemsMetric() =>
+      throw UnimplementedError('read fail');
+
+  @override
+  Future<void> saveTopItemsMetric(TopItemsMetric metric) =>
       throw UnimplementedError('save fail');
 }

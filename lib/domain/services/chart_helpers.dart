@@ -87,3 +87,31 @@ List<ChartSlice> toChartSlices<T>(
     (label: othersLabel, totalCents: rest),
   ];
 }
+
+/// Μετατρέπει ordered ποσότητες σε φέτες: οι πρώτες [limit] + συνθετικό
+/// «Λοιπά» με το ακριβές υπόλοιπο (mirror `toChartSlices` για doubles —
+/// ξεχωριστή συνάρτηση 29-09-2026 αντί γενίκευσης: το `ChartSlice.totalCents`
+/// είναι `int`-bound και η γενίκευση θα έσπαγε typedef + πίτα + fallback).
+List<ChartQtySlice> toQtySlices<T>(
+  List<T> rows, {
+  required String Function(T row) labelOf,
+  required double Function(T row) qtyOf,
+  required int limit,
+  required String othersLabel,
+}) {
+  if (rows.isEmpty || limit <= 0) return const [];
+  if (rows.length <= limit) {
+    return [
+      for (final row in rows) (label: labelOf(row), qty: qtyOf(row)),
+    ];
+  }
+  var rest = 0.0;
+  for (final row in rows.skip(limit)) {
+    rest += qtyOf(row);
+  }
+  return [
+    for (final row in rows.take(limit))
+      (label: labelOf(row), qty: qtyOf(row)),
+    (label: othersLabel, qty: rest),
+  ];
+}

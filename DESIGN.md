@@ -134,7 +134,7 @@ presentation/<screen>/
 από τον χρήστη (τελευταία γραμμή).
 
 **Γραφήματα (27-09-2026 — όλα pie, σύνολα €, καθαρά §3)**
-1. Ανά προμηθευτή · 2. Ανά κατηγορία · 3. Ανά υποκατηγορία · 4. Ανά τμήμα · 5. Top-10 είδη (κατά σύνολο €).
+1. Ανά προμηθευτή · 2. Ανά κατηγορία · 3. Ανά υποκατηγορία · 4. Ανά τμήμα · 5. Top-10 είδη (κατά σύνολο € · 29-09-2026: +dropdown μετρικής €/Τεμ/Κιλ/Λτ, persisted — € αμετάβλητο, ποσότητες σε `QtyPieChart` με reuse painter).
 6. Πορεία τιμής είδους (28-09-2026 — γραμμή, καθαρή €/μονάδα §3, όχι πίτα):
 επιλογή είδους (search, χωρίς «+») + περίοδος κάρτας· 1 point = 1 γραμμή
 (καμία συγχώνευση §2.2:291)· φίλτρο κλειδωμένης μονάδας (28-09-2026 —
@@ -143,7 +143,8 @@ presentation/<screen>/
 - 3D = εφέ βάθους (tilt + πάχος φέτας, custom painter): το `fl_chart` ΔΕΝ
   έχει 3D (evidence pub cache 25-09 — 0 results για depth/tilt) → custom
   `Pie3dPainter`, 0 νέα packages. Labels ΠΑΝΤΑ δεξιά της πίτας (custom
-  legend-στήλη, όχι overlay — αποφυγή κοψίματος §1.4).
+  legend-στήλη, όχι overlay — αποφυγή κοψίματος §1.4). Ο painter δέχεται
+  fractions — αγνωστικός €/ποσότητας (29-09-2026: reuse σε `QtyPieChart`).
 - Άθροιση στο SQL (`SUM(lineTotalCents) GROUP BY`, top-10 με
   `ORDER BY SUM DESC LIMIT 10`) — ποτέ φόρτωμα γραμμών σε Dart (precedent
   Βήματος 7)· streams (όχι futures) → auto-refresh μετά από save.
@@ -175,6 +176,9 @@ presentation/home/
 └── widgets/
     ├── pie_3d_chart.dart              -- generic πίτα 3D-εφέ + legend δεξιά + auto-size
     ├── home_chart_card.dart           -- τίτλος + period selector + AsyncValue states
+    ├── chart_state_views.dart         -- shared skeleton/error (29-09-2026, εξαγωγή από home card)
+    ├── qty_pie_chart.dart             -- πίτα ποσοτήτων + legend (reuse painter, 29-09-2026)
+    ├── top_items_card.dart            -- Top-10 + metric selector (29-09-2026)
     ├── item_trend_card.dart           -- 6η κάρτα (28-09-2026): επιλογή είδους + locked banner + γραμμή + states
     ├── item_trend_chart.dart          -- custom line painter + άξονες + auto-size
     ├── item_trend_fallback_list.dart  -- βλ. §4 Φάση 5 (στενό container safety net, χωρίς σύνολο)
@@ -187,6 +191,7 @@ presentation/home/
 - `homeChartConfigProvider` (plain Notifier, persisted SharedPreferences — read στο build, save async όπως theme · equality gate).
 - `todayProvider` (plain `Notifier<DateTime>`, SPoT τρέχουσα ημέρα dayOnly — `Timer.periodic` SPoT `clockCheckSeconds` + day-gate, rebuild Κεντρικής ΜΟΝΟ σε αλλαγή ημέρας · λύνει stale `now` τα μεσάνυχτα, 27-09-2026).
 - 5 streams ( `supplierTotalsStreamProvider` / `categoryTotalsStreamProvider` / `subCategoryTotalsStreamProvider` / `itemGroupTotalsStreamProvider` / `topItemsStreamProvider`, `.family` ανά `ChartQuery{from,to,limit}`) → repo passthrough (error-mapping μόνο) → DAO aggregations (§3).
+- Μετρικές Top-10 (29-09-2026): `topItemsMetricProvider` (plain `Notifier<TopItemsMetric>`, persisted `topItemsMetricKey`) + `topItemsByUnitProvider` (`autoDispose.family` ανά `TopItemsQtyQuery{from,to,unitId}` → top-10 + «Λοιπά» in-provider) → repo passthrough → `ReceiptDao.watchTopItemsByUnit` (SUM/GROUP, §3).
 - Πορεία (28-09-2026): `selectedTrendItemProvider` (plain `Notifier<int?>`, persisted `trendSelectedItemKey`) + `itemTrendSearchProvider` (family, LIKE) + `itemTrendProvider` (`autoDispose.family` ανά `ItemTrendQuery{itemId,unitId,from,to}` → split κλειδωμένης μονάδας + cap `trendMaxPoints` in-provider) → repo passthrough → `ReceiptLineDao.watchItemHistory` (§3).
 - **Κρίσιμο**: άθροιση στο SQL · totals/τιμές καθαρά (μετά έκπτωση §3) · `formatCents` SPoT προβολή.
 

@@ -111,6 +111,19 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
           );
 
   @override
+  Stream<List<ItemQtyTotal>> watchTopItemsByUnit({
+    required DateTime from,
+    required DateTime to,
+    required int unitId,
+  }) =>
+      _receiptDao
+          .watchTopItemsByUnit(from: from, to: to, unitId: unitId)
+          .handleError(
+            (Object e, StackTrace s) =>
+                Error.throwWithStackTrace(const DataLoadException(), s),
+          );
+
+  @override
   Future<Receipt?> getById(int id) => _guard(() => _receiptDao.getById(id));
 
   @override

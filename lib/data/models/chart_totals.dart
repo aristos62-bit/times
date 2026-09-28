@@ -83,7 +83,39 @@ typedef ChartQuery = ({DateTime from, DateTime to});
 ///
 /// Παράγεται από τον `toChartSlices` (top-N + συνθετικό «Λοιπά») — το UI
 /// δείχνει `label` + `formatCents(totalCents)` (SPoT προβολή §2.1:176).
+/// ΣΚΟΠΙΜΑ int-only (29-09-2026): γενίκευση σε `num` θα έσπαγε typedef +
+/// πίτα + fallback + tests — οι ποσότητες έχουν δικό τους `ChartQtySlice`.
 typedef ChartSlice = ({String label, int totalCents});
+
+/// Μετρική κάρτας Top-10 (§2.1 · 29-09-2026 — σταθερές 4, Q1).
+///
+/// `euros` = σύνολα € (συμπεριφορά Φάσης 5, αμετάβλητη) · οι υπόλοιπες =
+/// top ποσοτήτων ανά μονάδα (μία μονάδα ανά query — ποτέ ανάμειξη).
+enum TopItemsMetric { euros, pieces, kilos, liters }
+
+/// Μία φέτα ποσότητας: έτοιμη για προβολή (§2.1 · 29-09-2026).
+///
+/// Παράγεται από τον `toQtySlices` (top-N + συνθετικό «Λοιπά», exact
+/// υπόλοιπο — mirror `toChartSlices` για doubles).
+typedef ChartQtySlice = ({String label, double qty});
+
+/// Σύνολο είδους σε ποσότητα (§2.1 · 29-09-2026) — projection του
+/// `watchTopItemsByUnit` (SUM στρογγυλεμένο στα 3 δεκαδικά στη SQL).
+typedef ItemQtyTotal = ({
+  /// FK → Items.id.
+  int itemId,
+
+  /// Όνομα είδους (INNER JOIN — μόνο με κίνηση στην περίοδο).
+  String itemName,
+
+  /// Συνολική ποσότητα (στρογγυλεμένη §3-decimals).
+  double qty,
+});
+
+/// Παράμετρος-κλειδί του qty stream family (§2.1 · 29-09-2026).
+///
+/// Plain record — value equality για το family cache (pattern `ChartQuery`).
+typedef TopItemsQtyQuery = ({DateTime from, DateTime to, int unitId});
 
 /// Σημείο πορείας τιμής είδους (§2.1 · 28-09-2026 — 6ο γράφημα, γραμμή).
 ///

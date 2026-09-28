@@ -372,6 +372,32 @@ final itemLedgerProvider =
           : rows),
 );
 
+// ─── Top-10 μετρικές (§2.1 · 29-09-2026) ────────────────────────────────────
+
+/// Φέτες Top-10 ποσοτήτων ΜΙΑΣ μονάδας — `autoDispose.family` ανά
+/// [TopItemsQtyQuery] (εξαίρεση §2.1: αποδέσμευση DB watch).
+/// Slice top-10 + «Λοιπά» in-memory (precedent Βήματος 3, SPoT
+/// `topItemsLimit`). Σφάλματα ήδη `DataLoadException` (repo mapping).
+final topItemsByUnitProvider =
+    StreamProvider.autoDispose.family<List<ChartQtySlice>, TopItemsQtyQuery>(
+  (ref, query) => ref
+      .watch(receiptRepositoryProvider)
+      .watchTopItemsByUnit(
+        from: query.from,
+        to: query.to,
+        unitId: query.unitId,
+      )
+      .map(
+        (rows) => toQtySlices(
+          rows,
+          labelOf: (row) => row.itemName,
+          qtyOf: (row) => row.qty,
+          limit: AppConstants.topItemsLimit,
+          othersLabel: AppStrings.othersSliceLabel,
+        ),
+      ),
+);
+
 // ─── Συγκεντρωτικές αγορές (§2.3 · 29-09-2026, 2η ανάλυση) ───────────────────
 
 /// Γραμμές-αγορές περιόδου — `autoDispose.family` ανά [PeriodPurchasesQuery]

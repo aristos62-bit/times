@@ -385,6 +385,55 @@ class ReceiptDao extends BaseDao {
             ),
       );
 
+  /// Παρακολουθεί τα σύνολα ποσοτήτων ανά είδος σε ΜΙΑ μονάδα (§2.1 ·
+  /// 29-09-2026 — μετρικές Top-10).
+  ///
+  /// Ίδιο contract με [watchTopItems]: 3 joins + `WHERE unit_id = ?`
+  /// (μία μονάδα ανά query — ποτέ ανάμειξη τεμ/κιλ/λτ) · `ROUND(SUM,3)`
+  /// (REAL artifacts §3-decimals — στρογγύλεμα στη SQL, όχι σε Dart) ·
+  /// `ORDER BY qty DESC, name ASC` (ντετερμινιστικό). Πλήρης ordered λίστα
+  /// (slice top-N + «Λοιπά» στον provider, §2.1:183).
+  Stream<List<ItemQtyTotal>> watchTopItemsByUnit({
+    required DateTime from,
+    required DateTime to,
+    required int unitId,
+  }) =>
+      guardStream(
+        'Ανάγνωση ποσοτήτων ειδών',
+        () => db
+            .customSelect(
+              '''
+        SELECT i.id AS id,
+               i.name AS name,
+               COALESCE(ROUND(SUM(rl.quantity), 3), 0.0) AS qty
+        FROM items i
+        INNER JOIN receipt_lines rl ON rl.item_id = i.id
+        INNER JOIN receipts r       ON r.id = rl.receipt_id
+        WHERE r.date >= ? AND r.date < ? AND rl.unit_id = ?
+        GROUP BY i.id, i.name
+        ORDER BY qty DESC, i.name ASC
+      ''',
+              variables: [
+                Variable.withDateTime(from),
+                Variable.withDateTime(to),
+                Variable.withInt(unitId),
+              ],
+              readsFrom: {db.items, db.receiptLines, db.receipts},
+            )
+            .watch()
+            .map(
+              (rows) => rows
+                  .map(
+                    (row) => (
+                      itemId: row.read<int>('id'),
+                      itemName: row.read<String>('name'),
+                      qty: row.read<double>('qty'),
+                    ),
+                  )
+                  .toList(),
+            ),
+      );
+
   /// Μετράει τις αποδείξεις ενός προμηθευτή — Ρυθμίσεις, CRUD προμηθευτών
   /// (24-09-2026, §2.3).
   ///

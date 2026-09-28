@@ -21,6 +21,7 @@ import 'package:times/data/providers/stream_providers.dart';
 import 'package:times/presentation/home/home_page.dart';
 import 'package:times/presentation/home/widgets/home_chart_card.dart';
 import 'package:times/presentation/home/widgets/pie_3d_chart.dart';
+import 'package:times/presentation/home/widgets/top_items_card.dart';
 
 void main() {
   late SharedPreferences prefs;
@@ -206,10 +207,12 @@ const Size tallSize = Size(800, 2500);
 
     testWidgets('dark: αποδίδεται χωρίς σφάλματα', (tester) async {
       await pumpPage(tester, wrap(theme: AppTheme.dark), tallSize);
+      // 4 πίτες + TopItemsCard + πορεία (29-09-2026: η Top-10 έχει δική της).
       expect(
         find.byType(HomeChartCard, skipOffstage: false),
-        findsNWidgets(5),
+        findsNWidgets(4),
       );
+      expect(find.byType(TopItemsCard, skipOffstage: false), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

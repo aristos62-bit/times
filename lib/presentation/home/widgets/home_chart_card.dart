@@ -13,9 +13,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_enums.dart';
-import '../../../core/constants/app_errors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../data/models/chart_totals.dart';
+import 'chart_state_views.dart';
 import 'pie_3d_chart.dart';
 
 /// Κάρτα ενός γραφήματος (§2.1).
@@ -76,7 +76,7 @@ class HomeChartCard extends ConsumerWidget {
             ),
             const SizedBox(height: AppConstants.spacingS),
             if (showError)
-              _ChartError(onRetry: () => ref.invalidate(slicesProvider))
+              ChartErrorView(onRetry: () => ref.invalidate(slicesProvider))
             else
               async.when(
                 data: (slices) => slices.isEmpty
@@ -85,36 +85,13 @@ class HomeChartCard extends ConsumerWidget {
                         style: theme.textTheme.bodyMedium,
                       )
                     : Pie3dChart(slices: slices, semanticsLabel: title),
-                loading: () => const _ChartSkeleton(),
-                error: (_, _) =>
-                    _ChartError(onRetry: () => ref.invalidate(slicesProvider)),
+                loading: () => const ChartSkeletonView(),
+                error: (_, _) => ChartErrorView(
+                    onRetry: () => ref.invalidate(slicesProvider)),
               ),
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Σφάλμα κάρτας: `loadDataFailed` + «Επανάληψη» (SPoT, §2.1).
-class _ChartError extends StatelessWidget {
-  const _ChartError({required this.onRetry});
-
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(AppErrors.loadDataFailed, style: theme.textTheme.bodyMedium),
-        TextButton(
-          onPressed: onRetry,
-          child: const Text(AppStrings.retryButton),
-        ),
-      ],
     );
   }
 }
@@ -175,41 +152,6 @@ class ChartPeriodSelector extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
-      ],
-    );
-  }
-}
-
-/// Skeleton φόρτωσης κάρτας (§2.1:179 — όχι κενή κάρτα, όχι spinner).
-///
-/// Private (μόνο οι κάρτες το χρησιμοποιούν): 3 bars από
-/// `surfaceContainerHighest` (dark-safe, §1.5) + SPoT μεγέθη (§1.1).
-class _ChartSkeleton extends StatelessWidget {
-  const _ChartSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    final barColor = Theme.of(context).colorScheme.surfaceContainerHighest;
-    Widget bar(double widthFactor) => FractionallySizedBox(
-          widthFactor: widthFactor,
-          alignment: Alignment.centerLeft,
-          child: Container(
-            height: AppConstants.spacingL,
-            decoration: BoxDecoration(
-              color: barColor,
-              borderRadius: BorderRadius.circular(AppConstants.radiusS),
-            ),
-          ),
-        );
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        bar(1.0),
-        const SizedBox(height: AppConstants.spacingS),
-        bar(0.7),
-        const SizedBox(height: AppConstants.spacingS),
-        bar(0.85),
       ],
     );
   }
