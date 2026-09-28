@@ -137,6 +137,17 @@ class ChartPeriodSelector extends StatelessWidget {
           // Μικρότερη γραμματοσειρά επιλογών (29-09-2026 — μόνο font,
           // διαστάσεις/borders άθικτα).
           textStyle: Theme.of(context).textTheme.bodyMedium,
+          // Στενότερο κουτί (29-09-2026): πυκνό + κάθετο padding 6 +
+          // βέλος 30 (οριζόντιο padding = SPoT spacingL, όπως default).
+          trailingIcon:
+              const Icon(Icons.arrow_drop_down, size: 30),
+          inputDecorationTheme: const InputDecorationTheme(
+            isDense: true,
+            contentPadding: EdgeInsets.symmetric(
+              vertical: 6,
+              horizontal: AppConstants.spacingL,
+            ),
+          ),
           onSelected: (value) {
             if (value != null) onSelected(value);
           },

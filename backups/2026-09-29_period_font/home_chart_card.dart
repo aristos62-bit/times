@@ -134,9 +134,6 @@ class ChartPeriodSelector extends StatelessWidget {
       children: [
         DropdownMenu<PeriodType>(
           initialSelection: selected,
-          // Μικρότερη γραμματοσειρά επιλογών (29-09-2026 — μόνο font,
-          // διαστάσεις/borders άθικτα).
-          textStyle: Theme.of(context).textTheme.bodyMedium,
           onSelected: (value) {
             if (value != null) onSelected(value);
           },

@@ -35,8 +35,10 @@
   qty chart 6 · card 8 · settings repo 4 · SPoT +5 · customization +1.
 - Ενημερωμένα: home_page (dark) · customization (subtitle) · controller
   (last) · 6 fakes · SPoT registries · card refactor (υπάρχοντα περνούν).
-- Follow-up 29-09 (αίτημα χρήστη): metric ΔΙΠΛΑ στο period (Row+Expanded —
-  ellipsis σε 320px, όχι overflow).
+- Follow-up 29-09 (αιτήματα χρήστη): metric ΔΙΠΛΑ στο period (Row+Expanded) ·
+  μικρότερη γραμματοσειρά period selector (bodyMedium, όλα τα γραφήματα —
+  απόπειρες στενέματος padding/borders απορρίφθηκαν: το Material DropdownMenu
+  δεν το επιτρέπει χωρίς σπάσιμο).
 - Follow-up 29-09 (αίτημα χρήστη): στενότερο κουτί περιόδου (dense +
   SPoT padding, όλα τα γραφήματα).
 - Full suite **1429/1429** ✓ · `flutter analyze` No issues ✓.
