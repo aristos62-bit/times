@@ -18,16 +18,11 @@ import '../../../data/models/chart_totals.dart';
 import '../../shared/currency_text_field.dart';
 import 'item_trend_fallback_list.dart';
 
-/// Κατεύθυνση μεταβολής τιμής (χρώμα ετικέτας — SPoT `ColorScheme` §1.5).
-enum TrendMove { up, down, flat }
-
 /// Ζωγραφίζει grid + γραμμή + dots + ετικέτες (dumb — όλα έτοιμα ορίσματα).
 ///
 /// `values` καθαρές μοναδιαίες (double) · `lo/hi` padded όρια Υ (τα
 /// υπολογίζει το widget) · `yLabels` 3 (max/mid/min) · `xLabels` 3
-/// (πρώτη/μέση/τελευταία, χωρίς έτος) · `priceLabels` ανά σημείο (αριστερά
-/// του dot) · `changeLabels` % μεταβολή από το προηγούμενο (δεξιά του dot,
-/// null στο 1ο — δεν έχει προηγούμενο).
+/// (πρώτη/μέση/τελευταία).
 class ItemTrendPainter extends CustomPainter {
   ItemTrendPainter({
     required this.values,
@@ -39,8 +34,6 @@ class ItemTrendPainter extends CustomPainter {
     required this.labelStyle,
     required this.yLabels,
     required this.xLabels,
-    required this.priceLabels,
-    required this.changeLabels,
   });
 
   final List<double> values;
@@ -52,8 +45,6 @@ class ItemTrendPainter extends CustomPainter {
   final TextStyle labelStyle;
   final List<String> yLabels;
   final List<String> xLabels;
-  final List<String> priceLabels;
-  final List<({String text, Color color})?> changeLabels;
 
   /// Οριζόντια θέση σημείου [i] (n==1 → κέντρο).
   double _dx(int i, int n, double plotW) =>
@@ -65,29 +56,14 @@ class ItemTrendPainter extends CustomPainter {
       plotH - (v - lo) / (hi - lo) * plotH;
 
   /// Ζωγραφίζει μία ετικέτα με [TextPainter] στο ([x], [y]).
-  /// [rightAlign]: δεξί άκρο στο [x] (τιμές αριστερά του dot) — αλλιώς
-  /// αριστερό άκρο στο [x]. [color]: παρακάμπτει το `labelStyle` (μεταβολές).
-  void _drawLabel(
-    Canvas canvas,
-    String text,
-    double x,
-    double y, {
-    Color? color,
-    bool rightAlign = false,
-  }) {
+  void _drawLabel(Canvas canvas, String text, double x, double y) {
     final painter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: color == null ? labelStyle : labelStyle.copyWith(color: color),
-      ),
+      text: TextSpan(text: text, style: labelStyle),
       textDirection: TextDirection.ltr,
       maxLines: 1,
       ellipsis: '…',
     )..layout(maxWidth: AppConstants.trendAxisGutterLeft + 40);
-    painter.paint(
-      canvas,
-      Offset(rightAlign ? x - painter.width : x, y),
-    );
+    painter.paint(canvas, Offset(x, y));
   }
 
   @override
@@ -135,17 +111,6 @@ class ItemTrendPainter extends CustomPainter {
       );
     }
 
-    // Ετικέτες σημείων: τιμή αριστερά · % μεταβολή δεξιά (εκτός 1ου).
-    for (var i = 0; i < n; i++) {
-      final cx = _dx(i, n, plotW);
-      final cy = _dy(values[i], plotH);
-      _drawLabel(canvas, priceLabels[i], cx - 6, cy - 7, rightAlign: true);
-      final change = changeLabels[i];
-      if (change != null) {
-        _drawLabel(canvas, change.text, cx + 6, cy - 7, color: change.color);
-      }
-    }
-
     // Ετικέτες Χ (πρώτη/μέση/τελευταία).
     final mid = n ~/ 2;
     final baseline = plotH + 5;
@@ -173,9 +138,7 @@ class ItemTrendPainter extends CustomPainter {
       oldDelegate.gridColor != gridColor ||
       oldDelegate.labelStyle != labelStyle ||
       oldDelegate.yLabels != yLabels ||
-      oldDelegate.xLabels != xLabels ||
-      oldDelegate.priceLabels != priceLabels ||
-      oldDelegate.changeLabels != changeLabels;
+      oldDelegate.xLabels != xLabels;
 }
 
 /// Γραμμή πορείας + fallback (§2.1).
@@ -208,24 +171,12 @@ class ItemTrendChart extends StatelessWidget {
     return (lo: lo - pad, hi: hi + pad);
   }
 
-  /// % μεταβολή [curr] από [prev] («+5,3%»/«−2,1%»/«0,0%», 1 δεκαδικό με
-  /// κόμμα — parity προβολής §2.2). Ισότητα (και αμυντικά prev ≤ 0) → flat.
-  @visibleForTesting
-  static ({String text, TrendMove move}) changeOf(int prev, int curr) {
-    if (prev <= 0 || curr == prev) return (text: '0,0%', move: TrendMove.flat);
-    final pct = (curr - prev) / prev * 100;
-    final tenths = (pct.abs() * 10).round();
-    final text =
-        '${pct < 0 ? '-' : '+'}${tenths ~/ 10},${tenths % 10}%';
-    if (pct > 0) return (text: text, move: TrendMove.up);
-    return (text: text, move: TrendMove.down);
-  }
-
   @override
   Widget build(BuildContext context) {
     if (points.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final localizations = MaterialLocalizations.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         // Fallback πίνακα (§1.4 — ίδιο contract με την πίτα).
@@ -241,30 +192,6 @@ class ItemTrendChart extends StatelessWidget {
         final bounds = boundsOf(values);
         final mid = (bounds.lo + bounds.hi) / 2;
         final midIndex = points.length ~/ 2;
-        // Ετικέτες σημείων: τιμή αριστερά · % μεταβολή δεξιά (up=error,
-        // down=tertiary, flat=primary — SPoT ColorScheme, §1.5).
-        String dayMonth(DateTime date) => '${date.day}/${date.month}';
-        final changes = <({String text, Color color})?>[
-          null,
-          for (var i = 1; i < points.length; i++)
-            switch (changeOf(
-              points[i - 1].netPriceCents,
-              points[i].netPriceCents,
-            )) {
-              (text: final text, move: TrendMove.up) => (
-                  text: text,
-                  color: scheme.error,
-                ),
-              (text: final text, move: TrendMove.down) => (
-                  text: text,
-                  color: scheme.tertiary,
-                ),
-              (text: final text, move: _) => (
-                  text: text,
-                  color: scheme.primary,
-                ),
-            },
-        ];
         return Semantics(
           // container + explicitChildNodes (precedent πίτας, §1.6).
           container: true,
@@ -288,15 +215,10 @@ class ItemTrendChart extends StatelessWidget {
                   CurrencyTextField.formatCents(bounds.lo.round()),
                 ],
                 xLabels: [
-                  dayMonth(points.first.date),
-                  dayMonth(points[midIndex].date),
-                  dayMonth(points.last.date),
+                  localizations.formatShortDate(points.first.date),
+                  localizations.formatShortDate(points[midIndex].date),
+                  localizations.formatShortDate(points.last.date),
                 ],
-                priceLabels: [
-                  for (final p in points)
-                    CurrencyTextField.formatCents(p.netPriceCents),
-                ],
-                changeLabels: changes,
               ),
             ),
           ),

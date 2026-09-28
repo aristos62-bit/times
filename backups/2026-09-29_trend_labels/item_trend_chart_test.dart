@@ -161,37 +161,4 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
-
-  group('ItemTrendChart.changeOf (pure)', () {
-    test('ανοδική → up · καθοδική → down (κόμμα, πρόσημο)', () {
-      expect(
-        ItemTrendChart.changeOf(200, 210),
-        (text: '+5,0%', move: TrendMove.up),
-      );
-      // (1261−1296)/1296 ≈ −2,7%.
-      expect(
-        ItemTrendChart.changeOf(1296, 1261),
-        (text: '-2,7%', move: TrendMove.down),
-      );
-    });
-
-    test('ίδια → flat 0,0% (και αμυντικά prev ≤ 0)', () {
-      expect(
-        ItemTrendChart.changeOf(250, 250),
-        (text: '0,0%', move: TrendMove.flat),
-      );
-      expect(
-        ItemTrendChart.changeOf(0, 100),
-        (text: '0,0%', move: TrendMove.flat),
-      );
-    });
-
-    test('στρογγυλοποίηση 1 δεκαδικού', () {
-      // 1/1261 ≈ +0,079% → +0,1%.
-      expect(
-        ItemTrendChart.changeOf(1261, 1262),
-        (text: '+0,1%', move: TrendMove.up),
-      );
-    });
-  });
 }

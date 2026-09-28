@@ -31,13 +31,15 @@
 - Ε5 `ensureVisible` σε unbuilt node → `scrollUntilVisible` (γνωστό).
 - Ε6 menu-test χωρίς DB → canned overrides (gated-watch αντίστοιχο trend).
 
-## Tests (+29 → 1387/1387)
+## Tests (+32 → 1390/1390)
 
 - Νέα: DAO 5 · repo 3 · provider 4 · service +4 (slug/totals/excel/κενό) ·
   controller +3 · table 3 · section +6 (menu/sort/truncated/exports) ·
   SPoT +4 · exceptions +1 (registry).
-- Full suite **1387/1387** ✓ · `flutter analyze` No issues ✓.
+- Full suite **1390/1390** ✓ · `flutter analyze` No issues ✓.
 - DESIGN §2.3 (2η ανάλυση) · backups `backups/2026-09-29_stats_purchases/`
-  + `backups/2026-09-29_stats_totals_label/`.
+  + `backups/2026-09-29_stats_totals_label/` + `backups/2026-09-29_trend_labels/`.
+- Labels dots πορείας 29-09 (αίτημα χρήστη): τιμή αριστερά · % μεταβολή
+  δεξιά (κόκκινο/πράσινο/μπλε από ColorScheme) · ημερομηνίες χωρίς έτος.
 - Fix 29-09 (αίτημα χρήστη): γραμμή Σύνολο με σπάσιμο ανά μονάδα
   («Σύνολο: (Τεμ: 10 / Κιλ: 1,35)», μόνο μονάδες με κίνηση, σειρά ΒΔ).
