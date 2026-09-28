@@ -37,6 +37,8 @@
   (last) · 6 fakes · SPoT registries · card refactor (υπάρχοντα περνούν).
 - Follow-up 29-09 (αίτημα χρήστη): metric ΔΙΠΛΑ στο period (Row+Expanded —
   ellipsis σε 320px, όχι overflow).
+- Follow-up 29-09 (αίτημα χρήστη): στενότερο κουτί περιόδου (dense +
+  SPoT padding, όλα τα γραφήματα).
 - Full suite **1429/1429** ✓ · `flutter analyze` No issues ✓.
 - DESIGN §2.1 (μετρικές) · backups `backups/2026-09-29_topitems_metric/`
-  + `backups/2026-09-29_metric_side/`.
+  + `backups/2026-09-29_metric_side/` + `backups/2026-09-29_period_dense/`.
