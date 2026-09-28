@@ -247,10 +247,6 @@ abstract final class AppStrings {
   static const String statsSortLabel = 'Ταξινόμηση';
   /// Label dropdown ομαδοποίησης (§2.3 · 3η ανάλυση).
   static const String statsGroupLabel = 'Ομαδοποίηση';
-  /// Hints φίλτρου καταλόγου (§2.3 · κενό = Όλα, Q1).
-  static const String statsFilterAllCategories = 'Όλες οι κατηγορίες';
-  static const String statsFilterAllSubCategories = 'Όλες οι υποκατηγορίες';
-  static const String statsFilterAllItemGroups = 'Όλα τα τμήματα';
   /// Τίτλος 3ης ανάλυσης «Ομαδοποιημένη αναφορά» (μενού + detail §2.3).
   static const String statsGroupedTitle = 'Ομαδοποιημένη αναφορά';
   /// Περιγραφή 3ης ανάλυσης στο μενού (§2.3 · 29-09-2026).

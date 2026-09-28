@@ -239,15 +239,11 @@ typedef PeriodPurchaseRow = ({
 /// Παράμετρος-κλειδί του purchases stream family (§2.3 · 29-09-2026).
 ///
 /// Plain record — value equality για το family cache (pattern
-/// `ItemLedgerQuery`, με επιπλέον `sort`). 29-09-2026 (φίλτρο καταλόγου):
-/// +3 nullable ids (null = Όλα στο επίπεδο).
+/// `ItemLedgerQuery`, με επιπλέον `sort`).
 typedef PeriodPurchasesQuery = ({
   DateTime from,
   DateTime to,
   PurchasesSort sort,
-  int? categoryId,
-  int? subCategoryId,
-  int? itemGroupId,
 });
 
 /// Δεδομένα αγορών: γραμμές + ένδειξη cap (pattern `ItemTrendData`).

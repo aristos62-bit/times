@@ -401,7 +401,7 @@ final topItemsByUnitProvider =
 // ─── Συγκεντρωτικές αγορές (§2.3 · 29-09-2026, 2η ανάλυση) ───────────────────
 
 /// Γραμμές-αγορές περιόδου — `autoDispose.family` ανά [PeriodPurchasesQuery]
-/// (εξαίρεση §2.1: αποδέσμευση DB watch σε αλλαγή περιόδου/sort/φίλτρου/ημέρας).
+/// (εξαίρεση §2.1: αποδέσμευση DB watch σε αλλαγή περιόδου/sort/ημέρας).
 ///
 /// Cap + truncated flag in-provider (η λίστα είναι ordered — το cap κόβει
 /// από την αρχή· η κάρτα δείχνει σημείωση, pattern `otherUnitCount`).
@@ -415,9 +415,6 @@ final periodPurchasesProvider =
         from: query.from,
         to: query.to,
         sort: query.sort,
-        categoryId: query.categoryId,
-        subCategoryId: query.subCategoryId,
-        itemGroupId: query.itemGroupId,
       )
       .map((rows) {
     final capped = rows.length > AppConstants.statsTableMaxRows

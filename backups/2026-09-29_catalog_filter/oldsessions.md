@@ -83,12 +83,10 @@
 | 63 | [2η ανάλυση «Συνολικές αγορές»](oldsessions/2026-09-29_stats_purchases.md) | 29-09-2026 | Κλειστό | Γραμμές περιόδου + 4 sorts + δυναμικές στήλες μονάδων + Τιμή/Έκπτωση/Καθαρή + XLSX/PDF (Σύνολο με σπάσιμο/μονάδα · labels dots πορείας) · **1390/1390** ✓ (+32) · analyze καθαρό |
 | 64 | [Top-10 με μετρική €/Τεμ/Κιλ/Λτ](oldsessions/2026-09-29_topitems_metric.md) | 29-09-2026 | Κλειστό | Dropdown μετρικής (persist) + πίτα ποσοτήτων (reuse painter) · **1429/1429** ✓ (+39) · analyze καθαρό |
 | 65 | [3η ανάλυση «Ομαδοποιημένη αναφορά»](oldsessions/2026-09-29_grouped_report.md) | 29-09-2026 | Κλειστό | Preview dialog + grouped export (extensions, όχι νέα builders) · **1446/1446** ✓ (+56) · analyze καθαρό |
-| 66 | [Φίλτρο καταλόγου 3 επιπέδων](oldsessions/2026-09-29_catalog_filter.md) | 29-09-2026 | Κλειστό | `CatalogFilterField` shared 2η/3η + SQL WHERE (null=Όλα) · οθόνη+export · **1454/1454** ✓ (+8) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
 
-- **Φίλτρο καταλόγου 3 επιπέδων (29-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #66): τελική πρόταση (Option A + Q1–Q5) — dumb `CatalogFilterField` shared 2η/3η (κενό=Όλα, reset παιδιών, disabled+hints, τοπικό state) + 3 nullable ids → SQL WHERE (οθόνη+export) · ευρήματα Ε1–Ε4 (record literals, test-only overflow scroll/ensureVisible, enabled-null, no-dropdown-restyles) · **1454/1454** ✓ (+8, και κονσόλα χρήστη) · analyze καθαρό · DESIGN §2.3 · backup `backups/2026-09-29_catalog_filter/`.
 - **3η ανάλυση «Ομαδοποιημένη αναφορά» (29-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #65): preview dialog (grand + sections + Excel/PDF/Κλείσιμο) + grouped export (builder extensions) · Q1–Q6 ✓ · ευρήματα Ε1–Ε5 · **1446/1446** ✓ (+56) · analyze καθαρό · backup `backups/2026-09-29_grouped_report/`.
 
 - **Top-10 με μετρική (29-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #64): dropdown €/Τεμ/Κιλ/Λτ (persist, μία μονάδα/query) + `QtyPieChart` (reuse painter) + shared states · Q1–Q6 ✓ · ευρήματα Ε1–Ε6 · **1429/1429** ✓ (+39) · analyze καθαρό · backup `backups/2026-09-29_topitems_metric/`.

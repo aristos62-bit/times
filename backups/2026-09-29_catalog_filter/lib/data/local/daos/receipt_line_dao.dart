@@ -318,18 +318,13 @@ class ReceiptLineDao extends BaseDao {
   /// Custom SQL: joins αλυσίδας καταλόγου (categories ← sub ← groups ←
   /// items) + receipts + suppliers + units. `ORDER BY` ανά [sort] με
   /// tiebreak ημερομηνία/id (ντετερμινιστική — precedent totals §2.1, που
-  /// βάζουν `name ASC` δεύτερο). Προαιρετικά φίλτρα καταλόγου (29-09-2026 —
-  /// null = Όλα· οι στήλες είναι fixed strings, οι τιμές variables).
-  /// Stored τιμές §3 · ΟΛΕΣ οι μονάδες (η στήλη προβολής βγαίνει ανά
-  /// `unitId`, Q3). Πλήρης λίστα (cap provider). `readsFrom` → auto-refresh
-  /// μετά από save/update/delete.
+  /// βάζουν `name ASC` δεύτερο). Stored τιμές §3 · ΟΛΕΣ οι μονάδες (η
+  /// στήλη προβολής βγαίνει ανά `unitId`, Q3). Πλήρης λίστα (cap provider).
+  /// `readsFrom` → auto-refresh μετά από save/update/delete.
   Stream<List<PeriodPurchaseRow>> watchPeriodPurchases({
     required DateTime from,
     required DateTime to,
     required PurchasesSort sort,
-    int? categoryId,
-    int? subCategoryId,
-    int? itemGroupId,
   }) =>
       guardStream(
         'Ανάγνωση συγκεντρωτικών αγορών',
@@ -342,23 +337,6 @@ class ReceiptLineDao extends BaseDao {
             PurchasesSort.category =>
               'c.name ASC, r.date ASC, rl.id ASC',
           };
-          final filters = <String>['r.date >= ?', 'r.date < ?'];
-          final variables = <Variable>[
-            Variable.withDateTime(from),
-            Variable.withDateTime(to),
-          ];
-          if (categoryId != null) {
-            filters.add('c.id = ?');
-            variables.add(Variable.withInt(categoryId));
-          }
-          if (subCategoryId != null) {
-            filters.add('sc.id = ?');
-            variables.add(Variable.withInt(subCategoryId));
-          }
-          if (itemGroupId != null) {
-            filters.add('ig.id = ?');
-            variables.add(Variable.withInt(itemGroupId));
-          }
           return db
               .customSelect(
                 '''
@@ -380,10 +358,13 @@ class ReceiptLineDao extends BaseDao {
         INNER JOIN item_groups ig  ON ig.id = i.item_group_id
         INNER JOIN sub_categories sc ON sc.id = ig.sub_category_id
         INNER JOIN categories c    ON c.id = sc.category_id
-        WHERE ${filters.join(' AND ')}
+        WHERE r.date >= ? AND r.date < ?
         ORDER BY $orderBy
       ''',
-                variables: variables,
+                variables: [
+                  Variable.withDateTime(from),
+                  Variable.withDateTime(to),
+                ],
                 readsFrom: {
                   db.receiptLines,
                   db.receipts,

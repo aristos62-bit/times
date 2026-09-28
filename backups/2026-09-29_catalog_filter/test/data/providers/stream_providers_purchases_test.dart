@@ -37,9 +37,6 @@ class _FailingPurchasesLineDao extends ReceiptLineDao {
     required DateTime from,
     required DateTime to,
     required PurchasesSort sort,
-    int? categoryId,
-    int? subCategoryId,
-    int? itemGroupId,
   }) =>
       Stream.error(SqliteException(extendedResultCode: 1, message: 'test'));
 }
@@ -117,17 +114,11 @@ void main() {
     DateTime? from,
     DateTime? to,
     PurchasesSort sort = PurchasesSort.dateAsc,
-    int? categoryId,
-    int? subCategoryId,
-    int? itemGroupId,
   }) =>
       (
         from: from ?? DateTime(2026, 1, 1),
         to: to ?? DateTime(2026, 2, 1),
         sort: sort,
-        categoryId: categoryId,
-        subCategoryId: subCategoryId,
-        itemGroupId: itemGroupId,
       );
 
   group('periodPurchasesProvider (§2.3 · 29-09-2026)', () {
@@ -160,51 +151,6 @@ void main() {
       );
       expect(data.rows, isEmpty);
       expect(data.truncated, isFalse);
-    });
-
-    test('φίλτρο κατηγορίας → μόνο τα είδη της (29-09-2026)', () async {
-      await seedLine(date: DateTime(2026, 1, 5));
-      final otherCat = await CategoryDao(db).insert(name: 'ΑΡΤΟΣΚΕΥΑΣΜΑΤΑ');
-      final otherSub = await SubCategoryDao(db)
-          .insert(categoryId: otherCat, name: 'Ψωμιά');
-      final otherGroup = await ItemGroupDao(db)
-          .insert(subCategoryId: otherSub, name: 'Φραντζόλες');
-      final otherItem = await ItemDao(db).insert(
-        itemGroupId: otherGroup,
-        name: 'Ψωμί',
-        defaultUnitId: kiloId,
-      );
-      final receiptId = await ReceiptDao(db).insert(
-        date: DateTime(2026, 1, 6),
-        supplierId: supplierId,
-      );
-      await ReceiptLineDao(db).insert(
-        receiptId: receiptId,
-        itemId: otherItem,
-        unitId: kiloId,
-        quantity: 1,
-        priceCents: 100,
-      );
-      final container = containerWithDb();
-      final all = await waitForPurchasesValue(
-        (listen) => container.listen(
-          periodPurchasesProvider(query()),
-          listen,
-        ),
-        (value) => value.rows.length == 2,
-      );
-      expect(all.rows, hasLength(2));
-      final foodCat = (await CategoryDao(db).watchAll().first)
-          .firstWhere((c) => c.name == 'ΤΡΟΦΙΜΑ')
-          .id;
-      final filtered = await waitForPurchasesValue(
-        (listen) => container.listen(
-          periodPurchasesProvider(query(categoryId: foodCat)),
-          listen,
-        ),
-        (value) => value.rows.isNotEmpty,
-      );
-      expect([for (final r in filtered.rows) r.itemName], ['Γάλα']);
     });
 
     test('cap: >statsTableMaxRows → νεότερες + truncated', () async {

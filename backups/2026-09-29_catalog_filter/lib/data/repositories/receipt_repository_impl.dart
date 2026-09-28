@@ -191,19 +191,9 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
     required DateTime from,
     required DateTime to,
     required PurchasesSort sort,
-    int? categoryId,
-    int? subCategoryId,
-    int? itemGroupId,
   }) =>
       _lineDao
-          .watchPeriodPurchases(
-            from: from,
-            to: to,
-            sort: sort,
-            categoryId: categoryId,
-            subCategoryId: subCategoryId,
-            itemGroupId: itemGroupId,
-          )
+          .watchPeriodPurchases(from: from, to: to, sort: sort)
           .handleError(
             (Object e, StackTrace s) =>
                 Error.throwWithStackTrace(const DataLoadException(), s),

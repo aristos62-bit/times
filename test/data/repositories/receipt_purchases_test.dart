@@ -29,6 +29,9 @@ class _FailingPurchasesLineDao extends ReceiptLineDao {
     required DateTime from,
     required DateTime to,
     required PurchasesSort sort,
+    int? categoryId,
+    int? subCategoryId,
+    int? itemGroupId,
   }) =>
       Stream.error(SqliteException(extendedResultCode: 1, message: 'test'));
 }

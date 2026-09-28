@@ -402,6 +402,9 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
     required DateTime from,
     required DateTime to,
     required PurchasesSort sort,
+    int? categoryId,
+    int? subCategoryId,
+    int? itemGroupId,
   }) =>
       throw UnimplementedError();
   @override

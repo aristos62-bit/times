@@ -372,6 +372,9 @@ class _FailingReceiptRepo implements ReceiptRepository {
     required DateTime from,
     required DateTime to,
     required PurchasesSort sort,
+    int? categoryId,
+    int? subCategoryId,
+    int? itemGroupId,
   }) =>
       throw const DataLoadException();
   @override
@@ -491,8 +494,18 @@ class _BlockingReceiptRepo implements ReceiptRepository {
     required DateTime from,
     required DateTime to,
     required PurchasesSort sort,
+    int? categoryId,
+    int? subCategoryId,
+    int? itemGroupId,
   }) =>
-      inner.watchPeriodPurchases(from: from, to: to, sort: sort);
+      inner.watchPeriodPurchases(
+        from: from,
+        to: to,
+        sort: sort,
+        categoryId: categoryId,
+        subCategoryId: subCategoryId,
+        itemGroupId: itemGroupId,
+      );
   @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,

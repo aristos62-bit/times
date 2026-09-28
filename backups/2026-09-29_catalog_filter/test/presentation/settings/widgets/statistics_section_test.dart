@@ -118,9 +118,7 @@ void main() {
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         supportedLocales: const [Locale('el')],
         locale: const Locale('el'),
-          home: const Scaffold(
-            body: SingleChildScrollView(child: StatisticsSection()),
-          ),
+        home: const Scaffold(body: StatisticsSection()),
       ),
     );
   }
@@ -286,9 +284,7 @@ void main() {
             localizationsDelegates: GlobalMaterialLocalizations.delegates,
             supportedLocales: const [Locale('el')],
             locale: const Locale('el'),
-              home: const Scaffold(
-            body: SingleChildScrollView(child: StatisticsSection()),
-          ),
+            home: const Scaffold(body: StatisticsSection()),
           ),
         ),
         const Size(800, 600),
@@ -476,9 +472,6 @@ void main() {
         from: DateTime(2026, 9, 1),
         to: DateTime(2026, 10, 1),
         sort: PurchasesSort.dateAsc,
-        categoryId: null,
-        subCategoryId: null,
-        itemGroupId: null,
       );
       await pumpSized(
         tester,
@@ -500,9 +493,7 @@ void main() {
             localizationsDelegates: GlobalMaterialLocalizations.delegates,
             supportedLocales: const [Locale('el')],
             locale: const Locale('el'),
-              home: const Scaffold(
-            body: SingleChildScrollView(child: StatisticsSection()),
-          ),
+            home: const Scaffold(body: StatisticsSection()),
           ),
         ),
         const Size(800, 600),
@@ -573,9 +564,6 @@ void main() {
         from: DateTime(2026, 9, 1),
         to: DateTime(2026, 10, 1),
         sort: PurchasesSort.dateAsc,
-        categoryId: null,
-        subCategoryId: null,
-        itemGroupId: null,
       );
       await pumpSized(
         tester,
@@ -620,9 +608,7 @@ void main() {
             localizationsDelegates: GlobalMaterialLocalizations.delegates,
             supportedLocales: const [Locale('el')],
             locale: const Locale('el'),
-              home: const Scaffold(
-            body: SingleChildScrollView(child: StatisticsSection()),
-          ),
+            home: const Scaffold(body: StatisticsSection()),
           ),
         ),
         const Size(800, 600),
@@ -642,10 +628,6 @@ void main() {
       await pumpSized(tester, wrap(db: db), const Size(800, 600));
       await openPurchases(tester);
 
-      // Το φίλτρο καταλόγου έσπρωξε τα κουμπιά κάτω από το fold (600px) —
-      // scroll όπως η production ListView πριν το tap.
-      await tester.ensureVisible(find.text(AppStrings.statsExportExcelAction));
-      await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.statsExportExcelAction));
       await tester.pumpAndSettle();
       expect(picker.savedName, endsWith('_synola.xlsx'));
@@ -660,9 +642,6 @@ void main() {
       await pumpSized(tester, wrap(db: db), const Size(800, 600));
       await openPurchases(tester);
 
-      // Όπως το Excel test — scroll πριν το tap (φίλτρο καταλόγου).
-      await tester.ensureVisible(find.text(AppStrings.statsExportPdfAction));
-      await tester.pumpAndSettle();
       await tester.tap(find.text(AppStrings.statsExportPdfAction));
       await tester.pumpAndSettle();
       expect(picker.savedName, endsWith('_synola.pdf'));

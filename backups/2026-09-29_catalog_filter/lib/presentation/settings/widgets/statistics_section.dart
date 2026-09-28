@@ -25,7 +25,6 @@ import '../../shared/quantity_text_field.dart';
 import '../../shared/searchable_dropdown_field.dart';
 import '../../shared/controller_op_runner.dart';
 import '../controllers/statistics_controller.dart';
-import 'catalog_filter.dart';
 import 'purchases_table.dart';
 import 'report_preview_dialog.dart';
 import 'statistics_table.dart';
@@ -194,13 +193,6 @@ class _PurchasesAnalysisState extends ConsumerState<_PurchasesAnalysis> {
   /// Ταξινόμηση (default παλιές → νέες, Q2).
   PurchasesSort _sort = PurchasesSort.dateAsc;
 
-  /// Φίλτρο καταλόγου (null-ids = Όλα — τοπικό, όχι persist, Q5).
-  CatalogFilterSelection _filter = (
-    categoryId: null,
-    subCategoryId: null,
-    itemGroupId: null,
-  );
-
   /// Επιλογή custom range (picker με SPoT όρια· Ακύρωση → καμία αλλαγή).
   Future<void> _pickCustomRange() async {
     AppLogger.info(LogTag.ui, 'Άνοιγμα custom range αγορών');
@@ -299,19 +291,8 @@ class _PurchasesAnalysisState extends ConsumerState<_PurchasesAnalysis> {
           onChanged: (sort) => setState(() => _sort = sort),
         ),
         const SizedBox(height: AppConstants.spacingS),
-        CatalogFilterField(
-          onChanged: (filter) => setState(() => _filter = filter),
-        ),
-        const SizedBox(height: AppConstants.spacingS),
         _PurchasesBody(
-          query: (
-            from: range.from,
-            to: range.to,
-            sort: _sort,
-            categoryId: _filter.categoryId,
-            subCategoryId: _filter.subCategoryId,
-            itemGroupId: _filter.itemGroupId,
-          ),
+          query: (from: range.from, to: range.to, sort: _sort),
           onExportExcel: (rows, units) =>
               _exportExcel(context, ref, rows, units),
           onExportPdf: (rows, units) =>
@@ -947,13 +928,6 @@ class _GroupedAnalysisState extends ConsumerState<_GroupedAnalysis> {
   /// Ομαδοποίηση (default κατηγορία).
   PurchasesGroup _group = PurchasesGroup.category;
 
-  /// Φίλτρο καταλόγου (null-ids = Όλα — τοπικό, όχι persist, Q5).
-  CatalogFilterSelection _groupFilter = (
-    categoryId: null,
-    subCategoryId: null,
-    itemGroupId: null,
-  );
-
   /// Επιλογή custom range (picker με SPoT όρια· Ακύρωση → καμία αλλαγή).
   Future<void> _pickCustomRange() async {
     AppLogger.info(LogTag.ui, 'Άνοιγμα custom range ομαδοποιημένης');
@@ -1090,19 +1064,8 @@ class _GroupedAnalysisState extends ConsumerState<_GroupedAnalysis> {
           onChanged: (group) => setState(() => _group = group),
         ),
         const SizedBox(height: AppConstants.spacingS),
-        CatalogFilterField(
-          onChanged: (filter) => setState(() => _groupFilter = filter),
-        ),
-        const SizedBox(height: AppConstants.spacingS),
         _GroupedBody(
-          query: (
-            from: range.from,
-            to: range.to,
-            sort: _sort,
-            categoryId: _groupFilter.categoryId,
-            subCategoryId: _groupFilter.subCategoryId,
-            itemGroupId: _groupFilter.itemGroupId,
-          ),
+          query: (from: range.from, to: range.to, sort: _sort),
           onPreview: (rows, units) => _preview(context, ref, rows, units),
         ),
       ],

@@ -29,6 +29,9 @@ void main() {
   late int pieceId;
   late int markosId;
   late int ermisId;
+  late int foodId;
+  late int dairyId;
+  late int freshId;
 
   /// Κατάλογος: 2 κατηγορίες × είδη + 2 μονάδες + 2 προμηθευτές.
   Future<void> seedCatalog() async {
@@ -38,10 +41,10 @@ void main() {
       allowsDecimal: true,
     );
     pieceId = await UnitDao(db).insert(name: 'Τεμάχιο', abbreviation: 'τεμ');
-    final foodId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
-    final dairyId = await SubCategoryDao(db)
+    foodId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
+    dairyId = await SubCategoryDao(db)
         .insert(categoryId: foodId, name: 'Γαλακτοκομικά');
-    final freshId =
+    freshId =
         await ItemGroupDao(db).insert(subCategoryId: dairyId, name: 'Φρέσκα');
     milkId = await ItemDao(db).insert(
       itemGroupId: freshId,
@@ -213,6 +216,89 @@ void main() {
           )
           .first;
       expect(empty, isEmpty);
+    });
+  });
+
+  group('watchPeriodPurchases — φίλτρο καταλόγου (29-09-2026)', () {
+    Future<List<PeriodPurchaseRow>> readFiltered({
+      int? categoryId,
+      int? subCategoryId,
+      int? itemGroupId,
+    }) =>
+        dao
+            .watchPeriodPurchases(
+              from: from,
+              to: to,
+              sort: PurchasesSort.dateAsc,
+              categoryId: categoryId,
+              subCategoryId: subCategoryId,
+              itemGroupId: itemGroupId,
+            )
+            .first;
+
+    test('χωρίς φίλτρο → όλα (null = Όλα)', () async {
+      await seedLine(
+        date: DateTime(2026, 1, 5),
+        itemId: milkId,
+        supplierId: markosId,
+        unitId: kiloId,
+      );
+      await seedLine(
+        date: DateTime(2026, 1, 6),
+        itemId: breadId,
+        supplierId: markosId,
+        unitId: pieceId,
+      );
+      expect(await readFiltered(), hasLength(2));
+    });
+
+    test('κατηγορία → μόνο τα είδη της', () async {
+      await seedLine(
+        date: DateTime(2026, 1, 5),
+        itemId: milkId,
+        supplierId: markosId,
+        unitId: kiloId,
+      );
+      await seedLine(
+        date: DateTime(2026, 1, 6),
+        itemId: breadId,
+        supplierId: markosId,
+        unitId: pieceId,
+      );
+      final rows = await readFiltered(categoryId: foodId);
+      expect([for (final r in rows) r.itemName], ['Γάλα']);
+    });
+
+    test('υποκατηγορία + τμήμα (συνδυασμός)', () async {
+      await seedLine(
+        date: DateTime(2026, 1, 5),
+        itemId: milkId,
+        supplierId: markosId,
+        unitId: kiloId,
+      );
+      await seedLine(
+        date: DateTime(2026, 1, 6),
+        itemId: breadId,
+        supplierId: markosId,
+        unitId: pieceId,
+      );
+      expect(
+        await readFiltered(subCategoryId: dairyId),
+        hasLength(1),
+      );
+      expect(
+        await readFiltered(
+          categoryId: foodId,
+          subCategoryId: dairyId,
+          itemGroupId: freshId,
+        ),
+        hasLength(1),
+      );
+      // Άσχετος συνδυασμός → κενό (όχι crash).
+      expect(
+        await readFiltered(categoryId: foodId, itemGroupId: 999999),
+        isEmpty,
+      );
     });
   });
 }

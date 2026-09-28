@@ -231,15 +231,6 @@ void main() {
       expect(AppStrings.statsGroupMonth, 'Μήνας');
     });
 
-    test('catalog filter hints — κενό = Όλα (§2.3 · 29-09-2026)', () {
-      expect(AppStrings.statsFilterAllCategories, 'Όλες οι κατηγορίες');
-      expect(
-        AppStrings.statsFilterAllSubCategories,
-        'Όλες οι υποκατηγορίες',
-      );
-      expect(AppStrings.statsFilterAllItemGroups, 'Όλα τα τμήματα');
-    });
-
     // ─── Categories section (§2.3 · Φάση 4 Βήμα 4) ───────────────────────────
     test('titleCategoriesSection = «Κατηγορίες» + empty (§2.3 · Βήμα 4)', () {
       expect(AppStrings.titleCategoriesSection, 'Κατηγορίες');
@@ -389,9 +380,6 @@ const List<String> _allStrings = [
   AppStrings.statsSortSupplier,
   AppStrings.statsSortCategory,
   AppStrings.statsGroupLabel,
-  AppStrings.statsFilterAllCategories,
-  AppStrings.statsFilterAllSubCategories,
-  AppStrings.statsFilterAllItemGroups,
   AppStrings.statsGroupCategory,
   AppStrings.statsGroupSupplier,
   AppStrings.statsGroupDay,
