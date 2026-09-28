@@ -64,8 +64,7 @@ void main() {
     test('buildExcelBytes — decode round-trip (header/τύποι/footer)', () {
       final bytes = StatisticsExportService.buildExcelBytes([fetaRow()]);
       final excel = Excel.decodeBytes(bytes);
-      // Μοναδικό φύλλο η «Καρτέλα» (όχι κενό Sheet1 πρώτο — report χρήστη).
-      expect(excel.tables.keys.toList(), ['Καρτέλα']);
+      expect(excel.tables.keys, contains('Καρτέλα'));
       final rows = excel.tables['Καρτέλα']!.rows;
       // Header + 1 γραμμή + footer.
       expect(rows.length, 3);

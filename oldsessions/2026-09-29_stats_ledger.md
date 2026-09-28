@@ -66,3 +66,5 @@
 - Full suite **1358/1358** ✓ · `flutter analyze` No issues ✓.
 - DESIGN §2.3/§4 (ενότητα + deps + μενού) · backups
   `backups/2026-09-29_stats_ledger/` + `backups/2026-09-29_stats_menu/`.
+- Fix 29-09 (report χρήστη): κενό Sheet1 πρώτο στο XLSX → `excel.delete`
+  (η «Καρτέλα» μοναδικό φύλλο) · backup `backups/2026-09-29_stats_sheet_fix/`.
