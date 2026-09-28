@@ -8,8 +8,12 @@
 
 - `excel ^4.0.6` + `pdf ^3.12.0` (όχι 3.13: θέλει xml ^7 ≠ excel —
   evidence pub.dev API · pdf ≤3.12 → xml ^6 κοινό).
-- `flutter_native_splash ^2.4.8→^2.4.4` (ήθελε archive ^4 ≠ excel —
-  dev-only, η splash έχει παραχθεί).
+- `flutter_native_splash` ΠΑΡΕΜΕΙΝΕ `^2.4.8` + `dependency_overrides:
+  image '>=4.2.0 <4.5.2'` → image 4.3.0/archive 3.x (κοινό παράθυρο
+  pdf+excel+launcher_icons). Προηγήθηκε υποβιβασμός σε 2.4.4 που ΑΝΑΙΡΕΘΗΚΕ:
+  έσπαγε το Android release (`:flutter_native_splash:checkReleaseAarMetadata`
+  — android-31 ≠ androidx που θέλουν 34+). Το override αγγίζει μόνο dev-tool
+  runtime (η splash έχει παραχθεί).
 - Fonts: Noto Sans Regular/Bold (OFL, ~543KB, magic `00 01 00 00` +
   ελληνικά) από jsdelivr expo-google-fonts (github raw: HTML/404) →
   `assets/fonts/` + assets entry (η Helvetica δεν έχει Greek glyphs).
