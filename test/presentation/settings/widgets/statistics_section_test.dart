@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/constants/app_errors.dart';
 import 'package:times/core/constants/app_messages.dart';
 import 'package:times/core/constants/app_strings.dart';
@@ -26,6 +27,7 @@ import 'package:times/data/local/daos/receipt_line_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/supplier_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
+import 'package:times/data/models/chart_totals.dart';
 import 'package:times/data/providers/backup_file_picker.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/providers/settings_providers.dart';
@@ -400,6 +402,249 @@ void main() {
         findsWidgets,
       );
       handle.dispose();
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('StatisticsSection — αγορές (2η ανάλυση · 29-09-2026)', () {
+    /// Seed 2 ειδών/προμηθευτών/κατηγοριών + γραμμές (τρέχων μήνας).
+    Future<void> seedTwo(WidgetTester tester, AppDatabase db) async {
+      final kiloId = await UnitDao(db).insert(
+        name: 'Κιλό',
+        abbreviation: 'κιλ',
+        allowsDecimal: true,
+      );
+      final pieceId = await UnitDao(db).insert(
+        name: 'Τεμάχιο',
+        abbreviation: 'τεμ',
+      );
+      final foodId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
+      final dairyId = await SubCategoryDao(db)
+          .insert(categoryId: foodId, name: 'Γαλακτοκομικά');
+      final freshId =
+          await ItemGroupDao(db).insert(subCategoryId: dairyId, name: 'Φρέσκα');
+      final milkId = await ItemDao(db).insert(
+        itemGroupId: freshId,
+        name: 'Γάλα',
+        defaultUnitId: kiloId,
+      );
+      final bakeryId = await CategoryDao(db).insert(name: 'ΑΡΤΟΣΚΕΥΑΣΜΑΤΑ');
+      final breadSubId = await SubCategoryDao(db)
+          .insert(categoryId: bakeryId, name: 'Ψωμιά');
+      final breadGroupId = await ItemGroupDao(db)
+          .insert(subCategoryId: breadSubId, name: 'Φραντζόλες');
+      final breadId = await ItemDao(db).insert(
+        itemGroupId: breadGroupId,
+        name: 'Ψωμί',
+        defaultUnitId: pieceId,
+      );
+      final markosId = await SupplierDao(db).insert(name: 'Μάρκος');
+      final ermisId = await SupplierDao(db).insert(name: 'Ερμής');
+      final now = DateTime.now();
+      for (final (itemId, unitId, supplierId) in [
+        (milkId, kiloId, markosId),
+        (breadId, pieceId, ermisId),
+      ]) {
+        final receiptId = await ReceiptDao(db).insert(
+          date: now,
+          supplierId: supplierId,
+        );
+        await ReceiptLineDao(db).insert(
+          receiptId: receiptId,
+          itemId: itemId,
+          unitId: unitId,
+          quantity: 1,
+          priceCents: 100,
+        );
+      }
+    }
+
+    /// Ανοίγει τη 2η ανάλυση από το μενού.
+    Future<void> openPurchases(WidgetTester tester) async {
+      await tester.tap(find.text(AppStrings.statsPurchasesTitle));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('μενού: 2 γραμμές · back από detail', (tester) async {
+      // Canned streams (χωρίς DB — το detail κάνει watch με το άνοιγμα).
+      const today = [2026, 9, 15];
+      final query = (
+        from: DateTime(2026, 9, 1),
+        to: DateTime(2026, 10, 1),
+        sort: PurchasesSort.dateAsc,
+      );
+      await pumpSized(
+        tester,
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            backupFilePickerProvider.overrideWithValue(picker),
+            todayProvider.overrideWithBuild(
+              (ref, self) => DateTime(today[0], today[1], today[2]),
+            ),
+            unitsStreamProvider.overrideWith(
+              (ref) => Stream.value(const <Unit>[]),
+            ),
+            periodPurchasesProvider(query).overrideWith(
+              (ref) => Stream.value((rows: const [], truncated: false)),
+            ),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: const [Locale('el')],
+            locale: const Locale('el'),
+            home: const Scaffold(body: StatisticsSection()),
+          ),
+        ),
+        const Size(800, 600),
+      );
+      expect(find.text(AppStrings.statsLedgerTitle), findsOneWidget);
+      expect(find.text(AppStrings.statsPurchasesTitle), findsOneWidget);
+      expect(
+        find.text(AppStrings.statsPurchasesDescription),
+        findsOneWidget,
+      );
+      await openPurchases(tester);
+      expect(find.text(AppStrings.statsSortLabel), findsWidgets);
+      await tester.tap(find.byTooltip(AppStrings.statsBackAction));
+      await tester.pumpAndSettle();
+      expect(find.text(AppStrings.statsPurchasesTitle), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('πίνακας + footer + export κουμπιά', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await seedTwo(tester, db);
+      await pumpSized(tester, wrap(db: db), const Size(800, 600));
+      await openPurchases(tester);
+
+      expect(find.text('Γάλα'), findsOneWidget);
+      expect(find.text('Ψωμί'), findsOneWidget);
+      expect(find.text('Κιλό'), findsOneWidget);
+      expect(find.text('Τεμάχιο'), findsOneWidget);
+      expect(find.text('Σύνολο (2)'), findsOneWidget);
+      expect(find.text(AppStrings.statsExportExcelAction), findsOneWidget);
+      expect(find.text(AppStrings.statsExportPdfAction), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('sort: Προμηθευτής → πίνακας ξαναχτίζεται', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await seedTwo(tester, db);
+      await pumpSized(tester, wrap(db: db), const Size(800, 600));
+      await openPurchases(tester);
+      expect(find.text('Μάρκος'), findsOneWidget);
+
+      // Άνοιγμα sort menu από το εμφανιζόμενο κείμενο (Text, όχι το
+      // readOnly EditableText — pattern DropdownMenu).
+      await tester.tap(
+        find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Text &&
+                  widget.data == AppStrings.statsSortDateAsc,
+            )
+            .first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AppStrings.statsSortSupplier).last);
+      await tester.pumpAndSettle();
+      // Ερμής < Μάρκος — και οι δύο παρόντες, χωρίς crash.
+      expect(find.text('Ερμής'), findsOneWidget);
+      expect(find.text('Μάρκος'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('truncated → σημείωση (canned)', (tester) async {
+      const today = [2026, 9, 15];
+      final query = (
+        from: DateTime(2026, 9, 1),
+        to: DateTime(2026, 10, 1),
+        sort: PurchasesSort.dateAsc,
+      );
+      await pumpSized(
+        tester,
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            backupFilePickerProvider.overrideWithValue(picker),
+            todayProvider.overrideWithBuild(
+              (ref, self) => DateTime(today[0], today[1], today[2]),
+            ),
+            periodPurchasesProvider(query).overrideWith(
+              (ref) => Stream.value((
+                rows: [
+                  (
+                    receiptId: 1,
+                    date: DateTime(2026, 9, 9),
+                    itemName: 'Γάλα',
+                    categoryName: 'ΤΡΟΦΙΜΑ',
+                    supplierName: 'Μάρκος',
+                    quantity: 1.0,
+                    unitId: 1,
+                    unitAbbreviation: 'κιλ',
+                    priceCents: 100,
+                    discountCents: 0,
+                  ),
+                ],
+                truncated: true,
+              )),
+            ),
+            unitsStreamProvider.overrideWith(
+              (ref) => Stream.value([
+                Unit(
+                  id: 1,
+                  name: 'Κιλό',
+                  abbreviation: 'κιλ',
+                  allowsDecimal: true,
+                ),
+              ]),
+            ),
+          ],
+          child: MaterialApp(
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: const [Locale('el')],
+            locale: const Locale('el'),
+            home: const Scaffold(body: StatisticsSection()),
+          ),
+        ),
+        const Size(800, 600),
+      );
+      await openPurchases(tester);
+      expect(
+        find.text(AppMessages.statsTruncatedNote(AppConstants.statsTableMaxRows)),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('export Excel → _synola.xlsx + snackbar', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await seedTwo(tester, db);
+      await pumpSized(tester, wrap(db: db), const Size(800, 600));
+      await openPurchases(tester);
+
+      await tester.tap(find.text(AppStrings.statsExportExcelAction));
+      await tester.pumpAndSettle();
+      expect(picker.savedName, endsWith('_synola.xlsx'));
+      expect(find.text(AppMessages.statsExported), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('export PDF → _synola.pdf + snackbar', (tester) async {
+      final db = inMemoryDb();
+      addTearDown(db.close);
+      await seedTwo(tester, db);
+      await pumpSized(tester, wrap(db: db), const Size(800, 600));
+      await openPurchases(tester);
+
+      await tester.tap(find.text(AppStrings.statsExportPdfAction));
+      await tester.pumpAndSettle();
+      expect(picker.savedName, endsWith('_synola.pdf'));
+      expect(find.text(AppMessages.statsExported), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

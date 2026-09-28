@@ -175,4 +175,8 @@ abstract final class AppMessages {
   /// Επιτυχής εξαγωγή καρτέλας (§2.3 · 1η ανάλυση — συμμετρικό του
   /// `backupCreated`).
   static const String statsExported = 'Η εξαγωγή ολοκληρώθηκε';
+
+  /// Σημείωση cap πίνακα (2η ανάλυση §2.3 — προβάλλονται οι Ν νεότερες).
+  static String statsTruncatedNote(int max) =>
+      'Προβάλλονται οι $max νεότερες εγγραφές';
 }

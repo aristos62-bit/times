@@ -124,14 +124,6 @@ abstract interface class ReceiptRepository {
     required DateTime to,
   });
 
-  /// Παρακολουθεί ΟΛΕΣ τις γραμμές-αγορές περιόδου (§2.3 · 29-09-2026 —
-  /// 2η ανάλυση). Passthrough στο DAO (Βήμα 2).
-  Stream<List<PeriodPurchaseRow>> watchPeriodPurchases({
-    required DateTime from,
-    required DateTime to,
-    required PurchasesSort sort,
-  });
-
   /// Εισάγει απόδειξη με όλες τις γραμμές σε μία transaction (atomicity).
   /// Επιστρέφει το id της απόδειξης. Αποτυχία → SaveReceiptException.
   Future<int> insertReceiptWithLines({

@@ -398,13 +398,6 @@ class _NeverInsertReceiptRepo implements ReceiptRepository {
   }) =>
       throw UnimplementedError();
   @override
-  Stream<List<PeriodPurchaseRow>> watchPeriodPurchases({
-    required DateTime from,
-    required DateTime to,
-    required PurchasesSort sort,
-  }) =>
-      throw UnimplementedError();
-  @override
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,
     required int limit,

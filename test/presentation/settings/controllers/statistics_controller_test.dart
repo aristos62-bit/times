@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:times/core/constants/app_errors.dart';
 import 'package:times/core/errors/app_exceptions.dart';
+import 'package:times/data/local/app_database.dart';
 import 'package:times/data/models/chart_totals.dart';
 import 'package:times/data/providers/backup_file_picker.dart';
 import 'package:times/data/providers/settings_providers.dart';
@@ -135,6 +136,65 @@ void main() {
       picker.gate!.complete();
       expect(await first, (ok: true, error: null));
       expect(picker.savedBytes, isNotNull);
+    });
+  });
+
+  group('StatisticsController — αγορές (2η ανάλυση · 29-09-2026)', () {
+    final kilo = Unit(
+      id: 1,
+      name: 'Κιλό',
+      abbreviation: 'κιλ',
+      allowsDecimal: true,
+    );
+
+    PeriodPurchaseRow purchaseRow() => (
+          receiptId: 12,
+          date: DateTime(2026, 9, 9),
+          itemName: 'Γάλα',
+          categoryName: 'ΤΡΟΦΙΜΑ',
+          supplierName: 'Μάρκος',
+          quantity: 2,
+          unitId: 1,
+          unitAbbreviation: 'κιλ',
+          priceCents: 250,
+          discountCents: 50,
+        );
+
+    test('exportPurchasesExcel — ok + slug `_synola`', () async {
+      final c = container();
+      final result = await c
+          .read(statisticsControllerProvider.notifier)
+          .exportPurchasesExcel(rows: [purchaseRow()], units: [kilo]);
+      expect(result, (ok: true, error: null));
+      expect(picker.savedName, endsWith('_synola.xlsx'));
+      final excel = Excel.decodeBytes(picker.savedBytes!);
+      expect(excel.tables.keys.toList(), ['Σύνολα']);
+    });
+
+    test('exportPurchasesPdf — ok + slug `_synola`', () async {
+      final c = container();
+      final result = await c
+          .read(statisticsControllerProvider.notifier)
+          .exportPurchasesPdf((
+            title: 'Συνολικές αγορές',
+            headers: const ['Ημερομηνία'],
+            body: const [
+              ['09/09/2026'],
+            ],
+            totalsLine: null,
+          ));
+      expect(result, (ok: true, error: null));
+      expect(picker.savedName, endsWith('_synola.pdf'));
+      expect(picker.savedBytes!.sublist(0, 4), [0x25, 0x50, 0x44, 0x46]);
+    });
+
+    test('exportPurchasesExcel cancel → no-op', () async {
+      picker.cancel = true;
+      final c = container();
+      final result = await c
+          .read(statisticsControllerProvider.notifier)
+          .exportPurchasesExcel(rows: [purchaseRow()], units: [kilo]);
+      expect(result, (ok: false, error: null));
     });
   });
 }

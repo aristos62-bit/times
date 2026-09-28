@@ -218,8 +218,6 @@ abstract final class AppStrings {
   static const String statsColumnDate = 'Ημερομηνία';
   static const String statsColumnReceipt = 'Απόδειξη';
   static const String statsColumnSupplier = 'Προμηθευτής';
-  /// Header στήλης κατηγορίας (2η ανάλυση §2.3 · 29-09-2026).
-  static const String statsColumnCategory = 'Κατηγορία';
   static const String statsColumnQuantity = 'Ποσότητα';
   static const String statsColumnPrice = 'Τιμή';
   static const String statsColumnDiscount = 'Έκπτωση';
@@ -230,17 +228,6 @@ abstract final class AppStrings {
   static const String statsExportPdfAction = 'Εξαγωγή PDF';
   /// Label γραμμής συνόλων καρτέλας (άθροισμα καθαρών, §2.3 · Q4).
   static const String statsTotalsLabel = 'Σύνολο';
-  /// Τίτλος 2ης ανάλυσης «Συνολικές αγορές» (μενού + detail §2.3).
-  static const String statsPurchasesTitle = 'Συνολικές αγορές';
-  /// Περιγραφή 2ης ανάλυσης στο μενού (§2.3 · 29-09-2026).
-  static const String statsPurchasesDescription =
-      'Συγκεντρωτικές αγορές περιόδου με ταξινόμηση και εξαγωγή';
-  /// Labels ταξινόμησης αγορών (§2.3 · 2η ανάλυση).
-  static const String statsSortLabel = 'Ταξινόμηση';
-  static const String statsSortDateAsc = 'Ημερομηνία (παλιές → νέες)';
-  static const String statsSortDateDesc = 'Ημερομηνία (νέες → παλιές)';
-  static const String statsSortSupplier = 'Προμηθευτής';
-  static const String statsSortCategory = 'Κατηγορία';
 
   // ─── Backup section (§2.3 · Φάση 4 Βήμα 5) ─────────────────────────────────
   /// Τίτλος του section «Αντίγραφα ασφαλείας» στη σελίδα ρυθμίσεων (§2.3).

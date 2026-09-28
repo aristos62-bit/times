@@ -174,19 +174,6 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
           );
 
   @override
-  Stream<List<PeriodPurchaseRow>> watchPeriodPurchases({
-    required DateTime from,
-    required DateTime to,
-    required PurchasesSort sort,
-  }) =>
-      _lineDao
-          .watchPeriodPurchases(from: from, to: to, sort: sort)
-          .handleError(
-            (Object e, StackTrace s) =>
-                Error.throwWithStackTrace(const DataLoadException(), s),
-          );
-
-  @override
   Future<int> insertReceiptWithLines({
     required DateTime date,
     required int supplierId,

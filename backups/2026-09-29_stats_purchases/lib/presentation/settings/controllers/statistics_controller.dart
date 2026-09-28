@@ -14,7 +14,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_exceptions.dart';
 import '../../../core/logging/app_logger.dart';
-import '../../../data/local/app_database.dart';
 import '../../../data/models/chart_totals.dart';
 import '../../../data/providers/settings_providers.dart';
 import '../../../domain/services/statistics_export.dart';
@@ -57,7 +56,6 @@ class StatisticsController extends Notifier<SettingsState> {
           StatisticsExportService.buildStatsFileName(
             DateTime.now(),
             StatsExportFormat.excel,
-            'kartela',
           ),
           bytes,
         );
@@ -81,7 +79,6 @@ class StatisticsController extends Notifier<SettingsState> {
           StatisticsExportService.buildStatsFileName(
             DateTime.now(),
             StatsExportFormat.pdf,
-            'kartela',
           ),
           bytes,
         );
@@ -114,49 +111,4 @@ class StatisticsController extends Notifier<SettingsState> {
     AppLogger.info(LogTag.stats, 'Εξαγωγή ολοκληρώθηκε: $fileName');
     return (ok: true, error: null);
   }
-
-  /// Εξάγει συγκεντρωτικές αγορές σε XLSX (§2.3 · 2η ανάλυση).
-  Future<({bool ok, String? error})> exportPurchasesExcel({
-    required List<PeriodPurchaseRow> rows,
-    required List<Unit> units,
-  }) =>
-      _guarded(() async {
-        final bytes = StatisticsExportService.buildPurchasesExcelBytes(
-          rows: rows,
-          units: units,
-        );
-        return _save(
-          StatisticsExportService.buildStatsFileName(
-            DateTime.now(),
-            StatsExportFormat.excel,
-            'synola',
-          ),
-          bytes,
-        );
-      });
-
-  /// Εξάγει συγκεντρωτικές αγορές σε PDF (§2.3 · 2η ανάλυση).
-  Future<({bool ok, String? error})> exportPurchasesPdf(
-    StatsPdfModel model,
-  ) =>
-      _guarded(() async {
-        final (regular, bold) =
-            await StatisticsExportService.loadPdfFonts();
-        final bytes = await StatisticsExportService.buildPdfBytes(
-          title: model.title,
-          headers: model.headers,
-          body: model.body,
-          totalsLine: model.totalsLine,
-          fontBytes: regular,
-          boldFontBytes: bold,
-        );
-        return _save(
-          StatisticsExportService.buildStatsFileName(
-            DateTime.now(),
-            StatsExportFormat.pdf,
-            'synola',
-          ),
-          bytes,
-        );
-      });
 }

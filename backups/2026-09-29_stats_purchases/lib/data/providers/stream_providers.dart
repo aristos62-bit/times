@@ -372,32 +372,6 @@ final itemLedgerProvider =
           : rows),
 );
 
-// ─── Συγκεντρωτικές αγορές (§2.3 · 29-09-2026, 2η ανάλυση) ───────────────────
-
-/// Γραμμές-αγορές περιόδου — `autoDispose.family` ανά [PeriodPurchasesQuery]
-/// (εξαίρεση §2.1: αποδέσμευση DB watch σε αλλαγή περιόδου/sort/ημέρας).
-///
-/// Cap + truncated flag in-provider (η λίστα είναι ordered — το cap κόβει
-/// από την αρχή· η κάρτα δείχνει σημείωση, pattern `otherUnitCount`).
-/// ΟΛΕΣ οι μονάδες (η στήλη προβολής βγαίνει ανά `unitId`, Q3). Σφάλματα
-/// ήδη `DataLoadException` (repo mapping).
-final periodPurchasesProvider =
-    StreamProvider.autoDispose.family<PeriodPurchasesData, PeriodPurchasesQuery>(
-  (ref, query) => ref
-      .watch(receiptRepositoryProvider)
-      .watchPeriodPurchases(
-        from: query.from,
-        to: query.to,
-        sort: query.sort,
-      )
-      .map((rows) {
-    final capped = rows.length > AppConstants.statsTableMaxRows
-        ? rows.sublist(rows.length - AppConstants.statsTableMaxRows)
-        : rows;
-    return (rows: capped, truncated: rows.length > capped.length);
-  }),
-);
-
 /// Τελευταία γραμμή είδους για prefill τιμής/έκπτωσης (§2.2) — `.family`
 /// παραμετροποιημένο ανά [itemId]. One-shot FutureProvider (όχι stream — η
 /// τιμή διαβάζεται μία φορά στην επιλογή είδους, precedent `canDelete*`
