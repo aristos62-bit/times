@@ -204,39 +204,17 @@ void main() {
       );
     });
 
-    test('purchasesTotalsOf — sums/μονάδα + label σπασίματος + πλήθος', () {
-      final kilo = Unit(
-        id: 1,
-        name: 'Κιλό',
-        abbreviation: 'κιλ',
-        allowsDecimal: true,
-      );
-      final piece = Unit(
-        id: 2,
-        name: 'Τεμάχιο',
-        abbreviation: 'τεμ',
-        allowsDecimal: false,
-      );
-      final totals = StatisticsExportService.purchasesTotalsOf(
-        [
-          purchaseRow(),
-          purchaseRow(unitId: 2, quantity: 3, priceCents: 120, discountCents: 0),
-        ],
-        [kilo, piece],
-      );
+    test('purchasesTotalsOf — sums/μονάδα + σύνολο + πλήθος (Q4)', () {
+      final totals = StatisticsExportService.purchasesTotalsOf([
+        purchaseRow(),
+        purchaseRow(unitId: 2, quantity: 3, priceCents: 120, discountCents: 0),
+      ]);
       expect(totals.qtyByUnit[1], 2);
       expect(totals.qtyByUnit[2], 3);
       // (250−50)×2 + (120−0)×3 = 400 + 360 = 760.
       expect(totals.netTotalCents, 760);
       expect(totals.count, 2);
-      expect(totals.label, 'Σύνολο: (Κιλ: 2 / Τεμ: 3)');
-    });
-
-    test('purchasesTotalsOf — κενές → «Σύνολο (0)»', () {
-      final totals = StatisticsExportService.purchasesTotalsOf(const [], const []);
-      expect(totals.label, 'Σύνολο (0)');
-      expect(totals.netTotalCents, 0);
-      expect(totals.count, 0);
+      expect(totals.label, 'Σύνολο (2)');
     });
 
     test('buildPurchasesExcelBytes — δυναμικές στήλες + footer', () {
@@ -278,8 +256,8 @@ void main() {
       expect(numOf(1, 5), 2);
       expect(numOf(1, 6), 0);
       expect(numOf(1, 9), closeTo(2.0, 0.0001));
-      // Footer: label σπασίματος + sums + σύνολο.
-      expect(textOf(3, 0), 'Σύνολο: (Κιλ: 2 / Τεμ: 3)');
+      // Footer: sums + σύνολο.
+      expect(textOf(3, 0), 'Σύνολο (2)');
       expect(numOf(3, 5), 2);
       expect(numOf(3, 6), 3);
       expect(numOf(3, 9), closeTo(7.6, 0.0001));

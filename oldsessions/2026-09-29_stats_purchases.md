@@ -31,10 +31,13 @@
 - Ε5 `ensureVisible` σε unbuilt node → `scrollUntilVisible` (γνωστό).
 - Ε6 menu-test χωρίς DB → canned overrides (gated-watch αντίστοιχο trend).
 
-## Tests (+28 → 1386/1386)
+## Tests (+29 → 1387/1387)
 
 - Νέα: DAO 5 · repo 3 · provider 4 · service +4 (slug/totals/excel/κενό) ·
   controller +3 · table 3 · section +6 (menu/sort/truncated/exports) ·
   SPoT +4 · exceptions +1 (registry).
-- Full suite **1386/1386** ✓ · `flutter analyze` No issues ✓.
-- DESIGN §2.3 (2η ανάλυση) · backup `backups/2026-09-29_stats_purchases/`.
+- Full suite **1387/1387** ✓ · `flutter analyze` No issues ✓.
+- DESIGN §2.3 (2η ανάλυση) · backups `backups/2026-09-29_stats_purchases/`
+  + `backups/2026-09-29_stats_totals_label/`.
+- Fix 29-09 (αίτημα χρήστη): γραμμή Σύνολο με σπάσιμο ανά μονάδα
+  («Σύνολο: (Τεμ: 10 / Κιλ: 1,35)», μόνο μονάδες με κίνηση, σειρά ΒΔ).

@@ -102,7 +102,7 @@ class _PurchasesAnalysisState extends ConsumerState<_PurchasesAnalysis> {
     List<Unit> units,
   ) async {
     final localizations = MaterialLocalizations.of(context);
-    final totals = StatisticsExportService.purchasesTotalsOf(rows, units);
+    final totals = StatisticsExportService.purchasesTotalsOf(rows);
     String money(int cents) =>
         '${CurrencyTextField.formatCents(cents)} ${AppStrings.currencySymbol}';
     await runControllerOp(
@@ -261,7 +261,7 @@ class _PurchasesBody extends ConsumerWidget {
           );
         }
         final totals =
-            StatisticsExportService.purchasesTotalsOf(result.rows, units);
+            StatisticsExportService.purchasesTotalsOf(result.rows);
         final working = ref.watch(
           statisticsControllerProvider.select((s) => s.isWorking),
         );

@@ -62,7 +62,7 @@ Widget wrap({
         child: PurchasesTable(
           rows: rows,
           units: units,
-          totals: StatisticsExportService.purchasesTotalsOf(rows, units),
+          totals: StatisticsExportService.purchasesTotalsOf(rows),
         ),
       ),
     ),
@@ -101,8 +101,8 @@ void main() {
       // Γραμμές: προμηθευτές + ποσότητα στη στήλη της μονάδας.
       expect(find.text('Μάρκος'), findsOneWidget);
       // Footer: sums/μονάδα + σύνολο ((1296−35)×0,456 + 120×3 = 575+360).
-      // '0,456'/'3': σώμα + footer · label με σπάσιμο ανά μονάδα (29-09).
-      expect(find.text('Σύνολο: (Κιλ: 0,456 / Τεμ: 3)'), findsOneWidget);
+      // '0,456'/'3': σώμα + footer.
+      expect(find.text('Σύνολο (2)'), findsOneWidget);
       expect(find.text('0,456'), findsNWidgets(2));
       expect(find.text('3'), findsNWidgets(2));
       expect(tester.takeException(), isNull);

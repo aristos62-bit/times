@@ -214,39 +214,23 @@ abstract final class StatisticsExportService {
     return bytes;
   }
 
-  /// Σύνολα αγορών (Q4 · 2η ανάλυση + 29-09 σπάσιμο): ποσότητες ανά μονάδα +
-  /// καθαρό άθροισμα + πλήθος — μοναδική πηγή για table/excel/pdf (§1.1).
-  /// Το label σπάει ανά μονάδα («Σύνολο: (Τεμ: 10 / Κιλ: 1,35)» — μόνο
-  /// μονάδες με κίνηση, σειρά [units])· άδειο → «Σύνολο (0)». Το καθαρό
-  /// είναι άθροισμα ΣΥΝΟΛΩΝ γραμμών (όχι μοναδιαίων — η στήλη δείχνει
-  /// €/μονάδα).
-  static PurchasesTotals purchasesTotalsOf(
-    List<PeriodPurchaseRow> rows,
-    List<Unit> units,
-  ) {
+  /// Σύνολα αγορών (Q4): ποσότητες ανά μονάδα + καθαρό άθροισμα + πλήθος —
+  /// μοναδική πηγή για table/excel/pdf (§1.1). Το καθαρό είναι άθροισμα
+  /// ΣΥΝΟΛΩΝ γραμμών (όχι μοναδιαίων — η στήλη δείχνει €/μονάδα).
+  static PurchasesTotals purchasesTotalsOf(List<PeriodPurchaseRow> rows) {
     final qty = <int, double>{};
     var net = 0;
     for (final row in rows) {
       qty[row.unitId] = (qty[row.unitId] ?? 0) + row.quantity;
       net += ((row.priceCents - row.discountCents) * row.quantity).round();
     }
-    final parts = [
-      for (final unit in units)
-        if ((qty[unit.id] ?? 0) > 0)
-          '${_capitalized(unit.abbreviation)}: ${formatQuantity(qty[unit.id]!)}',
-    ];
     return (
       qtyByUnit: qty,
       netTotalCents: net,
       count: rows.length,
-      label: parts.isEmpty ? 'Σύνολο (0)' : 'Σύνολο: (${parts.join(' / ')})',
+      label: '${AppStrings.statsTotalsLabel} (${rows.length})',
     );
   }
-
-  /// Κεφαλαιοποιεί συντομογραφία («κιλ» → «Κιλ») για το label συνόλων.
-  static String _capitalized(String value) => value.isEmpty
-      ? value
-      : value[0].toUpperCase() + value.substring(1);
 
   /// Χτίζει XLSX συγκεντρωτικών αγορών (sync CPU): fixed στήλες +
   /// μία στήλη ποσότητας ανά μονάδα [units] (δυναμικές, Q3) + Τιμή/Έκπτωση/
@@ -310,7 +294,7 @@ abstract final class StatisticsExportService {
           ),
         );
       }
-      final totals = purchasesTotalsOf(rows, units);
+      final totals = purchasesTotalsOf(rows);
       final t = rows.length + 1;
       void setFooter(int c, CellValue value) =>
           sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: t))

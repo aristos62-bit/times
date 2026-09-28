@@ -523,8 +523,7 @@ void main() {
       expect(find.text('Ψωμί'), findsOneWidget);
       expect(find.text('Κιλό'), findsOneWidget);
       expect(find.text('Τεμάχιο'), findsOneWidget);
-      // Σπάσιμο ανά μονάδα στη γραμμή Σύνολο (29-09).
-      expect(find.text('Σύνολο: (Κιλ: 1 / Τεμ: 1)'), findsOneWidget);
+      expect(find.text('Σύνολο (2)'), findsOneWidget);
       expect(find.text(AppStrings.statsExportExcelAction), findsOneWidget);
       expect(find.text(AppStrings.statsExportPdfAction), findsOneWidget);
       expect(tester.takeException(), isNull);
