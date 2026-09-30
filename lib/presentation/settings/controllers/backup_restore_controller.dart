@@ -219,6 +219,9 @@ class BackupRestoreController extends Notifier<SettingsState> {
           ref.read(receiptFormControllerProvider.notifier).resetForm();
           ref.read(itemSearchControllerProvider.notifier).onQueryChanged('');
         }
+        // Retention (30-09-2026, §2.3): μόνο σε επιτυχία — ποτέ throw,
+        // οπότε δεν απειλεί το ok:true.
+        await service.pruneAutoBackups();
         AppLogger.info(LogTag.backup, 'Επαναφορά ολοκληρώθηκε');
         return (ok: true, error: null);
       });

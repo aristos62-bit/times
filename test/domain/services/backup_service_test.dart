@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/core/utils/greek_text_normalizer.dart';
 import 'package:times/data/local/app_database.dart';
@@ -235,6 +236,46 @@ void main() {
     });
   });
 
+  group('BackupService.pruneAutoBackups — retention (30-09-2026)', () {
+    List<String> autoNames() => Directory(tmpRoot.path)
+        .listSync()
+        .whereType<File>()
+        .map((f) => f.uri.pathSegments.last)
+        .where(
+          (n) => n.startsWith('auto_times_backup_') && n.endsWith('.sqlite'),
+        )
+        .toList();
+
+    test('7 παλιά + 1 φρέσκο → μένουν 5, το φρέσκο μέσα', () async {
+      final db = openFileDb('prune.sqlite');
+      final service = BackupService(db);
+      for (var i = 1; i <= 7; i++) {
+        final day = i.toString().padLeft(2, '0');
+        File('${tmpRoot.path}/auto_times_backup_202001${day}_000000.sqlite')
+            .writeAsStringSync('old');
+      }
+      final fresh = await service.autoBackupCurrent();
+      await service.pruneAutoBackups();
+      final remaining = autoNames();
+      expect(remaining.length, AppConstants.autoBackupRetentionCount);
+      expect(remaining, contains(fresh.split(Platform.pathSeparator).last));
+    });
+
+    test('keep param + keep 0 → no-op', () async {
+      final db = openFileDb('prune2.sqlite');
+      final service = BackupService(db);
+      for (var i = 1; i <= 4; i++) {
+        final day = i.toString().padLeft(2, '0');
+        File('${tmpRoot.path}/auto_times_backup_202002${day}_000000.sqlite')
+            .writeAsStringSync('old');
+      }
+      await service.pruneAutoBackups(keep: 2);
+      expect(autoNames().length, 2);
+      await service.pruneAutoBackups(keep: 0);
+      expect(autoNames().length, 2);
+    });
+  });
+
   group('BackupService.expectedTables (4 επίπεδα · 27-09-2026)', () {
     test('8 πίνακες με `item_groups` (SPoT §3)', () {
       expect(BackupService.expectedTables.length, 8);
@@ -329,7 +370,7 @@ void main() {
       );
     });
 
-    test('έκδοση 4, ελλιπείς στήλες → InvalidBackupFileException', () {
+    test('προηγούμενη έκδοση (4), ελλιπείς στήλες → Invalid', () {
       final db = openFileDb('vcol.sqlite');
       final service = BackupService(db);
       final path = '${tmpRoot.path}/vcol.sqlite';

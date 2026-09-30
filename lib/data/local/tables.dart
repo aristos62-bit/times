@@ -63,12 +63,15 @@ class Units extends Table {
 /// ώστε η βάση να απορρίπτει διπλότυπα (π.χ. «Γάλα» vs «γαλα»).
 class Items extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get itemGroupId => integer()
-      .references(ItemGroups, #id, onDelete: KeyAction.restrict)();
+  IntColumn get itemGroupId =>
+      integer().references(ItemGroups, #id, onDelete: KeyAction.restrict)();
   TextColumn get name => text()();
   TextColumn get normalizedName => text().unique()();
-  IntColumn get defaultUnitId =>
-      integer().nullable().references(Units, #id, onDelete: KeyAction.setNull)();
+  IntColumn get defaultUnitId => integer().nullable().references(
+    Units,
+    #id,
+    onDelete: KeyAction.setNull,
+  )();
 }
 
 /// Προμηθευτές — το `normalizedName` είναι global UNIQUE (όπως Items).
@@ -81,6 +84,11 @@ class Suppliers extends Table {
 
 /// Αποδείξεις — το `id` (AUTOINCREMENT) χρησιμεύει ως αριθμός απόδειξης
 /// (απόφαση §3: δεν χρειάζεται ξεχωριστός sequence counter).
+///
+/// Ρητά indexes v5 (30-09-2026): `date` (period queries §2.1/§2.3) +
+/// `supplierId` (joins/GROUP BY) — single-column (όχι composite).
+@TableIndex(name: 'idx_receipts_date', columns: {#date})
+@TableIndex(name: 'idx_receipts_supplier_id', columns: {#supplierId})
 class Receipts extends Table {
   IntColumn get id => integer().autoIncrement()();
   DateTimeColumn get date => dateTime()();
@@ -92,6 +100,7 @@ class Receipts extends Table {
 /// (`((priceCents − discountCents) × quantity).round()`, §3: ποτέ DB
 /// generated column).
 @TableIndex(name: 'idx_receipt_lines_item_id', columns: {#itemId})
+@TableIndex(name: 'idx_receipt_lines_receipt_id', columns: {#receiptId})
 class ReceiptLines extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get receiptId =>
@@ -104,9 +113,8 @@ class ReceiptLines extends Table {
   IntColumn get priceCents => integer()();
 
   /// Έκπτωση μονάδας σε λεπτά (0 = καμία · ≤ priceCents, §2.2).
-  /// SPoT καθαρού συνόλου: `lineTotalCents = ((priceCents - discountCents)
-  /// * quantity).round()` στο ReceiptLineDao.
-  IntColumn get discountCents =>
-      integer().withDefault(const Constant(0))();
+  /// SPoT καθαρού συνόλου: `lineTotalCents()` (`core/utils/line_total.dart`)
+  /// — writer ο ReceiptLineDao.
+  IntColumn get discountCents => integer().withDefault(const Constant(0))();
   IntColumn get lineTotalCents => integer()();
 }

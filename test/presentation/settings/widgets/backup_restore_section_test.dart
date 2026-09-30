@@ -98,7 +98,11 @@ void main() {
     );
   }
 
-  Future<void> pumpAt(WidgetTester tester, Size size, {ThemeData? theme}) async {
+  Future<void> pumpAt(
+    WidgetTester tester,
+    Size size, {
+    ThemeData? theme,
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -109,13 +113,16 @@ void main() {
 
   /// Χτίζει έγκυρο fixture αντιγράφου με ΣΥΓΧΡΟΝΟ sqlite3 FFI (όχι drift:
   /// το drift worker isolate κρατά Windows locks που κολλάνε το widget
-  /// fake-async). Οι 7 πίνακες §3, άδειοι αρκούν για το validation.
+  /// fake-async). Πλήρες σχήμα από τα SPoT (`expectedColumns`) + τρέχουσα
+  /// `user_version` (strict validation — χωρίς hardcode)· άδειοι πίνακες
+  /// αρκούν (έλεγχοι δομής, όχι δεδομένων).
   String makeFixture(String name) {
     final path = '${tmpRoot.path}/$name';
     final raw = sqlite3.open(path, mode: OpenMode.readWriteCreate);
-    for (final t in BackupService.expectedTables) {
-      raw.execute('CREATE TABLE $t (id INTEGER PRIMARY KEY)');
+    for (final entry in BackupService.expectedColumns.entries) {
+      raw.execute('CREATE TABLE ${entry.key} (${entry.value.join(', ')})');
     }
+    raw.execute('PRAGMA user_version = ${db.schemaVersion}');
     raw.close();
     return path;
   }
@@ -138,8 +145,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('δείχνει το κουμπί καταλόγου (§2.3 · 30-09-2026)',
-        (tester) async {
+    testWidgets('δείχνει το κουμπί καταλόγου (§2.3 · 30-09-2026)', (
+      tester,
+    ) async {
       await pumpAt(tester, const Size(800, 600));
       expect(find.text(AppStrings.backupExportCatalogAction), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -179,8 +187,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('restore έγκυρο → Ακύρωση → παραμονή, χωρίς αλλαγή',
-        (tester) async {
+    testWidgets('restore έγκυρο → Ακύρωση → παραμονή, χωρίς αλλαγή', (
+      tester,
+    ) async {
       picker.pickPath = makeFixture('ok2.sqlite');
       await pumpAt(tester, const Size(800, 600));
       await tapReal(tester, find.text(AppStrings.backupRestoreAction));

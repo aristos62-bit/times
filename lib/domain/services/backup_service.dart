@@ -149,6 +149,40 @@ final class BackupService {
     return path;
   }
 
+  /// Retention auto-backups (30-09-2026, §2.3): κρατά τα [keep] νεότερα
+  /// `auto_times_backup_*.sqlite`, σβήνει τα παλιότερα (best-effort).
+  /// ΔΕΝ ρίχνει ποτέ (try/catch + `deleteTemp`) — το restore δεν αποτυγχάνει
+  /// εξαιτίας retention. Καλείται ΜΟΝΟ μετά από επιτυχημένο restore· σε
+  /// αποτυχία μένουν όλα (forensics). Μόνο `auto_*` αγγίζονται.
+  Future<void> pruneAutoBackups({
+    int keep = AppConstants.autoBackupRetentionCount,
+  }) async {
+    try {
+      if (keep < 1) {
+        AppLogger.info(LogTag.backup, 'Retention: άκυρο keep=$keep — no-op');
+        return;
+      }
+      final docs = await getApplicationDocumentsDirectory();
+      final autos = Directory(docs.path).listSync().whereType<File>().where((
+        f,
+      ) {
+        final name = f.uri.pathSegments.last;
+        return name.startsWith('auto_times_backup_') &&
+            name.endsWith('.sqlite');
+      }).toList()..sort((a, b) => b.path.compareTo(a.path));
+      // Filenames χρονολογικά (yyyyMMdd_HHmmss) — τα πρώτα `keep` μένουν.
+      for (final extra in autos.skip(keep)) {
+        await deleteTemp(extra.path);
+      }
+      AppLogger.info(
+        LogTag.backup,
+        'Retention auto-backups: ${autos.length} → ${autos.length.clamp(0, keep)}',
+      );
+    } catch (e, s) {
+      AppLogger.error(LogTag.backup, 'Αποτυχία retention auto-backups', e, s);
+    }
+  }
+
   /// Validation υποψήφιου αρχείου ΠΡΙΝ από οτιδήποτε (§2.3: magic +
   /// έκδοση + πίνακες + στήλες + integrity, καμία αλλαγή): 1) υπάρχει
   /// 2) SQLite magic 3) `user_version` == schema (§3 baseline v4, strict)

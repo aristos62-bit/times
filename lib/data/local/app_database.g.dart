@@ -2415,8 +2415,8 @@ class ReceiptLine extends DataClass implements Insertable<ReceiptLine> {
   final int priceCents;
 
   /// Έκπτωση μονάδας σε λεπτά (0 = καμία · ≤ priceCents, §2.2).
-  /// SPoT καθαρού συνόλου: `lineTotalCents = ((priceCents - discountCents)
-  /// * quantity).round()` στο ReceiptLineDao.
+  /// SPoT καθαρού συνόλου: `lineTotalCents()` (`core/utils/line_total.dart`)
+  /// — writer ο ReceiptLineDao.
   final int discountCents;
   final int lineTotalCents;
   const ReceiptLine({
@@ -2700,9 +2700,21 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SuppliersTable suppliers = $SuppliersTable(this);
   late final $ReceiptsTable receipts = $ReceiptsTable(this);
   late final $ReceiptLinesTable receiptLines = $ReceiptLinesTable(this);
+  late final Index idxReceiptsDate = Index(
+    'idx_receipts_date',
+    'CREATE INDEX idx_receipts_date ON receipts (date)',
+  );
+  late final Index idxReceiptsSupplierId = Index(
+    'idx_receipts_supplier_id',
+    'CREATE INDEX idx_receipts_supplier_id ON receipts (supplier_id)',
+  );
   late final Index idxReceiptLinesItemId = Index(
     'idx_receipt_lines_item_id',
     'CREATE INDEX idx_receipt_lines_item_id ON receipt_lines (item_id)',
+  );
+  late final Index idxReceiptLinesReceiptId = Index(
+    'idx_receipt_lines_receipt_id',
+    'CREATE INDEX idx_receipt_lines_receipt_id ON receipt_lines (receipt_id)',
   );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -2717,7 +2729,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     suppliers,
     receipts,
     receiptLines,
+    idxReceiptsDate,
+    idxReceiptsSupplierId,
     idxReceiptLinesItemId,
+    idxReceiptLinesReceiptId,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([

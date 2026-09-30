@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/constants/app_enums.dart';
+import 'package:times/core/logging/app_logger.dart';
 import 'package:times/data/models/chart_totals.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/repositories/settings_repository.dart';
@@ -44,10 +45,13 @@ void main() {
       expect(newRepo().readThemeMode(), AppTheme.defaultMode);
     });
 
-    test('άγνωστη τιμή (π.χ. από παλιά έκδοση) → AppTheme.defaultMode', () async {
-      await prefs.setString(AppConstants.themeModeKey, 'sepia');
-      expect(newRepo().readThemeMode(), AppTheme.defaultMode);
-    });
+    test(
+      'άγνωστη τιμή (π.χ. από παλιά έκδοση) → AppTheme.defaultMode',
+      () async {
+        await prefs.setString(AppConstants.themeModeKey, 'sepia');
+        expect(newRepo().readThemeMode(), AppTheme.defaultMode);
+      },
+    );
 
     for (final mode in ThemeMode.values) {
       test('round-trip: `${mode.name}` αποθηκεύεται και διαβάζεται', () async {
@@ -85,6 +89,24 @@ void main() {
       expect(newRepo().readHomeChartConfig(), HomeChartConfig.defaults());
     });
 
+    test('corrupt JSON → defaults + error log (30-09-2026)', () async {
+      final lines = <String>[];
+      AppLogger.testSink = lines.add;
+      addTearDown(AppLogger.resetTestSink);
+      await prefs.setString(AppConstants.homeChartConfigKey, 'not-json{{{');
+      expect(newRepo().readHomeChartConfig(), HomeChartConfig.defaults());
+      expect(lines.join('\n'), contains('χρήση defaults'));
+    });
+
+    test('valid JSON λάθος σχήματος (array) → defaults + log', () async {
+      final lines = <String>[];
+      AppLogger.testSink = lines.add;
+      addTearDown(AppLogger.resetTestSink);
+      await prefs.setString(AppConstants.homeChartConfigKey, '[1,2]');
+      expect(newRepo().readHomeChartConfig(), HomeChartConfig.defaults());
+      expect(lines.join('\n'), contains('χρήση defaults'));
+    });
+
     test('corrupt entry → default entry (οι υγιείς κρατιούνται)', () async {
       await prefs.setString(
         AppConstants.homeChartConfigKey,
@@ -106,28 +128,27 @@ void main() {
       expect(config.topItems, const ChartEntry(order: 4));
     });
 
-    test('παλιό 4-key JSON (χωρίς subCategory) → migration: θέση 2 + shift',
-        () async {
-      await prefs.setString(
-        AppConstants.homeChartConfigKey,
-        jsonEncode({
-          'supplier': {'visible': true, 'order': 0, 'period': 'month'},
-          'category': {'visible': false, 'order': 1, 'period': 'year'},
-          'itemGroup': {'visible': true, 'order': 2, 'period': 'month'},
-          'topItems': {'visible': true, 'order': 3, 'period': 'month'},
-        }),
-      );
-      final config = newRepo().readHomeChartConfig();
-      expect(config.supplier.order, 0);
-      expect(config.category.order, 1);
-      expect(
-        config.subCategory,
-        const ChartEntry(order: 2),
-      );
-      expect(config.itemGroup.order, 3);
-      expect(config.topItems.order, 4);
-      expect(config.category.visible, isFalse);
-    });
+    test(
+      'παλιό 4-key JSON (χωρίς subCategory) → migration: θέση 2 + shift',
+      () async {
+        await prefs.setString(
+          AppConstants.homeChartConfigKey,
+          jsonEncode({
+            'supplier': {'visible': true, 'order': 0, 'period': 'month'},
+            'category': {'visible': false, 'order': 1, 'period': 'year'},
+            'itemGroup': {'visible': true, 'order': 2, 'period': 'month'},
+            'topItems': {'visible': true, 'order': 3, 'period': 'month'},
+          }),
+        );
+        final config = newRepo().readHomeChartConfig();
+        expect(config.supplier.order, 0);
+        expect(config.category.order, 1);
+        expect(config.subCategory, const ChartEntry(order: 2));
+        expect(config.itemGroup.order, 3);
+        expect(config.topItems.order, 4);
+        expect(config.category.visible, isFalse);
+      },
+    );
 
     /// Νέο key `subCategory` (5η πίτα 27-09-2026): το παλιό `subCategory`
     /// (προ-4-επιπέδων) σήμαινε την παλιά πίτα — το legacy fallback
@@ -158,10 +179,7 @@ void main() {
           'supplier': {'visible': true, 'order': 0, 'period': 'trimester'},
         }),
       );
-      expect(
-        newRepo().readHomeChartConfig().supplier.period,
-        PeriodType.month,
-      );
+      expect(newRepo().readHomeChartConfig().supplier.period, PeriodType.month);
     });
 
     test('round-trip: config με custom range', () async {
@@ -194,8 +212,7 @@ void main() {
       expect(stored, contains('itemTrend'));
     });
 
-    test('παλιό 5-key JSON (χωρίς itemTrend) → default entry θέση 5',
-        () async {
+    test('παλιό 5-key JSON (χωρίς itemTrend) → default entry θέση 5', () async {
       await prefs.setString(
         AppConstants.homeChartConfigKey,
         jsonEncode({

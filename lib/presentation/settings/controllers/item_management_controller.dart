@@ -29,6 +29,7 @@ import '../../../core/constants/app_errors.dart';
 import '../../../core/constants/app_messages.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../core/utils/greek_text_normalizer.dart';
+import '../../../data/local/app_database.dart';
 import '../../../data/providers/database_providers.dart';
 import '../../../data/providers/settings_providers.dart';
 import '../../../domain/validators/name_validator.dart';
@@ -61,6 +62,51 @@ class ItemManagementController extends Notifier<SettingsState> {
     }
   }
 
+  /// Prefill επεξεργασίας είδους (μετακόμιση από το widget, §2.0.5):
+  /// αλυσίδα είδος → τμήμα → υποκατηγορία → κατηγορία + μονάδα.
+  /// Plain, όχι `_guarded` (read-only prefill — κανένα `isWorking`).
+  /// Record αντί `(ok,error)`: ο καταναλωτής είναι dialog-params, όχι
+  /// controller-state (σκόπιμη απόκλιση από το `loadReceiptForEdit`).
+  /// Χαμένο ref (race διαγραφής) → null + info log· χαμένη μονάδα →
+  /// unit null (ΟΧΙ abort — το dialog δουλεύει χωρίς πρόταση).
+  Future<({ItemGroup group, SubCategory sub, Category category, Unit? unit})?>
+  loadItemForEdit(int itemId) async {
+    final item = await ref.read(itemRepositoryProvider).getById(itemId);
+    if (item == null || !ref.mounted) return null;
+    final group = await ref
+        .read(itemGroupRepositoryProvider)
+        .getById(item.itemGroupId);
+    if (group == null || !ref.mounted) {
+      AppLogger.info(LogTag.db, 'Lookups είδους #$itemId ελλιπή (τμήμα)');
+      return null;
+    }
+    final sub = await ref
+        .read(subCategoryRepositoryProvider)
+        .getById(group.subCategoryId);
+    if (sub == null || !ref.mounted) {
+      AppLogger.info(
+        LogTag.db,
+        'Lookups είδους #$itemId ελλιπή (υποκατηγορία)',
+      );
+      return null;
+    }
+    final category = await ref
+        .read(categoryRepositoryProvider)
+        .getById(sub.categoryId);
+    if (category == null || !ref.mounted) {
+      AppLogger.info(LogTag.db, 'Lookups είδους #$itemId ελλιπή (κατηγορία)');
+      return null;
+    }
+    Unit? unit;
+    if (item.defaultUnitId != null) {
+      unit = await ref
+          .read(unitRepositoryProvider)
+          .getById(item.defaultUnitId!);
+    }
+    if (!ref.mounted) return null;
+    return (group: group, sub: sub, category: category, unit: unit);
+  }
+
   /// Ενημερώνει είδος (όνομα/τμήμα/προτεινόμενη μονάδα). Validation/
   /// dup → `(ok:false, error:)` χωρίς DB access· καμία αλλαγή → no-op
   /// επιτυχία (χωρίς write)· ανύπαρκτο id → `loadDataFailed` (race §2.3).
@@ -71,83 +117,81 @@ class ItemManagementController extends Notifier<SettingsState> {
     required String name,
     required int itemGroupId,
     Value<int?>? defaultUnitId,
-  }) =>
-      _guarded(() async {
-        final trimmed = name.trim();
-        final validationError = NameValidator.validate(trimmed);
-        if (validationError != null) {
-          return (ok: false, error: validationError);
-        }
-        final repo = ref.read(itemRepositoryProvider);
-        final current = await repo.getById(id);
-        if (current == null) {
-          return (ok: false, error: AppErrors.loadDataFailed);
-        }
-        if (trimmed == current.name &&
-            itemGroupId == current.itemGroupId &&
-            _sameUnit(defaultUnitId, current.defaultUnitId)) {
-          return (ok: true, error: null); // no-op — καμία αλλαγή
-        }
-        final clash = await repo.getByNormalizedName(
-          GreekTextNormalizer.normalize(trimmed),
-        );
-        if (clash != null && clash.id != id) {
-          AppLogger.info(
-            LogTag.ui,
-            'Απόρριψη μετονομασίας είδους #$id σε "$trimmed": διπλότυπο',
-          );
-          return (ok: false, error: AppErrors.nameExists);
-        }
-        final updated = await repo.updateById(
-          id,
-          name: trimmed,
-          itemGroupId: itemGroupId,
-          defaultUnitId: defaultUnitId,
-        );
-        if (!updated) {
-          return (ok: false, error: AppErrors.loadDataFailed);
-        }
-        await _refreshItemGuards(
-          itemId: id,
-          itemGroupIds: {current.itemGroupId, itemGroupId},
-        );
-        AppLogger.info(LogTag.db, 'Ενημέρωση είδους #$id: $trimmed');
-        return (ok: true, error: null);
-      });
+  }) => _guarded(() async {
+    final trimmed = name.trim();
+    final validationError = NameValidator.validate(trimmed);
+    if (validationError != null) {
+      return (ok: false, error: validationError);
+    }
+    final repo = ref.read(itemRepositoryProvider);
+    final current = await repo.getById(id);
+    if (current == null) {
+      return (ok: false, error: AppErrors.loadDataFailed);
+    }
+    if (trimmed == current.name &&
+        itemGroupId == current.itemGroupId &&
+        _sameUnit(defaultUnitId, current.defaultUnitId)) {
+      return (ok: true, error: null); // no-op — καμία αλλαγή
+    }
+    final clash = await repo.getByNormalizedName(
+      GreekTextNormalizer.normalize(trimmed),
+    );
+    if (clash != null && clash.id != id) {
+      AppLogger.info(
+        LogTag.ui,
+        'Απόρριψη μετονομασίας είδους #$id σε "$trimmed": διπλότυπο',
+      );
+      return (ok: false, error: AppErrors.nameExists);
+    }
+    final updated = await repo.updateById(
+      id,
+      name: trimmed,
+      itemGroupId: itemGroupId,
+      defaultUnitId: defaultUnitId,
+    );
+    if (!updated) {
+      return (ok: false, error: AppErrors.loadDataFailed);
+    }
+    await _refreshItemGuards(
+      itemId: id,
+      itemGroupIds: {current.itemGroupId, itemGroupId},
+    );
+    AppLogger.info(LogTag.db, 'Ενημέρωση είδους #$id: $trimmed');
+    return (ok: true, error: null);
+  });
 
   /// Διαγράφει καθαρό είδος (0 γραμμές). Ελέγχει ο ΙΔΙΟΣ την πύλη
   /// (`countLinesByItemId == 0`) — defense in depth· μπλοκαρισμένο →
   /// `itemLinesTooltip`. Μετά το delete αποδεσμεύει τα families + καθαρίζει
   /// τυχόν επιλογή του (root search — οι draft γραμμές δεν φαίνονται).
-  Future<({bool ok, String? error})> deleteItem(int id) =>
-      _guarded(() async {
-        final receiptRepo = ref.read(receiptRepositoryProvider);
-        final lines = await receiptRepo.countLinesByItemId(id);
-        if (lines > 0) {
-          return (ok: false, error: AppMessages.itemLinesTooltip(lines));
-        }
-        final item = await ref.read(itemRepositoryProvider).getById(id);
-        final deleted = await ref.read(itemRepositoryProvider).deleteById(id);
-        if (!deleted) {
-          return (ok: false, error: AppErrors.loadDataFailed);
-        }
-        ref.invalidate(canDeleteItemProvider(id));
-        ref.invalidate(itemLinesCountProvider(id));
-        if (item != null) {
-          await _refreshGuardsForGroups({item.itemGroupId});
-        }
-        // Επιλογή του σβησμένου στο root search → αποεπιλογή.
-        final search = ref.read(itemSearchControllerProvider);
-        if (search.value?.selectedItem?.id == id) {
-          ref.read(itemSearchControllerProvider.notifier).clearSelection();
-          AppLogger.info(
-            LogTag.ui,
-            'Αποεπιλογή σβησμένου είδους #$id από την αναζήτηση',
-          );
-        }
-        AppLogger.info(LogTag.db, 'Διαγραφή είδους #$id');
-        return (ok: true, error: null);
-      });
+  Future<({bool ok, String? error})> deleteItem(int id) => _guarded(() async {
+    final receiptRepo = ref.read(receiptRepositoryProvider);
+    final lines = await receiptRepo.countLinesByItemId(id);
+    if (lines > 0) {
+      return (ok: false, error: AppMessages.itemLinesTooltip(lines));
+    }
+    final item = await ref.read(itemRepositoryProvider).getById(id);
+    final deleted = await ref.read(itemRepositoryProvider).deleteById(id);
+    if (!deleted) {
+      return (ok: false, error: AppErrors.loadDataFailed);
+    }
+    ref.invalidate(canDeleteItemProvider(id));
+    ref.invalidate(itemLinesCountProvider(id));
+    if (item != null) {
+      await _refreshGuardsForGroups({item.itemGroupId});
+    }
+    // Επιλογή του σβησμένου στο root search → αποεπιλογή.
+    final search = ref.read(itemSearchControllerProvider);
+    if (search.value?.selectedItem?.id == id) {
+      ref.read(itemSearchControllerProvider.notifier).clearSelection();
+      AppLogger.info(
+        LogTag.ui,
+        'Αποεπιλογή σβησμένου είδους #$id από την αναζήτηση',
+      );
+    }
+    AppLogger.info(LogTag.db, 'Διαγραφή είδους #$id');
+    return (ok: true, error: null);
+  });
 
   /// Ανανέωση ορατών πυλών είδους (stale one-shot, IndexedStack).
   void refreshGuards({required Iterable<int> itemIds}) {

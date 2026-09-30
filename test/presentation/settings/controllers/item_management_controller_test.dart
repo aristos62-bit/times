@@ -46,15 +46,14 @@ void main() {
     categoryId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
     subId = await SubCategoryDao(db)
         .insert(categoryId: categoryId, name: 'Γαλακτοκομικά');
-    groupId = await ItemGroupDao(
-      db,
-    ).insert(subCategoryId: subId, name: 'Φρέσκα');
+    groupId = await ItemGroupDao(db)
+        .insert(subCategoryId: subId, name: 'Φρέσκα');
     itemId = await ItemDao(db).insert(itemGroupId: groupId, name: 'Γάλα');
   });
 
   ProviderContainer container() => ProviderContainer.test(
-        overrides: [appDatabaseProvider.overrideWithValue(db)],
-      );
+    overrides: [appDatabaseProvider.overrideWithValue(db)],
+  );
 
   group('ItemManagementController.updateItem', () {
     test('rename ΟΚ + dup/κενό/ανύπαρκτο', () async {
@@ -98,9 +97,8 @@ void main() {
     });
 
     test('dup προς άλλο είδος → nameExists (εαυτός εξαιρείται)', () async {
-      final otherId = await ItemDao(
-        db,
-      ).insert(itemGroupId: groupId, name: 'Τυρί');
+      final otherId = await ItemDao(db)
+          .insert(itemGroupId: groupId, name: 'Τυρί');
       final c = container();
       addTearDown(c.dispose);
       final notifier = c.read(itemManagementControllerProvider.notifier);
@@ -147,11 +145,9 @@ void main() {
       expect((await ItemDao(db).getById(itemId))!.defaultUnitId, isNull);
     });
 
-    test('μετακίνηση τμήματος ανανεώνει πύλες 2-hop (group+sub+cat)',
-        () async {
-      final otherGroupId = await ItemGroupDao(
-        db,
-      ).insert(subCategoryId: subId, name: 'Κατεψυγμένα');
+    test('μετακίνηση τμήματος ανανεώνει πύλες 2-hop (group+sub+cat)', () async {
+      final otherGroupId = await ItemGroupDao(db)
+          .insert(subCategoryId: subId, name: 'Κατεψυγμένα');
       final c = container();
       addTearDown(c.dispose);
       final notifier = c.read(itemManagementControllerProvider.notifier);
@@ -179,12 +175,10 @@ void main() {
 
     test('μετακίνηση σε τμήμα άλλης υποκατηγορίας/κατηγορίας', () async {
       final otherCat = await CategoryDao(db).insert(name: 'ΟΙΚΙΑΚΑ');
-      final otherSub = await SubCategoryDao(
-        db,
-      ).insert(categoryId: otherCat, name: 'Καθαριστικά');
-      final otherGroup = await ItemGroupDao(
-        db,
-      ).insert(subCategoryId: otherSub, name: 'Υγρά');
+      final otherSub = await SubCategoryDao(db)
+          .insert(categoryId: otherCat, name: 'Καθαριστικά');
+      final otherGroup = await ItemGroupDao(db)
+          .insert(subCategoryId: otherSub, name: 'Υγρά');
       final c = container();
       addTearDown(c.dispose);
       final notifier = c.read(itemManagementControllerProvider.notifier);
@@ -198,7 +192,10 @@ void main() {
       expect((await ItemDao(db).getById(itemId))!.itemGroupId, otherGroup);
       // Παλιό δέντρο άδειο + καθαρό, νέο καθαρό.
       expect(await c.read(canDeleteItemGroupProvider(groupId).future), isTrue);
-      expect(await c.read(canDeleteItemGroupProvider(otherGroup).future), isTrue);
+      expect(
+        await c.read(canDeleteItemGroupProvider(otherGroup).future),
+        isTrue,
+      );
       expect(await c.read(canDeleteSubCategoryProvider(subId).future), isTrue);
       expect(
         await c.read(canDeleteSubCategoryProvider(otherSub).future),
@@ -207,6 +204,57 @@ void main() {
     });
   });
 
+  group('ItemManagementController.loadItemForEdit (§2.0.5)', () {
+    test('πλήρης αλυσίδα (ονόματα group/sub/cat/unit)', () async {
+      final withUnit = await ItemDao(db)
+          .insert(itemGroupId: groupId, name: 'Τυρί', defaultUnitId: unitId);
+      final c = container();
+      addTearDown(c.dispose);
+      final loaded = await c
+          .read(itemManagementControllerProvider.notifier)
+          .loadItemForEdit(withUnit);
+      expect(loaded, isNotNull);
+      expect(loaded!.group.name, 'Φρέσκα');
+      expect(loaded.sub.name, 'Γαλακτοκομικά');
+      expect(loaded.category.name, 'ΤΡΟΦΙΜΑ');
+      expect(loaded.unit?.name, 'Τεμάχιο');
+    });
+
+    test('χωρίς μονάδα → unit null (όχι abort)', () async {
+      final c = container();
+      addTearDown(c.dispose);
+      final loaded = await c
+          .read(itemManagementControllerProvider.notifier)
+          .loadItemForEdit(itemId);
+      expect(loaded, isNotNull);
+      expect(loaded!.unit, isNull);
+      expect(loaded.group.name, 'Φρέσκα');
+    });
+
+    test('ανύπαρκτο είδος → null', () async {
+      final c = container();
+      addTearDown(c.dispose);
+      expect(
+        await c
+            .read(itemManagementControllerProvider.notifier)
+            .loadItemForEdit(9999),
+        isNull,
+      );
+    });
+
+    test('σβησμένη μονάδα (SET NULL §3) → unit null', () async {
+      final withUnit = await ItemDao(db)
+          .insert(itemGroupId: groupId, name: 'Τυρί', defaultUnitId: unitId);
+      await UnitDao(db).deleteById(unitId);
+      final c = container();
+      addTearDown(c.dispose);
+      final loaded = await c
+          .read(itemManagementControllerProvider.notifier)
+          .loadItemForEdit(withUnit);
+      expect(loaded, isNotNull);
+      expect(loaded!.unit, isNull);
+    });
+  });
   group('ItemManagementController.deleteItem', () {
     test('καθαρό → ok + εξαφανίζεται', () async {
       final c = container();
@@ -220,10 +268,8 @@ void main() {
 
     test('με γραμμές → blocked tooltip (όχι delete)', () async {
       final supplierId = await SupplierDao(db).insert(name: 'Μάρκος');
-      final receiptId = await ReceiptDao(db).insert(
-        date: DateTime(2026, 1, 1),
-        supplierId: supplierId,
-      );
+      final receiptId = await ReceiptDao(db)
+          .insert(date: DateTime(2026, 1, 1), supplierId: supplierId);
       await ReceiptLineDao(db).insert(
         receiptId: receiptId,
         itemId: itemId,
@@ -258,10 +304,7 @@ void main() {
       await c
           .read(itemManagementControllerProvider.notifier)
           .deleteItem(itemId);
-      expect(
-        c.read(itemSearchControllerProvider).value?.selectedItem,
-        isNull,
-      );
+      expect(c.read(itemSearchControllerProvider).value?.selectedItem, isNull);
     });
   });
 

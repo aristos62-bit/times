@@ -23,6 +23,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/logging/app_logger.dart';
+import '../../core/utils/line_total.dart';
 import '../../data/local/app_database.dart';
 import '../../data/models/chart_totals.dart';
 
@@ -40,18 +41,14 @@ typedef StatsPdfModel = ({
 
 /// PDF section ομαδοποιημένης αναφοράς (§2.3 · 3η ανάλυση): τίτλος +
 /// γραμμές + γραμμή υποσυνόλου (έτοιμα strings, όπως `StatsPdfModel`).
-typedef PdfSection = ({
-  String title,
-  List<List<String>> rows,
-  String subtotal,
-});
+typedef PdfSection = ({String title, List<List<String>> rows, String subtotal});
 
 /// Επέκταση αρχείου ανά μορφή.
 extension StatsExportFormatX on StatsExportFormat {
   String get extension => switch (this) {
-        StatsExportFormat.excel => 'xlsx',
-        StatsExportFormat.pdf => 'pdf',
-      };
+    StatsExportFormat.excel => 'xlsx',
+    StatsExportFormat.pdf => 'pdf',
+  };
 }
 
 /// Σύνολα καρτέλας (Q4): label + καθαρό άθροισμα + πλήθος.
@@ -93,13 +90,11 @@ abstract final class StatisticsExportService {
   /// Αποτυχία → `StatsExportException` (χωρίς font τα ελληνικά σπάνε — Β2).
   static Future<(Uint8List, Uint8List)> loadPdfFonts() async {
     try {
-      final regular =
-          await rootBundle.load('assets/fonts/NotoSans-Regular.ttf');
-      final bold = await rootBundle.load('assets/fonts/NotoSans-Bold.ttf');
-      return (
-        regular.buffer.asUint8List(),
-        bold.buffer.asUint8List(),
+      final regular = await rootBundle.load(
+        'assets/fonts/NotoSans-Regular.ttf',
       );
+      final bold = await rootBundle.load('assets/fonts/NotoSans-Bold.ttf');
+      return (regular.buffer.asUint8List(), bold.buffer.asUint8List());
     } on Object catch (e, s) {
       AppLogger.error(LogTag.stats, 'Αποτυχία φόρτωσης PDF fonts', e, s);
       throw const StatsExportException();
@@ -127,9 +122,13 @@ abstract final class StatisticsExportService {
   static String quantityText(ItemLedgerRow row) =>
       '${formatQuantity(row.quantity)} ${row.unitAbbreviation}';
 
-  /// Καθαρό σύνολο γραμμής (λεπτά) — display mirror DAO (SPoT §3).
-  static int netTotalCents(ItemLedgerRow row) =>
-      ((row.priceCents - row.discountCents) * row.quantity).round();
+  /// Καθαρό σύνολο γραμμής (λεπτά) — display mirror μέσω SPoT
+  /// `lineTotalCents()` (§3, `core/utils/line_total.dart`).
+  static int netTotalCents(ItemLedgerRow row) => lineTotalCents(
+    priceCents: row.priceCents,
+    discountCents: row.discountCents,
+    quantity: row.quantity,
+  );
 
   /// Σύνολα καρτέλας (Q4) — μοναδική πηγή για table/excel/pdf (§1.1).
   static StatsTotals totalsOf(List<ItemLedgerRow> rows) {
@@ -157,14 +156,14 @@ abstract final class StatisticsExportService {
     final order = <String>[];
     final buckets = <String, List<PeriodPurchaseRow>>{};
     String keyOf(PeriodPurchaseRow row) => switch (group) {
-          PurchasesGroup.category => row.categoryName,
-          PurchasesGroup.supplier => row.supplierName,
-          PurchasesGroup.day =>
-            '${row.date.year}-${row.date.month.toString().padLeft(2, '0')}-'
-                '${row.date.day.toString().padLeft(2, '0')}',
-          PurchasesGroup.month =>
-            '${row.date.year}-${row.date.month.toString().padLeft(2, '0')}',
-        };
+      PurchasesGroup.category => row.categoryName,
+      PurchasesGroup.supplier => row.supplierName,
+      PurchasesGroup.day =>
+        '${row.date.year}-${row.date.month.toString().padLeft(2, '0')}-'
+            '${row.date.day.toString().padLeft(2, '0')}',
+      PurchasesGroup.month =>
+        '${row.date.year}-${row.date.month.toString().padLeft(2, '0')}',
+    };
     for (final row in rows) {
       final key = keyOf(row);
       if (!buckets.containsKey(key)) {
@@ -177,8 +176,10 @@ abstract final class StatisticsExportService {
   }
 
   /// Label γραμμής υποσυνόλου («ΤΡΟΦΙΜΑ · Σύνολο: (Κιλ: 2)» — §1.1).
-  static String groupSubtotalLabel(String displayName, PurchasesTotals totals) =>
-      '$displayName · ${totals.label}';
+  static String groupSubtotalLabel(
+    String displayName,
+    PurchasesTotals totals,
+  ) => '$displayName · ${totals.label}';
 
   /// Χτίζει XLSX bytes (sync CPU). Header bold · ημερομηνία `DateCellValue` ·
   /// αριθμός `Int` · ποσά native doubles (€) · κείμενα `Text` · footer συνόλων.
@@ -197,8 +198,9 @@ abstract final class StatisticsExportService {
         AppStrings.statsColumnNet,
       ];
       for (var c = 0; c < headers.length; c++) {
-        final cell =
-            sheet.cell(CellIndex.indexByString('${_columnLetter(c)}1'));
+        final cell = sheet.cell(
+          CellIndex.indexByString('${_columnLetter(c)}1'),
+        );
         cell.value = TextCellValue(headers[c]);
         cell.cellStyle = CellStyle(bold: true);
       }
@@ -210,27 +212,33 @@ abstract final class StatisticsExportService {
           month: row.date.month,
           day: row.date.day,
         );
-        sheet.cell(CellIndex.indexByString('B$n')).value =
-            IntCellValue(row.receiptId);
-        sheet.cell(CellIndex.indexByString('C$n')).value =
-            TextCellValue(row.supplierName);
-        sheet.cell(CellIndex.indexByString('D$n')).value =
-            TextCellValue(quantityText(row));
-        sheet.cell(CellIndex.indexByString('E$n')).value =
-            DoubleCellValue(row.priceCents / 100.0);
-        sheet.cell(CellIndex.indexByString('F$n')).value =
-            DoubleCellValue(row.discountCents / 100.0);
-        sheet.cell(CellIndex.indexByString('G$n')).value =
-            DoubleCellValue(
+        sheet.cell(CellIndex.indexByString('B$n')).value = IntCellValue(
+          row.receiptId,
+        );
+        sheet.cell(CellIndex.indexByString('C$n')).value = TextCellValue(
+          row.supplierName,
+        );
+        sheet.cell(CellIndex.indexByString('D$n')).value = TextCellValue(
+          quantityText(row),
+        );
+        sheet.cell(CellIndex.indexByString('E$n')).value = DoubleCellValue(
+          row.priceCents / 100.0,
+        );
+        sheet.cell(CellIndex.indexByString('F$n')).value = DoubleCellValue(
+          row.discountCents / 100.0,
+        );
+        sheet.cell(CellIndex.indexByString('G$n')).value = DoubleCellValue(
           (row.priceCents - row.discountCents) / 100.0,
         );
       }
       final totals = totalsOf(rows);
       final t = rows.length + 2;
-      sheet.cell(CellIndex.indexByString('A$t')).value =
-          TextCellValue(totals.label);
-      sheet.cell(CellIndex.indexByString('G$t')).value =
-          DoubleCellValue(totals.totalCents / 100.0);
+      sheet.cell(CellIndex.indexByString('A$t')).value = TextCellValue(
+        totals.label,
+      );
+      sheet.cell(CellIndex.indexByString('G$t')).value = DoubleCellValue(
+        totals.totalCents / 100.0,
+      );
       return _saveWorkbook(workbook.excel, rows.length);
     } on StatsExportException {
       rethrow;
@@ -272,7 +280,11 @@ abstract final class StatisticsExportService {
     var net = 0;
     for (final row in rows) {
       qty[row.unitId] = (qty[row.unitId] ?? 0) + row.quantity;
-      net += ((row.priceCents - row.discountCents) * row.quantity).round();
+      net += lineTotalCents(
+        priceCents: row.priceCents,
+        discountCents: row.discountCents,
+        quantity: row.quantity,
+      );
     }
     final parts = [
       for (final unit in units)
@@ -288,9 +300,8 @@ abstract final class StatisticsExportService {
   }
 
   /// Κεφαλαιοποιεί συντομογραφία («κιλ» → «Κιλ») για το label συνόλων.
-  static String _capitalized(String value) => value.isEmpty
-      ? value
-      : value[0].toUpperCase() + value.substring(1);
+  static String _capitalized(String value) =>
+      value.isEmpty ? value : value[0].toUpperCase() + value.substring(1);
 
   /// Χτίζει XLSX συγκεντρωτικών αγορών (sync CPU): fixed στήλες +
   /// μία στήλη ποσότητας ανά μονάδα [units] (δυναμικές, Q3) + Τιμή/Έκπτωση/
@@ -326,10 +337,7 @@ abstract final class StatisticsExportService {
       }
       // Γραμμές: flat ή blocks ομάδων (με τίτλο + υποσύνολο ανά block).
       // Τα display names των groups τα δίνει ο καλών (έχει locale).
-      final blocks = groups ??
-          [
-            (key: '', rows: rows),
-          ];
+      final blocks = groups ?? [(key: '', rows: rows)];
       var r = 1;
       void set(int c, CellValue value) =>
           sheet.cell(CellIndex.indexByColumnRow(columnIndex: c, rowIndex: r))
@@ -340,11 +348,14 @@ abstract final class StatisticsExportService {
           r++;
         }
         for (final row in block.rows) {
-          set(0, DateCellValue(
-            year: row.date.year,
-            month: row.date.month,
-            day: row.date.day,
-          ));
+          set(
+            0,
+            DateCellValue(
+              year: row.date.year,
+              month: row.date.month,
+              day: row.date.day,
+            ),
+          );
           set(1, IntCellValue(row.receiptId));
           set(2, TextCellValue(row.itemName));
           set(3, TextCellValue(row.categoryName));
@@ -352,9 +363,7 @@ abstract final class StatisticsExportService {
           for (var u = 0; u < units.length; u++) {
             set(
               5 + u,
-              DoubleCellValue(
-                row.unitId == units[u].id ? row.quantity : 0,
-              ),
+              DoubleCellValue(row.unitId == units[u].id ? row.quantity : 0),
             );
           }
           final priceCol = 5 + units.length;
@@ -362,27 +371,25 @@ abstract final class StatisticsExportService {
           set(priceCol + 1, DoubleCellValue(row.discountCents / 100.0));
           set(
             priceCol + 2,
-            DoubleCellValue(
-              (row.priceCents - row.discountCents) / 100.0,
-            ),
+            DoubleCellValue((row.priceCents - row.discountCents) / 100.0),
           );
           r++;
         }
         if (groups != null) {
           final sub = purchasesTotalsOf(block.rows, units);
-          setFooterRow(sheet, r, units, groupSubtotalLabel(block.key, sub), sub);
+          setFooterRow(
+            sheet,
+            r,
+            units,
+            groupSubtotalLabel(block.key, sub),
+            sub,
+          );
           r++;
         }
       }
       if (groups == null) {
         final totals = purchasesTotalsOf(rows, units);
-        setFooterRow(
-          sheet,
-          r,
-          units,
-          totals.label,
-          totals,
-        );
+        setFooterRow(sheet, r, units, totals.label, totals);
       } else {
         final totals = purchasesTotalsOf(rows, units);
         setFooterRow(
@@ -395,12 +402,7 @@ abstract final class StatisticsExportService {
       }
       return _saveWorkbook(workbook.excel, rows.length);
     } on Object catch (e, s) {
-      AppLogger.error(
-        LogTag.stats,
-        'Αποτυχία δημιουργίας XLSX αγορών',
-        e,
-        s,
-      );
+      AppLogger.error(LogTag.stats, 'Αποτυχία δημιουργίας XLSX αγορών', e, s);
       throw const StatsExportException();
     }
   }
@@ -418,16 +420,10 @@ abstract final class StatisticsExportService {
           ..value = value;
     set(0, TextCellValue(label));
     for (var u = 0; u < units.length; u++) {
-      set(
-        5 + u,
-        DoubleCellValue(totals.qtyByUnit[units[u].id] ?? 0),
-      );
+      set(5 + u, DoubleCellValue(totals.qtyByUnit[units[u].id] ?? 0));
     }
     final priceCol = 5 + units.length;
-    set(
-      priceCol + 2,
-      DoubleCellValue(totals.netTotalCents / 100.0),
-    );
+    set(priceCol + 2, DoubleCellValue(totals.netTotalCents / 100.0));
   }
 
   /// Χτίζει PDF bytes (async CPU). `headers`/`body`/`totalsLine` έτοιμα
@@ -526,11 +522,10 @@ abstract final class StatisticsExportService {
     required pw.Font bold,
   }) {
     pw.TextStyle cellStyle(bool header) => pw.TextStyle(
-          font: header ? bold : regular,
-          fontSize: 10,
-          fontWeight:
-              header ? pw.FontWeight.bold : pw.FontWeight.normal,
-        );
+      font: header ? bold : regular,
+      fontSize: 10,
+      fontWeight: header ? pw.FontWeight.bold : pw.FontWeight.normal,
+    );
     return pw.TableHelper.fromTextArray(
       headers: headers,
       data: rows,

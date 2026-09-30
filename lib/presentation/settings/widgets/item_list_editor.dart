@@ -28,7 +28,6 @@ import '../../../core/constants/app_messages.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/utils/app_feedback.dart';
 import '../../../data/local/app_database.dart';
-import '../../../data/providers/database_providers.dart';
 import '../../../data/providers/settings_providers.dart';
 import '../../price_entry/controllers/item_search_controller.dart';
 import '../../price_entry/widgets/item_search_field.dart';
@@ -47,9 +46,7 @@ class ItemListEditor extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return ProviderScope(
       overrides: [
-        itemSearchControllerProvider.overrideWith(
-          ItemSearchController.new,
-        ),
+        itemSearchControllerProvider.overrideWith(ItemSearchController.new),
       ],
       child: const _ItemListContent(),
     );
@@ -60,60 +57,34 @@ class ItemListEditor extends ConsumerWidget {
 class _ItemListContent extends ConsumerWidget {
   const _ItemListContent();
 
-  /// Επεξεργασία επιλεγμένου: lookups (τμήμα → υποκατηγορία → κατηγορία +
-  /// μονάδα) ΠΡΙΝ το open (το dialog μένει σύγχρονο, §2.4) → dialog →
+  /// Επεξεργασία επιλεγμένου: lookups από τον controller (§2.0.5 — το
+  /// widget ΔΕΝ διαβάζει repositories) → dialog (σύγχρονο, §2.4) →
   /// controller → feedback + καθάρισμα fork-επιλογής.
   /// Ανύπαρκτα refs (race διαγραφής) → `loadDataFailed` χωρίς dialog.
-  Future<void> _editItem(
-    BuildContext context,
-    WidgetRef ref,
-    Item item,
-  ) async {
-    final group = await ref.read(itemGroupRepositoryProvider).getById(
-          item.itemGroupId,
-        );
-    if (group == null || !context.mounted) {
+  Future<void> _editItem(BuildContext context, WidgetRef ref, Item item) async {
+    final loaded = await ref
+        .read(itemManagementControllerProvider.notifier)
+        .loadItemForEdit(item.id);
+    if (loaded == null || !context.mounted) {
       if (context.mounted) {
         AppFeedback.showError(context, AppErrors.loadDataFailed);
       }
       return;
     }
-    final sub = await ref.read(subCategoryRepositoryProvider).getById(
-          group.subCategoryId,
-        );
-    if (sub == null || !context.mounted) {
-      if (context.mounted) {
-        AppFeedback.showError(context, AppErrors.loadDataFailed);
-      }
-      return;
-    }
-    final category =
-        await ref.read(categoryRepositoryProvider).getById(sub.categoryId);
-    if (category == null || !context.mounted) {
-      if (context.mounted) {
-        AppFeedback.showError(context, AppErrors.loadDataFailed);
-      }
-      return;
-    }
-    Unit? unit;
-    if (item.defaultUnitId != null) {
-      unit = await ref
-          .read(unitRepositoryProvider)
-          .getById(item.defaultUnitId!);
-    }
-    if (!context.mounted) return;
     final result = await showItemEditDialog(
       context,
       item: item,
-      itemGroup: group,
-      subCategory: sub,
-      category: category,
-      unit: unit,
+      itemGroup: loaded.group,
+      subCategory: loaded.sub,
+      category: loaded.category,
+      unit: loaded.unit,
     );
     if (result == null || !context.mounted) return;
     await runControllerOp(
       context,
-      () => ref.read(itemManagementControllerProvider.notifier).updateItem(
+      () => ref
+          .read(itemManagementControllerProvider.notifier)
+          .updateItem(
             id: item.id,
             name: result.name,
             itemGroupId: result.itemGroupId,
@@ -159,11 +130,7 @@ class _ItemListContent extends ConsumerWidget {
       dense: true,
       contentPadding: EdgeInsets.zero,
       leading: const Icon(Icons.shopping_basket_outlined),
-      title: Text(
-        item.name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      title: Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -196,8 +163,10 @@ class _ItemListContent extends ConsumerWidget {
       itemManagementControllerProvider.select((s) => s.isWorking),
     );
     // Forked επιλογή (βλ. doc `ItemListEditor`).
-    final selected =
-        ref.watch(itemSearchControllerProvider).value?.selectedItem;
+    final selected = ref
+        .watch(itemSearchControllerProvider)
+        .value
+        ?.selectedItem;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,

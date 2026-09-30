@@ -166,6 +166,13 @@ abstract final class AppConstants {
   // αυτό το διάστημα ΔΕΝ ζητά ξεκλείδωμα (Q2).
   static const int appLockGraceSeconds = 30;
 
+  // Σταθερό ύψος περιοχής retry-κουμπιού (§1.4 — όχι layout jump όταν
+  // εμφανίζεται/κρύβεται το κουμπί).
+  static const double appLockButtonHeight = 48.0;
+
+  // Μέγεθος icon κλειδαριάς στην οθόνη ξεκλειδώματος.
+  static const double appLockIconSize = 64.0;
+
   // ─── Charts (§2.1 DESIGN · Φάση 5 Βήμα 1) ─────────────────────────────────
   // Πλήθος φετών πίτας (top-N + «Λοιπά», §2.1:183) — suppliers/κατηγορίες.
   static const int pieMaxSlices = 8;
@@ -239,4 +246,9 @@ abstract final class AppConstants {
   // Χρησιμοποιεί το πρότυπο ημερομηνίας (yyyy=έτος, MM=μήνας, dd=ημέρα,
   // HH=ώρα, mm=λεπτά, ss=δευτερόλεπτα).
   static const String backupFileNamePattern = 'times_backup_yyyyMMdd_HHmmss';
+
+  // Πλήθος auto-backups που κρατιούνται (retention 30-09-2026): κάθε
+  // restore προσθέτει ένα `auto_<ts>.sqlite` — τα παλιότερα σβήνονται
+  // μετά από επιτυχημένο restore (`pruneAutoBackups`, §2.3).
+  static const int autoBackupRetentionCount = 5;
 }

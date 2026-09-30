@@ -102,29 +102,26 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay> {
           child: _autoDone
               ? Center(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.all(AppConstants.spacingL),
+                    padding: const EdgeInsets.all(AppConstants.spacingL),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.lock_outlined,
-                          size: 64,
+                          size: AppConstants.appLockIconSize,
                           color: theme.colorScheme.primary,
                           semanticLabel: AppStrings.appLockEnableLabel,
                         ),
-                        const SizedBox(
-                            height: AppConstants.spacingM),
+                        const SizedBox(height: AppConstants.spacingM),
                         Text(
                           AppStrings.appLockReason,
                           style: theme.textTheme.titleMedium,
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(
-                            height: AppConstants.spacingL),
+                        const SizedBox(height: AppConstants.spacingL),
                         // Σταθερό ύψος (§1.4 — όχι layout jump).
                         SizedBox(
-                          height: 48,
+                          height: AppConstants.appLockButtonHeight,
                           child: Center(
                             child: _unlocking
                                 ? const SizedBox.shrink()

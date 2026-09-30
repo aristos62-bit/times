@@ -4,9 +4,10 @@
 /// (Categories/SubCategories/**ItemGroups**/Units/Items/Suppliers/
 /// Receipts/ReceiptLines). Στο `onCreate` δημιουργείται όλο το σχήμα +
 /// seed (units + κατάλογος από `.md`, χωρίς είδη). Baseline παραγωγής v4
-/// (30-09-2026): μοναδική εγκατάσταση με πραγματικά δεδομένα — μελλοντική
-/// αλλαγή σχήματος = bump `schemaVersion` + step στο `onUpgrade` + test,
-/// ποτέ wipe, ποτέ επανεγκατάσταση. Στο `beforeOpen` ενεργοποιείται το
+/// (30-09-2026) · τρέχουσα v5 (indexes 30-09-2026): μοναδική εγκατάσταση
+/// με πραγματικά δεδομένα — μελλοντική αλλαγή σχήματος = bump
+/// `schemaVersion` + step στο `onUpgrade` + test, ποτέ wipe, ποτέ
+/// επανεγκατάσταση. Στο `beforeOpen` ενεργοποιείται το
 /// `PRAGMA foreign_keys = ON`. Logging μέσω `AppLogger` με tag `DB` (§1.7).
 library;
 
@@ -28,22 +29,24 @@ part 'app_database.g.dart';
 /// της εφαρμογής (item catalog, receipts κ.λπ.) θα χρησιμοποιούν μόνο
 /// αυτό το αντικείμενο για ερωτήματα. Το προαιρετικό [executor] επιτρέπει
 /// in-memory βάση στα tests· στην παραγωγή ανοίγεται το αρχείο [dbFileName].
-@DriftDatabase(tables: [
-  Categories,
-  SubCategories,
-  ItemGroups,
-  Units,
-  Items,
-  Suppliers,
-  Receipts,
-  ReceiptLines,
-])
+@DriftDatabase(
+  tables: [
+    Categories,
+    SubCategories,
+    ItemGroups,
+    Units,
+    Items,
+    Suppliers,
+    Receipts,
+    ReceiptLines,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   /// Κατασκευή με δυνατότητα ορισμού custom [executor] για testing.
   /// Αν δεν δοθεί, χρησιμοποιείται το default drift executor.
   /// Αν [skipSeed] είναι `true`, δεν εκτελείται seed στο `onCreate`.
   AppDatabase({QueryExecutor? executor, this.skipSeed = false})
-      : super(executor ?? _openConnection());
+    : super(executor ?? _openConnection());
 
   /// Όνομα του αρχείου βάσης στον χώρο της εφαρμογής.
   static const dbFileName = 'times';
@@ -60,31 +63,51 @@ class AppDatabase extends _$AppDatabase {
       driftDatabase(name: dbFileName);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
-          await m.createAll();
-          AppLogger.info(LogTag.db, 'Δημιουργία βάσης (times, schema v4)');
-          if (!skipSeed) {
-            await runSeed(this);
-          }
-        },
-        // Baseline παραγωγής: v4 (30-09-2026) — μοναδική εγκατάσταση με
-        // πραγματικά δεδομένα. Καμία έκδοση < v4 σε κυκλοφορία (δεν
-        // υπάρχει legacy path). Μελλοντική αλλαγή σχήματος: bump
-        // schemaVersion + step εδώ (π.χ. `if (from < 5) {
-        // await m.addColumn(...); }`) + test — ποτέ wipe, ποτέ
-        // επανεγκατάσταση (οι αποδείξεις δεν ξαναχτίζονται).
-        onUpgrade: (m, from, to) async {
-          AppLogger.info(LogTag.db, 'Αναβάθμιση βάσης v$from → v$to');
-        },
-        beforeOpen: (details) async {
-          await customStatement('PRAGMA foreign_keys = ON');
-          AppLogger.info(LogTag.db, 'PRAGMA foreign_keys = ON');
-        },
+    onCreate: (m) async {
+      await m.createAll();
+      AppLogger.info(
+        LogTag.db,
+        'Δημιουργία βάσης (times, schema v$schemaVersion)',
       );
+      if (!skipSeed) {
+        await runSeed(this);
+      }
+    },
+    // Baseline παραγωγής: v4 (30-09-2026) · v5 indexes (30-09-2026) —
+    // μοναδική εγκατάσταση με πραγματικά δεδομένα. Καμία έκδοση < v4
+    // σε κυκλοφορία (δεν υπάρχει legacy path). Κανόνας: κάθε bump =
+    // step εδώ + test — ποτέ wipe, ποτέ επανεγκατάσταση (οι αποδείξεις
+    // δεν ξαναχτίζονται).
+    onUpgrade: (m, from, to) async {
+      AppLogger.info(LogTag.db, 'Αναβάθμιση βάσης v$from → v$to');
+      if (from < 5) {
+        // Indexes v5: IF NOT EXISTS — ασφαλές σε επανάληψη, δεδομένα
+        // άθικτα. Ονόματα ΤΑΥΤΙΣΜΕΝΑ με τα `@TableIndex` (αλλιώς διπλά
+        // indexes με το `createAll`).
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_receipt_lines_receipt_id '
+          'ON receipt_lines (receipt_id)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_receipts_date '
+          'ON receipts (date)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_receipts_supplier_id '
+          'ON receipts (supplier_id)',
+        );
+        AppLogger.info(LogTag.db, 'Migration v5: indexes ΟΚ');
+      }
+    },
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+      AppLogger.info(LogTag.db, 'PRAGMA foreign_keys = ON');
+    },
+  );
 
   /// Idempotent κλείσιμο (Φάση 4 Βήμα 5, απόφαση Β · §2.3 restore).
   ///
@@ -97,9 +120,9 @@ class AppDatabase extends _$AppDatabase {
     // Probe 1 (διάγνωση hang restore): απαντά ο executor; Με timeout και
     // catch-all — ποτέ throw, μόνο log (δεν αλλάζει τη ροή κλεισίματος).
     try {
-      await customSelect('SELECT 1').get().timeout(
-            Duration(seconds: AppConstants.restoreProbeTimeoutSeconds),
-          );
+      await customSelect('SELECT 1')
+          .get()
+          .timeout(Duration(seconds: AppConstants.restoreProbeTimeoutSeconds));
       AppLogger.info(LogTag.db, 'closeSafely: probe SELECT 1 OK');
     } on TimeoutException {
       AppLogger.info(LogTag.db, 'closeSafely: probe SELECT 1 TIMEOUT');

@@ -6,9 +6,11 @@
 /// (injection, ίδιο πρότυπο με `CategoryRepositoryImpl(dao)`): προφορτώνεται
 /// στο `main()` (Q4 — μηδέν flash, κανένα platform channel στο build).
 ///
-/// Χωρίς logging εδώ: το logging των αλλαγών θέματος γίνεται στον
-/// `ThemeModeController` (settings_providers.dart, tag UI) — πρότυπο των
-/// controllers του codebase (receipt_form_controller).
+/// Χωρίς logging εδώ — εξαίρεση: corrupt chart-config → error log (tag
+/// UI, καθρέφτης `ThemeModeController.build`): το logging των αλλαγών
+/// θέματος γίνεται στον `ThemeModeController` (settings_providers.dart,
+/// tag UI) — πρότυπο των controllers του codebase
+/// (receipt_form_controller).
 library;
 
 import 'dart:convert';
@@ -18,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_enums.dart';
+import '../../core/logging/app_logger.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/chart_totals.dart';
 import '../../presentation/home/state/home_chart_config.dart';
@@ -60,7 +63,11 @@ final class SettingsRepositoryImpl implements SettingsRepository {
     if (raw == null || raw.isEmpty) return HomeChartConfig.defaults();
     try {
       final decoded = jsonDecode(raw);
-      if (decoded is! Map<String, dynamic>) return HomeChartConfig.defaults();
+      if (decoded is! Map<String, dynamic>) {
+        // Έγκυρο JSON λάθος σχήματος (π.χ. array) — corruption όπως το catch.
+        AppLogger.error(LogTag.ui, 'Ρύθμιση γραφημάτων άκυρη — χρήση defaults');
+        return HomeChartConfig.defaults();
+      }
       final migrated = _migrateOrders(decoded);
       return HomeChartConfig(
         supplier: _entryFromJson(migrated['supplier'], 0),
@@ -70,7 +77,15 @@ final class SettingsRepositoryImpl implements SettingsRepository {
         topItems: _entryFromJson(migrated['topItems'], 4),
         itemTrend: _entryFromJson(migrated['itemTrend'], 5),
       );
-    } catch (_) {
+    } catch (e, s) {
+      // Κατεστραμμένο JSON — σιωπηλό reset ΜΟΝΟ για τον χρήστη· στο log
+      // μένει ίχνος (καθρέφτης `ThemeModeController.build`).
+      AppLogger.error(
+        LogTag.ui,
+        'Ανάγνωση γραφημάτων απέτυχε — χρήση defaults',
+        e,
+        s,
+      );
       return HomeChartConfig.defaults();
     }
   }
@@ -174,7 +189,9 @@ final class SettingsRepositoryImpl implements SettingsRepository {
     return ChartEntry(
       visible: visible is bool ? visible : true,
       order: order is int ? order : fallbackOrder,
-      period: _periodFromString(value['period'] is String ? value['period'] as String : null),
+      period: _periodFromString(
+        value['period'] is String ? value['period'] as String : null,
+      ),
       customFrom: customFrom is String ? DateTime.tryParse(customFrom) : null,
       customTo: customTo is String ? DateTime.tryParse(customTo) : null,
     );
@@ -182,10 +199,10 @@ final class SettingsRepositoryImpl implements SettingsRepository {
 
   /// Κωδικοποιεί μία entry (ISO strings για το custom range).
   static Map<String, dynamic> _entryToJson(ChartEntry entry) => {
-        'visible': entry.visible,
-        'order': entry.order,
-        'period': entry.period.name,
-        'customFrom': entry.customFrom?.toIso8601String(),
-        'customTo': entry.customTo?.toIso8601String(),
-      };
+    'visible': entry.visible,
+    'order': entry.order,
+    'period': entry.period.name,
+    'customFrom': entry.customFrom?.toIso8601String(),
+    'customTo': entry.customTo?.toIso8601String(),
+  };
 }

@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
+import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/core/logging/app_logger.dart';
 import 'package:times/data/local/app_database.dart';
@@ -235,6 +236,32 @@ void main() {
       expect(form.supplier, isNull);
       expect(form.draftLines, isEmpty);
       expect(form.editingId, isNull);
+    });
+
+    test('retention: 6 παλιά autos + restore → 5 (30-09-2026)', () async {
+      // Καθαρισμός autos προηγούμενων tests (ίδιο second = ίδιο filename
+      // → το `VACUUM INTO` αποτυγχάνει σε υπάρχον target, όπως στο R4).
+      for (final f in tmpRoot.listSync().whereType<File>().where(
+        (f) => f.path.contains('auto_times_backup_'),
+      )) {
+        f.deleteSync();
+      }
+      for (var i = 1; i <= 6; i++) {
+        final day = i.toString().padLeft(2, '0');
+        File('${tmpRoot.path}/auto_times_backup_202003${day}_000000.sqlite')
+            .writeAsStringSync('old');
+      }
+      final service = BackupService(db);
+      final snap = '${tmpRoot.path}/ret_snap.sqlite';
+      await service.exportSnapshot(snap);
+      final result = await controller().restoreBackup(snap);
+      expect(result.ok, isTrue);
+      final autos = tmpRoot
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.contains('auto_times_backup_'))
+          .toList();
+      expect(autos.length, AppConstants.autoBackupRetentionCount);
     });
 
     test('άκυρο αρχείο → InvalidBackupFileException, βάση ΑΝΟΙΧΤΗ', () async {

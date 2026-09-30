@@ -12,6 +12,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/providers/stream_providers.dart';
@@ -43,13 +44,11 @@ class _CatalogFilterFieldState extends ConsumerState<CatalogFilterField> {
   /// Γενιές πεδίων — φρέσκο άδειο dropdown σε reset (pattern header §2.2).
   int _epoch = 0;
 
-  void _emit() => widget.onChanged(
-        (
-          categoryId: _categoryId,
-          subCategoryId: _subCategoryId,
-          itemGroupId: _itemGroupId,
-        ),
-      );
+  void _emit() => widget.onChanged((
+    categoryId: _categoryId,
+    subCategoryId: _subCategoryId,
+    itemGroupId: _itemGroupId,
+  ));
 
   /// Καθαρισμός όλων (κουμπί «Όλες» — reuse `clearReceiptFilter`).
   void _clearAll() {
@@ -99,7 +98,7 @@ class _CatalogFilterFieldState extends ConsumerState<CatalogFilterField> {
             _emit();
           },
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppConstants.spacingM),
         if (categoryId == null)
           const TextField(
             enabled: false,
@@ -116,9 +115,10 @@ class _CatalogFilterFieldState extends ConsumerState<CatalogFilterField> {
             key: ValueKey('sub_${categoryId}_$_epoch'),
             labelText: AppStrings.fieldSubCategory,
             hintText: AppStrings.statsFilterAllSubCategories,
-            searchProvider: (query) => subCategorySearchProvider(
-              (categoryId: categoryId, query: query),
-            ),
+            searchProvider: (query) => subCategorySearchProvider((
+              categoryId: categoryId,
+              query: query,
+            )),
             labelOf: (s) => s.name,
             prefixIcon: const Icon(Icons.folder_outlined),
             resultLeadingIcon: const Icon(Icons.folder_outlined),
@@ -142,7 +142,7 @@ class _CatalogFilterFieldState extends ConsumerState<CatalogFilterField> {
               _emit();
             },
           ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppConstants.spacingM),
         if (subCategoryId == null)
           const TextField(
             enabled: false,
@@ -159,9 +159,10 @@ class _CatalogFilterFieldState extends ConsumerState<CatalogFilterField> {
             key: ValueKey('group_${subCategoryId}_$_epoch'),
             labelText: AppStrings.fieldItemGroup,
             hintText: AppStrings.statsFilterAllItemGroups,
-            searchProvider: (query) => itemGroupSearchProvider(
-              (subCategoryId: subCategoryId, query: query),
-            ),
+            searchProvider: (query) => itemGroupSearchProvider((
+              subCategoryId: subCategoryId,
+              query: query,
+            )),
             labelOf: (g) => g.name,
             prefixIcon: const Icon(Icons.folder_open_outlined),
             resultLeadingIcon: const Icon(Icons.folder_open_outlined),

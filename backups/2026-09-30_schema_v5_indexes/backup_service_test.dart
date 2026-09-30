@@ -1,0 +1,430 @@
+/// Unit tests — `BackupService` (domain/services · Φάση 4 Βήμα 5, §2.3).
+///
+/// File-backed temp DBs (όχι in-memory: το `VACUUM INTO` αποτυγχάνει σε
+/// `:memory:`) + `FakePathProvider` (χωρίς platform channel). Καμία
+/// εξάρτηση από UI/Riverpod — καθαρό service.
+library;
+
+import 'dart:io';
+
+import 'package:drift/native.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+import 'package:sqlite3/sqlite3.dart';
+
+import 'package:times/core/constants/app_constants.dart';
+import 'package:times/core/errors/app_exceptions.dart';
+import 'package:times/core/utils/greek_text_normalizer.dart';
+import 'package:times/data/local/app_database.dart';
+import 'package:times/domain/services/backup_service.dart';
+
+import '../../helpers/fake_path_provider.dart';
+
+void main() {
+  late Directory tmpRoot;
+  final List<AppDatabase> openDbs = [];
+
+  setUpAll(() {
+    tmpRoot = Directory.systemTemp.createTempSync('backup_service_test_');
+    PathProviderPlatform.instance = FakePathProvider(tmpRoot.path);
+  });
+
+  tearDownAll(() {
+    try {
+      tmpRoot.deleteSync(recursive: true);
+    } catch (_) {
+      // Windows file-handle best-effort (house precedent seed test).
+    }
+  });
+
+  setUp(() => openDbs.clear());
+
+  tearDown(() async {
+    for (final db in openDbs) {
+      await db.closeSafely();
+    }
+  });
+
+  /// File-backed βάση με σχήμα (skipSeed — άδειοι πίνακες, έγκυρο schema).
+  AppDatabase openFileDb(String name) {
+    final db = AppDatabase(
+      executor: NativeDatabase(File('${tmpRoot.path}/$name')),
+      skipSeed: true,
+    );
+    openDbs.add(db);
+    return db;
+  }
+
+  group('BackupService.buildBackupFileName', () {
+    test('pattern + timestamp + .sqlite (SPoT pattern §2.3)', () {
+      expect(
+        BackupService.buildBackupFileName(DateTime(2026, 9, 24, 21, 5, 7)),
+        'times_backup_20260924_210507.sqlite',
+      );
+    });
+
+    test('pad μονοψήφιων (μήνας/ώρα)', () {
+      expect(
+        BackupService.buildBackupFileName(DateTime(2026, 3, 5, 4, 7, 9)),
+        'times_backup_20260305_040709.sqlite',
+      );
+    });
+  });
+
+  group('BackupService snapshots', () {
+    test('exportSnapshot → αρχείο + validate ΟΚ', () async {
+      final db = openFileDb('a.sqlite');
+      await db
+          .into(db.categories)
+          .insert(
+            CategoriesCompanion.insert(
+              name: 'ΤΡΟΦΙΜΑ',
+              normalizedName: GreekTextNormalizer.normalize('ΤΡΟΦΙΜΑ'),
+            ),
+          );
+      final service = BackupService(db);
+      final target = '${tmpRoot.path}/snap.sqlite';
+      await service.exportSnapshot(target);
+      expect(File(target).existsSync(), isTrue);
+      await service.validateBackupFile(target);
+    });
+
+    test('exportSnapshot σε ανύπαρκτο φάκελο → BackupCreationException', () {
+      final db = openFileDb('b.sqlite');
+      final service = BackupService(db);
+      expect(
+        service.exportSnapshot('${tmpRoot.path}/no_dir_xyz/snap.sqlite'),
+        throwsA(isA<BackupCreationException>()),
+      );
+    });
+
+    test('autoBackupCurrent → auto_ αρχείο στο docs', () async {
+      final db = openFileDb('c.sqlite');
+      final service = BackupService(db);
+      final path = await service.autoBackupCurrent();
+      expect(path.contains('auto_times_backup_'), isTrue);
+      expect(File(path).existsSync(), isTrue);
+    });
+
+    test(
+      'replaceDatabaseFile → docs/times.sqlite με περιεχόμενο πηγής',
+      () async {
+        final dbA = openFileDb('ra.sqlite');
+        await dbA
+            .into(dbA.categories)
+            .insert(
+              CategoriesCompanion.insert(
+                name: 'ALPHA',
+                normalizedName: GreekTextNormalizer.normalize('ALPHA'),
+              ),
+            );
+        final serviceA = BackupService(dbA);
+        final snap = '${tmpRoot.path}/ra_snap.sqlite';
+        await serviceA.exportSnapshot(snap);
+        await serviceA.replaceDatabaseFile(snap);
+        final target = File('${tmpRoot.path}/times.sqlite');
+        expect(target.existsSync(), isTrue);
+        final reopened = AppDatabase(
+          executor: NativeDatabase(target),
+          skipSeed: true,
+        );
+        openDbs.add(reopened);
+        final cats = await reopened.select(reopened.categories).get();
+        expect(cats.map((c) => c.name), contains('ALPHA'));
+      },
+    );
+
+    test(
+      'replace σβήνει stale sidecars + overwrite (double-replace)',
+      () async {
+        final dbA = openFileDb('sa.sqlite');
+        final serviceA = BackupService(dbA);
+        final snap = '${tmpRoot.path}/sa_snap.sqlite';
+        await serviceA.exportSnapshot(snap);
+        await serviceA.replaceDatabaseFile(snap);
+        // Dummy stale sidecars δίπλα στο target (όπως θα άφηνε WAL-mode).
+        final target = File('${tmpRoot.path}/times.sqlite');
+        for (final s in const ['-wal', '-shm', '-journal']) {
+          File('${target.path}$s').writeAsStringSync('stale');
+        }
+        // Δεύτερο replace: copy-overwrite + cleanup (empirical Windows).
+        await serviceA.replaceDatabaseFile(snap);
+        expect(target.existsSync(), isTrue);
+        for (final s in const ['-wal', '-shm', '-journal']) {
+          expect(File('${target.path}$s').existsSync(), isFalse);
+        }
+        final reopened = AppDatabase(
+          executor: NativeDatabase(target),
+          skipSeed: true,
+        );
+        openDbs.add(reopened);
+        await serviceA.validateBackupFile(target.path);
+      },
+    );
+
+    test(
+      'replace αποτυχία → target + sidecars άθικτα (σειρά copy-πρώτα)',
+      () async {
+        final db = openFileDb('sb.sqlite');
+        final service = BackupService(db);
+        final target = File('${tmpRoot.path}/sb_target.sqlite');
+        target.writeAsStringSync('old-content');
+        final sidecar = File('${target.path}-wal');
+        sidecar.writeAsStringSync('old-sidecar');
+        expect(
+          service.replaceDatabaseFile('${tmpRoot.path}/missing.sqlite'),
+          throwsA(isA<RestoreBackupException>()),
+        );
+        expect(target.readAsStringSync(), 'old-content');
+        expect(sidecar.existsSync(), isTrue);
+      },
+    );
+  });
+
+  group('BackupService.replaceDatabaseFile — temp+rename (30-09-2026)', () {
+    test('επιτυχία → περιεχόμενο πηγής, κανένα temp leftover', () async {
+      final db = openFileDb('rr.sqlite');
+      await db
+          .into(db.categories)
+          .insert(
+            CategoriesCompanion.insert(
+              name: 'BETA',
+              normalizedName: GreekTextNormalizer.normalize('BETA'),
+            ),
+          );
+      final service = BackupService(db);
+      final snap = '${tmpRoot.path}/rr_snap.sqlite';
+      await service.exportSnapshot(snap);
+      await service.replaceDatabaseFile(snap);
+      final target = File('${tmpRoot.path}/times.sqlite');
+      expect(target.existsSync(), isTrue);
+      expect(File('${target.path}.restore_tmp').existsSync(), isFalse);
+      final reopened = AppDatabase(
+        executor: NativeDatabase(target),
+        skipSeed: true,
+      );
+      openDbs.add(reopened);
+      final cats = await reopened.select(reopened.categories).get();
+      expect(cats.map((c) => c.name), contains('BETA'));
+    });
+
+    test('rollback primitive: διεφθαρμένο target επανέρχεται', () async {
+      final db = openFileDb('rb.sqlite');
+      await db
+          .into(db.categories)
+          .insert(
+            CategoriesCompanion.insert(
+              name: 'GAMMA',
+              normalizedName: GreekTextNormalizer.normalize('GAMMA'),
+            ),
+          );
+      final service = BackupService(db);
+      final snap = '${tmpRoot.path}/rb_snap.sqlite';
+      await service.exportSnapshot(snap);
+      await service.replaceDatabaseFile(snap);
+      // Προσομοίωση μισού replace: σκουπίδια πάνω στο target.
+      final target = File('${tmpRoot.path}/times.sqlite');
+      await target.writeAsBytes([0, 1, 2, 3, 4, 5]);
+      await service.replaceDatabaseFile(snap);
+      final reopened = AppDatabase(
+        executor: NativeDatabase(target),
+        skipSeed: true,
+      );
+      openDbs.add(reopened);
+      final cats = await reopened.select(reopened.categories).get();
+      expect(cats.map((c) => c.name), contains('GAMMA'));
+    });
+  });
+
+  group('BackupService.pruneAutoBackups — retention (30-09-2026)', () {
+    List<String> autoNames() => Directory(tmpRoot.path)
+        .listSync()
+        .whereType<File>()
+        .map((f) => f.uri.pathSegments.last)
+        .where(
+          (n) => n.startsWith('auto_times_backup_') && n.endsWith('.sqlite'),
+        )
+        .toList();
+
+    test('7 παλιά + 1 φρέσκο → μένουν 5, το φρέσκο μέσα', () async {
+      final db = openFileDb('prune.sqlite');
+      final service = BackupService(db);
+      for (var i = 1; i <= 7; i++) {
+        final day = i.toString().padLeft(2, '0');
+        File('${tmpRoot.path}/auto_times_backup_202001${day}_000000.sqlite')
+            .writeAsStringSync('old');
+      }
+      final fresh = await service.autoBackupCurrent();
+      await service.pruneAutoBackups();
+      final remaining = autoNames();
+      expect(remaining.length, AppConstants.autoBackupRetentionCount);
+      expect(remaining, contains(fresh.split(Platform.pathSeparator).last));
+    });
+
+    test('keep param + keep 0 → no-op', () async {
+      final db = openFileDb('prune2.sqlite');
+      final service = BackupService(db);
+      for (var i = 1; i <= 4; i++) {
+        final day = i.toString().padLeft(2, '0');
+        File('${tmpRoot.path}/auto_times_backup_202002${day}_000000.sqlite')
+            .writeAsStringSync('old');
+      }
+      await service.pruneAutoBackups(keep: 2);
+      expect(autoNames().length, 2);
+      await service.pruneAutoBackups(keep: 0);
+      expect(autoNames().length, 2);
+    });
+  });
+
+  group('BackupService.expectedTables (4 επίπεδα · 27-09-2026)', () {
+    test('8 πίνακες με `item_groups` (SPoT §3)', () {
+      expect(BackupService.expectedTables.length, 8);
+      expect(
+        BackupService.expectedTables,
+        containsAll([
+          'categories',
+          'sub_categories',
+          'item_groups',
+          'units',
+          'items',
+          'suppliers',
+          'receipts',
+          'receipt_lines',
+        ]),
+      );
+    });
+
+    test('παλιό backup 7 πινάκων (χωρίς item_groups) → invalid', () {
+      final db = openFileDb('old7.sqlite');
+      final service = BackupService(db);
+      final thin7 = '${tmpRoot.path}/thin7.sqlite';
+      final raw = sqlite3.open(thin7, mode: OpenMode.readWriteCreate);
+      for (final table in BackupService.expectedTables) {
+        if (table == 'item_groups') continue;
+        raw.execute('CREATE TABLE $table (id INTEGER PRIMARY KEY)');
+      }
+      raw.close();
+      expect(
+        service.validateBackupFile(thin7),
+        throwsA(isA<InvalidBackupFileException>()),
+      );
+    });
+  });
+
+  group('BackupService.validateBackupFile', () {
+    test('ανύπαρκτο αρχείο → InvalidBackupFileException (καμία αλλαγή)', () {
+      final db = openFileDb('v.sqlite');
+      final service = BackupService(db);
+      expect(
+        service.validateBackupFile('${tmpRoot.path}/missing.sqlite'),
+        throwsA(isA<InvalidBackupFileException>()),
+      );
+    });
+
+    test('non-sqlite αρχείο → InvalidBackupFileException', () async {
+      final db = openFileDb('w.sqlite');
+      final service = BackupService(db);
+      final junk = File('${tmpRoot.path}/junk.txt');
+      await junk.writeAsString('δεν είναι βάση');
+      expect(
+        service.validateBackupFile(junk.path),
+        throwsA(isA<InvalidBackupFileException>()),
+      );
+    });
+
+    test('sqlite με λάθος πίνακες → InvalidBackupFileException', () {
+      final db = openFileDb('x.sqlite');
+      final service = BackupService(db);
+      final thin = '${tmpRoot.path}/thin.sqlite';
+      final raw = sqlite3.open(thin, mode: OpenMode.readWriteCreate);
+      raw.execute('CREATE TABLE notes (id INTEGER PRIMARY KEY)');
+      raw.close();
+      expect(
+        service.validateBackupFile(thin),
+        throwsA(isA<InvalidBackupFileException>()),
+      );
+    });
+  });
+
+  group('BackupService.validateBackupFile — έκδοση/στήλες/integrity', () {
+    test('έγκυρο snapshot v4 → ΟΚ (φρουρός false-reject)', () async {
+      final db = openFileDb('ok4.sqlite');
+      final service = BackupService(db);
+      final snap = '${tmpRoot.path}/ok4_snap.sqlite';
+      await service.exportSnapshot(snap);
+      await service.validateBackupFile(snap);
+    });
+
+    test('σωστοί πίνακες, έκδοση 0 → InvalidBackupFileException', () {
+      final db = openFileDb('v0.sqlite');
+      final service = BackupService(db);
+      final path = '${tmpRoot.path}/v0.sqlite';
+      final raw = sqlite3.open(path, mode: OpenMode.readWriteCreate);
+      for (final table in BackupService.expectedTables) {
+        raw.execute('CREATE TABLE $table (id INTEGER PRIMARY KEY)');
+      }
+      raw.close();
+      expect(
+        service.validateBackupFile(path),
+        throwsA(isA<InvalidBackupFileException>()),
+      );
+    });
+
+    test('έκδοση 4, ελλιπείς στήλες → InvalidBackupFileException', () {
+      final db = openFileDb('vcol.sqlite');
+      final service = BackupService(db);
+      final path = '${tmpRoot.path}/vcol.sqlite';
+      final raw = sqlite3.open(path, mode: OpenMode.readWriteCreate);
+      for (final table in BackupService.expectedTables) {
+        raw.execute('CREATE TABLE $table (id INTEGER PRIMARY KEY)');
+      }
+      raw.execute('PRAGMA user_version = 4');
+      raw.close();
+      expect(
+        service.validateBackupFile(path),
+        throwsA(isA<InvalidBackupFileException>()),
+      );
+    });
+
+    test(
+      'κομμένο snapshot (magic άθικτο) → InvalidBackupFileException',
+      () async {
+        final db = openFileDb('cut.sqlite');
+        final service = BackupService(db);
+        await db
+            .into(db.categories)
+            .insert(
+              CategoriesCompanion.insert(
+                name: 'ΤΡΟΦΙΜΑ',
+                normalizedName: GreekTextNormalizer.normalize('ΤΡΟΦΙΜΑ'),
+              ),
+            );
+        final snap = '${tmpRoot.path}/cut_snap.sqlite';
+        await service.exportSnapshot(snap);
+        final bytes = File(snap).readAsBytesSync();
+        final cut = File('${tmpRoot.path}/cut.sqlite');
+        await cut.writeAsBytes(bytes.sublist(0, bytes.length ~/ 2));
+        expect(
+          service.validateBackupFile(cut.path),
+          throwsA(isA<InvalidBackupFileException>()),
+        );
+      },
+    );
+
+    test('νεότερη έκδοση (99) → InvalidBackupFileException', () {
+      final db = openFileDb('v99.sqlite');
+      final service = BackupService(db);
+      final path = '${tmpRoot.path}/v99.sqlite';
+      final raw = sqlite3.open(path, mode: OpenMode.readWriteCreate);
+      for (final table in BackupService.expectedTables) {
+        raw.execute('CREATE TABLE $table (id INTEGER PRIMARY KEY)');
+      }
+      raw.execute('PRAGMA user_version = 99');
+      raw.close();
+      expect(
+        service.validateBackupFile(path),
+        throwsA(isA<InvalidBackupFileException>()),
+      );
+    });
+  });
+}

@@ -88,9 +88,30 @@
 | 68 | [Migration scaffold: `onUpgrade` χωρίς `StateError`](oldsessions/2026-09-30_migration_scaffold.md) | 30-09-2026 | Κλειστό | Baseline παραγωγής v4 (μοναδική εγκατάσταση, πραγματικά δεδομένα) · `onUpgrade` log+scaffold αντί throw · νέο `app_migration_test.dart` (+2) · analyze καθαρό · DESIGN §3/§4 |
 | 69 | [Backup validation: έκδοση + στήλες + integrity](oldsessions/2026-09-30_backup_validation.md) | 30-09-2026 | Κλειστό | `user_version` strict + `expectedColumns` + πλήρες `integrity_check` στο ίδιο probe · 0 νέα strings/exceptions · +5 tests (18/18 service, 11/11 controller) · analyze καθαρό · DESIGN §2.3 |
 | 70 | [Restore rollback: temp+rename + recovery](oldsessions/2026-09-30_restore_rollback.md) | 30-09-2026 | Κλειστό | `replaceDatabaseFile` temp+rename (όχι copy) · rollback από auto-backup + rethrow · finally ΠΑΝΤΑ invalidate+resets · 0 νέα strings · R1–R4 (+3: 20/20 service, 12/12 controller) · analyze καθαρό · DESIGN §2.3 |
+| 71 | [§2.0.5: lookups είδους → controller](oldsessions/2026-09-30_item_controller_load.md) | 30-09-2026 | Κλειστό | `loadItemForEdit` (record-null, plain, info-log) · widget χωρίς repo-reads · 0 νέα strings · +4 tests (14/14 controller, 7/7 editor) · analyze καθαρό · DESIGN αμετάβλητο |
+| 72 | [SPoT συνόλου γραμμής `line_total.dart`](oldsessions/2026-09-30_line_total.md) | 30-09-2026 | Κλειστό | 5 σημεία → 1 pure fn (DAO×2, draft, export×2) · 0 νέα strings · +6 tests · analyze καθαρό · DESIGN §3 |
+| 73 | [Retention auto-backups (keep 5)](oldsessions/2026-09-30_auto_retention.md) | 30-09-2026 | Κλειστό | `pruneAutoBackups` μετά επιτυχημένο restore · ποτέ throw · 0 νέα strings · +3 tests (22/22 service, 13/13 controller) · analyze καθαρό · DESIGN §2.3 |
+| 74 | [Log σε corrupt chart-config](oldsessions/2026-09-30_silent_catch_log.md) | 30-09-2026 | Κλειστό | Spot 1 (save button): καλυμμένο, καμία αλλαγή · Spot 2: error log UI tag (καθρέφτης theme) · +2 tests (31/31) · analyze καθαρό |
+| 75 | [Migration v4→v5: 3 indexes](oldsessions/2026-09-30_schema_v5_indexes.md) | 30-09-2026 | Κλειστό | Πρώτη πραγματική migration (`if from<5`, IF NOT EXISTS) · tripwire 5 · M1+M2 (δεδομένα άθικτα) · regen `.g.dart` (names ταυτίζονται) · v4 backups reject → fresh export · analyze καθαρό · DESIGN §3 |
+| 76 | [SPoT hardcoded μεγεθών](oldsessions/2026-09-30_spot_sizes.md) | 30-09-2026 | Κλειστό | 2× `spacingM` + `appLockButtonHeight` + `appLockIconSize` (incl. icon-64) · τιμές πανομοιότυπες · 28/28 widget tests · analyze καθαρό |
+| 77 | [Split `statistics_section.dart` (1116 γρ.)](oldsessions/2026-09-30_stats_split.md) | 30-09-2026 | Κλειστό | 1+4 part files (134/167/370/271/266) · verbatim, 0 renames · 33/33 tests · analyze καθαρό · DESIGN tree |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
+
+- **Split statistics (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #77): 1116 γρ. → main + 4 parts (134/167/370/271/266, byte-exact move, 0 renames) · public API αμετάβλητο · 33/33 ✓ · analyze καθαρό · DESIGN tree · backup `backups/2026-09-30_stats_split/` · ανοιχτό follow-up: split του 785-γραμμών test.
+
+- **SPoT μεγεθών (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #76): 2× `spacingM` (catalog filter) + `appLockButtonHeight`/`appLockIconSize` (overlay, incl. icon-64) · τιμές πανομοιότυπες, layout απαράλλακτο · 28/28 ✓ · analyze καθαρό · backup `backups/2026-09-30_spot_sizes/`.
+
+- **Migration v4→v5 (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #75): 3 indexes (receipt_id · date · supplier_id, single-column) · `schemaVersion 5` + step IF NOT EXISTS · tripwire 5 · M1 (fresh) + M2 (upgrade: indexes + γραμμή + version 5) · migration 4/4 + app_database 4/4 + backup 22/22 ✓ · analyze καθαρό · regen `.g.dart` (names ταυτίζονται με step) · DESIGN §3 · ⚠️ v4 backups reject → fresh export μετά το update · backup `backups/2026-09-30_schema_v5_indexes/`.
+
+- **Log σε corrupt chart-config (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #74): save-button `catch (_)` αποδεδειγμένα καλυμμένο upstream (καμία αλλαγή) · `readHomeChartConfig` corrupt/non-Map → error log UI tag (καθρέφτης theme) · συμπεριφορά αμετάβλητη · +2 tests (31/31 ✓) · analyze καθαρό · backup `backups/2026-09-30_silent_catch_log/`.
+
+- **Retention auto-backups (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #73): `pruneAutoBackups` (keep 5, SPoT const) μετά από επιτυχημένο restore · ποτέ throw · service 22/22 ✓ (+2: P1/P2) · controller 13/13 ✓ (+1: P3 wiring) · analyze καθαρό · DESIGN §2.3 · backup `backups/2026-09-30_auto_retention/`.
+
+- **SPoT συνόλου γραμμής (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #72): `core/utils/line_total.dart` — 5 σημεία → 1 pure fn (DAO insert/update, draft getter, export ×2) · αφαιρέθηκε νεκρό `netUnitCents` · +6 pure tests · υπάρχουσες σουίτες αμετάβλητες (43/43 DAO+export+νέο · 34/34 repos+ροές) · analyze καθαρό · regen `.g.dart` (μόνο σχόλιο) · DESIGN §3 · backup `backups/2026-09-30_line_total/`.
+
+- **§2.0.5 lookups είδους (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #71): `loadItemForEdit` στον controller (record-null, plain, info-log) — το widget δεν διαβάζει πια repositories (μοναδική παράβαση σε όλο το `presentation/`) · dialog/API αμετάβλητα · +4 tests (controller 14/14 ✓ · editor 7/7 ✓) · analyze καθαρό · DESIGN αμετάβλητο (συμμόρφωση) · backup `backups/2026-09-30_item_controller_load/`.
 
 - **Restore rollback (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #70): `replaceDatabaseFile` temp+rename (crash δεν αφήνει μισό αρχείο) · αποτυχία μετά το close → best-effort rollback από auto-backup (reuse, όχι νέα μέθοδος) + rethrow · finally ΠΑΝΤΑ invalidate+resets (ποτέ κλειστή βάση) · 0 νέα strings (→ `restoreFailed`) · service 20/20 ✓ (+2: R1/R3) · controller 12/12 ✓ (+1: R4) · analyze καθαρό · DESIGN §2.3 βήμα 3 · backup `backups/2026-09-30_restore_rollback/`.
 

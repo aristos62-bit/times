@@ -7,6 +7,7 @@ library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../../../core/utils/line_total.dart';
 import '../../../data/local/app_database.dart';
 
 part 'receipt_form_state.freezed.dart';
@@ -73,26 +74,28 @@ class DraftReceiptLine {
   /// Nullable με default null = υπάρχοντες καλούντες/tests άθικτοι.
   final int? enteredTotalCents;
 
-  /// Καθαρή τιμή μονάδας (λεπτά) — display-only (stored SPoT: DAO §3).
-  int get netUnitCents => priceCents - discountCents;
-
-  /// Καθαρό σύνολο γραμμής — display-only mirror του DAO (όπως το
+  /// Καθαρό σύνολο γραμμής — display-only mirror μέσω SPoT
+  /// `lineTotalCents()` (§3, `core/utils/line_total.dart` — όπως το
   /// enteredTotalCents: η λίστα το δείχνει χωρίς να το αποθηκεύει).
-  int get netTotalCents => (netUnitCents * quantity).round();
+  int get netTotalCents => lineTotalCents(
+    priceCents: priceCents,
+    discountCents: discountCents,
+    quantity: quantity,
+  );
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          other is DraftReceiptLine &&
-              other.itemId == itemId &&
-              other.unitId == unitId &&
-              other.quantity == quantity &&
-              other.priceCents == priceCents &&
-              other.discountCents == discountCents &&
-              other.itemName == itemName &&
-              other.unitAbbreviation == unitAbbreviation &&
-              other.unitAllowsDecimal == unitAllowsDecimal &&
-              other.enteredTotalCents == enteredTotalCents;
+      other is DraftReceiptLine &&
+          other.itemId == itemId &&
+          other.unitId == unitId &&
+          other.quantity == quantity &&
+          other.priceCents == priceCents &&
+          other.discountCents == discountCents &&
+          other.itemName == itemName &&
+          other.unitAbbreviation == unitAbbreviation &&
+          other.unitAllowsDecimal == unitAllowsDecimal &&
+          other.enteredTotalCents == enteredTotalCents;
 
   @override
   int get hashCode => Object.hash(
@@ -115,17 +118,21 @@ abstract class ReceiptFormState with _$ReceiptFormState {
   /// μέσω `DateUtils.dateOnly` στο controller — §2.2).
   const factory ReceiptFormState({
     required DateTime date,
+
     /// `supplier` — ο επιλεγμένος προμηθευτής (Βήμα 3), «null» = κανένας.
     /// Drift data-class (app_database.dart): immutable με value equality —
     /// συμβατό με το Freezed equality/copyWith χωρίς επιπλέον annotations.
     Supplier? supplier,
+
     /// `draftLines` — το «καλάθι» (§2.2 · Βήμα 5γ): γραμμές ΧΩΡΙΣ εγγραφή
     /// στη βάση (το insert γίνεται ατομικά στο save, Βήμα 5δ). Default κενή.
     @Default(<DraftReceiptLine>[]) List<DraftReceiptLine> draftLines,
+
     /// `isSaving` — async save σε εξέλιξη (§2.2 · Βήμα 5δ): το state ΠΑΡΑΜΕΝΕΙ
     /// σύγχρονο (plain Notifier) και το flag σημειώνει το async save — ίδιο
     /// pattern με το `_isCreating` των «+» (§2.2:235, double-tap guard).
     @Default(false) bool isSaving,
+
     /// `editingId` — Φάση Α (24-09-2026): id υπό-επεξεργασία απόδειξης,
     /// `null` = δημιουργία. Το `resetForm` το μηδενίζει.
     int? editingId,
