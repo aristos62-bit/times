@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/utils/app_feedback.dart';
 import '../../../data/providers/app_lock_providers.dart';
 
 /// Πύλη overlay: κλειδωμένη → `AppLockOverlay`, αλλιώς κενό.
@@ -45,9 +46,15 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay> {
     if (_unlocking) return;
     setState(() => _unlocking = true);
     try {
-      await ref.read(appLockProvider.notifier).unlock(
-            AppStrings.appLockReason,
-          );
+      final result = await ref
+          .read(appLockProvider.notifier)
+          .unlock(AppStrings.appLockReason);
+      if (!mounted) return;
+      // Επιτυχία → το overlay φεύγει μόνο του (καμία snackbar — θόρυβος)·
+      // σφάλμα πλατφόρμας → ορατό (fix 30-09)· ακύρωση → σιωπή.
+      if (!result.ok && result.error != null) {
+        AppFeedback.showError(context, result.error!);
+      }
     } finally {
       if (mounted) setState(() => _unlocking = false);
     }
