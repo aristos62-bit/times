@@ -3,10 +3,10 @@
 /// Οι πίνακες ορίζονται στο `tables.dart` (§3 DESIGN): 8 πίνακες
 /// (Categories/SubCategories/**ItemGroups**/Units/Items/Suppliers/
 /// Receipts/ReceiptLines). Στο `onCreate` δημιουργείται όλο το σχήμα +
-/// seed (units + κατάλογος από `.md`, χωρίς είδη). Baseline παραγωγής v4
-/// (30-09-2026): μοναδική εγκατάσταση με πραγματικά δεδομένα — μελλοντική
-/// αλλαγή σχήματος = bump `schemaVersion` + step στο `onUpgrade` + test,
-/// ποτέ wipe, ποτέ επανεγκατάσταση. Στο `beforeOpen` ενεργοποιείται το
+/// seed (units + κατάλογος από `.md`, χωρίς είδη). Wipe+fresh 27-09-2026:
+/// το παλιό migration path (v1→v2 units, v2→v3 discountCents) ΔΙΑΓΡΑΦΗΚΕ —
+/// `schemaVersion` 4, `onUpgrade` ρίχνει σκόπιμα (απαιτείται επανεγκατάσταση
+/// στις dev συσκευές). Στο `beforeOpen` ενεργοποιείται το
 /// `PRAGMA foreign_keys = ON`. Logging μέσω `AppLogger` με tag `DB` (§1.7).
 library;
 
@@ -71,14 +71,13 @@ class AppDatabase extends _$AppDatabase {
             await runSeed(this);
           }
         },
-        // Baseline παραγωγής: v4 (30-09-2026) — μοναδική εγκατάσταση με
-        // πραγματικά δεδομένα. Καμία έκδοση < v4 σε κυκλοφορία (δεν
-        // υπάρχει legacy path). Μελλοντική αλλαγή σχήματος: bump
-        // schemaVersion + step εδώ (π.χ. `if (from < 5) {
-        // await m.addColumn(...); }`) + test — ποτέ wipe, ποτέ
-        // επανεγκατάσταση (οι αποδείξεις δεν ξαναχτίζονται).
+        // Wipe+fresh 27-09-2026: κανένα upgrade path από v1–v3 (παλιό σχήμα
+        // 3 επιπέδων + migrations σβήστηκαν). Παλιά βάση/backup → σκόπιμο
+        // σφάλμα + καθαρή επανεγκατάσταση (δεν υπάρχουν χρήστες).
         onUpgrade: (m, from, to) async {
-          AppLogger.info(LogTag.db, 'Αναβάθμιση βάσης v$from → v$to');
+          throw StateError(
+            'Απαιτείται επανεγκατάσταση (schema v$from → v$to δεν υποστηρίζεται)',
+          );
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');

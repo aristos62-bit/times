@@ -180,61 +180,6 @@ void main() {
     );
   });
 
-  group('BackupService.replaceDatabaseFile — temp+rename (30-09-2026)', () {
-    test('επιτυχία → περιεχόμενο πηγής, κανένα temp leftover', () async {
-      final db = openFileDb('rr.sqlite');
-      await db
-          .into(db.categories)
-          .insert(
-            CategoriesCompanion.insert(
-              name: 'BETA',
-              normalizedName: GreekTextNormalizer.normalize('BETA'),
-            ),
-          );
-      final service = BackupService(db);
-      final snap = '${tmpRoot.path}/rr_snap.sqlite';
-      await service.exportSnapshot(snap);
-      await service.replaceDatabaseFile(snap);
-      final target = File('${tmpRoot.path}/times.sqlite');
-      expect(target.existsSync(), isTrue);
-      expect(File('${target.path}.restore_tmp').existsSync(), isFalse);
-      final reopened = AppDatabase(
-        executor: NativeDatabase(target),
-        skipSeed: true,
-      );
-      openDbs.add(reopened);
-      final cats = await reopened.select(reopened.categories).get();
-      expect(cats.map((c) => c.name), contains('BETA'));
-    });
-
-    test('rollback primitive: διεφθαρμένο target επανέρχεται', () async {
-      final db = openFileDb('rb.sqlite');
-      await db
-          .into(db.categories)
-          .insert(
-            CategoriesCompanion.insert(
-              name: 'GAMMA',
-              normalizedName: GreekTextNormalizer.normalize('GAMMA'),
-            ),
-          );
-      final service = BackupService(db);
-      final snap = '${tmpRoot.path}/rb_snap.sqlite';
-      await service.exportSnapshot(snap);
-      await service.replaceDatabaseFile(snap);
-      // Προσομοίωση μισού replace: σκουπίδια πάνω στο target.
-      final target = File('${tmpRoot.path}/times.sqlite');
-      await target.writeAsBytes([0, 1, 2, 3, 4, 5]);
-      await service.replaceDatabaseFile(snap);
-      final reopened = AppDatabase(
-        executor: NativeDatabase(target),
-        skipSeed: true,
-      );
-      openDbs.add(reopened);
-      final cats = await reopened.select(reopened.categories).get();
-      expect(cats.map((c) => c.name), contains('GAMMA'));
-    });
-  });
-
   group('BackupService.expectedTables (4 επίπεδα · 27-09-2026)', () {
     test('8 πίνακες με `item_groups` (SPoT §3)', () {
       expect(BackupService.expectedTables.length, 8);

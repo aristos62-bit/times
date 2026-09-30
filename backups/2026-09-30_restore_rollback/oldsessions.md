@@ -87,12 +87,9 @@
 | 67 | [Κλείδωμα εφαρμογής](oldsessions/2026-09-30_app_lock.md) | 30-09-2026 | Ανοιχτό (Β6 συσκευή) | Κάρτα «Ασφάλεια» + overlay (auto-prompt) + watcher (χάρη 30'') · `local_auth` + ορατά σφάλματα · `FlutterFragmentActivity` fix · **1503/1503** ✓ (+49) · analyze καθαρό |
 | 68 | [Migration scaffold: `onUpgrade` χωρίς `StateError`](oldsessions/2026-09-30_migration_scaffold.md) | 30-09-2026 | Κλειστό | Baseline παραγωγής v4 (μοναδική εγκατάσταση, πραγματικά δεδομένα) · `onUpgrade` log+scaffold αντί throw · νέο `app_migration_test.dart` (+2) · analyze καθαρό · DESIGN §3/§4 |
 | 69 | [Backup validation: έκδοση + στήλες + integrity](oldsessions/2026-09-30_backup_validation.md) | 30-09-2026 | Κλειστό | `user_version` strict + `expectedColumns` + πλήρες `integrity_check` στο ίδιο probe · 0 νέα strings/exceptions · +5 tests (18/18 service, 11/11 controller) · analyze καθαρό · DESIGN §2.3 |
-| 70 | [Restore rollback: temp+rename + recovery](oldsessions/2026-09-30_restore_rollback.md) | 30-09-2026 | Κλειστό | `replaceDatabaseFile` temp+rename (όχι copy) · rollback από auto-backup + rethrow · finally ΠΑΝΤΑ invalidate+resets · 0 νέα strings · R1–R4 (+3: 20/20 service, 12/12 controller) · analyze καθαρό · DESIGN §2.3 |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
-
-- **Restore rollback (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #70): `replaceDatabaseFile` temp+rename (crash δεν αφήνει μισό αρχείο) · αποτυχία μετά το close → best-effort rollback από auto-backup (reuse, όχι νέα μέθοδος) + rethrow · finally ΠΑΝΤΑ invalidate+resets (ποτέ κλειστή βάση) · 0 νέα strings (→ `restoreFailed`) · service 20/20 ✓ (+2: R1/R3) · controller 12/12 ✓ (+1: R4) · analyze καθαρό · DESIGN §2.3 βήμα 3 · backup `backups/2026-09-30_restore_rollback/`.
 
 - **Backup validation (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #69): `user_version == schema` strict (Q1) + `expectedColumns` 8 πινάκων (Q2) + πλήρες `integrity_check` (Q3) στο ίδιο read-only probe · 0 νέα strings/exceptions (όλα → `invalidBackupFile`) · service 18/18 ✓ (+5: V1–V5) · controller 11/11 ✓ · analyze καθαρό · DESIGN §2.3 · backup `backups/2026-09-30_backup_validation/`.
 

@@ -12,7 +12,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import 'package:times/core/errors/app_exceptions.dart';
-import 'package:times/core/logging/app_logger.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/local/daos/category_dao.dart';
 import 'package:times/data/local/daos/item_dao.dart';
@@ -115,43 +114,45 @@ void main() {
       );
     });
 
-    test(
-      'ακύρωση picker → (ok:false, error:null), χωρίς snackbar-λόγο',
-      () async {
-        picker.saveResult = false;
-        final result = await controller().exportBackup();
-        expect(result.ok, isFalse);
-        expect(result.error, isNull);
-      },
-    );
+    test('ακύρωση picker → (ok:false, error:null), χωρίς snackbar-λόγο', () async {
+      picker.saveResult = false;
+      final result = await controller().exportBackup();
+      expect(result.ok, isFalse);
+      expect(result.error, isNull);
+    });
 
-    test(
-      'σφάλμα picker → BackupCreationException (isWorking σβήνει)',
-      () async {
-        picker.throwOnSave = true;
-        await expectLater(
-          controller().exportBackup(),
-          throwsA(isA<BackupCreationException>()),
-        );
-        expect(
-          container.read(backupRestoreControllerProvider).isWorking,
-          isFalse,
-        );
-      },
-    );
+    test('σφάλμα picker → BackupCreationException (isWorking σβήνει)', () async {
+      picker.throwOnSave = true;
+      await expectLater(
+        controller().exportBackup(),
+        throwsA(isA<BackupCreationException>()),
+      );
+      expect(
+        container.read(backupRestoreControllerProvider).isWorking,
+        isFalse,
+      );
+    });
   });
 
   group('BackupRestoreController.exportCatalog (§2.3 · 30-09-2026)', () {
     Future<void> seedCatalog() async {
-      final kiloId = await UnitDao(db)
-          .insert(name: 'Κιλό', abbreviation: 'κιλ', allowsDecimal: true);
+      final kiloId = await UnitDao(db).insert(
+        name: 'Κιλό',
+        abbreviation: 'κιλ',
+        allowsDecimal: true,
+      );
       final catId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId = await SubCategoryDao(db)
-          .insert(categoryId: catId, name: 'Γαλακτοκομικά');
-      final groupId = await ItemGroupDao(db)
-          .insert(subCategoryId: subId, name: 'Φρέσκα');
-      await ItemDao(db)
-          .insert(itemGroupId: groupId, name: 'Γάλα', defaultUnitId: kiloId);
+      final subId = await SubCategoryDao(
+        db,
+      ).insert(categoryId: catId, name: 'Γαλακτοκομικά');
+      final groupId = await ItemGroupDao(
+        db,
+      ).insert(subCategoryId: subId, name: 'Φρέσκα');
+      await ItemDao(db).insert(
+        itemGroupId: groupId,
+        name: 'Γάλα',
+        defaultUnitId: kiloId,
+      );
     }
 
     test('επιτυχία → ok + times_catalog_*.xlsx + 2 γραμμές', () async {
@@ -184,7 +185,8 @@ void main() {
       expect(result.error, isNull);
     });
 
-    test('σφάλμα picker → CatalogExportException (isWorking σβήνει)', () async {
+    test('σφάλμα picker → CatalogExportException (isWorking σβήνει)',
+        () async {
       picker.throwOnSave = true;
       await expectLater(
         controller().exportCatalog(),
@@ -197,8 +199,7 @@ void main() {
     });
   });
 
-  group('BackupRestoreController.validateCandidate', () {
-    test('άκυρο path → (ok:false, error:invalidBackupFile)', () async {
+  group('BackupRestoreController.validateCandidate', () {    test('άκυρο path → (ok:false, error:invalidBackupFile)', () async {
       final result = await controller().validateCandidate(
         '${tmpRoot.path}/missing.sqlite',
       );
@@ -246,42 +247,5 @@ void main() {
       final cats = await db.select(db.categories).get();
       expect(cats, isEmpty);
     });
-
-    test(
-      'αποτυχία replace μετά το close → rethrow + finally (30-09-2026)',
-      () async {
-        final lines = <String>[];
-        AppLogger.testSink = lines.add;
-        addTearDown(AppLogger.resetTestSink);
-        // Εμπόδιο: directory στη θέση του target → το rename αποτυγχάνει
-        // determinιστικά (copy→temp ΟΚ, rename όχι — παντού, όχι μόνο Win).
-        // Προηγούμενα tests μπορεί να άφησαν ΑΡΧΕΙΟ στο path (success).
-        final obstaclePath = '${tmpRoot.path}/times.sqlite';
-        final leftover = File(obstaclePath);
-        if (leftover.existsSync()) leftover.deleteSync();
-        Directory(obstaclePath).createSync();
-        // Προηγούμενα tests αφήνουν auto_* με ανάλυση δευτερολέπτου —
-        // το `VACUUM INTO` αποτυγχάνει σε υπάρχον target (ίδιο second =
-        // ίδιο filename) → καθαρισμός για determinιστικό auto-backup.
-        for (final f in tmpRoot.listSync().whereType<File>().where(
-          (f) => f.path.contains('auto_times_backup_'),
-        )) {
-          f.deleteSync();
-        }
-        final service = BackupService(db);
-        final snap = '${tmpRoot.path}/blk_snap.sqlite';
-        await service.exportSnapshot(snap);
-        await expectLater(
-          controller().restoreBackup(snap),
-          throwsA(isA<RestoreBackupException>()),
-        );
-        // Το _guarded flag έσβησε + το catch/finally έτρεξε (rollback markers).
-        expect(
-          container.read(backupRestoreControllerProvider).isWorking,
-          isFalse,
-        );
-        expect(lines.join('\n'), contains('rollback'));
-      },
-    );
   });
 }

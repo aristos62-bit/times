@@ -3,9 +3,8 @@
 ///
 /// Καθαρό IO layer (όχι DAO/repository — δεν είναι πίνακας, είναι αρχείο):
 /// snapshot μέσω `VACUUM INTO` (WAL-safe, εκτός transaction — SQLite
-/// restriction), validation υποψήφιου αρχείου (magic + έκδοση + 8 πίνακες
-/// §3 + στήλες + integrity, καμία αλλαγή), αντικατάσταση αρχείου
-/// (temp + rename, όχι copy). Τα σφάλματα βγαίνουν ως `AppException`
+/// restriction), validation υποψήφιου αρχείου (magic + 7 πίνακες §3, καμία
+/// αλλαγή), αντικατάσταση αρχείου. Τα σφάλματα βγαίνουν ως `AppException`
 /// (pattern `ReceiptRepositoryImpl._guard`): κάθε `Exception` → mapped
 /// (log tag `backup` εδώ), απρόβλεπτα `Error` ανεβαίνουν raw.
 /// Προσαρμογή 24-09 (evidence pub cache): το `file_picker` 12 `saveFile`
@@ -40,36 +39,6 @@ final class BackupService {
     'suppliers',
     'receipts',
     'receipt_lines',
-  };
-
-  /// Αναμενόμενες στήλες ανά πίνακα (30-09-2026 · SPoT, δίπλα στο
-  /// `expectedTables`): πηγή `tables.dart` + drift snake_case. Έλεγχος
-  /// superset (`expected ⊆ actual` — defense-in-depth για ίδιο version με
-  /// πειραγμένο σχήμα). Αλλαγή σχήματος (bump §3) ενημερώνει ΚΑΙ εδώ.
-  static const Map<String, Set<String>> expectedColumns = {
-    'categories': {'id', 'name', 'normalized_name', 'created_at'},
-    'sub_categories': {'id', 'category_id', 'name', 'normalized_name'},
-    'item_groups': {'id', 'sub_category_id', 'name', 'normalized_name'},
-    'units': {'id', 'name', 'abbreviation', 'allows_decimal'},
-    'items': {
-      'id',
-      'item_group_id',
-      'name',
-      'normalized_name',
-      'default_unit_id',
-    },
-    'suppliers': {'id', 'name', 'normalized_name', 'created_at'},
-    'receipts': {'id', 'date', 'supplier_id'},
-    'receipt_lines': {
-      'id',
-      'receipt_id',
-      'item_id',
-      'unit_id',
-      'quantity',
-      'price_cents',
-      'discount_cents',
-      'line_total_cents',
-    },
   };
 
   /// Χτίζει filename από το SPoT pattern + timestamp (manual pad,
@@ -149,12 +118,10 @@ final class BackupService {
     return path;
   }
 
-  /// Validation υποψήφιου αρχείου ΠΡΙΝ από οτιδήποτε (§2.3: magic +
-  /// έκδοση + πίνακες + στήλες + integrity, καμία αλλαγή): 1) υπάρχει
-  /// 2) SQLite magic 3) `user_version` == schema (§3 baseline v4, strict)
-  /// 4) πίνακες 5) στήλες ανά πίνακα 6) `integrity_check` — με read-only
-  /// probe (ποτέ drift open — θα έγραφε schema σε άδειο αρχείο).
-  /// Αποτυχία → `InvalidBackupFileException` (`invalidBackupFile`).
+  /// Validation υποψήφιου αρχείου ΠΡΙΝ από οτιδήποτε (§2.3: magic + πίνακες,
+  /// καμία αλλαγή): 1) υπάρχει 2) SQLite magic 3) πίνακες με read-only probe
+  /// (ποτέ drift open — θα έγραφε schema σε άδειο αρχείο). Αποτυχία →
+  /// `InvalidBackupFileException` (`invalidBackupFile`).
   Future<void> validateBackupFile(String candidatePath) async {
     final file = File(candidatePath);
     AppLogger.info(LogTag.backup, 'Validation αντιγράφου: $candidatePath');
@@ -190,21 +157,6 @@ final class BackupService {
     try {
       final probe = sqlite3.open(candidatePath, mode: OpenMode.readOnly);
       try {
-        // Έκδοση σχήματος (drift: `PRAGMA user_version` == schemaVersion).
-        // Μόνο η τρέχουσα (strict — Q1 30-09-2026): παλιό/νεότερο αντίγραφο
-        // → invalid (κανένα σιωπηλό skew στο replace).
-        final versionRows = probe.select('PRAGMA user_version');
-        final candidateVersion = versionRows.isNotEmpty
-            ? versionRows.first['user_version'] as int
-            : -1;
-        if (candidateVersion != _db.schemaVersion) {
-          AppLogger.info(
-            LogTag.backup,
-            'Ασυμβίβαστη έκδοση αντιγράφου: $candidateVersion '
-            '(αναμενόμενη ${_db.schemaVersion})',
-          );
-          throw const InvalidBackupFileException();
-        }
         final names = {
           for (final row in probe.select(
             "SELECT name FROM sqlite_master WHERE type = 'table'",
@@ -215,34 +167,6 @@ final class BackupService {
           AppLogger.info(LogTag.backup, 'Λείπουν πίνακες: $names');
           throw const InvalidBackupFileException();
         }
-        // Στήλες ανά πίνακα (defense-in-depth: ίδιο version, πειραγμένο
-        // σχήμα). Ονόματα από internal SPoT consts (όχι user input —
-        // κανένα injection risk στο PRAGMA).
-        for (final entry in expectedColumns.entries) {
-          final actual = {
-            for (final row in probe.select('PRAGMA table_info(${entry.key})'))
-              (row['name'] as String).toLowerCase(),
-          };
-          final missing = entry.value.difference(actual);
-          if (missing.isNotEmpty) {
-            AppLogger.info(
-              LogTag.backup,
-              'Λείπουν στήλες στον ${entry.key}: $missing',
-            );
-            throw const InvalidBackupFileException();
-          }
-        }
-        // Ακεραιότητα σελίδων (πλήρες — Q3 30-09-2026, όχι quick_check:
-        // το σχήμα στηρίζεται σε UNIQUE indexes + FKs): κάθε γραμμή `ok`,
-        // αλλιώς κατεστραμμένο (truncated copy κ.λπ.).
-        final integrity = [
-          for (final row in probe.select('PRAGMA integrity_check'))
-            (row['integrity_check'] as String).toLowerCase(),
-        ];
-        if (integrity.isEmpty || integrity.any((v) => v != 'ok')) {
-          AppLogger.info(LogTag.backup, 'Αποτυχία integrity_check');
-          throw const InvalidBackupFileException();
-        }
       } finally {
         probe.close();
       }
@@ -250,39 +174,23 @@ final class BackupService {
     } on InvalidBackupFileException {
       rethrow;
     } on Exception catch (e, s) {
-      AppLogger.error(LogTag.backup, 'Αποτυχία ελέγχου αντιγράφου', e, s);
+      AppLogger.error(LogTag.backup, 'Αποτυχία ελέγχου πινάκων', e, s);
       throw const InvalidBackupFileException();
     }
   }
 
-  /// Αντικαθιστά το αρχείο βάσης με το [sourcePath] (30-09-2026: μέσω
-  /// temp + rename, όχι copy — crash στη μέση δεν αφήνει μισό αρχείο).
+  /// Αντικαθιστά το αρχείο βάσης με το [sourcePath].
   /// ΠΡΟΫΠΟΘΕΣΗ (controller): `closeSafely()` πριν (αλλιώς file-lock,
-  /// ιδίως Windows). Χρησιμοποιείται ΚΑΙ ως rollback primitive
-  /// (`replaceDatabaseFile(autoPath)` — η βάση γυρίζει στην pre-restore
-  /// κατάσταση). Αποτυχία → `RestoreBackupException` (`restoreFailed`).
-  /// Stale sidecars (`-wal`/`-shm`/`-journal`) σβήνονται ΜΕΤΑ το rename (όχι
+  /// ιδίως Windows). Αποτυχία → `RestoreBackupException` (`restoreFailed`).
+  /// Stale sidecars (`-wal`/`-shm`/`-journal`) σβήνονται ΜΕΤΑ το copy (όχι
   /// πριν — αλλιώς διπλό-σφάλμα close+copy θα άφηνε την παλιά βάση χωρίς
   /// το journal της)· best-effort via `deleteTemp`, ποτέ throw.
   Future<void> replaceDatabaseFile(String sourcePath) async {
     try {
       AppLogger.info(LogTag.backup, 'Restore: replace — target lookup');
       final target = await currentDbFile();
-      // Temp στο ΙΔΙΟ dir (ίδιο filesystem → rename = replace, ατομικό
-      // όπου υποστηρίζεται· στα Windows επαληθευμένο με εκτέλεση 30-09).
-      // Stale temp από crash ξαναγράφεται από το copy (overwrite).
-      final tmp = File('${target.path}.restore_tmp');
-      var moved = false;
-      try {
-        AppLogger.info(LogTag.backup, 'Restore: replace copy → ${tmp.path}');
-        await File(sourcePath).copy(tmp.path);
-        await tmp.rename(target.path);
-        moved = true;
-      } finally {
-        // Cleanup ΜΟΝΟ αν δεν έγινε rename (αλλιώς spurious log —
-        // το temp δεν υπάρχει πια).
-        if (!moved) await deleteTemp(tmp.path);
-      }
+      AppLogger.info(LogTag.backup, 'Restore: replace copy → ${target.path}');
+      await File(sourcePath).copy(target.path);
       for (final suffix in const ['-wal', '-shm', '-journal']) {
         await deleteTemp('${target.path}$suffix');
       }

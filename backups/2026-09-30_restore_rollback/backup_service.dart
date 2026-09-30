@@ -3,9 +3,8 @@
 ///
 /// Καθαρό IO layer (όχι DAO/repository — δεν είναι πίνακας, είναι αρχείο):
 /// snapshot μέσω `VACUUM INTO` (WAL-safe, εκτός transaction — SQLite
-/// restriction), validation υποψήφιου αρχείου (magic + έκδοση + 8 πίνακες
-/// §3 + στήλες + integrity, καμία αλλαγή), αντικατάσταση αρχείου
-/// (temp + rename, όχι copy). Τα σφάλματα βγαίνουν ως `AppException`
+/// restriction), validation υποψήφιου αρχείου (magic + 7 πίνακες §3, καμία
+/// αλλαγή), αντικατάσταση αρχείου. Τα σφάλματα βγαίνουν ως `AppException`
 /// (pattern `ReceiptRepositoryImpl._guard`): κάθε `Exception` → mapped
 /// (log tag `backup` εδώ), απρόβλεπτα `Error` ανεβαίνουν raw.
 /// Προσαρμογή 24-09 (evidence pub cache): το `file_picker` 12 `saveFile`
@@ -255,34 +254,18 @@ final class BackupService {
     }
   }
 
-  /// Αντικαθιστά το αρχείο βάσης με το [sourcePath] (30-09-2026: μέσω
-  /// temp + rename, όχι copy — crash στη μέση δεν αφήνει μισό αρχείο).
+  /// Αντικαθιστά το αρχείο βάσης με το [sourcePath].
   /// ΠΡΟΫΠΟΘΕΣΗ (controller): `closeSafely()` πριν (αλλιώς file-lock,
-  /// ιδίως Windows). Χρησιμοποιείται ΚΑΙ ως rollback primitive
-  /// (`replaceDatabaseFile(autoPath)` — η βάση γυρίζει στην pre-restore
-  /// κατάσταση). Αποτυχία → `RestoreBackupException` (`restoreFailed`).
-  /// Stale sidecars (`-wal`/`-shm`/`-journal`) σβήνονται ΜΕΤΑ το rename (όχι
+  /// ιδίως Windows). Αποτυχία → `RestoreBackupException` (`restoreFailed`).
+  /// Stale sidecars (`-wal`/`-shm`/`-journal`) σβήνονται ΜΕΤΑ το copy (όχι
   /// πριν — αλλιώς διπλό-σφάλμα close+copy θα άφηνε την παλιά βάση χωρίς
   /// το journal της)· best-effort via `deleteTemp`, ποτέ throw.
   Future<void> replaceDatabaseFile(String sourcePath) async {
     try {
       AppLogger.info(LogTag.backup, 'Restore: replace — target lookup');
       final target = await currentDbFile();
-      // Temp στο ΙΔΙΟ dir (ίδιο filesystem → rename = replace, ατομικό
-      // όπου υποστηρίζεται· στα Windows επαληθευμένο με εκτέλεση 30-09).
-      // Stale temp από crash ξαναγράφεται από το copy (overwrite).
-      final tmp = File('${target.path}.restore_tmp');
-      var moved = false;
-      try {
-        AppLogger.info(LogTag.backup, 'Restore: replace copy → ${tmp.path}');
-        await File(sourcePath).copy(tmp.path);
-        await tmp.rename(target.path);
-        moved = true;
-      } finally {
-        // Cleanup ΜΟΝΟ αν δεν έγινε rename (αλλιώς spurious log —
-        // το temp δεν υπάρχει πια).
-        if (!moved) await deleteTemp(tmp.path);
-      }
+      AppLogger.info(LogTag.backup, 'Restore: replace copy → ${target.path}');
+      await File(sourcePath).copy(target.path);
       for (final suffix in const ['-wal', '-shm', '-journal']) {
         await deleteTemp('${target.path}$suffix');
       }

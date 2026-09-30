@@ -6,12 +6,10 @@
 /// (σύγχρονο state + async actions με flag + `_guarded`). NON-autoDispose
 /// (§2.2:221, IndexedStack).
 ///
-/// Σειρά restore (κλειδωμένη Δ · 30-09-2026 με rollback): validate →
-/// (confirm στο widget) → auto-backup → `closeSafely()` → try replace →
-/// catch: best-effort rollback από το auto-backup + rethrow → finally
-/// ΠΑΝΤΑ `invalidate(appDatabaseProvider)` + reset φορμών (ποτέ κλειστή
-/// βάση). Το confirm dialog ζει στο widget (οι controllers δεν δείχνουν
-/// dialogs — pattern editors §2.3). Validation/dup → record
+/// Σειρά restore (κλειδωμένη Δ): validate → (confirm στο widget) →
+/// auto-backup → `closeSafely()` → replace → `invalidate(appDatabaseProvider)`
+/// + reset φορμών. Το confirm dialog ζει στο widget (οι controllers δεν
+/// δείχνουν dialogs — pattern editors §2.3). Validation/dup → record
 /// `(ok:false, error:)`· `AppException` ανεβαίνει ανέγγιχτο (feedback στο
 /// widget μέσω `runControllerOp`, που πιάνει `AppException`).
 library;
@@ -76,30 +74,38 @@ class BackupRestoreController extends Notifier<SettingsState> {
   /// Ακύρωση picker → `(ok:false, error:null)` (no-op, χωρίς snackbar).
   /// Αποτυχία → `BackupCreationException` (feedback στο widget).
   Future<({bool ok, String? error})> exportBackup() => _guarded(() async {
-    final service = ref.read(backupServiceProvider);
-    final picker = ref.read(backupFilePickerProvider);
-    final fileName = BackupService.buildBackupFileName(DateTime.now());
-    final tmp = await service.exportTempPath();
-    try {
-      await service.exportSnapshot(tmp);
-      final bytes = await service.readBytes(tmp);
-      bool saved;
-      try {
-        saved = await picker.saveBytes(fileName: fileName, bytes: bytes);
-      } on Exception catch (e, s) {
-        AppLogger.error(LogTag.backup, 'Αποτυχία διαλόγου αποθήκευσης', e, s);
-        throw const BackupCreationException();
-      }
-      if (!saved) {
-        AppLogger.info(LogTag.backup, 'Εξαγωγή ακυρώθηκε από τον χρήστη');
-        return (ok: false, error: null);
-      }
-      AppLogger.info(LogTag.backup, 'Εξαγωγή ολοκληρώθηκε: $fileName');
-      return (ok: true, error: null);
-    } finally {
-      await service.deleteTemp(tmp);
-    }
-  });
+        final service = ref.read(backupServiceProvider);
+        final picker = ref.read(backupFilePickerProvider);
+        final fileName = BackupService.buildBackupFileName(DateTime.now());
+        final tmp = await service.exportTempPath();
+        try {
+          await service.exportSnapshot(tmp);
+          final bytes = await service.readBytes(tmp);
+          bool saved;
+          try {
+            saved = await picker.saveBytes(
+              fileName: fileName,
+              bytes: bytes,
+            );
+          } on Exception catch (e, s) {
+            AppLogger.error(
+              LogTag.backup,
+              'Αποτυχία διαλόγου αποθήκευσης',
+              e,
+              s,
+            );
+            throw const BackupCreationException();
+          }
+          if (!saved) {
+            AppLogger.info(LogTag.backup, 'Εξαγωγή ακυρώθηκε από τον χρήστη');
+            return (ok: false, error: null);
+          }
+          AppLogger.info(LogTag.backup, 'Εξαγωγή ολοκληρώθηκε: $fileName');
+          return (ok: true, error: null);
+        } finally {
+          await service.deleteTemp(tmp);
+        }
+      });
 
   /// Ελέγχει υποψήφιο αρχείο (για το widget ΠΡΙΝ το confirm — κλειδωμένη
   /// σειρά Δ: confirm μόνο σε έγκυρο). Άκυρο → `(ok:false, error:)`·
@@ -125,48 +131,51 @@ class BackupRestoreController extends Notifier<SettingsState> {
   /// Ακύρωση picker → `(ok:false, error:null)`· αποτυχία builder/dialog →
   /// `CatalogExportException` (feedback στο widget).
   Future<({bool ok, String? error})> exportCatalog() => _guarded(() async {
-    final cats = await ref.read(categoryRepositoryProvider).watchAll().first;
-    final subs = await ref.read(subCategoryRepositoryProvider).watchAll().first;
-    final groups = await ref.read(itemGroupRepositoryProvider).watchAll().first;
-    final items = await ref.read(itemRepositoryProvider).watchAll().first;
-    final units = await ref.read(unitRepositoryProvider).watchAll().first;
-    final bytes = CatalogExportService.buildCatalogExcelBytes(
-      tree: buildCategoryTreeNodes(cats, subs, groups),
-      items: items,
-      units: units,
-    );
-    final fileName = CatalogExportService.buildCatalogFileName(DateTime.now());
-    final picker = ref.read(backupFilePickerProvider);
-    bool saved;
-    try {
-      saved = await picker.saveBytes(fileName: fileName, bytes: bytes);
-    } on Exception catch (e, s) {
-      AppLogger.error(
-        LogTag.backup,
-        'Αποτυχία διαλόγου αποθήκευσης καταλόγου',
-        e,
-        s,
-      );
-      throw const CatalogExportException();
-    }
-    if (!saved) {
-      AppLogger.info(
-        LogTag.backup,
-        'Εξαγωγή καταλόγου ακυρώθηκε από τον χρήστη',
-      );
-      return (ok: false, error: null);
-    }
-    AppLogger.info(LogTag.backup, 'Εξαγωγή καταλόγου: $fileName');
-    return (ok: true, error: null);
-  });
+        final cats =
+            await ref.read(categoryRepositoryProvider).watchAll().first;
+        final subs =
+            await ref.read(subCategoryRepositoryProvider).watchAll().first;
+        final groups =
+            await ref.read(itemGroupRepositoryProvider).watchAll().first;
+        final items = await ref.read(itemRepositoryProvider).watchAll().first;
+        final units = await ref.read(unitRepositoryProvider).watchAll().first;
+        final bytes = CatalogExportService.buildCatalogExcelBytes(
+          tree: buildCategoryTreeNodes(cats, subs, groups),
+          items: items,
+          units: units,
+        );
+        final fileName = CatalogExportService.buildCatalogFileName(
+          DateTime.now(),
+        );
+        final picker = ref.read(backupFilePickerProvider);
+        bool saved;
+        try {
+          saved = await picker.saveBytes(fileName: fileName, bytes: bytes);
+        } on Exception catch (e, s) {
+          AppLogger.error(
+            LogTag.backup,
+            'Αποτυχία διαλόγου αποθήκευσης καταλόγου',
+            e,
+            s,
+          );
+          throw const CatalogExportException();
+        }
+        if (!saved) {
+          AppLogger.info(
+            LogTag.backup,
+            'Εξαγωγή καταλόγου ακυρώθηκε από τον χρήστη',
+          );
+          return (ok: false, error: null);
+        }
+        AppLogger.info(LogTag.backup, 'Εξαγωγή καταλόγου: $fileName');
+        return (ok: true, error: null);
+      });
 
   /// Επαναφέρει το [candidatePath] (ΚΑΛΕΙΤΑΙ ΜΟΝΟ μετά από confirm στο widget).
   /// Ξανατρέχει validation (defense — το αρχείο μπορεί να άλλαξε) →
   /// auto-backup (αποτυχία = abort ΠΡΙΝ το close) → `closeSafely()` →
-  /// replace (temp+rename §2.3) → με αποτυχία: best-effort rollback από το
-  /// auto-backup (δεν μασκάρει το αρχικό σφάλμα) → ΠΑΝΤΑ restart providers
-  /// + reset φορμών (stale ids → FK σφάλμα αλλιώς· ποτέ κλειστή βάση).
-  /// Αποτυχία → mapped `AppException` (feedback στο widget).
+  /// replace → restart providers + reset φορμών (stale ids → FK σφάλμα
+  /// αλλιώς). Αποτυχία → mapped `AppException` (feedback στο widget).
   Future<({bool ok, String? error})> restoreBackup(String candidatePath) =>
       _guarded(() async {
         final service = ref.read(backupServiceProvider);
@@ -179,46 +188,18 @@ class BackupRestoreController extends Notifier<SettingsState> {
         _logLiveStreams();
         await ref.read(appDatabaseProvider).closeSafely();
         AppLogger.info(LogTag.backup, 'Restore: close OK — replace');
-        try {
-          await service.replaceDatabaseFile(candidatePath);
-          AppLogger.info(
-            LogTag.backup,
-            'Restore: replace OK — invalidate+reset',
-          );
-        } catch (e, s) {
-          // Rollback best-effort από το auto-backup (Q1 30-09-2026): η βάση
-          // γυρίζει στην pre-restore κατάσταση· το αρχικό σφάλμα ανεβαίνει
-          // ανέγγιχτο (Q2 — ο χρήστης μαθαίνει ότι ΔΕΝ έγινε restore).
-          AppLogger.error(
-            LogTag.backup,
-            'Restore: replace απέτυχε — rollback από auto-backup',
-            e,
-            s,
-          );
-          try {
-            await service.replaceDatabaseFile(autoPath);
-            AppLogger.info(LogTag.backup, 'Restore: rollback OK');
-          } catch (e2, s2) {
-            AppLogger.error(
-              LogTag.backup,
-              'Restore: rollback απέτυχε (χειροκίνητη ανάκτηση: $autoPath)',
-              e2,
-              s2,
-            );
-          }
-          rethrow;
-        } finally {
-          // ΠΑΝΤΑ (Q4): η βάση ξανανοίγει (νέα ή rolled-back) + resets —
-          // ποτέ κολλημένη κλειστή βάση, ποτέ stale ids (Q4: sync
-          // state-writes, ακίνδυνα εδώ — βλ. resetForm/onQueryChanged).
-          ref.invalidate(appDatabaseProvider);
-          // Stale in-memory state (ids παλιάς βάσης): πλήρες reset — αλλιώς το
-          // επόμενο save θα έσκαγε σε FK (pattern `deleteSupplier` §2.3).
-          // Το `onQueryChanged('')` καθαρίζει ΚΑΙ pending search (όχι μόνο
-          // `clearSelection` — η βάση άλλαξε ταυτότητα).
-          ref.read(receiptFormControllerProvider.notifier).resetForm();
-          ref.read(itemSearchControllerProvider.notifier).onQueryChanged('');
-        }
+        await service.replaceDatabaseFile(candidatePath);
+        AppLogger.info(
+          LogTag.backup,
+          'Restore: replace OK — invalidate+reset',
+        );
+        ref.invalidate(appDatabaseProvider);
+        // Stale in-memory state (ids παλιάς βάσης): πλήρες reset — αλλιώς το
+        // επόμενο save θα έσκαγε σε FK (pattern `deleteSupplier` §2.3).
+        // Το `onQueryChanged('')` καθαρίζει ΚΑΙ pending search (όχι μόνο
+        // `clearSelection` — η βάση άλλαξε ταυτότητα).
+        ref.read(receiptFormControllerProvider.notifier).resetForm();
+        ref.read(itemSearchControllerProvider.notifier).onQueryChanged('');
         AppLogger.info(LogTag.backup, 'Επαναφορά ολοκληρώθηκε');
         return (ok: true, error: null);
       });

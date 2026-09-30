@@ -370,8 +370,8 @@ presentation/settings/
 **Backup/Restore — αναλυτική ροή (κλειδωμένη 23-09-2026)**
 1. **Export**: tap → snapshot μέσω `VACUUM INTO` temp αρχείου (WAL-safe) → bytes → `file_picker` save dialog (`saveFile(fileName, bytes)`, προτεινόμενο filename από `AppConstants.backupFileNamePattern` + timestamp) → `AppFeedback.showSuccess`. Προσαρμογή 25-09 (Βήμα 5): το `file_picker` 12 ΔΕΝ δίνει path (θέλει bytes) — το παλιό «save dialog → path → VACUUM INTO» δεν υλοποιείται. ΠΟΤΕ γραφή στο `backups/` του project (μόνο αρχεία βημάτων).
 2. **Εξαγωγή καταλόγου (30-09-2026)**: 3ο κουμπί στο `Wrap` (`OutlinedButton`, ίδιο `isWorking` guard) → `BackupRestoreController.exportCatalog()` (one-shot `.first` reads 5 repos + pure `buildCategoryTreeNodes` SPoT + `CatalogExportService.buildCatalogExcelBytes`, 1 γραμμή/είδος με πλήρη διαδρομή + κενά κλαδιά) → save dialog (`times_catalog_*` + timestamp) → `AppMessages.catalogExported`. Ακύρωση → no-op· σφάλμα → `CatalogExportException` (`LogTag.backup`).
-2. **Restore**: tap → επιλογή αρχείου → **validation ΠΡΙΝ από οτιδήποτε** (30-09-2026: SQLite header magic + `user_version` == schema §3 (strict) + αναμενόμενοι πίνακες + στήλες ανά πίνακα (`expectedColumns`) + πλήρες `integrity_check`) → αν άκυρο, error χωρίς αλλαγή.
-3. Αν έγκυρο → **confirm dialog** με ρητή προειδοποίηση αντικατάστασης → OK → **υποχρεωτικό auto-backup** τρέχουσας βάσης (safety net §1.9) → `closeSafely()` (idempotent) → αντικατάσταση αρχείου (30-09-2026: copy σε temp ίδιου dir + rename, όχι copy — crash δεν αφήνει μισό αρχείο · καθαρισμός stale sidecars `-wal`/`-shm`/`-journal`, best-effort, μετά το rename) → με αποτυχία: best-effort rollback από το auto-backup + rethrow → ΠΑΝΤΑ **restart providers** (`ref.invalidate(appDatabaseProvider)`) + reset φορμών, ώστε όλο το UI να διαβάσει τα νέα δεδομένα και η εφαρμογή να μην μένει ποτέ με κλειστή βάση.
+2. **Restore**: tap → επιλογή αρχείου → **validation ΠΡΙΝ από οτιδήποτε** (SQLite header magic + αναμενόμενοι πίνακες) → αν άκυρο, error χωρίς αλλαγή.
+3. Αν έγκυρο → **confirm dialog** με ρητή προειδοποίηση αντικατάστασης → OK → **υποχρεωτικό auto-backup** τρέχουσας βάσης (safety net §1.9) → `closeSafely()` (idempotent) → αντικατάσταση αρχείου (+ καθαρισμός stale sidecars `-wal`/`-shm`/`-journal`, best-effort, μετά το copy) → **restart providers** (`ref.invalidate(appDatabaseProvider)`) ώστε όλο το UI να διαβάσει τα νέα δεδομένα.
 4. **Android Auto Backup ΑΠΕΝΕΡΓΟΠΟΙΗΜΕΝΟ** (`android:allowBackup="false"` στο manifest, 27-09-2026): το cloud restore θα επανέφερε ασύμβατη παλιά βάση μετά από reinstall (βλ. Ε3 κεφ. 54) — το μόνο αντίγραφο είναι το in-app export.
 
 ---
@@ -503,7 +503,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 - **`discountCents`** (§2.2): έκπτωση μονάδας σε λεπτά (`0` = καμία · `0≤d≤p`, αλλιώς απόρριψη) — SPoT υπολογισμού στο `ReceiptLineDao`, στήλη στο φρέσκο σχήμα v4 (παλιές γραμμές = 0).
 - **Κανόνας Δ-stat (δεσμευτικός για Φάση 5)**: κάθε στατιστικό μοναδιαίας τιμής (trend είδους, σύγκριση προμηθευτών €/μονάδα) χρησιμοποιεί **πάντα την καθαρή** `priceCents − discountCents` (ισοδύναμα `SUM(lineTotalCents)/SUM(quantity)`) — **ποτέ** σκέτο `priceCents` (θα έβγαζε τη χονδρική). Το πληκτρολογημένο σύνολο φυλάσσεται ως `DraftReceiptLine.enteredTotalCents` snapshot (display-only στο draft list — εξαίρεση Δ2 μόνο για αυτές τις γραμμές)· το stored σύνολο μπορεί να διαφέρει ±1 λεπτό (στρογγυλοποίηση παραγόμενης).
 - **`Unit.allowsDecimal`**: flag που ορίζει αν μια μονάδα δέχεται κλασματική ποσότητα (π.χ. Τεμάχιο=false, Κιλό=true). Χρησιμοποιείται από τη φόρμα εισαγωγής (Φάση 3) για απόρριψη τιμών όπως «2.5 τεμάχια».
-- **Migration v1→v2 (25-09-2026, data-only) — ιστορικό**: καθαρισμός Γραμμάριο/Χιλιοστόλιτρο — oldsessions κεφ. 35. Το path καταργήθηκε στο wipe+fresh v4 (27-09-2026, προ-παραγωγής).
+- **Migration v1→v2 (25-09-2026, data-only) — ΚΑΤΑΡΓΗΘΗΚΕ 27-09-2026** (wipe+fresh v4, §3): καθαρισμός Γραμμάριο/Χιλιοστόλιτρο — ιστορικό oldsessions κεφ. 35.
 - **Foreign key policy** (απόφαση, Φάση 1):
   - `ON DELETE RESTRICT` για Category/SubCategory/ItemGroup/Item/Supplier/Unit (ώστε να μην διαγράφονται αν έχουν δεδομένα — υλοποιεί απευθείας τον κανόνα της §2.3).
   - `ReceiptLine.receiptId → ON DELETE CASCADE`: η γραμμή χωρίς κεφαλίδα είναι άχρηστη (σχέση κυριότητας) — η διαγραφή απόδειξης σβήνει και τις γραμμές της. Εξαιρείται ρητά από τον RESTRICT κανόνα της §2.3.
@@ -511,7 +511,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 - **`normalizedName`** (Category & SubCategory & ItemGroup & Item & Supplier — 27-09-2026): καθαρή `GreekTextNormalizer.normalize(name)` (lowercase + αφαίρεση τόνων + ς→σ) που υπολογίζεται στο Dart κατά insert/update — όχι DB-generated column, ελεγχόμενο/testable, ίδιο μοτίβο με το `lineTotalCents`. Η αναζήτηση ειδών/προμηθευτών γίνεται πάντα με `WHERE normalizedName LIKE '%' || :normalizedQuery || '%'` (§2.0.4). Κατηγορία/Υποκατηγορία/Τμήμα επιλέγονται από μικρές ήδη-φορτωμένες λίστες (SearchableDropdownField §2.4) — φιλτράρισμα in-memory πάνω στο stream, χωρίς DB query. Ο ίδιος `normalizedName` χρησιμοποιείται και στον global duplicate-check του §2.2 (exact match, όχι LIKE) — μία μόνο υλοποίηση normalization, καμία διπλή λογική.
 - **[Φάση 1 + refactor 27-09-2026] `UNIQUE` στο `normalizedName`** (global constraint σε Category/SubCategory/ItemGroup/Item/Supplier): η απαγόρευση διπλότυπων ονομάτων εγγυάται σε επίπεδο βάσης μέσω exact-match στο `normalizedName` (πεζά/άτονα/ς→σ, §2.2). Δεν επαρκεί `UNIQUE` στο raw `name`, γιατί το SQLite string match δεν είναι case/tone-insensitive («Γάλα»≠«γάλα» ως strings).
 - Σημ.: τα `UNIQUE` σε `normalizedName` δημιουργούν αυτόματα δικό τους index — **δεν** προστίθενται ξεχωριστά indexes σ' αυτά τα columns. Το μοναδικό ρητό index βάσει σχήματος είναι στο `ReceiptLine.itemId` (επιτάχυνση στατιστικών). Ως εκ τούτου δεν χρησιμοποιείται `@TableIndex` σε κατάλογο/προμηθευτές (μόνο `ReceiptLine.itemId`). Το substring `LIKE '%...%'` του §3 παραμένει full scan στο SQLite χωρίς FTS5 — αμελητέο για τον όγκο δεδομένων προσωπικής χρήσης.
-- **Schema v4 — baseline παραγωγής (30-09-2026):** μοναδική εγκατάσταση με πραγματικά δεδομένα. Κανόνας: κάθε bump `schemaVersion` συνοδεύεται από migration step στο `onUpgrade` + test (`app_migration_test.dart`, tripwire) — ποτέ wipe, ποτέ επανεγκατάσταση.
+- **Schema v4 (wipe+fresh 27-09-2026):** το migration path v1→v2→v3 ΔΙΑΓΡΑΦΗΚΕ (δεν υπάρχουν χρήστες) — `onUpgrade` ρίχνει σκόπιμα, απαιτείται επανεγκατάσταση.
 
 ---
 
@@ -530,7 +530,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 
 ### Φάση 1 — Βάση Δεδομένων & Domain Models (refactor 4 επιπέδων 27-09-2026)
 
-> Το αρχικό seed (9/53/535 από `supermarket_categories_v2.md`) ανήκει στην προ-παραγωγή (wipe+fresh v4, 27-09-2026). Baseline παραγωγής: schema v4 (30-09-2026) — κάθε αλλαγή σχήματος θέλει migration step + test. Ισχύει μόνο το παρακάτω.
+> Το αρχικό seed (9/53/535 από `supermarket_categories_v2.md`) και το migration path v1→v3 ΔΙΑΓΡΑΦΗΚΑΝ (δεν υπάρχουν χρήστες). Ισχύει μόνο το παρακάτω.
 
 1. Ορισμός Drift tables (§3 — 8 πίνακες, schema v4).
 2. DAOs με βασικά CRUD + streams (+counts/cascade §2.3).
