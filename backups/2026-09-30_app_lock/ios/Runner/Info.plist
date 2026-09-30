@@ -8,8 +8,6 @@
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
 		<string>Τιμές</string>
-		<key>NSFaceIDUsageDescription</key>
-		<string>Ξεκλείδωμα της εφαρμογής «Τιμές»</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>

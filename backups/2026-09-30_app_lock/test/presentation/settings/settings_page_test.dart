@@ -16,13 +16,11 @@ import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/core/utils/greek_text_normalizer.dart';
 import 'package:times/data/local/app_database.dart';
-import 'package:times/data/providers/app_lock_providers.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/providers/settings_providers.dart';
 import 'package:times/presentation/settings/settings_page.dart';
 
 import '../../data/local/helpers/in_memory_db.dart';
-import '../../data/providers/helpers/fake_biometric_gate.dart';
 
 void main() {
   late SharedPreferences prefs;
@@ -43,10 +41,6 @@ void main() {
         // Βήμα 4: το section «Κατηγορίες» βλέπει DB providers (tree) —
         // in-memory βάση, όχι real file (Α1 εξέλιξη).
         appDatabaseProvider.overrideWithValue(db),
-        // Κλείδωμα (30-09-2026): fake gate — το `local_auth` δεν
-        // pumpάρεται (platform channel).
-        biometricGateProvider
-            .overrideWithValue(FakeBiometricGate()),
       ],
       child: MaterialApp(
         theme: theme,
@@ -94,20 +88,6 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    // ─── Κάρτα «Ασφάλεια» (§2.3 · 30-09-2026) ────────────────────────────────
-    testWidgets('κάρτα «Ασφάλεια» κάτω από το Θέμα + switch',
-        (tester) async {
-      await pumpAt(tester, const Size(800, 600));
-      // 2η κάρτα: scroll πριν το assert (lazy ListView, pattern Αντίγραφα).
-      await tester.scrollUntilVisible(
-        find.text(AppStrings.titleSecuritySection),
-        300,
-      );
-      expect(find.text(AppStrings.titleSecuritySection), findsOneWidget);
-      expect(find.text(AppStrings.appLockEnableLabel), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
     // ─── Responsive (§1.4) ───────────────────────────────────────────────────
     testWidgets('mobile (320×568) — κανένα overflow', (tester) async {
       await pumpAt(tester, const Size(320, 568));
@@ -138,18 +118,7 @@ void main() {
       expect(find.text(AppStrings.titleStatisticsSection), findsOneWidget);
       expect(find.text(AppStrings.titleItemsSection), findsOneWidget);
       expect(find.text(AppStrings.titleCategoriesSection), findsOneWidget);
-      // 2η κάρτα «Ασφάλεια» (30-09-2026): έσπρωξε τα κάτω sections εκτός
-      // viewport 600px (lazy ListView) — scroll πριν τα asserts (pattern
-      // «Αντίγραφα» παρακάτω).
-      await tester.scrollUntilVisible(
-        find.text(AppStrings.titleSuppliersSection),
-        300,
-      );
       expect(find.text(AppStrings.titleSuppliersSection), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text(AppStrings.titleReceiptsSection),
-        300,
-      );
       expect(find.text(AppStrings.titleReceiptsSection), findsOneWidget);
       // 6η κάρτα (Στατιστικά 28-09-2026): το «Αντίγραφα» βγήκε εκτός
       // viewport 600px (lazy ListView) — scroll πριν το assert.
@@ -190,11 +159,6 @@ void main() {
 
     testWidgets('expand «Αποδείξεις» → φαίνεται το φίλτρο ημέρας', (tester) async {
       await pumpAt(tester, const Size(800, 600));
-      // Κάτω από το fold (κάρτα «Ασφάλεια», 30-09-2026) — scroll πριν το tap.
-      await tester.scrollUntilVisible(
-        find.text(AppStrings.titleReceiptsSection),
-        300,
-      );
       await tester.tap(find.text(AppStrings.titleReceiptsSection));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.fieldDate), findsOneWidget);

@@ -46,12 +46,4 @@ abstract interface class SettingsRepository {
   /// Αποθηκεύει το επιλεγμένο είδος πορείας στον SPoT key
   /// `AppConstants.trendSelectedItemKey` (null = καθάρισμα).
   Future<void> saveTrendItemId(int? id);
-
-  /// Διαβάζει το κλείδωμα εφαρμογής ΣΥΓΧΡΟΝΩΣ (§2.3 · 30-09-2026 —
-  /// default `false`, pattern `readTrendItemId` με bool).
-  bool readAppLockEnabled();
-
-  /// Αποθηκεύει το κλείδωμα εφαρμογής στον SPoT key
-  /// `AppConstants.appLockEnabledKey`.
-  Future<void> saveAppLockEnabled(bool enabled);
 }

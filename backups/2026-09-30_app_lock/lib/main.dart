@@ -10,8 +10,6 @@ import 'core/logging/app_logger.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/providers/settings_providers.dart';
-import 'presentation/settings/widgets/app_lock_overlay.dart';
-import 'presentation/settings/widgets/app_lock_watcher.dart';
 
 Future<void> main() async {
   // Φάση 4, Βήμα 1 (Q4) + review fix (sync read, Q3 αναθεωρήθηκε): προφόρτωση
@@ -55,17 +53,6 @@ class TimesApp extends ConsumerWidget {
       // (§1.2). Μόνο η PriceEntry βλέπει data providers → η βάση ανοίγει
       // ΜΟΝΟ μέσω PriceEntry (Α1, §2.2:221) — το θέμα είναι SharedPreferences.
       routerConfig: appRouter,
-      // Κλείδωμα εφαρμογής (§2.3 · 30-09-2026): ο builder σκεπάζει ΟΛΟ το
-      // navigator (NavigationBar + dialogs — τίποτα ορατό πριν το unlock).
-      // TimesApp μένει ConsumerWidget (ο watcher/overlay έχουν δικό state).
-      builder: (context, child) => AppLockWatcher(
-        child: Stack(
-          children: [
-            ?child,
-            const AppLockGate(),
-          ],
-        ),
-      ),
     );
   }
 }

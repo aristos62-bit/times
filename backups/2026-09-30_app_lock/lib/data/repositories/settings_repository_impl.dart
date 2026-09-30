@@ -143,19 +143,6 @@ final class SettingsRepositoryImpl implements SettingsRepository {
     await _prefs.setString(AppConstants.topItemsMetricKey, metric.name);
   }
 
-  /// Διαβάζει το κλείδωμα εφαρμογής ΣΥΓΧΡΟΝΩΣ (memory-read, pattern
-  /// `readTrendItemId`): κενό → false (ξεκλείδωτη).
-  @override
-  bool readAppLockEnabled() =>
-      _prefs.getBool(AppConstants.appLockEnabledKey) ?? false;
-
-  /// Αποθηκεύει το κλείδωμα (bool, όχι remove — το false είναι έγκυρη
-  /// κατάσταση, σε αντίθεση με το nullable trend item).
-  @override
-  Future<void> saveAppLockEnabled(bool enabled) async {
-    await _prefs.setBool(AppConstants.appLockEnabledKey, enabled);
-  }
-
   /// SPoT mapping περιόδου (§2.1): γράφουμε `period.name`, διαβάζουμε από
   /// τον ίδιο πίνακα — άγνωστο/κενό → `PeriodType.month` (default §2.1).
   static PeriodType _periodFromString(String? raw) =>

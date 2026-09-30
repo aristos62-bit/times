@@ -155,11 +155,4 @@ class FailingRepository implements SettingsRepository {
   @override
   Future<void> saveTopItemsMetric(TopItemsMetric metric) =>
       throw UnimplementedError('save fail');
-
-  @override
-  bool readAppLockEnabled() => throw UnimplementedError('read fail');
-
-  @override
-  Future<void> saveAppLockEnabled(bool enabled) =>
-      throw UnimplementedError('save fail');
 }

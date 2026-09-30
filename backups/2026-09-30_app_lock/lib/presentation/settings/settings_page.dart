@@ -20,7 +20,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../data/providers/settings_providers.dart';
-import 'widgets/app_lock_section.dart';
 import 'widgets/backup_restore_section.dart';
 import 'widgets/category_tree_editor.dart';
 import 'widgets/item_list_editor.dart';
@@ -64,25 +63,6 @@ class SettingsPage extends ConsumerWidget {
                     onChanged: (mode) =>
                         ref.read(themeModeProvider.notifier).setMode(mode),
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppConstants.spacingL),
-          Card(
-            // Κάρτα «Ασφάλεια» (§2.3 · 30-09-2026): πάντα ορατή (Q5) κάτω
-            // από το Θέμα — κρύβεται εσωτερικά όταν δεν υποστηρίζεται (Q4).
-            child: Padding(
-              padding: const EdgeInsets.all(AppConstants.spacingL),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppStrings.titleSecuritySection,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: AppConstants.spacingM),
-                  const AppLockSection(),
                 ],
               ),
             ),

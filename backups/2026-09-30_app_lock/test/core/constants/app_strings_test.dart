@@ -197,14 +197,6 @@ void main() {
       expect(AppStrings.themeModeSystem, 'Αυτόματο');
     });
 
-    test('app lock strings — κάρτα/switch/reason (§2.3 · 30-09-2026)', () {
-      expect(AppStrings.titleSecuritySection, 'Ασφάλεια');
-      expect(AppStrings.appLockEnableLabel, 'Κλείδωμα εφαρμογής');
-      expect(AppStrings.appLockEnableSubtitle, 'Βιομετρικά ή PIN συσκευής');
-      expect(AppStrings.appLockReason, 'Ξεκλειδώστε για να συνεχίσετε');
-      expect(AppStrings.appLockUnlockAction, 'Ξεκλείδωμα');
-    });
-
     test('statistics section — τίτλος + headers + actions (§2.3 · 28-09-2026)',
         () {
       expect(AppStrings.titleStatisticsSection, 'Στατιστικά');
@@ -382,11 +374,6 @@ const List<String> _allStrings = [
   AppStrings.themeModeLight,
   AppStrings.themeModeDark,
   AppStrings.themeModeSystem,
-  AppStrings.titleSecuritySection,
-  AppStrings.appLockEnableLabel,
-  AppStrings.appLockEnableSubtitle,
-  AppStrings.appLockReason,
-  AppStrings.appLockUnlockAction,
   AppStrings.titleStatisticsSection,
   AppStrings.statsLedgerTitle,
   AppStrings.statsLedgerDescription,

@@ -257,23 +257,5 @@ void main() {
       await newRepo().saveTopItemsMetric(TopItemsMetric.pieces);
       expect(prefs.getString(AppConstants.topItemsMetricKey), 'pieces');
     });
-
-    // ─── readAppLockEnabled/saveAppLockEnabled (§2.3 · 30-09-2026) ─────────
-    test('χωρίς τιμή → false (ξεκλείδωτη)', () {
-      expect(newRepo().readAppLockEnabled(), isFalse);
-    });
-
-    test('round-trip: enabled αποθηκεύεται και διαβάζεται', () async {
-      final repo = newRepo();
-      await repo.saveAppLockEnabled(true);
-      expect(repo.readAppLockEnabled(), isTrue);
-      await repo.saveAppLockEnabled(false);
-      expect(repo.readAppLockEnabled(), isFalse);
-    });
-
-    test('γράφει στον SPoT key AppConstants.appLockEnabledKey', () async {
-      await newRepo().saveAppLockEnabled(true);
-      expect(prefs.getBool(AppConstants.appLockEnabledKey), isTrue);
-    });
   });
 }

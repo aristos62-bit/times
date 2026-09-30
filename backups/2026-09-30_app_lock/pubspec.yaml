@@ -58,7 +58,6 @@ dependencies:
   # pub.dev API 28-09-2026: pdf ≤3.12 → xml ^6, κοινό με excel).
   excel: ^4.0.6
   pdf: ^3.12.0
-  local_auth: 3.0.2
 
 dev_dependencies:
   flutter_test:

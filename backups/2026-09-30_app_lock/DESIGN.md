@@ -331,9 +331,6 @@ presentation/settings/
 ├── state/settings_state.dart                 (Βήματα 4–5)
 └── widgets/
     ├── theme_mode_selector.dart              (Βήμα 1 ✓)
-    ├── app_lock_section.dart                 (30-09-2026: dumb switch κλειδώματος, §2.3)
-    ├── app_lock_overlay.dart                 (30-09-2026: fullscreen overlay + πύλη, §2.3)
-    ├── app_lock_watcher.dart                 (30-09-2026: lifecycle paused/resumed + χάρη, §2.3)
     ├── statistics_section.dart               (28-09-2026: καρτέλα είδους + export, §2.3 · μενού 3 αναλύσεων 29-09)
     ├── catalog_filter.dart                   (29-09-2026: dumb φίλτρο καταλόγου 3 επιπέδων, §2.3)
     ├── statistics_table.dart                 (28-09-2026: dumb DataTable καρτέλας)
@@ -350,7 +347,6 @@ presentation/settings/
 
 **Providers / λογική**
 - `themeModeProvider` (Notifier, persisted μέσω `SettingsRepository` πάνω σε SharedPreferences) — read στο `main.dart` (`ConsumerWidget`) για `MaterialApp.router.themeMode`. SPoT: key `AppConstants.themeModeKey`, default `AppTheme.defaultMode` (system), labels `AppStrings` (τίτλος/Φωτεινό/Σκοτεινό/Αυτόματο). Sync read (review fix 23-09 — Q3 αναθεωρήθηκε με ΟΚ χρήστη).
-- **Κλείδωμα εφαρμογής (30-09-2026)**: κάρτα «Ασφάλεια» κάτω από το Θέμα (πάντα ορατή, Q5 — κρυφή εσωτερικά όταν δεν υποστηρίζεται, Q4) + dumb `AppLockSection` (SwitchListTile, ακριβές σχήμα customization §2.1) + fullscreen `AppLockOverlay` (`PopScope` no-back, busy guard §2.4) + `AppLockWatcher` (`AppLifecycleListener`, ΜΟΝΟ κλειδώνει, χάρη `appLockGraceSeconds` Q2) + πύλη στο `builder` του `MaterialApp.router` (σκεπάζει NavigationBar + dialogs). Data: `AppLockController` (plain Notifier, record `{enabled,locked}`, sync read persisted bool + zero-flash locked, auth ΠΡΙΝ persist) + `BiometricGate` wrapper (`local_auth` 3.0.2, fallback PIN Q3, `persistAcrossBackgrounding`, `getAvailableBiometrics` ποτέ) σε ξεχωριστό `app_lock_providers.dart` (κανόνας 7). SPoT +2/+5 (0 χρώματα/tags, 0 AppErrors/AppMessages — η αποτυχία auth επιστρέφει `false`).
 - `categoryTreeStreamProvider` (StreamProvider) → live δέντρο Κατηγορία ▸ Υποκατηγορία ▸ Τμήματα (27-09-2026).
 - `suppliersStreamProvider` (StreamProvider, Φάση 2) → live λίστα Προμηθευτών για τον supplier editor (24-09-2026, reuse — κανένα νέο query).
 - Sections «Κατηγορίες»/«Προμηθευτές» collapsible (24-09-2026): `ExpansionTile` κλειστά by default — καθαρή είσοδος· tap δείχνει τον editor (ίδια widgets, §2.4).
@@ -519,7 +515,7 @@ ReceiptLine     (id, receiptId → Receipt [CASCADE], itemId → Item, unitId �
 > Κάθε φάση κλείνει μόνο όταν: (α) ο κώδικας λειτουργεί, (β) τα tests της φάσης περνάνε, (γ) το DESIGN.md ενημερώνεται, (δ) έχεις δώσει ρητό OK.
 
 ### Φάση 0 — Θεμελίωση Project
-1. Δημιουργία Flutter project, ρύθμιση `pubspec.yaml` (Drift, Riverpod, GoRouter, shared_preferences, file_picker + path_provider + sqlite3 για backup · 29-09-2026: +`excel`/`pdf` για export στατιστικών · 30-09-2026: +`local_auth` για κλείδωμα εφαρμογής).
+1. Δημιουργία Flutter project, ρύθμιση `pubspec.yaml` (Drift, Riverpod, GoRouter, shared_preferences, file_picker + path_provider + sqlite3 για backup · 29-09-2026: +`excel`/`pdf` για export στατιστικών).
 2. Ορισμός branding: όνομα app, package id, εικονίδιο, splash screen, χρωματική παλέτα.
 3. Δημιουργία δομής φακέλων (§1.2) με κενά αρχεία-σκελετούς.
 4. SPoT σκελετοί (`lib/core/`): `app_constants.dart`, `app_strings.dart`, `app_messages.dart`, `app_errors.dart`, `app_enums.dart`, `app_theme.dart`, `app_colors.dart`, `app_routes.dart`, `app_exceptions.dart`.

@@ -158,14 +158,6 @@ abstract final class AppConstants {
   // (mode.name) — SEE settings_repository_impl (SPoT mapping, §2.3:270).
   static const String themeModeKey = 'theme_mode';
 
-  // ─── Κλείδωμα εφαρμογής (§2.3 · 30-09-2026) ────────────────────────────
-  // Key της SharedPreferences για το κλείδωμα (bool, pattern themeModeKey).
-  static const String appLockEnabledKey = 'app_lock_enabled';
-
-  // Περίοδος χάριτος σε δευτερόλεπτα: επιστροφή από background μέσα σε
-  // αυτό το διάστημα ΔΕΝ ζητά ξεκλείδωμα (Q2).
-  static const int appLockGraceSeconds = 30;
-
   // ─── Charts (§2.1 DESIGN · Φάση 5 Βήμα 1) ─────────────────────────────────
   // Πλήθος φετών πίτας (top-N + «Λοιπά», §2.1:183) — suppliers/κατηγορίες.
   static const int pieMaxSlices = 8;

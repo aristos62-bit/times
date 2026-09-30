@@ -170,18 +170,6 @@ abstract final class AppStrings {
   /// Επιλογή θέματος: Αυτόματο (ThemeMode.system, §2.3:270).
   static const String themeModeSystem = 'Αυτόματο';
 
-  // ─── Κλείδωμα εφαρμογής (§2.3 · 30-09-2026) ────────────────────────────
-  /// Τίτλος κάρτας «Ασφάλεια» κάτω από το Θέμα (Q5).
-  static const String titleSecuritySection = 'Ασφάλεια';
-  /// Switch κλειδώματος (τίτλος).
-  static const String appLockEnableLabel = 'Κλείδωμα εφαρμογής';
-  /// Switch κλειδώματος (υπότιτλος — τίμια ονομασία με το Q3 fallback).
-  static const String appLockEnableSubtitle = 'Βιομετρικά ή PIN συσκευής';
-  /// Αιτιολογία στο native dialog (υποχρεωτικά non-empty, SPoT §1.1).
-  static const String appLockReason = 'Ξεκλειδώστε για να συνεχίσετε';
-  /// Κουμπί overlay ξεκλειδώματος.
-  static const String appLockUnlockAction = 'Ξεκλείδωμα';
-
   // ─── Categories section (§2.3 · Φάση 4 Βήμα 4) ──────────────────────────
   /// Τίτλος του section «Κατηγορίες» στη σελίδα ρυθμίσεων (§2.3 · Βήμα 4).
   static const String titleCategoriesSection = 'Κατηγορίες';
