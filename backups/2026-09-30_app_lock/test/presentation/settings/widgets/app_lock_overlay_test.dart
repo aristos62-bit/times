@@ -9,11 +9,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_constants.dart';
-import 'package:times/core/constants/app_errors.dart';
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/providers/app_lock_providers.dart';
@@ -95,7 +93,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('unlock fail → overlay παραμένει (σιωπή)', (tester) async {
+    testWidgets('unlock fail → overlay παραμένει', (tester) async {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);
       await pumpGate(
         tester,
@@ -104,22 +102,6 @@ void main() {
       await tester.tap(find.text(AppStrings.appLockUnlockAction));
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.appLockUnlockAction), findsOneWidget);
-      expect(find.text(AppErrors.appLockFailed), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('unlock σφάλμα πλατφόρμας → error snackbar', (tester) async {
-      await prefs.setBool(AppConstants.appLockEnabledKey, true);
-      await pumpGate(
-        tester,
-        gate: FakeBiometricGate(
-          throwCode: LocalAuthExceptionCode.noCredentialsSet,
-        ),
-      );
-      await tester.tap(find.text(AppStrings.appLockUnlockAction));
-      await tester.pumpAndSettle();
-      expect(find.text(AppStrings.appLockUnlockAction), findsOneWidget);
-      expect(find.text(AppErrors.appLockFailed), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

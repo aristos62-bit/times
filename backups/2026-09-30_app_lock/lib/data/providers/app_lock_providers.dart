@@ -9,10 +9,8 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:local_auth/local_auth.dart';
 
 import '../../core/constants/app_constants.dart';
-import '../../core/constants/app_errors.dart';
 import '../../core/logging/app_logger.dart';
 import '../services/biometric_gate.dart';
 import 'settings_providers.dart';
@@ -71,42 +69,32 @@ class AppLockController extends Notifier<AppLockState> {
   }
 
   /// Αίτημα ενεργοποίησης: auth ΠΡΙΝ το persist (proof-of-capability —
-  /// αποκλείει «το άναψα και δεν δουλεύει»). Επιστρέφει record για το
-  /// `runControllerOp` (pattern editors §2.3): ok → success snackbar·
-  /// error → error snackbar· (false, null) = ακύρωση χρήστη → σιωπή.
-  Future<({bool ok, String? error})> requestEnable(String reason) async {
-    if (state.enabled) return (ok: false, error: null);
-    final auth = await _auth(reason);
-    if (!ref.mounted) return (ok: false, error: null);
-    if (!auth.ok) return auth;
+  /// αποκλείει «το άναψα και δεν δουλεύει»). Αποτυχία/ακύρωση → όλα
+  /// αμετάβλητα, μόνο log (pattern `ThemeModeController._save`).
+  Future<void> requestEnable(String reason) async {
+    if (state.enabled) return;
+    if (!await _auth(reason) || !ref.mounted) return;
     state = (enabled: true, locked: true);
     AppLogger.info(LogTag.ui, 'Κλείδωμα εφαρμογής: ON');
     unawaited(_save(true));
-    return (ok: true, error: null);
   }
 
   /// Αίτημα απενεργοποίησης: auth ΠΡΙΝ (αλλιώς ο κάτοχος της συσκευής
-  /// θα το έσβηνε χωρίς έλεγχο). Ήδη OFF → σιωπηλό no-op.
-  Future<({bool ok, String? error})> requestDisable(String reason) async {
-    if (!state.enabled) return (ok: false, error: null);
-    final auth = await _auth(reason);
-    if (!ref.mounted) return (ok: false, error: null);
-    if (!auth.ok) return auth;
+  /// θα το έσβηνε χωρίς έλεγχο). Ήδη OFF → no-op.
+  Future<void> requestDisable(String reason) async {
+    if (!state.enabled) return;
+    if (!await _auth(reason) || !ref.mounted) return;
     state = (enabled: false, locked: false);
     AppLogger.info(LogTag.ui, 'Κλείδωμα εφαρμογής: OFF');
     unawaited(_save(false));
-    return (ok: true, error: null);
   }
 
   /// Ξεκλείδωμα συνεδρίας (overlay). Επιτυχία → `locked=false`.
-  Future<({bool ok, String? error})> unlock(String reason) async {
-    if (!state.enabled || !state.locked) return (ok: false, error: null);
-    final auth = await _auth(reason);
-    if (!ref.mounted) return (ok: false, error: null);
-    if (!auth.ok) return auth;
+  Future<void> unlock(String reason) async {
+    if (!state.enabled || !state.locked) return;
+    if (!await _auth(reason) || !ref.mounted) return;
     state = (enabled: true, locked: false);
     AppLogger.info(LogTag.ui, 'Εφαρμογή ξεκλειδώθηκε');
-    return (ok: true, error: null);
   }
 
   /// Κλείδωμα από τον watcher (λήξη χάριτος — σύγχρονο, χωρίς auth).
@@ -117,27 +105,12 @@ class AppLockController extends Notifier<AppLockState> {
     AppLogger.info(LogTag.ui, 'Εφαρμογή κλειδώθηκε (background)');
   }
 
-  /// Ταυτοποίηση με ορατά σφάλματα (fix 30-09): `userCanceled` → σιωπή·
-  /// κάθε άλλο `LocalAuthException` code → log με code + `appLockFailed`
-  /// (ο κωδικός φαίνεται στο debug log για διάγνωση συσκευής).
-  Future<({bool ok, String? error})> _auth(String reason) async {
+  Future<bool> _auth(String reason) async {
     try {
-      final ok = await ref.read(biometricGateProvider).authenticate(reason);
-      return (ok: ok, error: null);
-    } on LocalAuthException catch (e, s) {
-      if (e.code == LocalAuthExceptionCode.userCanceled) {
-        return (ok: false, error: null);
-      }
-      AppLogger.error(
-        LogTag.ui,
-        'Ταυτοποίηση απέτυχε (${e.code.name})',
-        e,
-        s,
-      );
-      return (ok: false, error: AppErrors.appLockFailed);
+      return await ref.read(biometricGateProvider).authenticate(reason);
     } catch (e, s) {
       AppLogger.error(LogTag.ui, 'Ταυτοποίηση απέτυχε', e, s);
-      return (ok: false, error: AppErrors.appLockFailed);
+      return false;
     }
   }
 

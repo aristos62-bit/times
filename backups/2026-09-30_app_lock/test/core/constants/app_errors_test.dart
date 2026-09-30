@@ -101,10 +101,6 @@ void main() {
           'Προσθέστε τουλάχιστον μία γραμμή');
     });
 
-    test('appLockFailed = «Σφάλμα ταυτοποίησης» (§2.3 · 30-09-2026)', () {
-      expect(AppErrors.appLockFailed, 'Σφάλμα ταυτοποίησης');
-    });
-
     // ─── Καθολικός έλεγχος ποιότητας (ίδιο pattern με app_messages_test) ─────
     test('κανένα string μη-κενό, χωρίς whitespace στα άκρα, χωρίς \\n', () {
       for (final text in _allConstStrings) {
@@ -138,5 +134,4 @@ const List<String> _allConstStrings = [
   AppErrors.unitRequired,
   AppErrors.supplierRequired,
   AppErrors.receiptLinesRequired,
-  AppErrors.appLockFailed,
 ];

@@ -94,11 +94,6 @@ abstract final class AppErrors {
   /// Χωριστό από τα backup errors (άλλο domain, §1.1).
   static const String statsExportFailed = 'Σφάλμα κατά την εξαγωγή';
 
-  // ─── Κλείδωμα εφαρμογής (§2.3 · 30-09-2026) ──────────────────────────────
-  /// §2.3: η ταυτοποίηση απέτυχε σε επίπεδο πλατφόρμας (όχι ακύρωση χρήστη
-  /// — αυτή είναι σιωπηλή) → showError μέσω `runControllerOp`.
-  static const String appLockFailed = 'Σφάλμα ταυτοποίησης';
-
   /// §2.2: κενό «καλάθι» — τουλάχιστον 1 γραμμή. Το πάνω όριο
   /// (`maxReceiptLines`) καλύπτεται από το `AppMessages.receiptLinesLimitReached`.
   static const String receiptLinesRequired =

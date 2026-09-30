@@ -10,11 +10,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/constants/app_messages.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/logging/app_logger.dart';
 import '../../../data/providers/app_lock_providers.dart';
-import '../../shared/controller_op_runner.dart';
 
 /// Switch «Κλείδωμα εφαρμογής» για την κάρτα «Ασφάλεια».
 class AppLockSection extends ConsumerWidget {
@@ -36,22 +34,14 @@ class AppLockSection extends ConsumerWidget {
           title: const Text(AppStrings.appLockEnableLabel),
           subtitle: const Text(AppStrings.appLockEnableSubtitle),
           value: lock.enabled,
-          // Feedback μέσω `runControllerOp` (pattern editors §2.3): ok →
-          // success snackbar· error (σφάλμα πλατφόρμας) → error snackbar·
-          // ακύρωση χρήστη → σιωπή (fix 30-09: τίποτα αθόρυβο).
-          onChanged: (value) => runControllerOp(
-            context,
-            () => value
-                ? ref
-                    .read(appLockProvider.notifier)
-                    .requestEnable(AppStrings.appLockReason)
-                : ref
-                    .read(appLockProvider.notifier)
-                    .requestDisable(AppStrings.appLockReason),
-            value
-                ? AppMessages.appLockEnabled
-                : AppMessages.appLockDisabled,
-          ),
+          onChanged: (value) {
+            final notifier = ref.read(appLockProvider.notifier);
+            if (value) {
+              notifier.requestEnable(AppStrings.appLockReason);
+            } else {
+              notifier.requestDisable(AppStrings.appLockReason);
+            }
+          },
         );
       },
       loading: () => const SizedBox.shrink(),

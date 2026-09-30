@@ -6,11 +6,9 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_constants.dart';
-import 'package:times/core/constants/app_errors.dart';
 import 'package:times/data/providers/app_lock_providers.dart';
 import 'package:times/data/providers/settings_providers.dart';
 
@@ -55,9 +53,7 @@ void main() {
     test('requestEnable ok → enabled+locked+persisted', () async {
       final c = container();
       addTearDown(c.dispose);
-      final result =
-          await c.read(appLockProvider.notifier).requestEnable('reason');
-      expect(result, (ok: true, error: null));
+      await c.read(appLockProvider.notifier).requestEnable('reason');
       expect(c.read(appLockProvider), (enabled: true, locked: true));
       await settleSave();
       expect(prefs.getBool(AppConstants.appLockEnabledKey), isTrue);
@@ -68,35 +64,9 @@ void main() {
       gate = FakeBiometricGate(authResults: const [false]);
       final c = container();
       addTearDown(c.dispose);
-      final result =
-          await c.read(appLockProvider.notifier).requestEnable('reason');
-      expect(result, (ok: false, error: null));
+      await c.read(appLockProvider.notifier).requestEnable('reason');
       expect(c.read(appLockProvider), (enabled: false, locked: false));
       expect(prefs.containsKey(AppConstants.appLockEnabledKey), isFalse);
-    });
-
-    test('requestEnable σφάλμα πλατφόρμας → error (ορατό)', () async {
-      gate = FakeBiometricGate(
-        throwCode: LocalAuthExceptionCode.noBiometricsEnrolled,
-      );
-      final c = container();
-      addTearDown(c.dispose);
-      final result =
-          await c.read(appLockProvider.notifier).requestEnable('reason');
-      expect(result, (ok: false, error: AppErrors.appLockFailed));
-      expect(c.read(appLockProvider), (enabled: false, locked: false));
-    });
-
-    test('requestEnable userCanceled → σιωπή (null)', () async {
-      gate = FakeBiometricGate(
-        throwCode: LocalAuthExceptionCode.userCanceled,
-      );
-      final c = container();
-      addTearDown(c.dispose);
-      final result =
-          await c.read(appLockProvider.notifier).requestEnable('reason');
-      expect(result, (ok: false, error: null));
-      expect(c.read(appLockProvider), (enabled: false, locked: false));
     });
 
     test('requestEnable ενώ enabled → no-op (χωρίς auth)', () async {
@@ -111,9 +81,7 @@ void main() {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);
       final c = container();
       addTearDown(c.dispose);
-      final result =
-          await c.read(appLockProvider.notifier).requestDisable('reason');
-      expect(result, (ok: true, error: null));
+      await c.read(appLockProvider.notifier).requestDisable('reason');
       expect(c.read(appLockProvider), (enabled: false, locked: false));
       await settleSave();
       expect(prefs.getBool(AppConstants.appLockEnabledKey), isFalse);
@@ -124,22 +92,7 @@ void main() {
       gate = FakeBiometricGate(authResults: const [false]);
       final c = container();
       addTearDown(c.dispose);
-      final result =
-          await c.read(appLockProvider.notifier).requestDisable('reason');
-      expect(result, (ok: false, error: null));
-      expect(c.read(appLockProvider), (enabled: true, locked: true));
-    });
-
-    test('requestDisable σφάλμα πλατφόρμας → error (ορατό)', () async {
-      await prefs.setBool(AppConstants.appLockEnabledKey, true);
-      gate = FakeBiometricGate(
-        throwCode: LocalAuthExceptionCode.temporaryLockout,
-      );
-      final c = container();
-      addTearDown(c.dispose);
-      final result =
-          await c.read(appLockProvider.notifier).requestDisable('reason');
-      expect(result, (ok: false, error: AppErrors.appLockFailed));
+      await c.read(appLockProvider.notifier).requestDisable('reason');
       expect(c.read(appLockProvider), (enabled: true, locked: true));
     });
 
@@ -147,9 +100,7 @@ void main() {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);
       final c = container();
       addTearDown(c.dispose);
-      final result =
-          await c.read(appLockProvider.notifier).unlock('reason');
-      expect(result, (ok: true, error: null));
+      await c.read(appLockProvider.notifier).unlock('reason');
       expect(c.read(appLockProvider), (enabled: true, locked: false));
     });
 
@@ -158,22 +109,7 @@ void main() {
       gate = FakeBiometricGate(authResults: const [false]);
       final c = container();
       addTearDown(c.dispose);
-      final result =
-          await c.read(appLockProvider.notifier).unlock('reason');
-      expect(result, (ok: false, error: null));
-      expect(c.read(appLockProvider), (enabled: true, locked: true));
-    });
-
-    test('unlock σφάλμα πλατφόρμας → error (ορατό)', () async {
-      await prefs.setBool(AppConstants.appLockEnabledKey, true);
-      gate = FakeBiometricGate(
-        throwCode: LocalAuthExceptionCode.noCredentialsSet,
-      );
-      final c = container();
-      addTearDown(c.dispose);
-      final result =
-          await c.read(appLockProvider.notifier).unlock('reason');
-      expect(result, (ok: false, error: AppErrors.appLockFailed));
+      await c.read(appLockProvider.notifier).unlock('reason');
       expect(c.read(appLockProvider), (enabled: true, locked: true));
     });
 

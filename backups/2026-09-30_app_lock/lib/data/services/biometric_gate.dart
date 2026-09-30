@@ -19,10 +19,8 @@ abstract interface class BiometricGate {
   Future<bool> isSupported();
 
   /// Ταυτοποίηση με [reason] (SPoT non-empty — το API το απαιτεί).
-  /// `true` = επιτυχία· `false` = αποτυχία χρήστη/ακύρωση (σιωπηλή —
-  /// ο καλών δεν δείχνει τίποτα). Σφάλμα πλατφόρμας (π.χ. καθόλου
-  /// credentials, κλείδωμα) → ρίχνει `LocalAuthException` (ο καλών το
-  /// κάνει ορατό σφάλμα + log με code — τίποτα αθόρυβο, fix 30-09).
+  /// `true` = επιτυχία· `false` = αποτυχία/ακύρωση/σφάλμα πλατφόρμας
+  /// (ο καλών κάνει log — κανένα throw).
   Future<bool> authenticate(String reason);
 }
 
@@ -40,18 +38,18 @@ final class LocalAuthBiometricGate implements BiometricGate {
   }
 
   @override
-  Future<bool> authenticate(String reason) {
-    // Χωρίς try/catch σκόπιμα: το `false` σημαίνει ΜΟΝΟ αποτυχία/ακύρωση
-    // χρήστη (σιωπηλή)· τα σφάλματα πλατφόρμας (`LocalAuthException` με
-    // code — π.χ. καθόλου credentials) προωθούνται στον καλούντα για
-    // ορατό σφάλμα + log (fix 30-09: τίποτα αθόρυβο).
-    return _auth.authenticate(
-      localizedReason: reason,
-      // Q3: fallback σε PIN/pattern/passcode συσκευής (ποτέ lockout).
-      biometricOnly: false,
-      // Το OS dialog βάζει την εφαρμογή σε background — χωρίς αυτό η
-      // ταυτοποίηση θα απέτυχε στην επιστροφή (docs 3.0.2).
-      persistAcrossBackgrounding: true,
-    );
+  Future<bool> authenticate(String reason) async {
+    try {
+      return await _auth.authenticate(
+        localizedReason: reason,
+        // Q3: fallback σε PIN/pattern/passcode συσκευής (ποτέ lockout).
+        biometricOnly: false,
+        // Το OS dialog βάζει την εφαρμογή σε background — χωρίς αυτό η
+        // ταυτοποίηση θα απέτυχε στην επιστροφή (docs 3.0.2).
+        persistAcrossBackgrounding: true,
+      );
+    } catch (_) {
+      return false;
+    }
   }
 }

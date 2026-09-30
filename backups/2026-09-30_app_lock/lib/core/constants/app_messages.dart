@@ -176,13 +176,6 @@ abstract final class AppMessages {
   /// `backupCreated`).
   static const String statsExported = 'Η εξαγωγή ολοκληρώθηκε';
 
-  // ─── Κλείδωμα εφαρμογής (§2.3 · 30-09-2026) ──────────────────────────────
-  /// Το κλείδωμα ενεργοποιήθηκε (success snackbar via `runControllerOp`).
-  static const String appLockEnabled = 'Το κλείδωμα ενεργοποιήθηκε';
-
-  /// Το κλείδωμα απενεργοποιήθηκε (success snackbar via `runControllerOp`).
-  static const String appLockDisabled = 'Το κλείδωμα απενεργοποιήθηκε';
-
   /// Σημείωση cap πίνακα (2η ανάλυση §2.3 — προβάλλονται οι Ν νεότερες).
   static String statsTruncatedNote(int max) =>
       'Προβάλλονται οι $max νεότερες εγγραφές';

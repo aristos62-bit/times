@@ -193,12 +193,6 @@ void main() {
       expect(AppMessages.statsExported, 'Η εξαγωγή ολοκληρώθηκε');
     });
 
-    // ─── Κλείδωμα εφαρμογής (§2.3 · 30-09-2026) ─────────────────────────────
-    test('appLockEnabled/appLockDisabled (§2.3)', () {
-      expect(AppMessages.appLockEnabled, 'Το κλείδωμα ενεργοποιήθηκε');
-      expect(AppMessages.appLockDisabled, 'Το κλείδωμα απενεργοποιήθηκε');
-    });
-
     // ─── Καθολικός έλεγχος ποιότητας (ίδιο pattern με app_strings_test) ─────
     test('κανένα const string μη-κενό, χωρίς whitespace στα άκρα, χωρίς \\n', () {
       for (final text in _allConstStrings) {
@@ -239,6 +233,4 @@ const List<String> _allConstStrings = [
   AppMessages.backupCreated,
   AppMessages.restoreConfirmWithBackup,
   AppMessages.trendItemRemoved,
-  AppMessages.appLockEnabled,
-  AppMessages.appLockDisabled,
 ];

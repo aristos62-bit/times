@@ -8,12 +8,9 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_constants.dart';
-import 'package:times/core/constants/app_errors.dart';
-import 'package:times/core/constants/app_messages.dart';
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/data/providers/app_lock_providers.dart';
@@ -64,34 +61,20 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('toggle ON → auth + persist true + snackbar', (tester) async {
+    testWidgets('toggle ON → auth + persist true', (tester) async {
       await pumpSection(tester);
       await tester.tap(find.text(AppStrings.appLockEnableLabel));
       await tester.pumpAndSettle();
       expect(prefs.getBool(AppConstants.appLockEnabledKey), isTrue);
-      expect(find.text(AppMessages.appLockEnabled), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('toggle OFF → auth + persist false + snackbar', (tester) async {
+    testWidgets('toggle OFF → auth + persist false', (tester) async {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);
       await pumpSection(tester);
       await tester.tap(find.text(AppStrings.appLockEnableLabel));
       await tester.pumpAndSettle();
       expect(prefs.getBool(AppConstants.appLockEnabledKey), isFalse);
-      expect(find.text(AppMessages.appLockDisabled), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('σφάλμα πλατφόρμας → error snackbar (ορατό)', (tester) async {
-      gate = FakeBiometricGate(
-        throwCode: LocalAuthExceptionCode.noBiometricsEnrolled,
-      );
-      await pumpSection(tester);
-      await tester.tap(find.text(AppStrings.appLockEnableLabel));
-      await tester.pumpAndSettle();
-      expect(prefs.containsKey(AppConstants.appLockEnabledKey), isFalse);
-      expect(find.text(AppErrors.appLockFailed), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
