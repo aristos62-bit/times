@@ -38,16 +38,6 @@ class BackupRestoreSection extends ConsumerWidget {
     );
   }
 
-  /// Εξαγωγή καταλόγου: controller → feedback (ακύρωση = no-op).
-  /// 3ο κουμπί του Wrap (§2.3 · 30-09-2026) — ίδιο guard/feedback pattern.
-  Future<void> _exportCatalog(BuildContext context, WidgetRef ref) async {
-    await runControllerOp(
-      context,
-      () => ref.read(backupRestoreControllerProvider.notifier).exportCatalog(),
-      AppMessages.catalogExported,
-    );
-  }
-
   /// Επαναφορά: pick → validate → confirm → controller → feedback.
   /// Ακύρωση pick/dialog → no-op. Άκυρο αρχείο → error, καμία αλλαγή.
   Future<void> _restore(BuildContext context, WidgetRef ref) async {
@@ -113,11 +103,6 @@ class BackupRestoreSection extends ConsumerWidget {
               onPressed: working ? null : () => _restore(context, ref),
               icon: const Icon(Icons.download_outlined),
               label: const Text(AppStrings.backupRestoreAction),
-            ),
-            OutlinedButton.icon(
-              onPressed: working ? null : () => _exportCatalog(context, ref),
-              icon: const Icon(Icons.table_chart_outlined),
-              label: const Text(AppStrings.backupExportCatalogAction),
             ),
           ],
         ),

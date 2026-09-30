@@ -193,12 +193,6 @@ void main() {
       expect(AppMessages.statsExported, 'Η εξαγωγή ολοκληρώθηκε');
     });
 
-    // ─── Εξαγωγή καταλόγου (§2.3 · 30-09-2026) ─────────────────────────────
-    test('catalogExported = «Η εξαγωγή καταλόγου ολοκληρώθηκε» (§2.3)', () {
-      expect(AppMessages.catalogExported,
-          'Η εξαγωγή καταλόγου ολοκληρώθηκε');
-    });
-
     // ─── Κλείδωμα εφαρμογής (§2.3 · 30-09-2026) ─────────────────────────────
     test('appLockEnabled/appLockDisabled (§2.3)', () {
       expect(AppMessages.appLockEnabled, 'Το κλείδωμα ενεργοποιήθηκε');
@@ -247,5 +241,4 @@ const List<String> _allConstStrings = [
   AppMessages.trendItemRemoved,
   AppMessages.appLockEnabled,
   AppMessages.appLockDisabled,
-  AppMessages.catalogExported,
 ];

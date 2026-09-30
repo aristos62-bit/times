@@ -82,17 +82,6 @@ final class StatsExportException extends AppException {
       : super(userMessage: AppErrors.statsExportFailed, loggingTag: LogTag.stats);
 }
 
-// ─── Εξαγωγή καταλόγου (§2.3 · 30-09-2026) ─────────────────────────────────
-/// Αποτυχία δημιουργίας XLSX καταλόγου → AppErrors.catalogExportFailed.
-/// Tag `backup` (η εξαγωγή ζει στην κάρτα Αντιγράφων + backup controller).
-final class CatalogExportException extends AppException {
-  const CatalogExportException()
-      : super(
-          userMessage: AppErrors.catalogExportFailed,
-          loggingTag: LogTag.backup,
-        );
-}
-
 /// Αποτυχία αντικατάστασης/επαναφοράς βάσης (Βήμα 4) → AppErrors.restoreFailed.
 final class RestoreBackupException extends AppException {
   const RestoreBackupException()

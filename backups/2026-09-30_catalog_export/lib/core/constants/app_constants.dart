@@ -198,11 +198,6 @@ abstract final class AppConstants {
   // `backupFileNamePattern`, άλλη αρχή· η επέκταση μπαίνει από τον καλούντα).
   static const String statsFileNamePattern = 'times_stats_yyyyMMdd_HHmmss';
 
-  // ─── Εξαγωγή καταλόγου (§2.3 · 30-09-2026) ───────────────────────────────
-  // Pattern ονομασίας αρχείου καταλόγου (ίδιο template, άλλη αρχή —
-  // σκόπιμα χωριστή const, §1.1: SPoT ανά χρήση).
-  static const String catalogFileNamePattern = 'times_catalog_yyyyMMdd_HHmmss';
-
   // Safety cap γραμμών καρτέλας (χωριστό από `trendMaxPoints` — άλλο UI,
   // §1.1: SPoT ανά χρήση, όχι κοινόχρηστος αριθμός).
   static const int statsTableMaxRows = 200;

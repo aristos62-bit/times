@@ -287,8 +287,4 @@ abstract final class AppStrings {
   static const String backupExportAction = 'Εξαγωγή αντιγράφου';
   /// Label κουμπιού επαναφοράς αντιγράφου (§2.3 · Βήμα 5).
   static const String backupRestoreAction = 'Επαναφορά αντιγράφου';
-  /// Label κουμπιού εξαγωγής καταλόγου (§2.3 · 30-09-2026).
-  static const String backupExportCatalogAction = 'Εξαγωγή καταλόγου';
-  /// Header στήλης συντομογραφίας μονάδας στον κατάλογο (§2.3 · 30-09-2026).
-  static const String catalogUnitAbbreviation = 'Συντομογραφία';
 }

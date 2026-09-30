@@ -123,11 +123,23 @@ final categoryTreeStreamProvider = StreamProvider<List<CategoryTreeNode>>(
     return categories.when(
       data: (cats) => subs.when(
         data: (subList) => groups.when(
-          // Σύνθεση μέσω pure function (SPoT §1.1 — reuse και ο controller
-          // εξαγωγής καταλόγου, που δεν διαβάζει `.future` composite).
-          data: (groupList) => Stream.value(
-            buildCategoryTreeNodes(cats, subList, groupList),
-          ),
+          data: (groupList) => Stream.value([
+            for (final cat in cats)
+              (
+                category: cat,
+                subNodes: [
+                  for (final sub in subList)
+                    if (sub.categoryId == cat.id)
+                      (
+                        subCategory: sub,
+                        itemGroups: [
+                          for (final g in groupList)
+                            if (g.subCategoryId == sub.id) g,
+                        ],
+                      ),
+                ],
+              ),
+          ]),
           loading: () => const Stream.empty(),
           error: (e, s) => Stream.error(e, s),
         ),

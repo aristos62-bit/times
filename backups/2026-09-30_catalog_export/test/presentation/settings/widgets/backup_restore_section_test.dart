@@ -138,20 +138,6 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('δείχνει το κουμπί καταλόγου (§2.3 · 30-09-2026)',
-        (tester) async {
-      await pumpAt(tester, const Size(800, 600));
-      expect(find.text(AppStrings.backupExportCatalogAction), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-    // ΣΗΜΕΙΩΣΗ (εύρημα harness 30-09): tap→controller→picker end-to-end
-    // ΔΕΝ τεστάρεται σε widget επίπεδο — τα one-shot `.first` reads του
-    // controller δεν ολοκληρώνονται ποτέ στο widget FakeAsync zone (ούτε
-    // με file ούτε με in-memory DB, ούτε με runAsync/pumps). Το ίδιο op
-    // καλύπτεται 4/4 στο controller test (πραγματικό async, decode bytes)
-    // και το tap-wiring είναι χαρακτήρα-χαρακτήρα ίδιο με τα 2 αδελφά
-    // κουμπιά (που επίσης τεστάρουν μόνο ύπαρξη, όχι tap).
-
     testWidgets('restore ακύρωση pick → τίποτα (ούτε dialog)', (tester) async {
       picker.pickPath = null;
       await pumpAt(tester, const Size(800, 600));

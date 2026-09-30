@@ -25,31 +25,3 @@ typedef CategoryTreeNode = ({
   /// Οι υποκόμβοι της κατηγορίας, αλφαβητικά (`[]` αν δεν έχει).
   List<SubCategoryTreeNode> subNodes,
 });
-
-/// Συνθέτει το δέντρο in-memory πάνω σε ήδη-φορτωμένες λίστες (ΚΑΝΕΝΑ νέο
-/// DB query, σκεπτικό §3) — pure function, testable χωρίς providers.
-/// Μοναδική πηγή σύνθεσης (§1.1): τη χρησιμοποιεί ΚΑΙ ο
-/// `categoryTreeStreamProvider` ΚΑΙ ο controller εξαγωγής καταλόγου
-/// (ο controller δεν μπορεί να διαβάσει `.future` του composite provider —
-/// εύρημα Φάσης 2 Βήματος 3: hang).
-List<CategoryTreeNode> buildCategoryTreeNodes(
-  List<Category> categories,
-  List<SubCategory> subCategories,
-  List<ItemGroup> itemGroups,
-) => [
-      for (final cat in categories)
-        (
-          category: cat,
-          subNodes: [
-            for (final sub in subCategories)
-              if (sub.categoryId == cat.id)
-                (
-                  subCategory: sub,
-                  itemGroups: [
-                    for (final g in itemGroups)
-                      if (g.subCategoryId == sub.id) g,
-                  ],
-                ),
-          ],
-        ),
-    ];

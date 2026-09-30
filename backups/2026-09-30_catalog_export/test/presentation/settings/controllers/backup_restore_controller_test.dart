@@ -6,18 +6,12 @@ library;
 import 'dart:io';
 
 import 'package:drift/native.dart';
-import 'package:excel/excel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 import 'package:times/core/errors/app_exceptions.dart';
 import 'package:times/data/local/app_database.dart';
-import 'package:times/data/local/daos/category_dao.dart';
-import 'package:times/data/local/daos/item_dao.dart';
-import 'package:times/data/local/daos/item_group_dao.dart';
-import 'package:times/data/local/daos/sub_category_dao.dart';
-import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/providers/backup_file_picker.dart';
 import 'package:times/data/providers/database_providers.dart';
 import 'package:times/data/providers/settings_providers.dart';
@@ -134,72 +128,8 @@ void main() {
     });
   });
 
-  group('BackupRestoreController.exportCatalog (§2.3 · 30-09-2026)', () {
-    Future<void> seedCatalog() async {
-      final kiloId = await UnitDao(db).insert(
-        name: 'Κιλό',
-        abbreviation: 'κιλ',
-        allowsDecimal: true,
-      );
-      final catId = await CategoryDao(db).insert(name: 'ΤΡΟΦΙΜΑ');
-      final subId = await SubCategoryDao(
-        db,
-      ).insert(categoryId: catId, name: 'Γαλακτοκομικά');
-      final groupId = await ItemGroupDao(
-        db,
-      ).insert(subCategoryId: subId, name: 'Φρέσκα');
-      await ItemDao(db).insert(
-        itemGroupId: groupId,
-        name: 'Γάλα',
-        defaultUnitId: kiloId,
-      );
-    }
-
-    test('επιτυχία → ok + times_catalog_*.xlsx + 2 γραμμές', () async {
-      await seedCatalog();
-      final result = await controller().exportCatalog();
-      expect(result.ok, isTrue);
-      expect(picker.lastFileName, startsWith('times_catalog_'));
-      expect(picker.lastFileName, endsWith('.xlsx'));
-      expect(picker.lastBytes, isNotEmpty);
-      final excel = Excel.decodeBytes(picker.lastBytes!);
-      expect(excel.tables.keys.toList(), ['Κατάλογος']);
-      expect(excel.tables['Κατάλογος']!.rows, hasLength(2));
-      expect(
-        container.read(backupRestoreControllerProvider).isWorking,
-        isFalse,
-      );
-    });
-
-    test('άδειος κατάλογος → headers only + ok', () async {
-      final result = await controller().exportCatalog();
-      expect(result.ok, isTrue);
-      final excel = Excel.decodeBytes(picker.lastBytes!);
-      expect(excel.tables['Κατάλογος']!.rows, hasLength(1));
-    });
-
-    test('ακύρωση picker → (ok:false, error:null)', () async {
-      picker.saveResult = false;
-      final result = await controller().exportCatalog();
-      expect(result.ok, isFalse);
-      expect(result.error, isNull);
-    });
-
-    test('σφάλμα picker → CatalogExportException (isWorking σβήνει)',
-        () async {
-      picker.throwOnSave = true;
-      await expectLater(
-        controller().exportCatalog(),
-        throwsA(isA<CatalogExportException>()),
-      );
-      expect(
-        container.read(backupRestoreControllerProvider).isWorking,
-        isFalse,
-      );
-    });
-  });
-
-  group('BackupRestoreController.validateCandidate', () {    test('άκυρο path → (ok:false, error:invalidBackupFile)', () async {
+  group('BackupRestoreController.validateCandidate', () {
+    test('άκυρο path → (ok:false, error:invalidBackupFile)', () async {
       final result = await controller().validateCandidate(
         '${tmpRoot.path}/missing.sqlite',
       );

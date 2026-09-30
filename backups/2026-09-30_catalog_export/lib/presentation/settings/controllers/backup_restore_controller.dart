@@ -18,12 +18,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_exceptions.dart';
 import '../../../core/logging/app_logger.dart';
-import '../../../data/models/category_tree_node.dart';
 import '../../../data/providers/database_providers.dart';
 import '../../../data/providers/settings_providers.dart';
 import '../../../data/providers/stream_providers.dart';
 import '../../../domain/services/backup_service.dart';
-import '../../../domain/services/catalog_export.dart';
 import '../../price_entry/controllers/item_search_controller.dart';
 import '../../price_entry/controllers/receipt_form_controller.dart';
 import '../state/settings_state.dart';
@@ -118,57 +116,6 @@ class BackupRestoreController extends Notifier<SettingsState> {
         } on InvalidBackupFileException catch (e) {
           return (ok: false, error: e.userMessage);
         }
-      });
-
-  /// Εξάγει ολόκληρο τον κατάλογο (δέντρο + είδη + μονάδες) σε XLSX
-  /// (§2.3 · 30-09-2026). Διαβάζει τα repos κατευθείαν με one-shot
-  /// `.first` (precedent `itemSearchController` + `appDatabaseProvider`
-  /// στον ίδιο controller — ΟΧΙ `.future` providers: εύρημα Φάσης 2
-  /// Βήματος 3, hang — και ΟΧΙ `AsyncValue.when`: η section μένει
-  /// data-less σκόπιμα). Σύνθεση δέντρου μέσω pure `buildCategoryTreeNodes`
-  /// (SPoT §1.1, ίδια με τον `categoryTreeStreamProvider`).
-  /// Σφάλμα stream → `DataLoadException` (υπάρχων δρόμος `runControllerOp`).
-  /// Ακύρωση picker → `(ok:false, error:null)`· αποτυχία builder/dialog →
-  /// `CatalogExportException` (feedback στο widget).
-  Future<({bool ok, String? error})> exportCatalog() => _guarded(() async {
-        final cats =
-            await ref.read(categoryRepositoryProvider).watchAll().first;
-        final subs =
-            await ref.read(subCategoryRepositoryProvider).watchAll().first;
-        final groups =
-            await ref.read(itemGroupRepositoryProvider).watchAll().first;
-        final items = await ref.read(itemRepositoryProvider).watchAll().first;
-        final units = await ref.read(unitRepositoryProvider).watchAll().first;
-        final bytes = CatalogExportService.buildCatalogExcelBytes(
-          tree: buildCategoryTreeNodes(cats, subs, groups),
-          items: items,
-          units: units,
-        );
-        final fileName = CatalogExportService.buildCatalogFileName(
-          DateTime.now(),
-        );
-        final picker = ref.read(backupFilePickerProvider);
-        bool saved;
-        try {
-          saved = await picker.saveBytes(fileName: fileName, bytes: bytes);
-        } on Exception catch (e, s) {
-          AppLogger.error(
-            LogTag.backup,
-            'Αποτυχία διαλόγου αποθήκευσης καταλόγου',
-            e,
-            s,
-          );
-          throw const CatalogExportException();
-        }
-        if (!saved) {
-          AppLogger.info(
-            LogTag.backup,
-            'Εξαγωγή καταλόγου ακυρώθηκε από τον χρήστη',
-          );
-          return (ok: false, error: null);
-        }
-        AppLogger.info(LogTag.backup, 'Εξαγωγή καταλόγου: $fileName');
-        return (ok: true, error: null);
       });
 
   /// Επαναφέρει το [candidatePath] (ΚΑΛΕΙΤΑΙ ΜΟΝΟ μετά από confirm στο widget).

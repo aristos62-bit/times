@@ -292,12 +292,6 @@ void main() {
       expect(AppStrings.backupRestoreAction, 'Επαναφορά αντιγράφου');
     });
 
-    // ─── Εξαγωγή καταλόγου (§2.3 · 30-09-2026) ─────────────────────────────
-    test('backupExportCatalogAction + catalogUnitAbbreviation (§2.3)', () {
-      expect(AppStrings.backupExportCatalogAction, 'Εξαγωγή καταλόγου');
-      expect(AppStrings.catalogUnitAbbreviation, 'Συντομογραφία');
-    });
-
     // ─── Καθολικές εγγυήσεις (όλα τα strings) ────────────────────────────────
     test('κανένα string μη-κενό, χωρίς whitespace στα άκρα, χωρίς αλλαγή γραμμής', () {
       for (final text in _allStrings) {
@@ -443,6 +437,4 @@ const List<String> _allStrings = [
   AppStrings.titleBackupSection,
   AppStrings.backupExportAction,
   AppStrings.backupRestoreAction,
-  AppStrings.backupExportCatalogAction,
-  AppStrings.catalogUnitAbbreviation,
 ];

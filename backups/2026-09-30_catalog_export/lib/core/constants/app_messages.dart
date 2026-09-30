@@ -176,11 +176,6 @@ abstract final class AppMessages {
   /// `backupCreated`).
   static const String statsExported = 'Η εξαγωγή ολοκληρώθηκε';
 
-  // ─── Εξαγωγή καταλόγου (§2.3 · 30-09-2026) ───────────────────────────────
-  /// Επιτυχής εξαγωγή καταλόγου (success snackbar via `runControllerOp` —
-  /// δικό του SPoT, όχι δανεικό από stats/backup, §1.1).
-  static const String catalogExported = 'Η εξαγωγή καταλόγου ολοκληρώθηκε';
-
   // ─── Κλείδωμα εφαρμογής (§2.3 · 30-09-2026) ──────────────────────────────
   /// Το κλείδωμα ενεργοποιήθηκε (success snackbar via `runControllerOp`).
   static const String appLockEnabled = 'Το κλείδωμα ενεργοποιήθηκε';

@@ -94,11 +94,6 @@ abstract final class AppErrors {
   /// Χωριστό από τα backup errors (άλλο domain, §1.1).
   static const String statsExportFailed = 'Σφάλμα κατά την εξαγωγή';
 
-  // ─── Εξαγωγή καταλόγου (§2.3 · 30-09-2026) ───────────────────────────────
-  /// §2.3: αποτυχία δημιουργίας XLSX καταλόγου → showError (άλλο domain
-  /// από stats/backup, §1.1).
-  static const String catalogExportFailed = 'Σφάλμα κατά την εξαγωγή καταλόγου';
-
   // ─── Κλείδωμα εφαρμογής (§2.3 · 30-09-2026) ──────────────────────────────
   /// §2.3: η ταυτοποίηση απέτυχε σε επίπεδο πλατφόρμας (όχι ακύρωση χρήστη
   /// — αυτή είναι σιωπηλή) → showError μέσω `runControllerOp`.

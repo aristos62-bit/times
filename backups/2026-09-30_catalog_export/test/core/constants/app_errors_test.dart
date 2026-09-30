@@ -101,11 +101,6 @@ void main() {
           'Προσθέστε τουλάχιστον μία γραμμή');
     });
 
-    test('catalogExportFailed = «Σφάλμα κατά την εξαγωγή καταλόγου» (§2.3)', () {
-      expect(AppErrors.catalogExportFailed,
-          'Σφάλμα κατά την εξαγωγή καταλόγου');
-    });
-
     test('appLockFailed = «Σφάλμα ταυτοποίησης» (§2.3 · 30-09-2026)', () {
       expect(AppErrors.appLockFailed, 'Σφάλμα ταυτοποίησης');
     });
@@ -144,5 +139,4 @@ const List<String> _allConstStrings = [
   AppErrors.supplierRequired,
   AppErrors.receiptLinesRequired,
   AppErrors.appLockFailed,
-  AppErrors.catalogExportFailed,
 ];
