@@ -1,5 +1,4 @@
-/// Tree editor καταλόγου (§2.3 DESIGN · 27-09-2026) — 3 ορατά επίπεδα
-/// (Κατηγορία ▸ Υποκατηγορία ▸ Τμήμα· το 4ο, Είδη, ζει στο ItemListEditor).
+/// Tree editor καταλόγου 4 επιπέδων (§2.3 DESIGN · 27-09-2026).
 ///
 /// Data-section `ConsumerWidget` (pattern `RecentReceiptsList`): βλέπει το
 /// ζωντανό `categoryTreeStreamProvider` (in-memory σύνθεση, κανένα νέο query)

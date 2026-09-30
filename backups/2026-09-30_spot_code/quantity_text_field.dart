@@ -74,19 +74,17 @@ class QuantityTextField extends StatelessWidget {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return null;
 
-    final digits = AppConstants.quantityDecimalDigits;
     final pattern = allowsDecimal
-        ? RegExp('^(\\d+)(?:[.,](\\d{1,$digits}))?\$')
+        ? RegExp(r'^(\d+)(?:[.,](\d{1,3}))?$')
         : RegExp(r'^(\d+)$');
     final match = pattern.firstMatch(trimmed);
     if (match == null) return null;
 
     // Το integer-only pattern έχει μόνο group 1 — το group 2 ΔΕΝ υπάρχει.
     final fraction = match.groupCount >= 2 ? (match.group(2) ?? '') : '';
-    // «1,5» κιλά → πλήρης κλίμακα δεκαδικών → double 1.5 (χωρίς float artifacts).
-    final double value = double.parse(
-      '${match.group(1)!}.${fraction.padRight(digits, '0')}',
-    );
+    // «1,5» κιλά → 1.500 (3 δεκαδικά) → double 1.5 (χωρίς float artifacts).
+    final double value =
+        double.parse('${match.group(1)!}.${fraction.padRight(3, '0')}');
     if (value > AppConstants.maxQuantity) return null;
     return value;
   }

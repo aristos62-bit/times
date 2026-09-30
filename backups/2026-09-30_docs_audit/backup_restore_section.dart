@@ -84,7 +84,7 @@ class BackupRestoreSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Busy-flag: απενεργοποιεί και τα τρία κουμπιά όσο τρέχει op (§2.4 guard).
+    // Busy-flag: απενεργοποιεί και τα δύο κουμπιά όσο τρέχει op (§2.4 guard).
     final working = ref.watch(
       backupRestoreControllerProvider.select((s) => s.isWorking),
     );

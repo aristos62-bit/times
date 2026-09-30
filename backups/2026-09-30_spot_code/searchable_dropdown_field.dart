@@ -85,10 +85,6 @@ class SearchableDropdownField<T> extends ConsumerStatefulWidget {
   }) : assert(
           !showAllWhenEmpty || allOptionsProvider != null,
           'showAllWhenEmpty == true απαιτεί allOptionsProvider',
-        ),
-       assert(
-          createLabel == null || onCreate != null,
-          'createLabel != null απαιτεί onCreate (INVARIANT)',
         );
 
   /// Label του πεδίου (SPoT app_strings, π.χ. `AppStrings.fieldSupplier`).

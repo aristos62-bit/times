@@ -1,8 +1,7 @@
 /// Κάρτα Top-10 με επιλογή μετρικής (§2.1 · 29-09-2026).
 ///
 /// Τίτλος + period selector (reuse `ChartPeriodSelector`, Βήμα 4) + metric
-/// selector (DropdownMenu ΔΙΠΛΑ στο period — Row με 2 Expanded, 320px §1.4,
-/// `ValueKey` E5) +
+/// selector (DropdownMenu κάτω από period — 320px §1.4, `ValueKey` E5) +
 /// body: € → πίτα συνόλων (ίδιο rendering με `HomeChartCard`) · μονάδα →
 /// `QtyPieChart`. Gated unit lookup (§2.0.1): η λίστα μονάδων
 /// παρακολουθείται ΜΟΝΟ εκτός € (smoke-test συμβατότητα — αλλιώς real DB

@@ -95,12 +95,9 @@
 | 75 | [Migration v4→v5: 3 indexes](oldsessions/2026-09-30_schema_v5_indexes.md) | 30-09-2026 | Κλειστό | Πρώτη πραγματική migration (`if from<5`, IF NOT EXISTS) · tripwire 5 · M1+M2 (δεδομένα άθικτα) · regen `.g.dart` (names ταυτίζονται) · v4 backups reject → fresh export · analyze καθαρό · DESIGN §3 |
 | 76 | [SPoT hardcoded μεγεθών](oldsessions/2026-09-30_spot_sizes.md) | 30-09-2026 | Κλειστό | 2× `spacingM` + `appLockButtonHeight` + `appLockIconSize` (incl. icon-64) · τιμές πανομοιότυπες · 28/28 widget tests · analyze καθαρό |
 | 77 | [Split `statistics_section.dart` (1116 γρ.)](oldsessions/2026-09-30_stats_split.md) | 30-09-2026 | Κλειστό | 1+4 part files (134/167/370/271/266) · verbatim, 0 renames · 33/33 tests · analyze καθαρό · DESIGN tree |
-| 78 | [Docs audit σελίδων + SPoT parse](oldsessions/2026-09-30_docs_audit.md) | 30-09-2026 | Κλειστό | ~20 stale docs (4 subagents + επαλήθευση) · assert createLabel→onCreate · const-derived parse/format · 1546 + 23 + 18 ✓ · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
-
-- **Docs audit (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #78): 4 subagents (home/price_entry/settings/shared) → ~20 stale docs, όλα επαληθευμένα + διορθωμένα · assert INVARIANT · parse/format παραγόμενα από const (ίδια συμπεριφορά) · full 1546 ✓ + 23 ✓ + 18 ✓ · analyze καθαρό · μάθημα: ποτέ bare `dart format <dir>` (51 αρχεία churn + lint — revert + replay) · backup `backups/2026-09-30_docs_audit/` + `backups/2026-09-30_spot_code/`.
 
 - **Split statistics (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #77): 1116 γρ. → main + 4 parts (134/167/370/271/266, byte-exact move, 0 renames) · public API αμετάβλητο · 33/33 ✓ · analyze καθαρό · DESIGN tree · backup `backups/2026-09-30_stats_split/` · ανοιχτό follow-up: split του 785-γραμμών test.
 

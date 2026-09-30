@@ -134,8 +134,7 @@ class _ReceiptHeaderSectionState extends ConsumerState<ReceiptHeaderSection> {
             // Κλείδωμα προμηθευτή (όπως είδος §2.4): επιλεγμένος →
             // locked banner (ListTile + «Αλλαγή», reuse `changeItem`)·
             // κανένας → live search dropdown. Το dropdown υπάρχει ΜΟΝΟ
-            // χωρίς επιλογή, άρα το `onCleared` call-site του header
-            // αφαιρέθηκε (το API ζει — βλ. dialog «+», φίλτρο καταλόγου).
+            // χωρίς επιλογή, άρα το `onCleared` είναι νεκρό και αφαιρέθηκε.
             child: supplier != null
                 ? ListTile(
                     contentPadding: EdgeInsets.zero,

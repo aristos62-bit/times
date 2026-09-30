@@ -13,8 +13,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../shared/currency_text_field.dart';
 
-/// Πεδίο «Έκπτωση» (€ — ανά μονάδα σε unit-mode, ΣΥΝΟΛΟ ποσότητας σε
-/// total-mode· ο γονέας ερμηνεύει). Ο γονέας κρατά τον controller και
+/// Πεδίο «Έκπτωση» (ανά μονάδα, €). Ο γονέας κρατά τον controller και
 /// διαβάζει την τιμή μέσω `CurrencyTextField.parseCents`.
 class DiscountField extends StatelessWidget {
   const DiscountField({

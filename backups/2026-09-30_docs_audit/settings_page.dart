@@ -2,12 +2,13 @@
 ///
 /// Στοιχείο του App Shell: ο `AppShell` δίνει το Scaffold με NavigationBar
 /// και η σελίδα προσθέτει δικό της nested Scaffold (AppBar + σώμα).
-/// Watches: `themeModeProvider` (η σελίδα — SharedPreferences, ΟΧΙ η βάση)·
-/// τα sections κάνουν watch τα δικά τους (δέντρο, λίστες, αποδείξεις,
-/// κλείδωμα — βλ. editors· η βάση ανοίγει και από εδώ, στο launch είναι ήδη
+/// Watches: `themeModeProvider` (section «Θέμα», SharedPreferences — ΟΧΙ η
+/// βάση) + `categoryTreeStreamProvider` (section «Κατηγορίες», Βήμα 4) +
+/// `receiptsByDayStreamProvider`/`selectedReceiptDayProvider` (section
+/// «Αποδείξεις», Φάση Β — η βάση ανοίγει και από εδώ· στο launch είναι ήδη
 /// ανοιχτή μέσω PriceEntry, IndexedStack §2.2:221/Α1).
-/// Sections «Στατιστικά»/«Είδη»/«Κατηγορίες»/«Προμηθευτές»/«Αποδείξεις»/«Αντίγραφα» collapsible
-/// (24-09-2026 + Βήμα 5 + ενότητα Ειδών + Στατιστικά 28-09): κλειστά εξ αρχής (`ExpansionTile` default) —
+/// Sections «Είδη»/«Κατηγορίες»/«Προμηθευτές»/«Αποδείξεις»/«Αντίγραφα» collapsible
+/// (24-09-2026 + Βήμα 5 + ενότητα Ειδών): κλειστά εξ αρχής (`ExpansionTile` default) —
 /// καθαρή είσοδος στη σελίδα· tap δείχνει τον editor ως ήταν.
 /// Το expand-state επιβιώνει σε αλλαγή tab
 /// (IndexedStack κρατά το State, §2.2:222).
@@ -28,9 +29,8 @@ import 'widgets/statistics_section.dart';
 import 'widgets/supplier_list_editor.dart';
 import 'widgets/theme_mode_selector.dart';
 
-/// Σελίδα ρυθμίσεων (§2.3) — section «Θέμα» (Βήμα 1 · πάντα ορατό) + κάρτα
-/// «Ασφάλεια» (30-09-2026 · πάντα ορατή) + collapsible sections «Στατιστικά»
-/// + «Είδη» (editor, ενότητα Ειδών) + «Κατηγορίες» (tree editor, Βήμα 4) + «Προμηθευτές»
+/// Σελίδα ρυθμίσεων (§2.3) — section «Θέμα» (Βήμα 1 · πάντα ορατό) +
+/// collapsible sections «Είδη» (editor, ενότητα Ειδών) + «Κατηγορίες» (tree editor, Βήμα 4) + «Προμηθευτές»
 /// (CRUD 24-09-2026) + «Αποδείξεις» (διαχείριση, Φάση Β 24-09-2026) +
 /// «Αντίγραφα ασφαλείας» (export/restore, Βήμα 5).
 class SettingsPage extends ConsumerWidget {
@@ -90,7 +90,7 @@ class SettingsPage extends ConsumerWidget {
           const SizedBox(height: AppConstants.spacingL),
           Card(
             // Collapsible section (§2.3 · 28-09-2026): κλειστό εξ αρχής —
-            // ανάμεσα σε «Ασφάλεια» και «Είδη».
+            // ανάμεσα σε «Θέμα» και «Είδη».
             child: ExpansionTile(
               title: Text(
                 AppStrings.titleStatisticsSection,
@@ -186,9 +186,8 @@ class SettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: AppConstants.spacingL),
           Card(
-            // Collapsible section (§2.3 · Βήμα 5): export/restore/catalog —
-            // data-less state (μόνο isWorking flag, όπως το Theme)· η εξαγωγή
-            // καταλόγου διαβάζει τη βάση (one-shot reads, 30-09-2026).
+            // Collapsible section (§2.3 · Βήμα 5): export/restore — data-less
+            // (μόνο isWorking flag, όπως το Theme — δεν ανοίγει τη βάση).
             child: ExpansionTile(
               title: Text(
                 AppStrings.titleBackupSection,

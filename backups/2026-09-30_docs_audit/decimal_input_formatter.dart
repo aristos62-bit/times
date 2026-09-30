@@ -85,7 +85,7 @@ class DecimalInputFormatter extends TextInputFormatter {
     );
   }
 
-  /// Θέση του πρώτου διαχωριστή (`.`/`,`) στη συμβολοσειρά, ή -1 αν δεν υπάρχει.
+  /// Θέση του πρώτου διαχωριστή (`/`) στη συμβολοσειρά, ή -1 αν δεν υπάρχει.
   int _firstSeparatorIndex(String text) {
     final dot = text.indexOf('.');
     final comma = text.indexOf(',');

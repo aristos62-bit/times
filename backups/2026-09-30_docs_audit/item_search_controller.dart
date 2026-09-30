@@ -19,9 +19,8 @@
 ///   * `selectItem`/`clearSelection` → ITEM_SELECTED banner / επιστροφή.
 ///   * `createCategory`/`createSubCategory`/`createItemGroup`/`createItem` →
 ///     record `{ entity, created }` (soft dup-check §2.0.4 + `NameValidator`).
-///     Το `createItem` παίρνει προαιρετικό `defaultUnitId` (ΥΠΟΧΡΕΩΤΙΚΗ
-///     μονάδα 27-09-2026 — κλειδωμένη δέσμευση, όχι πρόταση· null →
-///     `(null, false)` safety-net, βλ. μέθοδο).
+///     Το `createItem` απαιτεί `defaultUnitId` (προτεινόμενη μονάδα §2.2 —
+///     προεπιλέγεται στο entry μέσω `_applyDefaultUnit`).
 library;
 
 import 'dart:async';

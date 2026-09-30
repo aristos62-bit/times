@@ -1,10 +1,11 @@
-/// SPoT state — κοινό busy-flag διαχείρισης (§2.3 DESIGN / Φάση 4).
+/// SPoT state — Διαχείριση κατηγοριών/υποκατηγοριών (§2.3 DESIGN /
+/// Φάση 4 Βήμα 4).
 ///
-/// Κατάσταση των management controllers (plain Notifier): ΜΟΝΟ το
+/// Κατάσταση του `CategoryManagementController` (plain Notifier): ΜΟΝΟ το
 /// busy-flag `isWorking` (double-tap guard, pattern `isSaving` του
-/// `ReceiptFormState`). Τα δέντρα/λίστες ΔΕΝ ζουν εδώ — έρχονται από streams
-/// (§2.5)· οι πύλες διαγραφής από τους `canDelete*/inUseCount*` providers.
-/// Κοινό αρχείο Βημάτων 4–5 (§2.3:261).
+/// `ReceiptFormState`). Το δέντρο ΔΕΝ ζει εδώ — έρχεται από τον
+/// `categoryTreeStreamProvider` (stream, §2.5)· η πύλη διαγραφής από τους
+/// `canDelete*/inUseCount*` providers. Κοινό αρχείο Βημάτων 4–5 (§2.3:261).
 library;
 
 import 'package:freezed_annotation/freezed_annotation.dart';

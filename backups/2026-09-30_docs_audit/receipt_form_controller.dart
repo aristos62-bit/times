@@ -3,8 +3,8 @@
 /// `Notifier`, όχι AsyncNotifier — το state είναι σύγχρονο (δεν έρχεται από
 /// τη βάση)· το AsyncValue.when ισχύει για data sections, όχι για το header.
 /// Ο `build()` ΧΩΡΙΣ εξάρτηση από repository → η βάση ΔΕΝ ανοίγει όσο η
-/// σελίδα δείχνει μόνο το header. Repo πρόσβαση ΜΟΝΟ με user action
-/// (δημιουργία προμηθευτή, save/load/delete, refresh πυλών).
+/// σελίδα δείχνει μόνο το header. Η μόνη repo πρόσβαση είναι με user action:
+/// η inline δημιουργία προμηθευτή («+») μέσω `createSupplier`.
 library;
 
 import 'package:flutter/material.dart';

@@ -4,9 +4,8 @@
 /// και η σελίδα προσθέτει δικό της nested Scaffold (AppBar + σώμα).
 /// `ConsumerWidget`, ΜΟΝΟ layout/σύνθεση (καθόλου business logic — §2.0):
 /// διαβάζει το `homeChartConfigProvider` (ορατές κάρτες `(order,index)`-sorted),
-/// επιλύει το query κάθε κάρτας (`resolvePeriodRange`, Βήμα 3) και περνά τα
-/// resolved δεδομένα στις κάρτες (`HomeChartCard` για τις 4 πίτες ·
-/// `TopItemsCard` · `ItemTrendCard` — η κάθε μία κάνει η ίδια watch).
+/// επιλύει το query κάθε κάρτας (`resolvePeriodRange`, Βήμα 3) και περνά το
+/// resolved family instance στην `HomeChartCard` (η κάρτα κάνει η ίδια watch).
 /// Τελευταία γραμμή: «Προσαρμογή Οθόνης» (collapsible, pattern Ρυθμίσεων).
 /// Responsive §1.4: single-column `ListView` (κάρτες άνισου ύψους) + padding
 /// από SPoT — ποτέ σταθερό ύψος.
@@ -28,8 +27,7 @@ import 'widgets/home_customization_section.dart';
 import 'widgets/item_trend_card.dart';
 import 'widgets/top_items_card.dart';
 
-/// Σελίδα στατιστικών (§2.1) — 6 κάρτες (4 πίτες + Top-10 + πορεία τιμής)
-/// + Προσαρμογή Οθόνης.
+/// Σελίδα στατιστικών (§2.1) — 5 πίτες + Προσαρμογή Οθόνης.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -42,6 +40,8 @@ class HomePage extends ConsumerWidget {
         ChartId.topItems => AppStrings.chartTopItemsTitle,
         ChartId.itemTrend => AppStrings.chartItemTrendTitle,
       };
+
+  /// Family ανά γράφημα επιλύεται στο `_ChartCard` (switch) — εδώ μόνο τίτλοι.
 
   /// Επιλογή προσαρμοσμένου range (pattern `_pickDay` §2.3): picker με SPoT
   /// όρια· Ακύρωση/dismiss → καμία αλλαγή. Ημέρες αποθηκεύονται ως έχουν —
@@ -113,8 +113,7 @@ class HomePage extends ConsumerWidget {
 }
 
 /// Κάρτα ενός γραφήματος: επιλύει query + καλωδιώνει callbacks (§2.0 —
-/// η σελίδα κάνει ΜΟΝΟ σύνθεση· το rendering το κάνει η οικεία κάρτα:
-/// `HomeChartCard` (πίτες) / `TopItemsCard` / `ItemTrendCard`).
+/// η σελίδα κάνει ΜΟΝΟ σύνθεση, η κάρτα Βήματος 4 το rendering).
 class _ChartCard extends ConsumerWidget {
   const _ChartCard({
     required this.id,

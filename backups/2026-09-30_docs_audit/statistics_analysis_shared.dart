@@ -21,7 +21,7 @@ String _groupLabel(PurchasesGroup group) => switch (group) {
   PurchasesGroup.month => AppStrings.statsGroupMonth,
 };
 
-/// Headers πίνακα αγορών (8+N στήλες — 5 fixed + N μονάδων + Τιμή/Έκπτωση/Καθαρή, §2.3).
+/// Headers πίνακα αγορών (9 στήλες — fixed + δυναμικές μονάδων, §2.3).
 List<String> _purchasesHeaders(List<Unit> units) => [
   AppStrings.statsColumnDate,
   AppStrings.statsColumnReceipt,

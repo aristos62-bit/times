@@ -10,8 +10,8 @@
 /// Η δημιουργία ΔΕΝ ζει εδώ — γίνεται στο `NewItemFlowDialog` (reuse §2.4)
 /// μέσω του forked search controller, όπως στο `ItemSearchField`.
 /// Dup-check exact (`getByNormalizedName` — ο πίνακας Item ΕΧΕΙ UNIQUE
-/// `normalizedName`, §3). Το rename εξαιρεί τον εαυτό του· ακριβώς ίδιο
-/// κείμενο = no-op (recase γράφεται — βλ. μέθοδο).
+/// `normalizedName`, §3). Το rename εξαιρεί τον εαυτό του· ίδιο normalized
+/// με τον εαυτό = no-op επιτυχία χωρίς write.
 ///
 /// Διαγραφή: RESTRICT (§3) — ΜΟΝΟ καθαρό (`countLinesByItemId == 0`, πύλη +
 /// defense in depth)· αν το σβησμένο ήταν επιλεγμένο (root ή fork),

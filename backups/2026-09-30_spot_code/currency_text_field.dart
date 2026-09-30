@@ -12,8 +12,6 @@
 /// δεν αποθηκεύει, δεν ανοίγει βάση (§2.0.1 — καμία repo πρόσβαση).
 library;
 
-import 'dart:math' show pow;
-
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_constants.dart';
@@ -72,15 +70,12 @@ class CurrencyTextField extends StatelessWidget {
   static int? parseCents(String? text) {
     if (text == null) return null;
     final trimmed = text.trim();
-    final digits = AppConstants.priceDecimalDigits;
     final match =
-        RegExp('^(\\d+)(?:[.,](\\d{1,$digits}))?\$').firstMatch(trimmed);
+        RegExp(r'^(\d+)(?:[.,](\d{1,2}))?$').firstMatch(trimmed);
     if (match == null) return null;
     final whole = int.parse(match.group(1)!);
     final fraction = match.group(2) ?? '';
-    final multiplier = pow(10, digits).toInt();
-    final cents =
-        whole * multiplier + int.parse(fraction.padRight(digits, '0'));
+    final cents = whole * 100 + int.parse(fraction.padRight(2, '0'));
     if (cents > AppConstants.maxPriceCents) return null;
     return cents;
   }
@@ -88,10 +83,8 @@ class CurrencyTextField extends StatelessWidget {
   /// Μορφοποιεί λεπτά (cents) σε κείμενο «ευρώ,δεκαδικά» με κόμμα — χωρίς
   /// intl/locale (hermetic tests, Beat 5 απόφαση). Π.χ. `250 → "2,50"`.
   static String formatCents(int cents) {
-    final digits = AppConstants.priceDecimalDigits;
-    final multiplier = pow(10, digits).toInt();
-    final whole = cents ~/ multiplier;
-    final fraction = (cents % multiplier).toString().padLeft(digits, '0');
+    final whole = cents ~/ 100;
+    final fraction = (cents % 100).toString().padLeft(2, '0');
     return '$whole,$fraction';
   }
 

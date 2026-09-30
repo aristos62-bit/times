@@ -9,7 +9,7 @@
 ///
 /// Dup-check exact (`getByNormalizedName` — ο πίνακας Supplier ΕΧΕΙ UNIQUE
 /// `normalizedName`, §3 — καλύτερο από in-memory). Το rename εξαιρεί τον
-/// εαυτό του· ακριβώς ίδιο κείμενο = no-op (recase γράφεται — βλ. μέθοδο).
+/// εαυτό του· ίδιο normalized με τον εαυτό = no-op επιτυχία χωρίς write.
 /// Το create ΔΕΝ επιλέγει στη φόρμα (διαφορά από το
 /// `ReceiptFormController.createSupplier` — σκόπιμο non-reuse, διαφορετικό
 /// contract: εδώ `(ok, error)`, εκεί `{supplier, created}` + select).

@@ -5,10 +5,9 @@
 // `searchable_dropdown_field.dart` (τα imports του κύριου ισχύουν εδώ).
 part of 'searchable_dropdown_field.dart';
 
-/// Οι «γραμμές» του overlay. Sealed: αποτέλεσμα ή «+» (create). Όταν ορίστηκε
-/// `createLabel`, κρατά τη λίστα του `RawAutocomplete` μη-κενή όταν υπάρχει
-/// query (το «+» ορατό ΑΚΟΜΑ με 0 αποτελέσματα, §2.4)· χωρίς `createLabel`
-/// η κενή αναζήτηση δίνει κενή λίστα (βλ. `_createOnly`).
+/// Οι «γραμμές» του overlay. Sealed: αποτέλεσμα ή «+» (create). Κρατά τη
+/// λίστα του `RawAutocomplete` πάντα μη-κενή όταν υπάρχει query, ώστε το
+/// «+» να είναι ορατό ΑΚΟΜΑ με 0 αποτελέσματα (§2.4).
 sealed class _Entry<T> {
   const _Entry();
 }

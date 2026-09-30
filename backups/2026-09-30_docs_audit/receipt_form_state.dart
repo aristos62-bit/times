@@ -16,10 +16,8 @@ part 'receipt_form_state.freezed.dart';
 ///
 /// Plain immutable value object (ΟΧΙ Freezed — δεν χρειάζεται copyWith union:
 /// οι γραμμές προστίθενται/αφαιρούνται ως σύνολο μέσω `copyWith(draftLines:)`).
-/// Καθρέφτης γραμμής για το «καλάθι» (χωρίς `receiptId` / `lineTotalCents` —
-/// αυτά υπολογίζονται/εισάγονται στο save, Βήμα 5δ) + display snapshots
-/// (`itemName`/`unitAbbreviation`/`unitAllowsDecimal`/`enteredTotalCents` —
-/// όχι ορίσματα insert, μόνο προβολή).
+/// Καθρέφτης των ορισμάτων του `ReceiptLineDao.insert` (χωρίς `receiptId` /
+/// `lineTotalCents` — αυτά υπολογίζονται/εισάγονται στο save, Βήμα 5δ).
 /// Ίδιο είδος σε πολλές γραμμές ΕΠΙΤΡΕΠΕΤΑΙ — δεν γίνεται merge (§2.2:237).
 /// `enteredTotalCents` (24-09-2026): snapshot του πληκτρολογημένου συνόλου
 /// ΜΟΝΟ σε γραμμές «Συνολικής τιμής» (αλλιώς null) — το draft list το δείχνει

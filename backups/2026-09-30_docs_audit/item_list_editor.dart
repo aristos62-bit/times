@@ -9,8 +9,8 @@
 /// Ο management controller είναι global singleton — προσβάσιμος και από το
 /// fork ref· το `clearSelection` μετά από CRUD καθαρίζει το fork (το root
 /// το καθαρίζει ο controller, §2.3).
-/// CRUD μέσω `ItemManagementController` + `ItemEditDialog` (όνομα/τμήμα +
-/// μονάδα) + `ConfirmDialog` (delete, `isDestructive`).
+/// CRUD μέσω `ItemManagementController` + `ItemEditDialog` (όνομα/
+/// υποκατηγορία/μονάδα) + `ConfirmDialog` (delete, `isDestructive`).
 /// Feedback ΜΟΝΟ από εδώ μέσω `AppFeedback` (§2.4).
 ///
 /// Πύλη διαγραφής (§2.3:275, πατρόν Βήματος 4): `canDelete==false` →

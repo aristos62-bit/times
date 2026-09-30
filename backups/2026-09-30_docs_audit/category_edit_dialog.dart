@@ -1,5 +1,5 @@
-/// Dialog δημιουργίας/μετονομασίας κατηγορίας/υποκατηγορίας/τμήματος/
-/// προμηθευτή (§2.3 DESIGN / Φάση 4 Βήμα 4 · CRUD προμηθευτών 24-09-2026).
+/// Dialog δημιουργίας/μετονομασίας κατηγορίας/υποκατηγορίας/προμηθευτή
+/// (§2.3 DESIGN / Φάση 4 Βήμα 4 · CRUD προμηθευτών 24-09-2026).
 ///
 /// Απλό dumb-stateful dialog (pattern βήματος ονόματος του
 /// `NewItemFlowDialog`): παίρνει τίτλο + αρχικό κείμενο, επιστρέφει το
@@ -9,10 +9,9 @@
 /// (`nameExists`) γίνεται ΜΕΤΑ το pop από τον καλούντα (controller) με
 /// snackbar — όπως το `supplierExists` του header (§2.4).
 ///
-/// Τίτλοι/κουμπιά πάντα SPoT από τον καλούντα: create → `addNewCategory`/
-/// `addNewSubCategory`/`addNewItemGroup`/`addNewSupplier`, rename →
-/// `fieldCategory`/`fieldSubCategory`/`fieldItemGroup`/`fieldSupplier`·
-/// κουμπί: create → `newItemSave`, rename → `saveAction`.
+/// Τίτλοι/κουμπιά πάντα SPoT από τον καλούντα: create → `addNewCategory`,
+/// rename → `fieldCategory`· κουμπί: create → `newItemSave`, rename →
+/// `saveAction`.
 library;
 
 import 'package:flutter/material.dart';
@@ -22,7 +21,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_messages.dart';
 import '../../../domain/validators/name_validator.dart';
 
-/// Ανοίγει το dialog ονόματος κατηγορίας/υποκατηγορίας/τμήματος/προμηθευτή.
+/// Ανοίγει το dialog ονόματος κατηγορίας/υποκατηγορίας/προμηθευτή.
 ///
 /// Επιστρέφει το trimmed όνομα ή `null` (Ακύρωση/dismiss) — ο καλών μετράει
 /// μόνο το non-null (pattern `showConfirmDialog`).

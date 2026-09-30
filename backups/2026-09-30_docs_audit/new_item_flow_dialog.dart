@@ -87,12 +87,12 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
   /// Επιλεγμένο (ή νέο-δημιουργημένο) τμήμα — «null» = Βήμα 3 pending.
   ItemGroup? _itemGroup;
 
-  /// Επιλεγμένη υποχρεωτική μονάδα του νέου είδους (Βήμα 4, 27-09-2026 —
-  /// κλειδωμένη δέσμευση 28-09-2026, όχι πρόταση) — `null` = καμία (το
-  /// «Προσθήκη» μένει ανενεργό). Αποθηκεύεται ως `Item.defaultUnitId`.
+  /// Επιλεγμένη προτεινόμενη μονάδα του νέου είδους (Βήμα 4, 27-09-2026) —
+  /// `null` = καμία (το «Προσθήκη» μένει ανενεργό). Αποθηκεύεται ως
+  /// `Item.defaultUnitId` και προεπιλέγεται στο entry (`_applyDefaultUnit`).
   Unit? _unit;
 
-  /// Controller του πεδίου ονόματος (Βήμα 4) — prefill από [initialName].
+  /// Controller του πεδίου ονόματος (Βήμα 3) — prefill από [initialName].
   late final TextEditingController _nameController;
 
   /// Double-tap guard του «Προσθήκη» (§2.4).
@@ -330,7 +330,7 @@ class _NewItemFlowDialogState extends ConsumerState<NewItemFlowDialog> {
   /// Βήμα 4 (όνομα + μονάδα + save) — ΜΟΝΟ όταν υπάρχει τμήμα.
   ///
   /// Η μονάδα είναι υποχρεωτική (27-09-2026): αποθηκεύεται ως
-  /// `Item.defaultUnitId` (κλειδωμένη μονάδα γραμμής, §2.2). Χωρίς «+» — οι μονάδες
+  /// `Item.defaultUnitId` (πρόταση entry, §2.2). Χωρίς «+» — οι μονάδες
   /// διαχειρίζονται από τις Ρυθμίσεις (ίδιο με το entry §2.2:236).
   Widget _buildNameStep() {
     return Column(
