@@ -74,12 +74,15 @@ class AppLockController extends Notifier<AppLockState> {
   /// αποκλείει «το άναψα και δεν δουλεύει»). Επιστρέφει record για το
   /// `runControllerOp` (pattern editors §2.3): ok → success snackbar·
   /// error → error snackbar· (false, null) = ακύρωση χρήστη → σιωπή.
+  /// Η συνεδρία μένει ξεκλείδωτη (μόλις αποδείχτηκε ταυτότητα — το
+  /// κλείδωμα πιάνει σε επόμενο launch/background, αλλιώς το overlay θα
+  /// ξαναπετούσε δακτυλικό αμέσως, fix 30-09).
   Future<({bool ok, String? error})> requestEnable(String reason) async {
     if (state.enabled) return (ok: false, error: null);
     final auth = await _auth(reason);
     if (!ref.mounted) return (ok: false, error: null);
     if (!auth.ok) return auth;
-    state = (enabled: true, locked: true);
+    state = (enabled: true, locked: false);
     AppLogger.info(LogTag.ui, 'Κλείδωμα εφαρμογής: ON');
     unawaited(_save(true));
     return (ok: true, error: null);

@@ -52,13 +52,15 @@ void main() {
       expect(c.read(appLockProvider), (enabled: true, locked: true));
     });
 
-    test('requestEnable ok → enabled+locked+persisted', () async {
+    test('requestEnable ok → enabled+ξεκλείδωτη+persisted', () async {
       final c = container();
       addTearDown(c.dispose);
       final result =
           await c.read(appLockProvider.notifier).requestEnable('reason');
       expect(result, (ok: true, error: null));
-      expect(c.read(appLockProvider), (enabled: true, locked: true));
+      // Η συνεδρία μένει ξεκλείδωτη (μόλις έγινε auth — το overlay θα
+      // ξαναπετούσε δακτυλικό αμέσως, fix 30-09).
+      expect(c.read(appLockProvider), (enabled: true, locked: false));
       await settleSave();
       expect(prefs.getBool(AppConstants.appLockEnabledKey), isTrue);
       expect(gate.reasons, ['reason']);
