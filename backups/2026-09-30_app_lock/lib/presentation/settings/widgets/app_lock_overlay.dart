@@ -48,9 +48,10 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay> {
   bool _autoFired = false;
 
   /// Η πρώτη προσπάθεια ολοκληρώθηκε και είμαστε ακόμα κλειδωμένοι —
-  /// ΜΟΝΟ τότε φαίνεται το κουμπί (retry). Μέχρι τότε spinner (όχι
-  /// φλασάρισμα κουμπιού πριν το OS dialog, fix 30-09). Σταθερό ύψος
-  /// περιοχής (§1.4 — όχι layout jump spinner↔κουμπί).
+  /// ΜΟΝΟ τότε φαίνεται το κουμπί (retry). Μέχρι τότε η περιοχή μένει
+  /// ΑΔΕΙΑ: το OS dialog είναι ημιδιάφανο και ό,τι ζωγραφίζουμε από πίσω
+  /// (κουμπί ή spinner) φαίνεται — θέλουμε ΜΟΝΟ το δακτυλικό (fix 30-09).
+  /// Σταθερό ύψος (§1.4 — όχι layout jump).
   bool _autoDone = false;
 
   @override
@@ -113,15 +114,15 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppConstants.spacingL),
-                  // Μέχρι να ολοκληρωθεί η πρώτη προσπάθεια (auto-prompt)
-                  // spinner — το κουμπί εμφανίζεται ΜΟΝΟ ως retry (όχι
-                  // φλασάρισμα πριν το OS dialog, fix 30-09). Σταθερό ύψος.
+                  // Όσο εκκρεμεί το δακτυλικό (auto-prompt ή retry) η περιοχή
+                  // μένει ΑΔΕΙΑ — το OS dialog είναι ημιδιάφανο (fix 30-09).
+                  // Κουμπί ΜΟΝΟ ως retry μετά από αποτυχία/ακύρωση.
+                  // Σταθερό ύψος (§1.4).
                   SizedBox(
                     height: 48,
                     child: Center(
-                      child: _unlocking || !_autoDone
-                          ? const CircularProgressIndicator()
-                          : FilledButton.icon(
+                      child: _autoDone && !_unlocking
+                          ? FilledButton.icon(
                               onPressed: _unlock,
                               icon: const Icon(
                                 Icons.fingerprint_outlined,
@@ -129,7 +130,8 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay> {
                               label: const Text(
                                 AppStrings.appLockUnlockAction,
                               ),
-                            ),
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ),
                 ],

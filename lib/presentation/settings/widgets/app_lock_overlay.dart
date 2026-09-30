@@ -93,51 +93,57 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay> {
     return PopScope(
       canPop: false,
       child: Material(
+        // Πάντα αδιαφανής επιφάνεια (ποτέ τα δεδομένα από πίσω).
         color: theme.colorScheme.surface,
         child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(AppConstants.spacingL),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.lock_outlined,
-                    size: 64,
-                    color: theme.colorScheme.primary,
-                    semanticLabel: AppStrings.appLockEnableLabel,
-                  ),
-                  const SizedBox(height: AppConstants.spacingM),
-                  Text(
-                    AppStrings.appLockReason,
-                    style: theme.textTheme.titleMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppConstants.spacingL),
-                  // Όσο εκκρεμεί το δακτυλικό (auto-prompt ή retry) η περιοχή
-                  // μένει ΑΔΕΙΑ — το OS dialog είναι ημιδιάφανο (fix 30-09).
-                  // Κουμπί ΜΟΝΟ ως retry μετά από αποτυχία/ακύρωση.
-                  // Σταθερό ύψος (§1.4).
-                  SizedBox(
-                    height: 48,
-                    child: Center(
-                      child: _autoDone && !_unlocking
-                          ? FilledButton.icon(
-                              onPressed: _unlock,
-                              icon: const Icon(
-                                Icons.fingerprint_outlined,
-                              ),
-                              label: const Text(
-                                AppStrings.appLockUnlockAction,
-                              ),
-                            )
-                          : const SizedBox.shrink(),
+          // Πριν την 1η ολοκλήρωση: ΤΙΠΟΤΑ ορατό — μόνο το system dialog
+          // (fix 30-09). Η οθόνη κλειδώματος (icon + κείμενο + retry)
+          // εμφανίζεται ΜΟΝΟ μετά από αποτυχία/ακύρωση.
+          child: _autoDone
+              ? Center(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.all(AppConstants.spacingL),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.lock_outlined,
+                          size: 64,
+                          color: theme.colorScheme.primary,
+                          semanticLabel: AppStrings.appLockEnableLabel,
+                        ),
+                        const SizedBox(
+                            height: AppConstants.spacingM),
+                        Text(
+                          AppStrings.appLockReason,
+                          style: theme.textTheme.titleMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(
+                            height: AppConstants.spacingL),
+                        // Σταθερό ύψος (§1.4 — όχι layout jump).
+                        SizedBox(
+                          height: 48,
+                          child: Center(
+                            child: _unlocking
+                                ? const SizedBox.shrink()
+                                : FilledButton.icon(
+                                    onPressed: _unlock,
+                                    icon: const Icon(
+                                      Icons.fingerprint_outlined,
+                                    ),
+                                    label: const Text(
+                                      AppStrings.appLockUnlockAction,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
+                )
+              : const SizedBox.shrink(),
         ),
       ),
     );
