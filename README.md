@@ -1,19 +1,42 @@
 # Τιμές (Times)
 
-Personal expense & receipt tracking with price history and store comparisons.
+Προσωπική καταγραφή αγορών/αποδείξεων, παρακολούθηση τιμών ειδών ανά
+προμηθευτή, στατιστικά και συγκρίσεις τιμών στον χρόνο — 100% offline,
+μόνο στα ελληνικά.
 
-Προσωπική καταγραφή αγορών/αποδείξεων, παρακολούθηση τιμών ειδών ανά προμηθευτή, στατιστικά και συγκρίσεις τιμών στον χρόνο.
+## Λειτουργίες
 
-## Getting Started
+- **Αρχική**: 5 γραφήματα πίτας (ανά προμηθευτή/κατηγορία/υποκατηγορία/
+  τμήμα) + Top-10 ειδών (σε € ή ποσότητα) + πορεία τιμής είδους, με
+  φίλτρα περιόδου και προσαρμογή οθόνης.
+- **Εισαγωγή**: καταχώρηση απόδειξης με γραμμές (ποσότητα/τιμή/έκπτωση/
+  μονάδα), αναζήτηση είδους με inline δημιουργία, κλείδωμα μονάδας ανά
+  είδος, επεξεργασία + διαγραφή αποδείξεων.
+- **Ρυθμίσεις**: Θέμα (Φωτεινό/Σκοτεινό/Αυτόματο) · Στατιστικά
+  (ιστορικό αγορών είδους, συνολικές αγορές, ομαδοποιημένη αναφορά με
+  φίλτρο καταλόγου 3 επιπέδων, export Excel/PDF) · Κατάλογος
+  (Κατηγορίες/Υποκατηγορίες/Τμήματα/Είδη) · Προμηθευτές · Αποδείξεις ·
+  Αντίγραφα ασφαλείας (export/restore ολόκληρης της βάσης).
 
-Αυτό το project είναι ένα Flutter project. Αναλυτική αρχιτεκτονική και σχεδιασμός: βλ. `DESIGN.md`.
+## Τεχνολογίες
 
-A few resources to get you started if this is your first Flutter project:
+Flutter (Android/iOS/Windows) · SQLite μέσω Drift · Riverpod ·
+GoRouter · SharedPreferences. Καμία άδεια συσκευής, κανένα δίκτυο —
+τα δεδομένα μένουν στη συσκευή.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Ανάπτυξη
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```sh
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs  # μετά από αλλαγές σε Drift/Freezed
+flutter test --timeout 30s
+flutter analyze
+flutter run
+```
+
+Πλήρης αρχιτεκτονική: `DESIGN.md` · ιστορικό εργασιών: `oldsessions.md` +
+`oldsessions/` · κανόνες συνεργασίας: `AGENTS.md`.
+
+## Κατάσταση
+
+Έκδοση 1.0.0+1 · σουίτα 1454/1454 · `flutter analyze` καθαρό.
