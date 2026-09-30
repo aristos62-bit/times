@@ -145,12 +145,14 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('pending auto-prompt → spinner, όχι κουμπί (όχι φλας)',
+    testWidgets('pending auto-prompt → άδεια περιοχή (μόνο δακτυλικό)',
         (tester) async {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);
       await pumpGate(tester, gate: PendingGate(), settle: false);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Ούτε κουμπί ούτε spinner — το OS dialog είναι ημιδιάφανο (fix).
+      expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text(AppStrings.appLockUnlockAction), findsNothing);
+      expect(find.text(AppStrings.appLockReason), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

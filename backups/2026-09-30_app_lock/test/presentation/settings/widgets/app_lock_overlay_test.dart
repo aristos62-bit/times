@@ -51,6 +51,9 @@ void main() {
     required BiometricGate gate,
     Size size = const Size(800, 600),
     ThemeData? theme,
+    // Pending gate + spinner (animation) → το pumpAndSettle δεν
+    // ολοκληρώνεται ποτέ: σταθερά pumps (pattern debounce tests).
+    bool settle = true,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -68,7 +71,12 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
   }
 
   group('AppLockGate/AppLockOverlay (§2.3 · 30-09-2026)', () {
@@ -78,10 +86,13 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('κλειδωμένη → overlay με reason + κουμπί', (tester) async {
+    testWidgets('κλειδωμένη → overlay με reason + κουμπί retry', (tester) async {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);
-      // Pending gate: το auto-prompt μένει ανοιχτό, το overlay φαίνεται.
-      await pumpGate(tester, gate: PendingGate());
+      // Αποτυχημένο auto-prompt → εμφανίζεται το κουμπί (retry).
+      await pumpGate(
+        tester,
+        gate: FakeBiometricGate(authResults: const [false]),
+      );
       expect(find.text(AppStrings.appLockReason), findsOneWidget);
       expect(find.text(AppStrings.appLockUnlockAction), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -99,7 +110,7 @@ void main() {
     testWidgets('unlock ok → overlay φεύγει', (tester) async {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);
       final gate = PendingGate();
-      await pumpGate(tester, gate: gate);
+      await pumpGate(tester, gate: gate, settle: false);
       gate.completer.complete(true);
       await tester.pumpAndSettle();
       expect(find.text(AppStrings.appLockUnlockAction), findsNothing);
@@ -134,15 +145,11 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('double-tap → ένα auth (busy guard)', (tester) async {
+    testWidgets('pending auto-prompt → spinner, όχι κουμπί (όχι φλας)',
+        (tester) async {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);
-      final gate = PendingGate();
-      await pumpGate(tester, gate: gate);
-      await tester.tap(find.text(AppStrings.appLockUnlockAction));
-      await tester.tap(find.text(AppStrings.appLockUnlockAction));
-      gate.completer.complete(true);
-      await tester.pumpAndSettle();
-      expect(gate.calls, 1);
+      await pumpGate(tester, gate: PendingGate(), settle: false);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
       expect(find.text(AppStrings.appLockUnlockAction), findsNothing);
       expect(tester.takeException(), isNull);
     });
@@ -154,8 +161,12 @@ void main() {
         Size(800, 600),
         Size(1200, 800),
       ]) {
-        // Pending: χωρίς αυτό το auto-prompt θα ξεκλείδωνε πριν το assert.
-        await pumpGate(tester, gate: PendingGate(), size: size);
+        // Αποτυχημένο auto → κουμπί retry (πλήρες layout με spinner/button).
+        await pumpGate(
+          tester,
+          gate: FakeBiometricGate(authResults: const [false]),
+          size: size,
+        );
         expect(tester.takeException(), isNull, reason: 'overflow σε $size');
       }
     });
@@ -164,7 +175,7 @@ void main() {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);
       await pumpGate(
         tester,
-        gate: PendingGate(),
+        gate: FakeBiometricGate(authResults: const [false]),
         theme: AppTheme.dark,
       );
       expect(find.text(AppStrings.appLockUnlockAction), findsOneWidget);
