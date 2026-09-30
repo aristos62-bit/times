@@ -47,9 +47,6 @@ app.*.map.json
 # Widget Preview related
 .widget_preview/
 
-# Kotlin daemon sessions (build artifact, αλλάζει σε κάθε build).
-android/.kotlin/
-
 # Εφαρμογή Τιμές (30-09-2026): ποτέ backup βάσης/keystore στο git —
 # τα .db backups πάνε ΜΟΝΟ σε φάκελο συσκευής (§2.3), τα signing keys
 # μένουν τοπικά (Play Store signing).
