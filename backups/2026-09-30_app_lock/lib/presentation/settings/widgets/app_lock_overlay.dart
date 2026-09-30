@@ -42,6 +42,21 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay> {
   /// το κουμπί είναι ανενεργό — ένα native dialog ανά tap.
   bool _unlocking = false;
 
+  /// Auto-prompt μία φορά ανά κλείδωμα (standard lock-screen UX — το
+  /// δακτυλικό δεν καλείται στο build, μόνο post-frame). Το flag
+  /// αποτρέπει βρόχο dialogs σε αποτυχία (retry μόνο από το κουμπί).
+  bool _autoFired = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _autoFired) return;
+      _autoFired = true;
+      _unlock();
+    });
+  }
+
   Future<void> _unlock() async {
     if (_unlocking) return;
     setState(() => _unlocking = true);

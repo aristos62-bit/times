@@ -47,6 +47,12 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay> {
   /// αποτρέπει βρόχο dialogs σε αποτυχία (retry μόνο από το κουμπί).
   bool _autoFired = false;
 
+  /// Η πρώτη προσπάθεια ολοκληρώθηκε και είμαστε ακόμα κλειδωμένοι —
+  /// ΜΟΝΟ τότε φαίνεται το κουμπί (retry). Μέχρι τότε spinner (όχι
+  /// φλασάρισμα κουμπιού πριν το OS dialog, fix 30-09). Σταθερό ύψος
+  /// περιοχής (§1.4 — όχι layout jump spinner↔κουμπί).
+  bool _autoDone = false;
+
   @override
   void initState() {
     super.initState();
@@ -71,7 +77,12 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay> {
         AppFeedback.showError(context, result.error!);
       }
     } finally {
-      if (mounted) setState(() => _unlocking = false);
+      if (mounted) {
+        setState(() {
+          _unlocking = false;
+          _autoDone = true;
+        });
+      }
     }
   }
 
@@ -102,10 +113,24 @@ class _AppLockOverlayState extends ConsumerState<AppLockOverlay> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppConstants.spacingL),
-                  FilledButton.icon(
-                    onPressed: _unlocking ? null : _unlock,
-                    icon: const Icon(Icons.fingerprint_outlined),
-                    label: const Text(AppStrings.appLockUnlockAction),
+                  // Μέχρι να ολοκληρωθεί η πρώτη προσπάθεια (auto-prompt)
+                  // spinner — το κουμπί εμφανίζεται ΜΟΝΟ ως retry (όχι
+                  // φλασάρισμα πριν το OS dialog, fix 30-09). Σταθερό ύψος.
+                  SizedBox(
+                    height: 48,
+                    child: Center(
+                      child: _unlocking || !_autoDone
+                          ? const CircularProgressIndicator()
+                          : FilledButton.icon(
+                              onPressed: _unlock,
+                              icon: const Icon(
+                                Icons.fingerprint_outlined,
+                              ),
+                              label: const Text(
+                                AppStrings.appLockUnlockAction,
+                              ),
+                            ),
+                    ),
                   ),
                 ],
               ),
