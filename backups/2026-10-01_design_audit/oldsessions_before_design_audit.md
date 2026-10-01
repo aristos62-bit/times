@@ -109,12 +109,9 @@
 | 89 | [Confirm διαγραφής γραμμής καλαθιού](oldsessions/2026-10-01_draft_confirm.md) | 01-10-2026 | Κλειστό | Destructive confirm (νέα+επεξεργασία) · 1 SPoT message · 12+35 ✓ · full 1575/1575 · analyze καθαρό · DESIGN §2.2 |
 | 90 | [Φίλτρο Η/Ε/Μ λίστας πρόσφατων](oldsessions/2026-10-01_recent_filter.md) | 01-10-2026 | Κλειστό | SegmentedButton (default ημέρα, όριο 20) · update in-place · 9+9+14 ✓ · analyze καθαρό · DESIGN §2.2 |
 | 91 | [Διαφοροποίηση ανοιχτών sections Ρυθμίσεων](oldsessions/2026-10-01_settings_tint.md) | 01-10-2026 | Κλειστό | Expanded `surfaceContainerHigh` ×6 · 0 νέα χρώματα · 14/14 ✓ · analyze καθαρό |
-| 92 | [DESIGN αυστηρά αρχιτεκτονική](oldsessions/2026-10-01_design_audit.md) | 01-10-2026 | Κλειστό | 9 διορθώσεις + αφαίρεση ιστορίας (−196/+140) · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
-
-- **DESIGN αυστηρά αρχιτεκτονική (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #92): 9 διορθώσεις + αφαίρεση ιστορίας −196/+140 · analyze καθαρό · backup `backups/2026-10-01_design_audit/`.
 
 - **Διαφοροποίηση ανοιχτών sections (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #91): expanded `surfaceContainerHigh` ×6 · 14/14 ✓ · analyze καθαρό · backup `backups/2026-10-01_settings_tint/`.
 
