@@ -7,6 +7,7 @@ library;
 
 import 'package:drift/drift.dart';
 
+import '../../../core/utils/dates.dart' as dates;
 import '../../models/receipt_summary.dart';
 import '../../models/chart_totals.dart';
 import '../app_database.dart';
@@ -83,10 +84,10 @@ class ReceiptDao extends BaseDao {
   /// Παρακολουθεί τις αποδείξεις μίας ημέρας με σύνοψη (§2.3 · Φάση Β).
   ///
   /// Ίδιο SQL aggregation με [watchRecentSummaries] + `WHERE` ημέρας:
-  /// `dayStart <= date < dayStart + 1 ημέρα` — τα όρια υπολογίζονται εδώ με
-  /// καθαρό `DateTime` (όχι flutter `DateUtils`: το data layer δεν εξαρτάται
-  /// από το UI) και καλύπτουν τυχόν time-parts αμυντικά. Σειρά: date desc,
-  /// id desc — ίδια με [watchAll].
+  /// `dayStart <= date < dayStart + 1 ημέρα` — τα όρια με SPoT
+  /// `dates.addDays` (DST-ασφαλές, 01-10-2026 · όχι flutter `DateUtils`:
+  /// το data layer δεν εξαρτάται από το UI) και καλύπτουν τυχόν time-parts
+  /// αμυντικά. Σειρά: date desc, id desc — ίδια με [watchAll].
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,
     required int limit,
@@ -94,8 +95,8 @@ class ReceiptDao extends BaseDao {
       guardStream(
         'Ανάγνωση αποδείξεων ημέρας',
         () {
-          final start = DateTime(day.year, day.month, day.day);
-          final end = start.add(const Duration(days: 1));
+          final start = dates.dayOnly(day);
+          final end = dates.addDays(start, 1);
           return db
               .customSelect(
                 '''

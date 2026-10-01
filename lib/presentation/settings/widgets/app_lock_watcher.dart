@@ -13,6 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/providers/app_lock_providers.dart';
 
 /// Φυλάει το [child] κλειδωμένο μετά από background πέραν της χάριτος.
+/// Καλύπτει pause/resume (mobile) + hide/show (desktop minimize, F3 01-10)·
+/// `inactive` σκόπιμα ΕΚΤΟΣ (transient + auth-dialog risk, βλ. πρόταση).
 class AppLockWatcher extends ConsumerStatefulWidget {
   const AppLockWatcher({super.key, required this.child});
 
@@ -32,16 +34,25 @@ class _AppLockWatcherState extends ConsumerState<AppLockWatcher> {
   void initState() {
     super.initState();
     _listener = AppLifecycleListener(
-      onPause: () => _pausedAt = DateTime.now(),
-      onResume: () {
-        final pausedAt = _pausedAt;
-        _pausedAt = null;
-        if (pausedAt == null || !mounted) return;
-        if (shouldRelock(pausedAt: pausedAt, now: DateTime.now())) {
-          ref.read(appLockProvider.notifier).lock();
-        }
-      },
+      onPause: _wentBackground,
+      onHide: _wentBackground,
+      onResume: _returnedToForeground,
+      onShow: _returnedToForeground,
     );
+  }
+
+  /// Background (pause mobile / hide desktop): μνήμη στιγμής.
+  void _wentBackground() => _pausedAt = DateTime.now();
+
+  /// Επιστροφή (resume/show): κλείδωμα αν έληξε η χάρη. Idempotent — η
+  /// πρώτη κατανάλωση μηδενίζει (`_pausedAt = null`), η δεύτερη no-op.
+  void _returnedToForeground() {
+    final pausedAt = _pausedAt;
+    _pausedAt = null;
+    if (pausedAt == null || !mounted) return;
+    if (shouldRelock(pausedAt: pausedAt, now: DateTime.now())) {
+      ref.read(appLockProvider.notifier).lock();
+    }
   }
 
   @override

@@ -69,6 +69,13 @@ void main() {
         'times_backup_20260305_040709.sqlite',
       );
     });
+
+    test('auto όνομα ξεκινά από SPoT prefix (sync φρουρός · 01-10)', () {
+      expect(
+        'auto_${BackupService.buildBackupFileName(DateTime(2026, 9, 30))}',
+        startsWith(BackupService.autoBackupNamePrefix),
+      );
+    });
   });
 
   group('BackupService snapshots', () {

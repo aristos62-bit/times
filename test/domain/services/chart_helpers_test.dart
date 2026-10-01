@@ -95,6 +95,56 @@ void main() {
       );
       expect(range.from, range.to);
     });
+
+    group('DST (Europe/Athens · 01-10-2026)', () {
+    // ΣΗΜ.: σε UTC αυτά περνάνε και με `Duration` (midnight+24h == midnight).
+    // Δαγκώνουν ΜΟΝΟ σε ζώνη με DST (τοπικά: GTB· αλλού `TZ=Europe/Athens
+    // flutter test`). 29-03-2026 = 23ωρη (επόμενη 28-03-2027) ·
+    // 25-10-2026 = 25ωρη.
+    test('day στην 23ωρη: to = μεσάνυχτα (όχι 01:00)', () {
+      final range = resolvePeriodRange(
+        PeriodType.day,
+        now: DateTime(2026, 3, 29, 10),
+      );
+      expect(range.from, DateTime(2026, 3, 29));
+      expect(range.to, DateTime(2026, 3, 30));
+      expect(range.to.hour, 0);
+    });
+
+    test('day στην 25ωρη: to = επομένη (όχι 23:00 ίδιας)', () {
+      final range = resolvePeriodRange(
+        PeriodType.day,
+        now: DateTime(2026, 10, 25, 10),
+      );
+      expect(range.from, DateTime(2026, 10, 25));
+      expect(range.to, DateTime(2026, 10, 26));
+      expect(range.to.hour, 0);
+    });
+
+    test('week που περιέχει την 23ωρη: end μεσάνυχτα (όχι 01:00)', () {
+      // now Τετάρτη 25-03: start Δευτέρα 23-03 (το subtract δεν διασχίζει
+      // μετάβαση — οι μεταβάσεις είναι Κυριακές· το end +7 τη διασχίζει).
+      final range = resolvePeriodRange(
+        PeriodType.week,
+        now: DateTime(2026, 3, 25, 10),
+      );
+      expect(range.from, DateTime(2026, 3, 23));
+      expect(range.to, DateTime(2026, 3, 30));
+      expect(range.to.hour, 0);
+    });
+
+    test('custom που τελειώνει στην 23ωρη: to = επομένη μεσάνυχτα', () {
+      final range = resolvePeriodRange(
+        PeriodType.custom,
+        customFrom: DateTime(2026, 3, 27),
+        customTo: DateTime(2026, 3, 29),
+        now: now,
+      );
+      expect(range.from, DateTime(2026, 3, 27));
+      expect(range.to, DateTime(2026, 3, 30));
+      expect(range.to.hour, 0);
+    });
+  });
   });
 
   group('toChartSlices', () {

@@ -29,6 +29,32 @@ class AppLockGate extends ConsumerWidget {
   }
 }
 
+/// Φόντο πίσω από το overlay: όταν κλειδωμένα, το περιεχόμενο βγαίνει από
+/// το semantics tree (screen reader — F2 01-10, αλλιώς διαβάζει κρυφά
+/// οικονομικά δεδομένα) και από το keyboard traversal/focus (Tab desktop).
+/// Τίποτα δεν ξεμοντάρεται — state (drafts) άθικτο.
+class AppLockBackground extends ConsumerWidget {
+  const AppLockBackground({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locked = ref.watch(appLockProvider.select((s) => s.locked));
+    if (!locked) return child;
+    return ExcludeSemantics(
+      excluding: true,
+      child: FocusScope(
+        canRequestFocus: false,
+        skipTraversal: true,
+        descendantsAreFocusable: false,
+        descendantsAreTraversable: false,
+        child: child,
+      ),
+    );
+  }
+}
+
 /// Οθόνη ξεκλειδώματος — ορατή ΜΟΝΟ όταν `locked`.
 class AppLockOverlay extends ConsumerStatefulWidget {
   const AppLockOverlay({super.key});

@@ -4,6 +4,8 @@
 /// widgets) δουλεύουν πάνω σε αυτό (pattern `FakeStatsPicker`).
 library;
 
+import 'dart:async';
+
 import 'package:local_auth/local_auth.dart';
 
 import 'package:times/data/services/biometric_gate.dart';
@@ -14,10 +16,15 @@ class FakeBiometricGate implements BiometricGate {
     this.supported = true,
     List<bool>? authResults,
     this.throwCode,
+    this.hangAuth = false,
   }) : _authResults = List.of(authResults ?? const [true]);
 
   bool supported;
   final List<bool> _authResults;
+
+  /// Όταν true, το `authenticate` δεν ολοκληρώνεται ποτέ (hang native —
+  /// timeout test 01-10).
+  final bool hangAuth;
 
   /// Όταν ορίζεται, το `authenticate` ρίχνει `LocalAuthException` με αυτό
   /// το code (σφάλμα πλατφόρμας — όχι ακύρωση χρήστη).
@@ -30,6 +37,10 @@ class FakeBiometricGate implements BiometricGate {
   @override
   Future<bool> authenticate(String reason) async {
     reasons.add(reason);
+    if (hangAuth) {
+      await Completer<void>().future; // δεν ολοκληρώνεται ποτέ
+      throw StateError('unreachable');
+    }
     final code = throwCode;
     if (code != null) {
       throw LocalAuthException(code: code, description: 'test');

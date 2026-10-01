@@ -7,11 +7,10 @@
 /// αποτυχία → rollback + `SaveReceiptException` (συμβόλαιο Βήμα 1).
 ///
 /// Το lineTotalCents υπολογίζεται στο ReceiptLineDao (SPoT §3) — εδώ
-/// περνάνε μόνο τα βασικά πεδία (ReceiptLineInput). Χωρίς logging εδώ:
+/// περνάνε μόνο τα βασικά πεδία (ReceiptLineInput). Error-mapping μέσω SPoT
+/// `guardRepo` (reads) — γράφει ήδη μία φορά ο DAO guard. Χωρίς logging εδώ:
 /// οι DAO guards λογκάρουν ήδη τις αποτυχίες μέσα στη transaction.
 library;
-
-import 'package:drift/native.dart';
 
 import '../../core/errors/app_exceptions.dart';
 import '../local/daos/receipt_dao.dart';
@@ -20,6 +19,7 @@ import '../local/app_database.dart';
 import '../models/chart_totals.dart';
 import '../models/receipt_summary.dart';
 import 'receipt_repository.dart';
+import 'repo_guard.dart';
 
 /// Υλοποίηση με δύο DAOs (κεφαλίδα + γραμμές) και transaction save.
 final class ReceiptRepositoryImpl implements ReceiptRepository {
@@ -27,15 +27,6 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
 
   final ReceiptDao _receiptDao;
   final ReceiptLineDao _lineDao;
-
-  /// Εκτελεί [op]· raw SqliteException → `DataLoadException`.
-  Future<T> _guard<T>(Future<T> Function() op) async {
-    try {
-      return await op();
-    } on SqliteException {
-      throw const DataLoadException();
-    }
-  }
 
   @override
   Stream<List<Receipt>> watchAll() => _receiptDao.watchAll().handleError(
@@ -124,26 +115,26 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
           );
 
   @override
-  Future<Receipt?> getById(int id) => _guard(() => _receiptDao.getById(id));
+  Future<Receipt?> getById(int id) => guardRepo(() => _receiptDao.getById(id));
 
   @override
   Future<int> countBySupplierId(int supplierId) =>
-      _guard(() => _receiptDao.countBySupplierId(supplierId));
+      guardRepo(() => _receiptDao.countBySupplierId(supplierId));
 
   @override
   Future<int> countLinesByItemId(int itemId) =>
-      _guard(() => _lineDao.countByItemId(itemId));
+      guardRepo(() => _lineDao.countByItemId(itemId));
 
   @override
   Future<int> insert({required DateTime date, required int supplierId}) =>
-      _guard(() => _receiptDao.insert(date: date, supplierId: supplierId));
+      guardRepo(() => _receiptDao.insert(date: date, supplierId: supplierId));
 
   @override
   Future<bool> updateById(int id, {DateTime? date, int? supplierId}) =>
-      _guard(() => _receiptDao.updateById(id, date: date, supplierId: supplierId));
+      guardRepo(() => _receiptDao.updateById(id, date: date, supplierId: supplierId));
 
   @override
-  Future<bool> deleteById(int id) => _guard(() => _receiptDao.deleteById(id));
+  Future<bool> deleteById(int id) => guardRepo(() => _receiptDao.deleteById(id));
 
   @override
   Stream<List<ReceiptLine>> watchLines(int receiptId) =>
@@ -154,11 +145,11 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
 
   @override
   Future<List<ReceiptLine>> getLines(int receiptId) =>
-      _guard(() => _lineDao.getByReceiptId(receiptId));
+      guardRepo(() => _lineDao.getByReceiptId(receiptId));
 
   @override
   Future<ReceiptLine?> getLatestByItemId(int itemId) =>
-      _guard(() => _lineDao.getLatestByItemId(itemId));
+      guardRepo(() => _lineDao.getLatestByItemId(itemId));
 
   @override
   Stream<List<ItemPricePoint>> watchItemHistory({
@@ -231,7 +222,7 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
         }
         return receiptId;
       });
-    } on SqliteException {
+    } on Exception {
       // Rollback automatic (drift) — αναδύεται μόνο το mapped exception.
       throw const SaveReceiptException();
     }
@@ -268,7 +259,7 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
       });
     } on DataLoadException {
       rethrow;
-    } on SqliteException {
+    } on Exception {
       // Rollback automatic (drift) — αναδύεται μόνο το mapped exception.
       throw const SaveReceiptException();
     }

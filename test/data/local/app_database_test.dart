@@ -108,5 +108,22 @@ void main() {
         expect(lines.join('\n'), contains('TIMEOUT'));
       },
     );
+
+    test(
+      'timeout → flag επαναφορά: 2η κλήση ξαναδοκιμάζει (R1 · 01-10)',
+      timeout: const Timeout(Duration(seconds: 60)),
+      () async {
+        final lines = <String>[];
+        AppLogger.testSink = lines.add;
+        addTearDown(AppLogger.resetTestSink);
+
+        final db = _HangingCloseDb();
+        await db.closeSafely();
+        await db.closeSafely();
+
+        // Δύο κύκλοι (όχι no-op στη 2η) — το retry επιτρέπεται.
+        expect('TIMEOUT'.allMatches(lines.join('\n')).length, 2);
+      },
+    );
   });
 }

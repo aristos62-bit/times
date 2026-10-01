@@ -139,22 +139,26 @@ final unitsStreamProvider = StreamProvider<List<Unit>>(
 /// Stream.empty — θα έμενε σε loading). Το show-all-στο-focus (Δ1, Β5β) ΔΕΝ
 /// περνάει από εδώ: η φόρμα χρησιμοποιεί το `unitsStreamProvider` ως πηγή
 /// «όλων» μέσα στο SearchableDropdownField (allOptionsProvider).
-final unitSearchProvider = StreamProvider.family<List<Unit>, String>(
-  (ref, query) {
-    final normalized = GreekTextNormalizer.normalize(query.trim());
-    if (normalized.isEmpty) return Stream.value(const []);
-    return ref.watch(unitRepositoryProvider).watchAll().map(
-          (units) => units
-          .where(
-            (u) =>
-        GreekTextNormalizer.normalize(u.name).contains(normalized) ||
-            GreekTextNormalizer.normalize(u.abbreviation)
-                .contains(normalized),
-      )
-          .toList(),
-    );
-  },
-);
+final unitSearchProvider = StreamProvider.family<List<Unit>, String>((
+  ref,
+  query,
+) {
+  final normalized = GreekTextNormalizer.normalize(query.trim());
+  if (normalized.isEmpty) return Stream.value(const []);
+  return ref
+      .watch(unitRepositoryProvider)
+      .watchAll()
+      .map(
+        (units) => units
+            .where(
+              (u) =>
+                  GreekTextNormalizer.normalize(u.name).contains(normalized) ||
+                  GreekTextNormalizer.normalize(u.abbreviation)
+                      .contains(normalized),
+            )
+            .toList(),
+      );
+});
 
 /// Όλα τα είδη, με σειρά normalizedName.
 final itemsStreamProvider = StreamProvider<List<Item>>(

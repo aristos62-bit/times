@@ -1,17 +1,16 @@
 /// Υλοποίηση `UnitRepository` πάνω στον UnitDao — Φάση 2, Βήμα 2.
 ///
-/// Λεπτό repository layer: μηδέν query logic — μόνο error-mapping raw
-/// `SqliteException` → `DataLoadException` (συμβόλαιο Βήμα 1). Το
-/// deleteById mapάρει και το RESTRICT (ReceiptLines.unitId) σε
-/// `DataLoadException` — βλ. docstring interface (διόρθωση Βήμα 2).
+/// Λεπτό repository layer: μηδέν query logic — μόνο error-mapping μέσω
+/// SPoT `guardRepo` (συμβόλαιο Βήμα 1). Το deleteById mapάρει και το
+/// RESTRICT (ReceiptLines.unitId) σε `DataLoadException` — βλ. docstring
+/// interface (διόρθωση Βήμα 2).
 /// Χωρίς logging (ήδη από τον DAO guard).
 library;
-
-import 'package:drift/native.dart';
 
 import '../../core/errors/app_exceptions.dart';
 import '../local/daos/unit_dao.dart';
 import '../local/app_database.dart';
+import 'repo_guard.dart';
 import 'unit_repository.dart';
 
 /// Full CRUD + stream mapping του UnitDao σε AppException.
@@ -20,15 +19,6 @@ final class UnitRepositoryImpl implements UnitRepository {
 
   final UnitDao _dao;
 
-  /// Εκτελεί [op]· raw SqliteException → `DataLoadException`.
-  Future<T> _guard<T>(Future<T> Function() op) async {
-    try {
-      return await op();
-    } on SqliteException {
-      throw const DataLoadException();
-    }
-  }
-
   @override
   Stream<List<Unit>> watchAll() => _dao.watchAll().handleError(
         (Object e, StackTrace s) =>
@@ -36,7 +26,7 @@ final class UnitRepositoryImpl implements UnitRepository {
       );
 
   @override
-  Future<Unit?> getById(int id) => _guard(() => _dao.getById(id));
+  Future<Unit?> getById(int id) => guardRepo(() => _dao.getById(id));
 
   @override
   Future<int> insert({
@@ -44,7 +34,7 @@ final class UnitRepositoryImpl implements UnitRepository {
     required String abbreviation,
     bool allowsDecimal = false,
   }) =>
-      _guard(
+      guardRepo(
         () => _dao.insert(
           name: name,
           abbreviation: abbreviation,
@@ -59,7 +49,7 @@ final class UnitRepositoryImpl implements UnitRepository {
     String? abbreviation,
     bool? allowsDecimal,
   }) =>
-      _guard(
+      guardRepo(
         () => _dao.updateById(
           id,
           name: name,
@@ -69,5 +59,5 @@ final class UnitRepositoryImpl implements UnitRepository {
       );
 
   @override
-  Future<bool> deleteById(int id) => _guard(() => _dao.deleteById(id));
+  Future<bool> deleteById(int id) => guardRepo(() => _dao.deleteById(id));
 }

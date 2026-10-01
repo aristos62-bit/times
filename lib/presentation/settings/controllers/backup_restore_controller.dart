@@ -206,6 +206,13 @@ class BackupRestoreController extends Notifier<SettingsState> {
               s2,
             );
           }
+          // Μόνο το γνωστό σφάλμα εμπλουτίζεται με το filename (R2 01-10)·
+          // απρόβλεπτα Errors ανεβαίνουν raw όπως πριν (καμία μεταμφίεση).
+          if (e is RestoreBackupException) {
+            throw RestoreBackupException.withBackup(
+              Uri.file(autoPath).pathSegments.last,
+            );
+          }
           rethrow;
         } finally {
           // ΠΑΝΤΑ (Q4): η βάση ξανανοίγει (νέα ή rolled-back) + resets —
@@ -218,6 +225,9 @@ class BackupRestoreController extends Notifier<SettingsState> {
           // `clearSelection` — η βάση άλλαξε ταυτότητα).
           ref.read(receiptFormControllerProvider.notifier).resetForm();
           ref.read(itemSearchControllerProvider.notifier).onQueryChanged('');
+          // Trend-επιλογή: persisted itemId — ξένη βάση + ίδιο id = σιωπηλά
+          // λάθος είδος (R4 01-10)· `clear()` μηδενίζει state + persist.
+          ref.read(selectedTrendItemProvider.notifier).clear();
         }
         // Retention (30-09-2026, §2.3): μόνο σε επιτυχία — ποτέ throw,
         // οπότε δεν απειλεί το ok:true.

@@ -1,0 +1,51 @@
+/// Abstract repository για τις κατηγορίες — Φάση 2, Βήμα 1 (DESIGN §4).
+///
+/// SPoT: Μοναδικό σημείο πρόσβασης στα δεδομένα κατηγοριών. Οι
+/// controllers/pages δεν καλούν ποτέ τον CategoryDao απευθείας (DESIGN §1.2).
+///
+/// Error mapping: τα DAOs ρίχνουν raw SqliteException (BaseDao guard).
+/// Το implementation mapάρει σε AppException — reads → DataLoadException,
+/// writes → DataLoadException (προσωρινά, θα αντικατασταθεί στη Φάση 3/4
+/// με validators — βλ. NOTE στο app_errors.dart).
+library;
+
+import '../local/app_database.dart';
+
+/// Abstract interface — υλοποιείται πάνω στον CategoryDao.
+abstract interface class CategoryRepository {
+  /// Παρακολουθεί όλες τις κατηγορίες, αλφαβητικά (DESIGN §3).
+  Stream<List<Category>> watchAll();
+
+  /// Διαβάζει μία κατηγορία ή null αν δεν υπάρχει.
+  Future<Category?> getById(int id);
+
+  /// Διαβάζει κατηγορία με βάση το κανονικοποιημένο όνομα (exact-match,
+  /// soft dup-check §2.2 — ο πίνακας ΕΧΕΙ UNIQUE `normalizedName`, §3).
+  Future<Category?> getByNormalizedName(String normalizedName);
+
+  /// Εισάγει κατηγορία· επιστρέφει το νέο id.
+  Future<int> insert({required String name});
+
+  /// Ενημερώνει το όνομα. Επιστρέφει true αν άλλαξε 1 γραμμή.
+  Future<bool> updateById(int id, {required String name});
+
+  /// Διαγραφή. RESTRICT (FK): αποτυγχάνει αν υπάρχουν υποκατηγορίες.
+  Future<bool> deleteById(int id);
+
+  /// Μετράει τα είδη της κατηγορίας με ≥1 γραμμή απόδειξης — Φάση 4,
+  /// Βήμα 3 (§2.3:275): πύλη διαγραφής (`0` = καθαρή). Passthrough του
+  /// `CategoryDao.countItemsInUseByCategoryId` με mapping σε
+  /// `DataLoadException` (καταναλωτής: `canDeleteCategoryProvider`).
+  Future<int> countItemsInUse(int categoryId);
+
+  /// Μετράει ΟΛΑ τα είδη της κατηγορίας — Φάση 4, Βήμα 4 (§2.3):
+  /// αριθμός στο cascade confirm («θα σβηστούν Ν είδη»). Passthrough του
+  /// `CategoryDao.countItemsByCategoryId` με mapping σε `DataLoadException`.
+  Future<int> countItems(int categoryId);
+
+  /// Διαγράφει την κατηγορία με όλο το περιεχόμενό της (υποκατηγορίες +
+  /// ορφανά είδη) σε ένα transaction — Φάση 4, Βήμα 4 (§2.3, αποφάσεις Α/Γ).
+  /// Καλείται ΜΟΝΟ όταν `countItemsInUse == 0` (πύλη `canDelete*Provider`).
+  /// Passthrough του `CategoryDao.deleteWithContents`.
+  Future<bool> deleteWithContents(int categoryId);
+}

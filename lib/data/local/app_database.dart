@@ -112,7 +112,9 @@ class AppDatabase extends _$AppDatabase {
   /// Idempotent κλείσιμο (Φάση 4 Βήμα 5, απόφαση Β · §2.3 restore).
   ///
   /// 1η κλήση → `close()` + info log· επόμενες → no-op. Αποτυχία → error
-  /// log (tag DB) χωρίς rethrow — ο καλών (restore/onDispose) συνεχίζει
+  /// log (tag DB) χωρίς rethrow + επαναφορά flag (R1 01-10: το close που
+  /// απέτυχε/κρέμασε μπορεί να ξαναδοκιμαστεί — το πρώτο δεν ολοκληρώθηκε,
+  /// άρα κανένα double-close) — ο καλών (restore/onDispose) συνεχίζει
   /// (το replace θα αποτύχει με mapped exception αν το αρχείο κλειδώθηκε).
   Future<void> closeSafely() async {
     if (_closed) return;
@@ -139,8 +141,11 @@ class AppDatabase extends _$AppDatabase {
       // Αποδεδειγμένο hang (συσκευή 27-09-2026): ο executor απαντά (probe
       // OK) αλλά το teardown δεν ολοκληρώνεται — συνέχεια στο replace αντί
       // για παγωμένη εφαρμογή (αποτυχία → mapped exception + snackbar).
+      // Flag-επαναφορά (R1 01-10): επιτρέπεται νέα προσπάθεια.
+      _closed = false;
       AppLogger.info(LogTag.db, 'closeSafely: TIMEOUT — συνέχεια χωρίς close');
     } catch (e, s) {
+      _closed = false;
       AppLogger.error(LogTag.db, 'Αποτυχία κλεισίματος βάσης', e, s);
     }
   }

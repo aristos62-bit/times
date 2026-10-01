@@ -72,6 +72,13 @@ final class BackupService {
     },
   };
 
+  /// Σταθερό πρόθεμα ονομάτων auto-backups (01-10-2026 · SPoT §1.1):
+  /// `auto_` + το στατικό μέρος του `backupFileNamePattern`. Χρήση στο
+  /// φίλτρο του `pruneAutoBackups` (όχι στη δημιουργία — εκείνη συνθέτει
+  /// `'auto_${buildBackupFileName(...)}'`). Το guard test
+  /// (`startsWith`) σπάει αν αλλάξει το pattern χωρίς αυτό.
+  static const String autoBackupNamePrefix = 'auto_times_backup_';
+
   /// Χτίζει filename από το SPoT pattern + timestamp (manual pad,
   /// non-localized — σκόπιμα όχι `DateFormat`, το όνομα αρχείου δεν
   /// εξαρτάται από locale).
@@ -89,9 +96,12 @@ final class BackupService {
 
   /// Το αρχείο της τρέχουσας βάσης (`<docs>/times.sqlite` — evidence
   /// `drift_flutter` native.dart: `File(docs, '$name.sqlite')`).
+  /// Το basename έρχεται από το SPoT `AppDatabase.dbFileName` (01-10).
   Future<File> currentDbFile() async {
     final docs = await getApplicationDocumentsDirectory();
-    return File('${docs.path}${Platform.pathSeparator}times.sqlite');
+    return File(
+      '${docs.path}${Platform.pathSeparator}${AppDatabase.dbFileName}.sqlite',
+    );
   }
 
   /// Temp path για το snapshot εξαγωγής (`<docs>/export_tmp_<ts>.sqlite` —
@@ -167,7 +177,7 @@ final class BackupService {
         f,
       ) {
         final name = f.uri.pathSegments.last;
-        return name.startsWith('auto_times_backup_') &&
+        return name.startsWith(autoBackupNamePrefix) &&
             name.endsWith('.sqlite');
       }).toList()..sort((a, b) => b.path.compareTo(a.path));
       // Filenames χρονολογικά (yyyyMMdd_HHmmss) — τα πρώτα `keep` μένουν.

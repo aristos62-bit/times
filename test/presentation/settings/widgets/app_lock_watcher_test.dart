@@ -115,6 +115,24 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('ON + hide→show (desktop minimize, F3) → χωρίς επίπτωση',
+        (tester) async {
+      await prefs.setBool(AppConstants.appLockEnabledKey, true);
+      final container = await pumpWatcher(tester);
+      await container.read(appLockProvider.notifier).unlock('reason');
+      await tester.pumpAndSettle();
+      // Έγκυρη ακολουθία (assert 3.47 — hidden→resumed κατευθείαν άκυρο):
+      // onHide + onShow πυροδοτούνται ενδιάμεσα, η άμεση επιστροφή δεν
+      // κλειδώνει (χάρη — ίδιος κώδικας με pause/resume).
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(container.read(appLockProvider).locked, isFalse);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('launch με ON → κλειδωμένη (build, zero-flash)',
         (tester) async {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);

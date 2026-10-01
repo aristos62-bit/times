@@ -1,0 +1,33 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  analyze-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          cache-key: flutter-${{ hashFiles('pubspec.lock') }}
+
+      - run: flutter pub get
+
+      - run: flutter pub run build_runner build --delete-conflicting-outputs
+
+      - run: flutter analyze
+
+      - run: flutter test --coverage
+
+      - name: Upload coverage (lcov)
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info

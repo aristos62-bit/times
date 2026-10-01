@@ -2,6 +2,8 @@
 /// dialogs, tooltips) — «τι ενημερώνει τη ροή».
 library;
 
+import 'app_errors.dart';
+
 /// Abstract SPoT class — μόνο σταθερές/μέθοδοι, δεν instantiate (pattern AppConstants).
 abstract final class AppMessages {
   // ─── SnackBar success (§2.2, §2.3) ────────────────────────────────────────
@@ -162,6 +164,11 @@ abstract final class AppMessages {
   static const String restoreConfirmWithBackup =
       'Η επαναφορά θα αντικαταστήσει όλα τα τρέχοντα δεδομένα. '
       'Θα δημιουργηθεί πρώτα αυτόματο αντίγραφο της τρέχουσας βάσης. Συνέχεια;';
+
+  /// Αποτυχία επαναφοράς με διατηρημένο auto-backup (R2 · 01-10-2026):
+  /// δείχνει ΜΟΝΟ το filename (όχι path — αρκετό για εύρεση, όχι θόρυβος).
+  static String restoreFailedWithBackup(String fileName) =>
+      '${AppErrors.restoreFailed}. Διατηρήθηκε αυτόματο αντίγραφο: $fileName';
 
   // ─── Πορεία τιμής είδους (§2.1 · 28-09-2026) ──────────────────────────────
   /// Το επιλεγμένο είδος πορείας δεν υπάρχει πια — επανάληψη επιλογής.

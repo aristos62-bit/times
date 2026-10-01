@@ -10,6 +10,7 @@ import 'package:excel/excel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:times/core/constants/app_constants.dart';
 import 'package:times/core/errors/app_exceptions.dart';
@@ -262,6 +263,39 @@ void main() {
           .where((f) => f.path.contains('auto_times_backup_'))
           .toList();
       expect(autos.length, AppConstants.autoBackupRetentionCount);
+    });
+
+    test('restore μηδενίζει persisted trend-επιλογή (R4 · 01-10)', () async {
+      // Καθαρισμός autos (ίδιο second = ίδιο filename → VACUUM INTO σε
+      // υπάρχον target, όπως P3/R4-retention).
+      for (final f in tmpRoot.listSync().whereType<File>().where(
+        (f) => f.path.contains('auto_times_backup_'),
+      )) {
+        f.deleteSync();
+      }
+      SharedPreferences.setMockInitialValues({});
+      final mockPrefs = await SharedPreferences.getInstance();
+      await mockPrefs.setInt(AppConstants.trendSelectedItemKey, 7);
+      final c2 = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(db),
+          backupFilePickerProvider.overrideWithValue(picker),
+          sharedPreferencesProvider.overrideWithValue(mockPrefs),
+        ],
+      );
+      addTearDown(c2.dispose);
+      // Προεπιλογή ορατή στο state (build διάβασε prefs).
+      expect(c2.read(selectedTrendItemProvider), 7);
+      final service = BackupService(db);
+      final snap = '${tmpRoot.path}/trend_snap.sqlite';
+      await service.exportSnapshot(snap);
+      final result = await c2
+          .read(backupRestoreControllerProvider.notifier)
+          .restoreBackup(snap);
+      expect(result.ok, isTrue);
+      // State + persist καθαρά (ξένη βάση + ίδιο id = σιωπηλά λάθος είδος).
+      expect(c2.read(selectedTrendItemProvider), isNull);
+      expect(mockPrefs.getInt(AppConstants.trendSelectedItemKey), isNull);
     });
 
     test('άκυρο αρχείο → InvalidBackupFileException, βάση ΑΝΟΙΧΤΗ', () async {

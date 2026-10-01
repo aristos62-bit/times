@@ -61,6 +61,14 @@ void main() {
       expect(e.loggingTag, LogTag.backup);
     });
 
+    test('withBackup → μήνυμα με filename (R2 · 01-10)', () {
+      final e = RestoreBackupException.withBackup('auto_x.sqlite');
+      expect(e, isA<AppException>());
+      expect(e.loggingTag, LogTag.backup);
+      expect(e.userMessage, contains(AppErrors.restoreFailed));
+      expect(e.userMessage, contains('auto_x.sqlite'));
+    });
+
     test('StatsExportException → statsExportFailed + LogTag.stats (§2.3)', () {
       const e = StatsExportException();
       expect(e.userMessage, AppErrors.statsExportFailed);

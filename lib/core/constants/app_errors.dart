@@ -24,11 +24,14 @@ abstract final class AppErrors {
   /// §2.1 + §2.4 (AsyncValueView): generic σφάλμα φόρτωσης δεδομένων.
   /// Εμφανίζεται σε 2+ σημεία → SPoT (§1.1).
   ///
-  /// NOTE(Φάση2-Βήμα1): το `loadDataFailed` καλύπτεται προσωρινά και για
-  /// write-time FK/UNIQUE σφάλματα καταλόγου (χωρίς δικό τους μήνυμα ακόμα).
-  /// Το validation (Φάση 3 Βήμα 6) κάλυψε ΜΟΝΟ τα σφάλματα εισόδου (ονόματα,
-  /// τιμή, ποσότητα) πριν το DB· τα write-time conflicts (FK/UNIQUE) περνούν
-  /// στη Φάση 4 (Settings CRUD), όπου γίνονται πραγματικό σενάριο.
+  /// NOTE(επαληθευμένο 01-10-2026): το `loadDataFailed` καλύπτει και τα
+  /// write-time σφάλματα καταλόγου (χωρίς δικό τους μήνυμα — απόφαση:
+  /// races ~αδύνατα λόγω pre-checks/πυλών, βλ. `guardRepo`). Στην παραγωγή
+  /// η βάση τρέχει σε background isolate και τα σφάλματα φτάνουν ως
+  /// `DriftRemoteException` (όχι `SqliteException` — χάνεται στη
+  /// σειριοποίηση)· το mapping πιάνει κάθε `Exception` (το `Error` μένει
+  /// σκόπιμα εκτός). Το validation (Βήμα 6) καλύπτει τα σφάλματα εισόδου
+  /// πριν το DB· τα write-time conflicts πιάνονται από pre-checks + πύλες.
   static const String loadDataFailed = 'Σφάλμα κατά τη φόρτωση δεδομένων';
 
   // ─── Backup / Restore (§2.3) ────────────────────────────────────────────

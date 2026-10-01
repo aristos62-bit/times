@@ -166,6 +166,11 @@ abstract final class AppConstants {
   // αυτό το διάστημα ΔΕΝ ζητά ξεκλείδωμα (Q2).
   static const int appLockGraceSeconds = 30;
 
+  // Timeout ταυτοποίησης σε δευτερόλεπτα (01-10): native auth που δεν
+  // επιστρέφει ποτέ → `TimeoutException` → ορατό σφάλμα + retry (αντί
+  // για κενό overlay). Συντηρητικό για αργές συσκευές.
+  static const int appLockAuthTimeoutSeconds = 60;
+
   // Σταθερό ύψος περιοχής retry-κουμπιού (§1.4 — όχι layout jump όταν
   // εμφανίζεται/κρύβεται το κουμπί).
   static const double appLockButtonHeight = 48.0;

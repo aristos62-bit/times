@@ -1,36 +1,25 @@
 /// Υλοποίηση `CategoryRepository` πάνω στον CategoryDao — Φάση 2, Βήμα 2.
 ///
 /// Λεπτό repository layer (DESIGN §1.2, §4 Φάση 2): ΚΑΝΕΝΑ query logic —
-/// όλα τα queries ζουν στα DAOs. Εδώ γίνεται ΜΟΝΟ το error-mapping:
-/// τα DAOs ρίχνουν raw `SqliteException` (BaseDao guard, §4.1) και το
-/// repository mapάρει σε `DataLoadException` (συμβόλαιο Βήμα 1).
+/// όλα τα queries ζουν στα DAOs. Εδώ γίνεται ΜΟΝΟ το error-mapping μέσω
+/// SPoT `guardRepo` (συμβόλαιο Βήμα 1).
 ///
 /// Constructor με DAO μόνο (χωρίς AppDatabase — το `_dao.db` είναι public
 /// final στο BaseDao, απόφαση Βήμα 2). Χωρίς logging εδώ: τα σφάλματα
 /// λογκάρονται ήδη μία φορά από τον DAO guard.
 library;
 
-import 'package:drift/native.dart';
-
 import '../../core/errors/app_exceptions.dart';
 import '../local/daos/category_dao.dart';
 import '../local/app_database.dart';
 import 'category_repository.dart';
+import 'repo_guard.dart';
 
 /// Σκέτο mapping φουλ CRUD + stream του CategoryDao σε AppException.
 final class CategoryRepositoryImpl implements CategoryRepository {
   CategoryRepositoryImpl(this._dao);
 
   final CategoryDao _dao;
-
-  /// Εκτελεί [op]· raw SqliteException → `DataLoadException`.
-  Future<T> _guard<T>(Future<T> Function() op) async {
-    try {
-      return await op();
-    } on SqliteException {
-      throw const DataLoadException();
-    }
-  }
 
   @override
   Stream<List<Category>> watchAll() => _dao.watchAll().handleError(
@@ -39,32 +28,32 @@ final class CategoryRepositoryImpl implements CategoryRepository {
       );
 
   @override
-  Future<Category?> getById(int id) => _guard(() => _dao.getById(id));
+  Future<Category?> getById(int id) => guardRepo(() => _dao.getById(id));
 
   @override
   Future<Category?> getByNormalizedName(String normalizedName) =>
-      _guard(() => _dao.getByNormalizedName(normalizedName));
+      guardRepo(() => _dao.getByNormalizedName(normalizedName));
 
   @override
   Future<int> insert({required String name}) =>
-      _guard(() => _dao.insert(name: name));
+      guardRepo(() => _dao.insert(name: name));
 
   @override
   Future<bool> updateById(int id, {required String name}) =>
-      _guard(() => _dao.updateById(id, name: name));
+      guardRepo(() => _dao.updateById(id, name: name));
 
   @override
-  Future<bool> deleteById(int id) => _guard(() => _dao.deleteById(id));
+  Future<bool> deleteById(int id) => guardRepo(() => _dao.deleteById(id));
 
   @override
   Future<int> countItemsInUse(int categoryId) =>
-      _guard(() => _dao.countItemsInUseByCategoryId(categoryId));
+      guardRepo(() => _dao.countItemsInUseByCategoryId(categoryId));
 
   @override
   Future<int> countItems(int categoryId) =>
-      _guard(() => _dao.countItemsByCategoryId(categoryId));
+      guardRepo(() => _dao.countItemsByCategoryId(categoryId));
 
   @override
   Future<bool> deleteWithContents(int categoryId) =>
-      _guard(() => _dao.deleteWithContents(categoryId));
+      guardRepo(() => _dao.deleteWithContents(categoryId));
 }

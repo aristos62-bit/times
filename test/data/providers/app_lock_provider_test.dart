@@ -6,6 +6,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -177,6 +178,29 @@ void main() {
           await c.read(appLockProvider.notifier).unlock('reason');
       expect(result, (ok: false, error: AppErrors.appLockFailed));
       expect(c.read(appLockProvider), (enabled: true, locked: true));
+    });
+
+    test('hang native → timeout SPoT → error (F1 · 01-10)', () async {
+      await prefs.setBool(AppConstants.appLockEnabledKey, true);
+      gate = FakeBiometricGate(hangAuth: true);
+      fakeAsync((f) {
+        final c = container();
+        addTearDown(c.dispose);
+        var done = false;
+        late ({bool ok, String? error}) result;
+        c.read(appLockProvider.notifier).unlock('reason').then((r) {
+          result = r;
+          done = true;
+        });
+        f.flushMicrotasks();
+        expect(done, isFalse);
+        f.elapse(
+          Duration(seconds: AppConstants.appLockAuthTimeoutSeconds + 1),
+        );
+        f.flushMicrotasks();
+        expect(done, isTrue);
+        expect(result, (ok: false, error: AppErrors.appLockFailed));
+      });
     });
 
     test('lock() → locked (sync, χωρίς auth)', () async {

@@ -46,6 +46,16 @@ class _FailingStreamReceiptDao extends ReceiptDao {
       Stream.error(SqliteException(extendedResultCode: 1, message: 'test'));
 }
 
+/// DAO double — generic (non-SQLite) σφάλμα στο getById: προσομοιώνει το
+/// `DriftRemoteException` του background isolate (01-10-2026 — ο τύπος
+/// `SqliteException` δεν επιβιώνει της σειριοποίησης, βλ. drift protocol).
+class _ThrowingReceiptDao extends ReceiptDao {
+  _ThrowingReceiptDao(super.db);
+
+  @override
+  Future<Receipt?> getById(int id) async => throw Exception('boom');
+}
+
 void main() {
   late dynamic db;
   late ReceiptRepositoryImpl repo;
@@ -103,6 +113,19 @@ void main() {
       );
       final row = await repo.getById(id);
       expect(row!.date, DateTime(2026, 2, 1));
+    });
+  });
+
+  group('ReceiptRepositoryImpl — isolate-proof mapping (01-10-2026)', () {
+    test('generic σφάλμα future → DataLoadException', () async {
+      final throwing = ReceiptRepositoryImpl(
+        _ThrowingReceiptDao(db),
+        ReceiptLineDao(db),
+      );
+      await expectLater(
+        throwing.getById(1),
+        throwsA(isA<DataLoadException>()),
+      );
     });
   });
 

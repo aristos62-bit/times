@@ -1,7 +1,7 @@
 /// Υλοποίηση `ItemRepository` πάνω στον ItemDao — Φάση 2, Βήμα 2.
 ///
-/// Πέρα από το standard error-mapping (raw `SqliteException` →
-/// `DataLoadException`), εδώ ζει η αναζήτηση `searchByNormalizedName`:
+/// Πέρα από το standard error-mapping (SPoT `guardRepo`), εδώ ζει η
+/// αναζήτηση `searchByNormalizedName`:
 /// LIKE στο `normalizedName` μέσω `_dao.db` (μόνιμη απόφαση: η αναζήτηση
 /// ορίζεται στα Repositories, όχι στα DAOs — DESIGN §4 Φάση 2).
 ///
@@ -15,7 +15,6 @@
 library;
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/errors/app_exceptions.dart';
@@ -23,21 +22,13 @@ import '../../core/utils/greek_text_normalizer.dart';
 import '../local/daos/item_dao.dart';
 import '../local/app_database.dart';
 import 'item_repository.dart';
+import 'repo_guard.dart';
 
 /// Full CRUD + LIKE search του ItemDao με mapping σε AppException.
 final class ItemRepositoryImpl implements ItemRepository {
   ItemRepositoryImpl(this._dao);
 
   final ItemDao _dao;
-
-  /// Εκτελεί [op]· raw SqliteException → `DataLoadException`.
-  Future<T> _guard<T>(Future<T> Function() op) async {
-    try {
-      return await op();
-    } on SqliteException {
-      throw const DataLoadException();
-    }
-  }
 
   @override
   Stream<List<Item>> watchAll() => _dao.watchAll().handleError(
@@ -74,11 +65,11 @@ final class ItemRepositoryImpl implements ItemRepository {
   }
 
   @override
-  Future<Item?> getById(int id) => _guard(() => _dao.getById(id));
+  Future<Item?> getById(int id) => guardRepo(() => _dao.getById(id));
 
   @override
   Future<Item?> getByNormalizedName(String normalizedName) =>
-      _guard(() => _dao.getByNormalizedName(normalizedName));
+      guardRepo(() => _dao.getByNormalizedName(normalizedName));
 
   @override
   Future<int> insert({
@@ -86,7 +77,7 @@ final class ItemRepositoryImpl implements ItemRepository {
     required String name,
     int? defaultUnitId,
   }) =>
-      _guard(
+      guardRepo(
         () => _dao.insert(
           itemGroupId: itemGroupId,
           name: name,
@@ -101,7 +92,7 @@ final class ItemRepositoryImpl implements ItemRepository {
     String? name,
     Value<int?>? defaultUnitId,
   }) =>
-      _guard(
+      guardRepo(
         () => _dao.updateById(
           id,
           itemGroupId: itemGroupId,
@@ -111,5 +102,5 @@ final class ItemRepositoryImpl implements ItemRepository {
       );
 
   @override
-  Future<bool> deleteById(int id) => _guard(() => _dao.deleteById(id));
+  Future<bool> deleteById(int id) => guardRepo(() => _dao.deleteById(id));
 }

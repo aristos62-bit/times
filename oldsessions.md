@@ -96,9 +96,29 @@
 | 76 | [SPoT hardcoded μεγεθών](oldsessions/2026-09-30_spot_sizes.md) | 30-09-2026 | Κλειστό | 2× `spacingM` + `appLockButtonHeight` + `appLockIconSize` (incl. icon-64) · τιμές πανομοιότυπες · 28/28 widget tests · analyze καθαρό |
 | 77 | [Split `statistics_section.dart` (1116 γρ.)](oldsessions/2026-09-30_stats_split.md) | 30-09-2026 | Κλειστό | 1+4 part files (134/167/370/271/266) · verbatim, 0 renames · 33/33 tests · analyze καθαρό · DESIGN tree |
 | 78 | [Docs audit σελίδων + SPoT parse](oldsessions/2026-09-30_docs_audit.md) | 30-09-2026 | Κλειστό | ~20 stale docs (4 subagents + επαλήθευση) · assert createLabel→onCreate · const-derived parse/format · 1546 + 23 + 18 ✓ · analyze καθαρό |
+| 79 | [Flaky auto-timestamp στο CI](oldsessions/2026-10-01_auto_flaky.md) | 01-10-2026 | Κλειστό | `VACUUM INTO` σε υπάρχον target (ίδιο second, γρήγορο CI) · cleanup autos σε 2 tests · 22/22 · workflow ξανατρέχει |
+| 80 | [DST-ασφαλή όρια περιόδου](oldsessions/2026-10-01_dst_bounds.md) | 01-10-2026 | Κλειστό | SPoT `dates.dart` (dayOnly+addDays) · 5 σημεία · red→green (4 DST) · 32+21+18 ✓ · analyze καθαρό |
+| 81 | [Shared `guardRepo` (isolate-proof)](oldsessions/2026-10-01_repo_guard.md) | 01-10-2026 | Κλειστό | 8 `_guard`→1 + 2 inline · `DriftRemoteException` πιάνεται · NOTE ξαναγραμμένο · red-green test + 184/184 repos ✓ · analyze καθαρό |
+| 82 | [4 ρίσκα restore (R1–R4)](oldsessions/2026-10-01_restore_risks.md) | 01-10-2026 | Κλειστό | Trend-reset · flag-retry · filename στο μήνυμα · global handlers · controller 14/14 · app_database 5/5 · analyze καθαρό · DESIGN §1.7 |
+| 83 | [Σκλήρυνση κλειδώματος (F1–F3)](oldsessions/2026-10-01_app_lock.md) | 01-10-2026 | Κλειστό | Timeout 60'' + hide/show + semantics/focus trap · 18+9+13 ✓ · analyze καθαρό · DESIGN §2.3 |
+| 84 | [Rewrite stale §5 DESIGN](oldsessions/2026-10-01_design_s5.md) | 01-10-2026 | Κλειστό | Τρέχουσα εικόνα αντί ιστορικού · χωρίς σάπια νούμερα · byte-exact splice |
+| 85 | [CI integrity: format hunks + generated gate](oldsessions/2026-10-01_ci_integrity.md) | 01-10-2026 | Κλειστό | 2 canonical hunks (28/28) · `git diff --exit-code` gate (πράσινο) · format/coverage gates αργότερα |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
+
+- **CI integrity (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #85): 2 canonical hunks (28/28 ✓) · generated-gate (`git diff --exit-code`, επαληθευμένα πράσινο) · format/coverage gates + migration: μελλοντικό κοινό pass · backup `backups/2026-10-01_ci_integrity/`.
+
+- **DESIGN §5 rewrite (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #84): Φάση 4/896/1249/housekeeping → τρέχουσα εικόνα (v5/release/ποιότητα/πρόσφατα/ανοιχτά) · ιστορικό μένει oldsessions · byte-exact splice (UTF-8 no BOM, LF) · backup `backups/2026-10-01_design_s5/`.
+
+- **App lock hardening (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #83): F1 timeout 60'' (FakeAsync proof) · F3 hide/show desktop · F2 `AppLockBackground` (semantics + Tab αποδεδειγμένα) · provider 18/18 + watcher 9/9 + overlay 13/13 ✓ (από χρήστη) · analyze καθαρό · DESIGN §2.3 · backup `backups/2026-10-01_app_lock/`.
+
+- **Restore risks R1–R4 (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #82): R4 trend-`clear()` στο finally (14/14 ✓) · R1 flag-retry σε failure (5/5 ✓) · R2 filename στο μήνυμα (`withBackup`, 12/12 ✓) · R3 global handlers (analyze ✓, χωρίς tests) · analyze καθαρό · DESIGN §1.7 · backup `backups/2026-10-01_restore_risks/`.
+
+- **DST bounds (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #80): αποδεδειγμένο bug με εκτέλεση (GTB: 01:00/23:00) · SPoT `core/utils/dates.dart` · chart_helpers (4 σημεία) + DAO day-filter · red→green 4 DST · 32+21+18 ✓ · analyze καθαρό · backup `backups/2026-10-01_dst_bounds/`.
+- **Shared guard (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #81): `DriftRemoteException` ≠ `SqliteException` (source drift protocol) → `on Exception` · 8 swaps + 2 inline · NOTE ξαναγραμμένο · red-green double test · repos 184/184 ✓ · analyze καθαρό · backup `backups/2026-10-01_repo_guard/`.
+
+- **Flaky CI (01-10-2026) ΥΠΟ ΕΠΑΛΗΘΕΥΣΗ WORKFLOW** (row #79): τοπικά 1546/1546 αλλά το workflow έσπασε στο P1 — `VACUUM INTO` σε υπάρχον auto-target (ίδιο second, γρήγορο CI) · fix: cleanup autos σε auto-test + P1 · 22/22 ✓ · commit `d2d8bc5`, workflow ξανατρέχει.
 
 - **Docs audit (30-09-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #78): 4 subagents (home/price_entry/settings/shared) → ~20 stale docs, όλα επαληθευμένα + διορθωμένα · assert INVARIANT · parse/format παραγόμενα από const (ίδια συμπεριφορά) · full 1546 ✓ + 23 ✓ + 18 ✓ · analyze καθαρό · μάθημα: ποτέ bare `dart format <dir>` (51 αρχεία churn + lint — revert + replay) · backup `backups/2026-09-30_docs_audit/` + `backups/2026-09-30_spot_code/`.
 

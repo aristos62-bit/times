@@ -7,6 +7,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_auth/local_auth.dart';
@@ -148,11 +149,16 @@ void main() {
     testWidgets('pending auto-prompt → τίποτα ορατό (μόνο δακτυλικό)',
         (tester) async {
       await prefs.setBool(AppConstants.appLockEnabledKey, true);
-      await pumpGate(tester, gate: PendingGate(), settle: false);
+      final gate = PendingGate();
+      await pumpGate(tester, gate: gate, settle: false);
       // Ούτε κείμενο ούτε κουμπί — η οθόνη βγαίνει ΜΟΝΟ σε αποτυχία.
       expect(find.text(AppStrings.appLockReason), findsNothing);
       expect(find.text(AppStrings.appLockUnlockAction), findsNothing);
       expect(tester.takeException(), isNull);
+      // Καθαρισμός: ολοκλήρωση του pending auth για να ακυρωθεί το 60s
+      // timeout-timer (F1) — αλλιώς pending-timer στο τέλος (invariant).
+      gate.completer.complete(false);
+      await tester.pump();
     });
 
     testWidgets('320/800/1200 — κανένα overflow', (tester) async {
@@ -180,6 +186,81 @@ void main() {
         theme: AppTheme.dark,
       );
       expect(find.text(AppStrings.appLockUnlockAction), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('AppLockBackground (F2 · 01-10 — semantics/focus trap)', () {
+    Future<void> pumpBackground(
+      WidgetTester tester, {
+      required bool lockedPrefs,
+      FocusNode? focusNode,
+    }) async {
+      if (lockedPrefs) {
+        await prefs.setBool(AppConstants.appLockEnabledKey, true);
+      }
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            biometricGateProvider.overrideWithValue(FakeBiometricGate()),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: AppLockBackground(
+                child: Column(
+                  children: [
+                    const Text('μυστικό'),
+                    TextButton(
+                      focusNode: focusNode,
+                      onPressed: () {},
+                      child: const Text('πίσω-κουμπί'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('κλειδωμένα → φόντο εκτός semantics tree', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpBackground(tester, lockedPrefs: true);
+      // Το widget υπάρχει οπτικά, αλλά ΟΧΙ στο semantics (reader τυφλό).
+      expect(find.text('μυστικό'), findsOneWidget);
+      expect(find.bySemanticsLabel('μυστικό'), findsNothing);
+      handle.dispose();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('ξεκλείδωτα → φόντο κανονικά στο semantics', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpBackground(tester, lockedPrefs: false);
+      expect(find.bySemanticsLabel('μυστικό'), findsOneWidget);
+      handle.dispose();
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('κλειδωμένα → Tab δεν πιάνει φόντο', (tester) async {
+      final node = FocusNode();
+      addTearDown(node.dispose);
+      await pumpBackground(tester, lockedPrefs: true, focusNode: node);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(node.hasFocus, isFalse);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('ξεκλείδωτα → Tab πιάνει φόντο (control)', (tester) async {
+      final node = FocusNode();
+      addTearDown(node.dispose);
+      await pumpBackground(tester, lockedPrefs: false, focusNode: node);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      expect(node.hasFocus, isTrue);
       expect(tester.takeException(), isNull);
     });
   });

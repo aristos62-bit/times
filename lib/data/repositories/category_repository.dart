@@ -3,10 +3,10 @@
 /// SPoT: Μοναδικό σημείο πρόσβασης στα δεδομένα κατηγοριών. Οι
 /// controllers/pages δεν καλούν ποτέ τον CategoryDao απευθείας (DESIGN §1.2).
 ///
-/// Error mapping: τα DAOs ρίχνουν raw SqliteException (BaseDao guard).
-/// Το implementation mapάρει σε AppException — reads → DataLoadException,
-/// writes → DataLoadException (προσωρινά, θα αντικατασταθεί στη Φάση 3/4
-/// με validators — βλ. NOTE στο app_errors.dart).
+/// Error mapping: τα DAOs ρίχνουν raw σφάλμα (BaseDao guard, log μία φορά).
+/// Το implementation mapάρει σε AppException μέσω SPoT `guardRepo` —
+/// κάθε `Exception` (συμπ. `DriftRemoteException` του background isolate)
+/// → `DataLoadException`.
 library;
 
 import '../local/app_database.dart';

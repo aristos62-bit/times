@@ -122,10 +122,16 @@ class AppLockController extends Notifier<AppLockState> {
 
   /// Ταυτοποίηση με ορατά σφάλματα (fix 30-09): `userCanceled` → σιωπή·
   /// κάθε άλλο `LocalAuthException` code → log με code + `appLockFailed`
-  /// (ο κωδικός φαίνεται στο debug log για διάγνωση συσκευής).
+  /// (ο κωδικός φαίνεται στο debug log για διάγνωση συσκευής). Native auth
+  /// που δεν επιστρέφει → timeout (SPoT) → ίδιο ορατό σφάλμα + retry.
   Future<({bool ok, String? error})> _auth(String reason) async {
     try {
-      final ok = await ref.read(biometricGateProvider).authenticate(reason);
+      final ok = await ref
+          .read(biometricGateProvider)
+          .authenticate(reason)
+          .timeout(
+            Duration(seconds: AppConstants.appLockAuthTimeoutSeconds),
+          );
       return (ok: ok, error: null);
     } on LocalAuthException catch (e, s) {
       if (e.code == LocalAuthExceptionCode.userCanceled) {

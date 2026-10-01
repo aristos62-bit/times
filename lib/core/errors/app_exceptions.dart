@@ -22,6 +22,7 @@
 library;
 
 import '../constants/app_errors.dart';
+import '../constants/app_messages.dart';
 import '../debug/debug_config.dart';
 
 /// Βάση όλων των app exceptions. [sealed]: καμία υλοποίηση εκτός του SPoT
@@ -97,4 +98,13 @@ final class CatalogExportException extends AppException {
 final class RestoreBackupException extends AppException {
   const RestoreBackupException()
       : super(userMessage: AppErrors.restoreFailed, loggingTag: LogTag.backup);
+
+  /// Παραλλαγή με διατηρημένο auto-backup (R2 · 01-10-2026): το μήνυμα
+  /// δείχνει το filename (όχι path) — non-const, η const παραμένει για τους
+  /// υπάρχοντες καλούντες.
+  RestoreBackupException.withBackup(String fileName)
+      : super(
+          userMessage: AppMessages.restoreFailedWithBackup(fileName),
+          loggingTag: LogTag.backup,
+        );
 }

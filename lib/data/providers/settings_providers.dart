@@ -353,9 +353,10 @@ String? topItemsMetricAbbreviation(TopItemsMetric metric) => switch (metric) {
 /// Επιλεγμένη μετρική Top-10. Plain `Notifier` (pattern `SelectedTrendItem`):
 /// σύγχρονο state + persist `topItemsMetricKey` (sync read, async save).
 /// NON-autoDispose (σύμβαση DI δέντρου).
-final topItemsMetricProvider = NotifierProvider<TopItemsMetricController, TopItemsMetric>(
-  TopItemsMetricController.new,
-);
+final topItemsMetricProvider =
+    NotifierProvider<TopItemsMetricController, TopItemsMetric>(
+      TopItemsMetricController.new,
+    );
 
 /// Controller μετρικής Top-10 — βλ. `topItemsMetricProvider`.
 class TopItemsMetricController extends Notifier<TopItemsMetric> {

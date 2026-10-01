@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -18,6 +19,18 @@ Future<void> main() async {
   // των SharedPreferences ΠΡΙΝ το runApp + σύγχρονο memory-read στο build —
   // το persisted ThemeMode είναι ορατό στο πρώτο frame (αληθινό μηδέν flash).
   WidgetsFlutterBinding.ensureInitialized();
+  // Global error handlers (R3 · 01-10): απρόβλεπτα αφήνουν ίχνος αντί
+  // σιωπηλού red screen. Σε release τα logs σβήνουν (DebugConfig by
+  // design) — οι handlers μένουν ως hook για μελλοντικό crash reporting.
+  FlutterError.onError = (details) {
+    AppLogger.error(LogTag.ui, 'Ανεπάντεχο σφάλμα UI', details.exception,
+        details.stack);
+    FlutterError.presentError(details);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    AppLogger.error(LogTag.ui, 'Ανεπάντεχο async σφάλμα', error, stack);
+    return true;
+  };
   final prefs = await SharedPreferences.getInstance();
 
   runApp(ProviderScope(
@@ -52,8 +65,11 @@ class TimesApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: ref.watch(themeModeProvider),
       // GoRouter (Φάση 3, Βήμα 1) — StatefulShellRoute + NavLogObserver
-      // (§1.2). Μόνο η PriceEntry βλέπει data providers → η βάση ανοίγει
-      // ΜΟΝΟ μέσω PriceEntry (Α1, §2.2:221) — το θέμα είναι SharedPreferences.
+      // (§1.2). Και τα 3 branches χτίζονται στο launch (IndexedStack +
+      // Offstage inactive, evidence go_router 18) → η βάση ανοίγει στο
+      // launch από παντού (Home κάρτες, PriceEntry λίστα, Settings
+      // editors). Η παλιά Α1 («ΜΟΝΟ μέσω PriceEntry») ίσχυε μέχρι το
+      // Βήμα 7 — το θέμα παραμένει SharedPreferences.
       routerConfig: appRouter,
       // Κλείδωμα εφαρμογής (§2.3 · 30-09-2026): ο builder σκεπάζει ΟΛΟ το
       // navigator (NavigationBar + dialogs — τίποτα ορατό πριν το unlock).
@@ -61,7 +77,7 @@ class TimesApp extends ConsumerWidget {
       builder: (context, child) => AppLockWatcher(
         child: Stack(
           children: [
-            ?child,
+            AppLockBackground(child: child ?? const SizedBox.shrink()),
             const AppLockGate(),
           ],
         ),

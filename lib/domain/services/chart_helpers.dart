@@ -9,19 +9,16 @@
 library;
 
 import '../../core/constants/app_enums.dart';
+import '../../core/utils/dates.dart' as dates;
 import '../../data/models/chart_totals.dart';
-
-/// Κανονικοποιεί σε μέρα (χωρίς ώρα) — τοπικό helper (όχι `DateUtils`: το
-/// domain δεν εξαρτάται από το UI · pattern `watchSummariesByDay` §3).
-DateTime _dayOnly(DateTime value) =>
-    DateTime(value.year, value.month, value.day);
 
 /// Επιλύει τα όρια `[from, to)` μιας περιόδου (§2.1 · Φάση 5 Βήμα 3):
 /// day = ημέρα `now` · week = Δευτέρα–Κυριακή της `now` · month/year =
 /// τρέχων μήνας/έτος · custom = οι μέρες [customFrom, customTo] ολόκληρες
 /// (to = επομένη του `customTo`). Null custom ή `from > to` → άδειο
 /// (`from == to`, ο καλών δείχνει `noPricesForPeriod`, §2.1:185).
-/// Calendar bounds (όχι `Duration` σε μήνα/έτος — DST-ασφαλές).
+/// Ημερολογιακή αριθμητική SPoT (`dates.addDays`, 01-10-2026) — το
+/// `Duration` σε τοπικά μεσάνυχτα σπάει στις αλλαγές ώρας (23ωρες/25ωρες).
 ({DateTime from, DateTime to}) resolvePeriodRange(
   PeriodType period, {
   DateTime? customFrom,
@@ -30,12 +27,12 @@ DateTime _dayOnly(DateTime value) =>
 }) {
   switch (period) {
     case PeriodType.day:
-      final start = _dayOnly(now);
-      return (from: start, to: start.add(const Duration(days: 1)));
+      final start = dates.dayOnly(now);
+      return (from: start, to: dates.addDays(start, 1));
     case PeriodType.week:
-      final today = _dayOnly(now);
-      final start = today.subtract(Duration(days: today.weekday - 1));
-      return (from: start, to: start.add(const Duration(days: 7)));
+      final today = dates.dayOnly(now);
+      final start = dates.addDays(today, -(today.weekday - 1));
+      return (from: start, to: dates.addDays(start, 7));
     case PeriodType.month:
       final start = DateTime(now.year, now.month);
       final end = now.month == DateTime.december
@@ -46,13 +43,13 @@ DateTime _dayOnly(DateTime value) =>
       return (from: DateTime(now.year), to: DateTime(now.year + 1));
     case PeriodType.custom:
       if (customFrom == null || customTo == null) {
-        final empty = _dayOnly(now);
+        final empty = dates.dayOnly(now);
         return (from: empty, to: empty);
       }
-      final from = _dayOnly(customFrom);
-      final to = _dayOnly(customTo).add(const Duration(days: 1));
+      final from = dates.dayOnly(customFrom);
+      final to = dates.addDays(dates.dayOnly(customTo), 1);
       if (!from.isBefore(to)) {
-        final empty = _dayOnly(now);
+        final empty = dates.dayOnly(now);
         return (from: empty, to: empty);
       }
       return (from: from, to: to);

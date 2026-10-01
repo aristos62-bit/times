@@ -3,18 +3,18 @@
 /// Λεπτό repository layer + αναζήτηση `searchByNormalizedName` (LIKE στο
 /// `normalizedName` μέσω `_dao.db` — DESIGN §4 Φάση 2). Ίδιο μοτίβο με
 /// ItemRepositoryImpl: input ήδη-normalized, `escapeLike` + `escapeChar`
-/// στο drift `like()`, mapping σε `DataLoadException`. Χωρίς logging
+/// στο drift `like()`, mapping μέσω SPoT `guardRepo`. Χωρίς logging
 /// (ήδη από τον DAO guard).
 library;
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/utils/greek_text_normalizer.dart';
 import '../local/daos/supplier_dao.dart';
 import '../local/app_database.dart';
+import 'repo_guard.dart';
 import 'supplier_repository.dart';
 
 /// Full CRUD + LIKE search του SupplierDao με mapping σε AppException.
@@ -22,15 +22,6 @@ final class SupplierRepositoryImpl implements SupplierRepository {
   SupplierRepositoryImpl(this._dao);
 
   final SupplierDao _dao;
-
-  /// Εκτελεί [op]· raw SqliteException → `DataLoadException`.
-  Future<T> _guard<T>(Future<T> Function() op) async {
-    try {
-      return await op();
-    } on SqliteException {
-      throw const DataLoadException();
-    }
-  }
 
   @override
   Stream<List<Supplier>> watchAll() => _dao.watchAll().handleError(
@@ -60,20 +51,20 @@ final class SupplierRepositoryImpl implements SupplierRepository {
   }
 
   @override
-  Future<Supplier?> getById(int id) => _guard(() => _dao.getById(id));
+  Future<Supplier?> getById(int id) => guardRepo(() => _dao.getById(id));
 
   @override
   Future<Supplier?> getByNormalizedName(String normalizedName) =>
-      _guard(() => _dao.getByNormalizedName(normalizedName));
+      guardRepo(() => _dao.getByNormalizedName(normalizedName));
 
   @override
   Future<int> insert({required String name}) =>
-      _guard(() => _dao.insert(name: name));
+      guardRepo(() => _dao.insert(name: name));
 
   @override
   Future<bool> updateById(int id, {required String name}) =>
-      _guard(() => _dao.updateById(id, name: name));
+      guardRepo(() => _dao.updateById(id, name: name));
 
   @override
-  Future<bool> deleteById(int id) => _guard(() => _dao.deleteById(id));
+  Future<bool> deleteById(int id) => guardRepo(() => _dao.deleteById(id));
 }
