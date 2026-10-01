@@ -101,14 +101,6 @@ void main() {
     test('autoBackupCurrent → auto_ αρχείο στο docs', () async {
       final db = openFileDb('c.sqlite');
       final service = BackupService(db);
-      // Καθαρισμός autos προηγούμενων tests (ίδιο second = ίδιο filename
-      // → το `VACUUM INTO` αποτυγχάνει σε υπάρχον target · flaky στο CI).
-      for (final f in Directory(tmpRoot.path)
-          .listSync()
-          .whereType<File>()
-          .where((f) => f.path.contains('auto_times_backup_'))) {
-        f.deleteSync();
-      }
       final path = await service.autoBackupCurrent();
       expect(path.contains('auto_times_backup_'), isTrue);
       expect(File(path).existsSync(), isTrue);
@@ -257,14 +249,6 @@ void main() {
     test('7 παλιά + 1 φρέσκο → μένουν 5, το φρέσκο μέσα', () async {
       final db = openFileDb('prune.sqlite');
       final service = BackupService(db);
-      // Καθαρισμός autos προηγούμενων tests (ίδιο second = ίδιο filename
-      // → το `VACUUM INTO` αποτυγχάνει σε υπάρχον target · flaky στο CI).
-      for (final f in Directory(tmpRoot.path)
-          .listSync()
-          .whereType<File>()
-          .where((f) => f.path.contains('auto_times_backup_'))) {
-        f.deleteSync();
-      }
       for (var i = 1; i <= 7; i++) {
         final day = i.toString().padLeft(2, '0');
         File('${tmpRoot.path}/auto_times_backup_202001${day}_000000.sqlite')
