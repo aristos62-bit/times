@@ -56,10 +56,6 @@ abstract final class AppMessages {
   static String deleteReceiptConfirm(int id, String supplier) =>
       'Διαγραφή απόδειξης #$id ($supplier);';
 
-  /// Confirm αφαίρεσης γραμμής καλαθιού (§2.2 — νέα + επεξεργασία, ίδια λίστα).
-  static String deleteDraftLineConfirm(String name) =>
-      'Διαγραφή γραμμής "$name";';
-
   /// Φόρτωση απόδειξης για επεξεργασία με γεμάτα drafts.
   static const String editDiscardDraftsConfirm =
       'Υπάρχουν μη αποθηκευμένες γραμμές. Φόρτωση απόδειξης για επεξεργασία;';

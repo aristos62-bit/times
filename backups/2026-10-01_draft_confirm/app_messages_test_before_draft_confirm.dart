@@ -73,13 +73,6 @@ void main() {
       );
     });
 
-    test('deleteDraftLineConfirm — όνομα γραμμής (§2.2)', () {
-      expect(
-        AppMessages.deleteDraftLineConfirm('Γάλα'),
-        'Διαγραφή γραμμής "Γάλα";',
-      );
-    });
-
     test('editDiscardDraftsConfirm — ακριβές κείμενο (Φάση Α)', () {
       expect(
         AppMessages.editDiscardDraftsConfirm,

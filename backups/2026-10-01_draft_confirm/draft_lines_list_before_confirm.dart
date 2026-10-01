@@ -18,9 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/constants/app_messages.dart';
 import '../../../core/constants/app_strings.dart';
-import '../../shared/confirm_dialog.dart';
 import '../../shared/currency_text_field.dart';
 import '../../shared/quantity_text_field.dart';
 import '../controllers/receipt_form_controller.dart';
@@ -34,22 +32,6 @@ class DraftLinesList extends ConsumerWidget {
   /// Συνολική τιμή (24-09-2026): γραμμές με `enteredTotalCents` δείχνουν ΚΑΙ
   /// το πληκτρολογημένο σύνολο (stored snapshot — κανένας επαν-υπολογισμός,
   /// SPoT μαθηματικών το DAO).
-  /// Αφαίρεση με destructive confirm (§2.2 — νέα + επεξεργασία, ίδια λίστα).
-  Future<void> _removeLine(
-    BuildContext context,
-    WidgetRef ref,
-    DraftReceiptLine line,
-    int index,
-  ) async {
-    final confirmed = await showConfirmDialog(
-      context,
-      message: AppMessages.deleteDraftLineConfirm(line.itemName),
-      isDestructive: true,
-    );
-    if (confirmed != true || !context.mounted) return;
-    ref.read(receiptFormControllerProvider.notifier).removeDraftLine(index);
-  }
-
   Widget _buildRow(
     BuildContext context,
     WidgetRef ref,
@@ -92,7 +74,9 @@ class DraftLinesList extends ConsumerWidget {
       trailing: IconButton(
         icon: const Icon(Icons.delete_outline),
         tooltip: AppStrings.removeDraftLine,
-        onPressed: () => _removeLine(context, ref, line, index),
+        onPressed: () => ref
+            .read(receiptFormControllerProvider.notifier)
+            .removeDraftLine(index),
       ),
     );
   }

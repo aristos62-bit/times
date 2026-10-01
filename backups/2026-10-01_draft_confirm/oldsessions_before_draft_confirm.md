@@ -106,12 +106,9 @@
 | 86 | [PDF SPoT: abbreviations-doc + fonts/paddings](oldsessions/2026-10-01_pdf_spot.md) | 01-10-2026 | Κλειστό | Doc-ομολογία (lookup αδύνατο) + 10 consts (4 fonts + 6 paddings) · πανομοιότυπα bytes · 22/22 · analyze καθαρό |
 | 87 | [Dedup ×3 (receipt SQL · search · CRUD)](oldsessions/2026-10-01_dedup.md) | 01-10-2026 | Κλειστό | Shared `_watchSummaries`/`_searchInMemory`/`_create/_rename/_delete` · records+closures · 29+20+28 ✓ · analyze καθαρό · DESIGN αμετάβλητο |
 | 88 | [Parity + στήλες συνόλων](oldsessions/2026-10-01_line_columns.md) | 01-10-2026 | Κλειστό | Edit-parity stored + Τιμή/Έκπτωση/Σύνολο/Καθαρή (οθόνη+Excel+PDF) · part-fix · 18+8+44+3+3 ✓ · analyze καθαρό · DESIGN §2.3 |
-| 89 | [Confirm διαγραφής γραμμής καλαθιού](oldsessions/2026-10-01_draft_confirm.md) | 01-10-2026 | Κλειστό | Destructive confirm (νέα+επεξεργασία) · 1 SPoT message · 12+35 ✓ · full 1575/1575 · analyze καθαρό · DESIGN §2.2 |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
-
-- **Confirm διαγραφής γραμμής καλαθιού (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #89): destructive confirm σε νέα+επεξεργασία · 1 SPoT message · draft 12/12 + messages 35/35 + full 1575/1575 ✓ · analyze καθαρό · DESIGN §2.2 · backup `backups/2026-10-01_draft_confirm/`.
 
 - **Parity + στήλες συνόλων (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #88): edit-parity `enteredTotalCents=l.lineTotalCents` · 8 / 9+N στήλες (οθόνη+Excel+PDF) · part-fix import→library · DESIGN §2.3 · export 18/18 + line_total 8/8 + strings 44/44 + tables 3/3+3/3 ✓ · analyze καθαρό · backups `backups/2026-10-01_line_columns/` + `backups/2026-10-01_edit_parity/`.
 

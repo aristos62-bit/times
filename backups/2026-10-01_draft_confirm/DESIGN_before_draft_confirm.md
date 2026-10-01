@@ -228,7 +228,7 @@ presentation/price_entry/
     ├── unit_quantity_price_section.dart
 ├── discount_field.dart               -- dumb πεδίο «Έκπτωση» (€/μονάδα, §2.2)
 ├── unit_section_checks.dart          -- part: helpers ανάγνωσης πεδίων (κανόνας 7)
-    ├── draft_lines_list.dart          -- οι γραμμές που έχουν προστεθεί στο "καλάθι" της τρέχουσας απόδειξης · αφαίρεση ανά γραμμή με destructive confirm (§2.4)
+    ├── draft_lines_list.dart          -- οι γραμμές που έχουν προστεθεί στο "καλάθι" της τρέχουσας απόδειξης
     ├── save_receipt_button.dart       -- «Αποθήκευση Απόδειξης» (disabled-OR: κενό καλάθι ∨ χωρίς προμηθευτή ∨ isSaving) + feedback
     └── recent_receipts_list.dart      -- λίστα τελευταίων αποδείξεων με actions (Φάση Α 24-09-2026): #, ημερομηνία, προμηθευτής, #γραμμές, σύνολο € + μολύβι/κάδος · auto-refresh μέσω stream (Φάση 3 Βήμα 7)
 ```

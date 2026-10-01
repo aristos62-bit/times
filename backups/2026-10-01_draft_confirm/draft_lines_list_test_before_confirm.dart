@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:times/core/constants/app_messages.dart';
 import 'package:times/core/constants/app_strings.dart';
 import 'package:times/core/theme/app_theme.dart';
 import 'package:times/presentation/price_entry/controllers/receipt_form_controller.dart';
@@ -71,8 +70,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('διαγραφή → confirm → Ναι (αφαιρείται η σωστή γραμμή)',
-        (tester) async {
+    testWidgets('διαγραφή → αφαιρείται η σωστή γραμμή', (tester) async {
       await tester.pumpWidget(wrap());
       final container = containerOf(tester);
       final notifier =
@@ -82,12 +80,6 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.delete_outline).first);
-      await tester.pumpAndSettle();
-      expect(
-        find.text(AppMessages.deleteDraftLineConfirm('Γάλα')),
-        findsOneWidget,
-      );
-      await tester.tap(find.text(AppMessages.confirmDialogConfirm));
       await tester.pumpAndSettle();
 
       expect(find.text('Γάλα'), findsNothing);
@@ -99,30 +91,8 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('διαγραφή → Ακύρωση (χωρίς αφαίρεση)', (tester) async {
-      await tester.pumpWidget(wrap());
-      final container = containerOf(tester);
-      final notifier =
-          container.read(receiptFormControllerProvider.notifier);
-      notifier.addDraftLine(line(itemName: 'Γάλα'));
-      notifier.addDraftLine(line(itemId: 2, itemName: 'Ψωμί'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.delete_outline).first);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(AppMessages.confirmDialogCancel));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Γάλα'), findsOneWidget);
-      expect(find.text('Ψωμί'), findsOneWidget);
-      expect(
-        container.read(receiptFormControllerProvider).draftLines.length,
-        2,
-      );
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('διαγραφή → dismiss (χωρίς αφαίρεση)', (tester) async {
+    testWidgets('τελευταία διαγραφή → επιστροφή σε κενή κατάσταση',
+        (tester) async {
       await tester.pumpWidget(wrap());
       final container = containerOf(tester);
       container.read(receiptFormControllerProvider.notifier).addDraftLine(
@@ -131,29 +101,6 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.delete_outline));
-      await tester.pumpAndSettle();
-      await tester.tapAt(const Offset(5, 5));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Γάλα'), findsOneWidget);
-      expect(
-        container.read(receiptFormControllerProvider).draftLines.length,
-        1,
-      );
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('τελευταία διαγραφή → Ναι → κενή κατάσταση', (tester) async {
-      await tester.pumpWidget(wrap());
-      final container = containerOf(tester);
-      container.read(receiptFormControllerProvider.notifier).addDraftLine(
-            line(),
-          );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byIcon(Icons.delete_outline));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text(AppMessages.confirmDialogConfirm));
       await tester.pumpAndSettle();
 
       expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
