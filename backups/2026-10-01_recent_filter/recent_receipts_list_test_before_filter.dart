@@ -106,12 +106,11 @@ void main() {
       expect(find.text('1,00 €'), findsOneWidget);
     });
 
-    testWidgets('κενή βάση → noReceiptsForDay (default φίλτρο ημέρας), κανένα Card',
-        (tester) async {
+    testWidgets('κενή βάση → recentReceiptsEmpty, κανένα Card', (tester) async {
       await tester.pumpWidget(wrap(Stream.value(const <ReceiptSummary>[])));
       await tester.pumpAndSettle();
 
-      expect(find.text(AppStrings.noReceiptsForDay), findsOneWidget);
+      expect(find.text(AppStrings.recentReceiptsEmpty), findsOneWidget);
       expect(find.byType(Card), findsNothing);
     });
 
@@ -154,16 +153,6 @@ void main() {
         expect(tester.takeException(), isNull, reason: 'overflow στο $size');
         expect(find.text(AppMessages.receiptNumber(1)), findsOneWidget);
       }
-    });
-
-    testWidgets('φίλτρο Η/Ε/Μ: segments ορατά, default Ημέρα', (tester) async {
-      await tester.pumpWidget(wrap(Stream.value(sampleSummaries())));
-      await tester.pumpAndSettle();
-
-      expect(find.text(AppStrings.periodDay), findsOneWidget);
-      expect(find.text(AppStrings.periodWeek), findsOneWidget);
-      expect(find.text(AppStrings.periodMonth), findsOneWidget);
-      expect(tester.takeException(), isNull);
     });
 
     testWidgets('dark mode: ίδιο περιεχόμενο χωρίς σφάλματα', (tester) async {

@@ -107,12 +107,9 @@
 | 87 | [Dedup ×3 (receipt SQL · search · CRUD)](oldsessions/2026-10-01_dedup.md) | 01-10-2026 | Κλειστό | Shared `_watchSummaries`/`_searchInMemory`/`_create/_rename/_delete` · records+closures · 29+20+28 ✓ · analyze καθαρό · DESIGN αμετάβλητο |
 | 88 | [Parity + στήλες συνόλων](oldsessions/2026-10-01_line_columns.md) | 01-10-2026 | Κλειστό | Edit-parity stored + Τιμή/Έκπτωση/Σύνολο/Καθαρή (οθόνη+Excel+PDF) · part-fix · 18+8+44+3+3 ✓ · analyze καθαρό · DESIGN §2.3 |
 | 89 | [Confirm διαγραφής γραμμής καλαθιού](oldsessions/2026-10-01_draft_confirm.md) | 01-10-2026 | Κλειστό | Destructive confirm (νέα+επεξεργασία) · 1 SPoT message · 12+35 ✓ · full 1575/1575 · analyze καθαρό · DESIGN §2.2 |
-| 90 | [Φίλτρο Η/Ε/Μ λίστας πρόσφατων](oldsessions/2026-10-01_recent_filter.md) | 01-10-2026 | Κλειστό | SegmentedButton (default ημέρα, όριο 20) · update in-place · 9+9+14 ✓ · analyze καθαρό · DESIGN §2.2 |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
-
-- **Φίλτρο Η/Ε/Μ λίστας πρόσφατων (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #90): SegmentedButton default ημέρα + όριο 20 · DAO between + update in-place · DAO 9/9 + stream 9/9 + λίστα 14/14 ✓ · analyze καθαρό · DESIGN §2.2 · backup `backups/2026-10-01_recent_filter/`.
 
 - **Confirm διαγραφής γραμμής καλαθιού (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #89): destructive confirm σε νέα+επεξεργασία · 1 SPoT message · draft 12/12 + messages 35/35 + full 1575/1575 ✓ · analyze καθαρό · DESIGN §2.2 · backup `backups/2026-10-01_draft_confirm/`.
 

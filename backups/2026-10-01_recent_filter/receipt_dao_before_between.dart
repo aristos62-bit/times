@@ -123,21 +123,6 @@ class ReceiptDao extends BaseDao {
     );
   }
 
-  /// Παρακολουθεί τις αποδείξεις περιόδου `[from, to)` με σύνοψη (§2.2 ·
-  /// φίλτρο Η/Ε/Μ λίστας πρόσφατων — τα όρια τα δίνει έτοιμα ο
-  /// `resolvePeriodRange`, εδώ περνάνε αυτούσια στο WHERE).
-  Stream<List<ReceiptSummary>> watchSummariesBetween({
-    required DateTime from,
-    required DateTime to,
-    required int limit,
-  }) =>
-      _watchSummaries(
-        from: from,
-        to: to,
-        limit: limit,
-        log: 'Ανάγνωση αποδείξεων περιόδου',
-      );
-
   /// Παρακολουθεί τα σύνολα ανά προμηθευτή σε περίοδο (§2.1 · Φάση 5).
   ///
   /// SQL aggregation (precedent `watchRecentSummaries`): SUM του

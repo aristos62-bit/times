@@ -40,14 +40,6 @@ abstract interface class ReceiptRepository {
     required int limit,
   });
 
-  /// Παρακολουθεί τις αποδείξεις περιόδου `[from, to)` με σύνοψη (§2.2 ·
-  /// φίλτρο Η/Ε/Μ λίστας πρόσφατων). Passthrough στο DAO (Βήμα 2).
-  Stream<List<ReceiptSummary>> watchSummariesBetween({
-    required DateTime from,
-    required DateTime to,
-    required int limit,
-  });
-
   /// Παρακολουθεί τα σύνολα ανά προμηθευτή σε περίοδο (§2.1 · Φάση 5).
   /// Passthrough στο DAO (Βήμα 2).
   Stream<List<SupplierTotal>> watchTotalsBySupplier({

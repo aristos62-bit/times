@@ -423,14 +423,6 @@ class _BlockingReceiptRepo implements ReceiptRepository {
       inner.watchSummariesByDay(day: day, limit: limit);
 
   @override
-  Stream<List<ReceiptSummary>> watchSummariesBetween({
-    required DateTime from,
-    required DateTime to,
-    required int limit,
-  }) =>
-      inner.watchSummariesBetween(from: from, to: to, limit: limit);
-
-  @override
   Stream<List<SupplierTotal>> watchTotalsBySupplier({
     required DateTime from,
     required DateTime to,

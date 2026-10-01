@@ -91,9 +91,9 @@ void main() {
             .enabled,
         isFalse,
       );
-      // Βήμα 7: read-only λίστα πρόσφατων αποδείξεων (κενή — override, φίλτρο ημέρας).
+      // Βήμα 7: read-only λίστα πρόσφατων αποδείξεων (κενή — override).
       expect(find.text(AppStrings.recentReceiptsTitle), findsOneWidget);
-      expect(find.text(AppStrings.noReceiptsForDay), findsOneWidget);
+      expect(find.text(AppStrings.recentReceiptsEmpty), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

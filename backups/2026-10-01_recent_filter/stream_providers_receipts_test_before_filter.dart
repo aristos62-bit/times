@@ -14,7 +14,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:times/core/constants/app_enums.dart';
 import 'package:times/data/local/app_database.dart';
 import 'package:times/data/models/receipt_summary.dart';
 import 'package:times/data/providers/database_providers.dart';
@@ -97,21 +96,14 @@ void main() {
     });
   });
 
-  group('recentReceiptsStreamProvider (Φάση 3, Βήμα 7 + φίλτρο Η/Ε/Μ)', () {
-    /// Σήμερα (dateOnly): το default φίλτρο είναι η ημέρα, οπότε τα δείγματα
-    /// πρέπει να είναι σημερινά για να φαίνονται (όχι σταθερή παλιά ημερομηνία).
-    DateTime today() {
-      final now = DateTime.now();
-      return DateTime(now.year, now.month, now.day);
-    }
-
+  group('recentReceiptsStreamProvider (Φάση 3, Βήμα 7)', () {
     test('επιστρέφει σύνοψη: γραμμές + σύνολο + supplier από join', () async {
       final container = containerWithDb();
       final chain = await seedReceiptChain(container);
       final receiptId = await container
           .read(receiptRepositoryProvider)
           .insertReceiptWithLines(
-            date: today(),
+            date: DateTime(2026, 1, 1),
             supplierId: chain.supplierId,
             lines: [
               (itemId: chain.itemId,
@@ -157,7 +149,7 @@ void main() {
       await container
           .read(receiptRepositoryProvider)
           .insertReceiptWithLines(
-            date: today(),
+            date: DateTime(2026, 1, 1),
             supplierId: chain.supplierId,
             lines: [
               (itemId: chain.itemId,
@@ -170,46 +162,6 @@ void main() {
       final rows = await resultsFuture;
       expect(rows.single.lineCount, 1);
       expect(rows.single.totalCents, 100);
-    });
-
-    test('φίλτρο εβδομάδας/μήνα: παλιά απόδειξη φαίνεται στο μήνα, όχι στην ημέρα',
-        () async {
-      final container = containerWithDb();
-      final chain = await seedReceiptChain(container);
-      // Σταθερό «σήμερα» μέσα στον μήνα (ανεξάρτητο από την πραγματική ημέρα
-      // εκτέλεσης — αλλιώς η 1η του μήνα σπάει τα offsets).
-      final fixedNow = DateTime(2026, 10, 15);
-      container.read(todayProvider.notifier).checkNow(fixedNow);
-      final dayBefore = DateTime(2026, 10, 14);
-      Future<int> insertOn(DateTime date) => container
-          .read(receiptRepositoryProvider)
-          .insertReceiptWithLines(
-            date: date,
-            supplierId: chain.supplierId,
-            lines: [
-              (itemId: chain.itemId,
-                  unitId: chain.unitId,
-                  quantity: 1,
-                  priceCents: 100, discountCents: 0),
-            ],
-          );
-      await insertOn(dayBefore);
-      await insertOn(fixedNow);
-
-      // Default ημέρα → μόνο η σημερινή.
-      var rows = await waitForValue<List<ReceiptSummary>>(
-        (listen) => container.listen(recentReceiptsStreamProvider, listen),
-        (v) => v.length == 1,
-      );
-      expect(rows.single.date, fixedNow);
-
-      // Μήνας → και οι δύο.
-      container.read(recentPeriodFilterProvider.notifier).select(PeriodType.month);
-      rows = await waitForValue<List<ReceiptSummary>>(
-        (listen) => container.listen(recentReceiptsStreamProvider, listen),
-        (v) => v.length == 2,
-      );
-      expect(rows.length, 2);
     });
   });
 

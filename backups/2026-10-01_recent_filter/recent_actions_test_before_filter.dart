@@ -19,7 +19,6 @@ import 'package:times/data/local/daos/item_group_dao.dart';
 import 'package:times/data/local/daos/sub_category_dao.dart';
 import 'package:times/data/local/daos/unit_dao.dart';
 import 'package:times/data/providers/database_providers.dart';
-import 'package:times/data/providers/stream_providers.dart';
 import 'package:times/presentation/price_entry/controllers/receipt_form_controller.dart';
 import 'package:times/presentation/price_entry/state/receipt_form_state.dart';
 import 'package:times/presentation/price_entry/widgets/recent_receipts_list.dart';
@@ -27,10 +26,6 @@ import 'package:times/presentation/price_entry/widgets/recent_receipts_list.dart
 import '../../../data/local/helpers/in_memory_db.dart';
 
 void main() {
-  /// Σταθερό «σήμερα» (όχι flake μεσονυχτίου + όχι pending Timer:
-  /// `overrideWithBuild` χωρίς `Timer.periodic`, precedent statistics/home).
-  final fixedToday = DateTime(2026, 10, 15);
-
   /// Seed αλυσίδας (unit → category → sub → group → item → supplier) +
   /// 1 απόδειξη 1 γραμμής. Αλυσίδα 4 επιπέδων (§3 · 27-09-2026).
   /// Επιστρέφει (receiptId, supplierId, itemId, unitId).
@@ -53,8 +48,7 @@ void main() {
     final receiptId = await container
         .read(receiptRepositoryProvider)
         .insertReceiptWithLines(
-      // Ίδια ημέρα με το `fixedToday`: το default φίλτρο λίστας είναι η ημέρα.
-      date: fixedToday,
+      date: DateTime(2026, 1, 1),
       supplierId: supplierId,
       lines: [
         (itemId: itemId, unitId: unitId, quantity: 2, priceCents: 199, discountCents: 0),
@@ -73,10 +67,7 @@ void main() {
     final db = inMemoryDb();
     addTearDown(db.close);
     final container = ProviderContainer.test(
-      overrides: [
-        appDatabaseProvider.overrideWithValue(db),
-        todayProvider.overrideWithBuild((ref, self) => fixedToday),
-      ],
+      overrides: [appDatabaseProvider.overrideWithValue(db)],
     );
     addTearDown(container.dispose);
     await seedOneReceipt(container);
@@ -118,10 +109,7 @@ void main() {
       final db = inMemoryDb();
       addTearDown(db.close);
       final container = ProviderContainer.test(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(db),
-          todayProvider.overrideWithBuild((ref, self) => fixedToday),
-        ],
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
       );
       addTearDown(container.dispose);
       await seedOneReceipt(container);
@@ -149,7 +137,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(AppMessages.receiptDeleted), findsOneWidget);
-      expect(find.text(AppStrings.noReceiptsForDay), findsOneWidget);
+      expect(find.text(AppStrings.recentReceiptsEmpty), findsOneWidget);
       // One-shot future (όχι watch-stream — κολλάει στο FakeAsync).
       expect(
         await container.read(receiptRepositoryProvider).getById(1),
@@ -161,10 +149,7 @@ void main() {
       final db = inMemoryDb();
       addTearDown(db.close);
       final container = ProviderContainer.test(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(db),
-          todayProvider.overrideWithBuild((ref, self) => fixedToday),
-        ],
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
       );
       addTearDown(container.dispose);
       final seeded = await seedOneReceipt(container);
@@ -283,10 +268,7 @@ void main() {
       final db = inMemoryDb();
       addTearDown(db.close);
       final container = ProviderContainer.test(
-        overrides: [
-          appDatabaseProvider.overrideWithValue(db),
-          todayProvider.overrideWithBuild((ref, self) => fixedToday),
-        ],
+        overrides: [appDatabaseProvider.overrideWithValue(db)],
       );
       addTearDown(container.dispose);
       await seedOneReceipt(container);

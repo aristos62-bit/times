@@ -109,7 +109,7 @@ void main() {
     expect(find.text(AppStrings.draftLinesEmpty), findsOneWidget);
     expect(find.text(AppStrings.saveReceipt), findsOneWidget);
     expect(find.text(AppStrings.recentReceiptsTitle), findsOneWidget);
-    expect(find.text(AppStrings.noReceiptsForDay), findsOneWidget);
+    expect(find.text(AppStrings.recentReceiptsEmpty), findsOneWidget);
   });
 
   testWidgets('αλλαγή θέματος από τα Ρυθμίσεις αλλάζει MaterialApp.themeMode',

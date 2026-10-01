@@ -384,13 +384,6 @@ class _FailingReceiptRepo implements ReceiptRepository {
   }) =>
       throw const DataLoadException();
   @override
-  Stream<List<ReceiptSummary>> watchSummariesBetween({
-    required DateTime from,
-    required DateTime to,
-    required int limit,
-  }) =>
-      throw const DataLoadException();
-  @override
   Stream<List<SupplierTotal>> watchTotalsBySupplier({
     required DateTime from,
     required DateTime to,
@@ -519,13 +512,6 @@ class _BlockingReceiptRepo implements ReceiptRepository {
     required int limit,
   }) =>
       inner.watchSummariesByDay(day: day, limit: limit);
-  @override
-  Stream<List<ReceiptSummary>> watchSummariesBetween({
-    required DateTime from,
-    required DateTime to,
-    required int limit,
-  }) =>
-      inner.watchSummariesBetween(from: from, to: to, limit: limit);
   @override
   Stream<List<SupplierTotal>> watchTotalsBySupplier({
     required DateTime from,

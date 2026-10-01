@@ -18,7 +18,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_constants.dart';
-import '../../core/constants/app_enums.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/logging/app_logger.dart';
 import '../../core/utils/greek_text_normalizer.dart';
@@ -180,28 +179,15 @@ final receiptsStreamProvider = StreamProvider<List<Receipt>>(
   (ref) => ref.watch(receiptRepositoryProvider).watchAll(),
 );
 
-/// Οι τελευταίες αποδείξεις με σύνοψη (ReceiptSummary) για τη read-only
-/// λίστα (§2.2 Βήμα 7 + φίλτρο Η/Ε/Μ): της επιλεγμένης περιόδου
-/// (`recentPeriodFilterProvider`, default ημέρα) με όριο
-/// [AppConstants.recentReceiptsLimit]. NON-autoDispose: το stream ζει όσο η
-/// εφαρμογή — η λίστα ανανεώνεται μόνη της μετά το save (re-emit του
-/// customSelectStream). Τα μεσάνυχτα ξαναλύνονται τα όρια (`todayProvider`).
+/// Οι τελευταίες [AppConstants.recentReceiptsLimit] αποδείξεις με σύνοψη
+/// (ReceiptSummary: αριθμός, ημερομηνία, προμηθευτής, γραμμές, σύνολο €)
+/// για τη read-only λίστα (§2.2 Βήμα 7). NON-autoDispose (ίδιο idiom με
+/// όλα τα stream providers): το stream ζει όσο η εφαρμογή — η λίστα
+/// ανανεώνεται μόνη της μετά το save (re-emit του customSelectStream).
 final recentReceiptsStreamProvider = StreamProvider<List<ReceiptSummary>>(
-  (ref) {
-    final period = ref.watch(recentPeriodFilterProvider);
-    final today = ref.watch(todayProvider);
-    final repo = ref.watch(receiptRepositoryProvider);
-    const limit = AppConstants.recentReceiptsLimit;
-    if (period == PeriodType.day) {
-      return repo.watchSummariesByDay(day: today, limit: limit);
-    }
-    final range = resolvePeriodRange(period, now: today);
-    return repo.watchSummariesBetween(
-      from: range.from,
-      to: range.to,
-      limit: limit,
-    );
-  },
+  (ref) => ref
+      .watch(receiptRepositoryProvider)
+      .watchRecentSummaries(limit: AppConstants.recentReceiptsLimit),
 );
 
 /// Γραμμές απόδειξης — `.family` παραμετροποιημένο ανά [receiptId].
@@ -441,27 +427,6 @@ final latestReceiptLineProvider = FutureProvider.family<ReceiptLine?, int>(
   (ref, itemId) =>
       ref.watch(receiptRepositoryProvider).getLatestByItemId(itemId),
 );
-
-/// Επιλεγμένο φίλτρο περιόδου λίστας πρόσφατων (§2.2 · Η/Ε/Μ).
-/// Μόνο day/week/month (το UI δείχνει 3 segments)· default `day`.
-/// Plain `Notifier` (pattern `SelectedReceiptDay`): σύγχρονο state.
-/// Σύμβαση ονομασίας §2.0.2. NON-autoDispose.
-final recentPeriodFilterProvider =
-    NotifierProvider<RecentPeriodFilter, PeriodType>(
-  RecentPeriodFilter.new,
-);
-
-/// Controller φίλτρου περιόδου — plain Notifier (βλ. πάνω).
-class RecentPeriodFilter extends Notifier<PeriodType> {
-  @override
-  PeriodType build() => PeriodType.day;
-
-  /// Ορίζει το φίλτρο (ίδιο → χωρίς re-notify).
-  void select(PeriodType period) {
-    if (state == period) return;
-    state = period;
-  }
-}
 
 /// Επιλεγμένη ημέρα φίλτρου «Διαχείρισης αποδείξεων» (§2.3 · Φάση Β).
 /// `null` = όλες (οι τελευταίες `AppConstants.manageReceiptsLimit`).

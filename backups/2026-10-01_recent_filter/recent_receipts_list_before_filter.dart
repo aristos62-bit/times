@@ -22,7 +22,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/constants/app_enums.dart';
 import '../../../core/constants/app_errors.dart';
 import '../../../core/constants/app_messages.dart';
 import '../../../core/constants/app_strings.dart';
@@ -36,39 +35,9 @@ import '../../shared/receipt_summary_tile.dart';
 import '../controllers/item_search_controller.dart';
 import '../controllers/receipt_form_controller.dart';
 
-/// Λίστα πρόσφατων αποδείξεων (§2.2 · Βήμα 7 + Φάση Α actions + φίλτρο Η/Ε/Μ).
+/// Λίστα πρόσφατων αποδείξεων (§2.2 · Βήμα 7 + Φάση Α actions).
 class RecentReceiptsList extends ConsumerWidget {
   const RecentReceiptsList({super.key});
-
-  /// Φίλτρο περιόδου (Η/Ε/Μ, §2.2): `SegmentedButton` single-choice πάνω από
-  /// τη λίστα (M3, semantics/tooltip δωρεάν §1.6· labels SPoT `periodDay/Week/
-  /// Month`, 0 νέα strings). Default ημέρα (`recentPeriodFilterProvider`).
-  Widget _filterSegments(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(recentPeriodFilterProvider);
-    return SegmentedButton<PeriodType>(
-      segments: const [
-        ButtonSegment(
-          value: PeriodType.day,
-          label: Text(AppStrings.periodDay),
-          tooltip: AppStrings.periodDay,
-        ),
-        ButtonSegment(
-          value: PeriodType.week,
-          label: Text(AppStrings.periodWeek),
-          tooltip: AppStrings.periodWeek,
-        ),
-        ButtonSegment(
-          value: PeriodType.month,
-          label: Text(AppStrings.periodMonth),
-          tooltip: AppStrings.periodMonth,
-        ),
-      ],
-      selected: {selected},
-      onSelectionChanged: (selection) => ref
-          .read(recentPeriodFilterProvider.notifier)
-          .select(selection.first),
-    );
-  }
 
   /// Διαγραφή απόδειξης: confirm (destructive) → controller → feedback.
   /// Pattern `_deleteSupplier` (§2.3): feedback ΜΟΝΟ εδώ, ποτέ στο dialog.
@@ -183,7 +152,6 @@ class RecentReceiptsList extends ConsumerWidget {
     final busy = ref.watch(
       receiptFormControllerProvider.select((s) => s.isSaving),
     );
-    final period = ref.watch(recentPeriodFilterProvider);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -194,17 +162,11 @@ class RecentReceiptsList extends ConsumerWidget {
           style: theme.textTheme.titleMedium,
         ),
         const SizedBox(height: AppConstants.spacingS),
-        _filterSegments(context, ref),
-        const SizedBox(height: AppConstants.spacingS),
         // Καταστάσεις (Γ1): loading spinner · error + retry · empty · data.
-        // Κενό ανά φίλτρο: ημέρα → `noReceiptsForDay` (όπως Φάση Β) ·
-        // εβδομάδα/μήνας → `noPricesForPeriod` (ακριβές περιόδου, §2.1).
         async.when(
           data: (summaries) => summaries.isEmpty
               ? Text(
-                  period == PeriodType.day
-                      ? AppStrings.noReceiptsForDay
-                      : AppStrings.noPricesForPeriod,
+                  AppStrings.recentReceiptsEmpty,
                   style: theme.textTheme.bodyMedium,
                 )
               : _buildList(context, ref, summaries, busy),

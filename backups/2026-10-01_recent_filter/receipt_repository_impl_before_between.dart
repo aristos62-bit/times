@@ -52,17 +52,6 @@ final class ReceiptRepositoryImpl implements ReceiptRepository {
           );
 
   @override
-  Stream<List<ReceiptSummary>> watchSummariesBetween({
-    required DateTime from,
-    required DateTime to,
-    required int limit,
-  }) =>
-      _receiptDao.watchSummariesBetween(from: from, to: to, limit: limit).handleError(
-            (Object e, StackTrace s) =>
-                Error.throwWithStackTrace(const DataLoadException(), s),
-          );
-
-  @override
   Stream<List<SupplierTotal>> watchTotalsBySupplier({
     required DateTime from,
     required DateTime to,
