@@ -43,11 +43,33 @@ class ReceiptDao extends BaseDao {
   /// για το `r.date` χρησιμοποιεί το default drift mapping
   /// (unix seconds → DateTime) — καμία χειροκίνητη μετατροπή.
   Stream<List<ReceiptSummary>> watchRecentSummaries({required int limit}) =>
+      _watchSummaries(limit: limit, log: 'Ανάγνωση πρόσφατων αποδείξεων');
+
+  /// Κοινός κορμός συνόψεων (01-10): ίδιο SELECT/GROUP/ORDER/mapper —
+  /// προαιρετικό WHERE ημέρας. Καλούντες: [watchRecentSummaries] (χωρίς
+  /// φίλτρο), [watchSummariesByDay] (με DST-ασφαλή όρια).
+  Stream<List<ReceiptSummary>> _watchSummaries({
+    DateTime? from,
+    DateTime? to,
+    required int limit,
+    required String log,
+  }) =>
       guardStream(
-        'Ανάγνωση πρόσφατων αποδείξεων',
-        () => db
-            .customSelect(
-              '''
+        log,
+        () {
+          var where = '';
+          final variables = <Variable>[];
+          if (from != null && to != null) {
+            where = 'WHERE r.date >= ? AND r.date < ?';
+            variables.addAll([
+              Variable.withDateTime(from),
+              Variable.withDateTime(to),
+            ]);
+          }
+          variables.add(Variable.withInt(limit));
+          return db
+              .customSelect(
+                '''
         SELECT r.id AS id,
                r.date AS date,
                r.supplier_id AS supplierId,
@@ -57,28 +79,27 @@ class ReceiptDao extends BaseDao {
         FROM receipts r
         LEFT JOIN suppliers s      ON s.id = r.supplier_id
         LEFT JOIN receipt_lines rl ON rl.receipt_id = r.id
+        $where
         GROUP BY r.id, r.date, r.supplier_id, s.name
         ORDER BY r.date DESC, r.id DESC
         LIMIT ?
       ''',
-              variables: [Variable.withInt(limit)],
-              readsFrom: {db.receipts, db.suppliers, db.receiptLines},
-            )
-            .watch()
-            .map(
-              (rows) => rows
-                  .map(
-                    (row) => (
-                      id: row.read<int>('id'),
-                      date: row.read<DateTime>('date'),
-                      supplierId: row.read<int>('supplierId'),
-                      supplierName: row.read<String>('supplierName'),
-                      lineCount: row.read<int>('lineCount'),
-                      totalCents: row.read<int>('totalCents'),
-                    ),
-                  )
-                  .toList(),
-            ),
+                variables: variables,
+                readsFrom: {db.receipts, db.suppliers, db.receiptLines},
+              )
+              .watch()
+              .map((rows) => rows.map(_summaryOf).toList());
+        },
+      );
+
+  /// Mapper γραμμής → `ReceiptSummary` (κοινός και για τα δύο queries).
+  ReceiptSummary _summaryOf(QueryRow row) => (
+        id: row.read<int>('id'),
+        date: row.read<DateTime>('date'),
+        supplierId: row.read<int>('supplierId'),
+        supplierName: row.read<String>('supplierName'),
+        lineCount: row.read<int>('lineCount'),
+        totalCents: row.read<int>('totalCents'),
       );
 
   /// Παρακολουθεί τις αποδείξεις μίας ημέρας με σύνοψη (§2.3 · Φάση Β).
@@ -91,53 +112,16 @@ class ReceiptDao extends BaseDao {
   Stream<List<ReceiptSummary>> watchSummariesByDay({
     required DateTime day,
     required int limit,
-  }) =>
-      guardStream(
-        'Ανάγνωση αποδείξεων ημέρας',
-        () {
-          final start = dates.dayOnly(day);
-          final end = dates.addDays(start, 1);
-          return db
-              .customSelect(
-                '''
-        SELECT r.id AS id,
-                r.date AS date,
-                r.supplier_id AS supplierId,
-                s.name AS supplierName,
-                COUNT(rl.id) AS lineCount,
-                COALESCE(SUM(rl.line_total_cents), 0) AS totalCents
-        FROM receipts r
-        LEFT JOIN suppliers s      ON s.id = r.supplier_id
-        LEFT JOIN receipt_lines rl ON rl.receipt_id = r.id
-        WHERE r.date >= ? AND r.date < ?
-        GROUP BY r.id, r.date, r.supplier_id, s.name
-        ORDER BY r.date DESC, r.id DESC
-        LIMIT ?
-      ''',
-                variables: [
-                  Variable.withDateTime(start),
-                  Variable.withDateTime(end),
-                  Variable.withInt(limit),
-                ],
-                readsFrom: {db.receipts, db.suppliers, db.receiptLines},
-              )
-              .watch()
-              .map(
-                (rows) => rows
-                    .map(
-                      (row) => (
-                        id: row.read<int>('id'),
-                        date: row.read<DateTime>('date'),
-                        supplierId: row.read<int>('supplierId'),
-                        supplierName: row.read<String>('supplierName'),
-                        lineCount: row.read<int>('lineCount'),
-                        totalCents: row.read<int>('totalCents'),
-                      ),
-                    )
-                    .toList(),
-              );
-        },
-      );
+  }) {
+    final start = dates.dayOnly(day);
+    final end = dates.addDays(start, 1);
+    return _watchSummaries(
+      from: start,
+      to: end,
+      limit: limit,
+      log: 'Ανάγνωση αποδείξεων ημέρας',
+    );
+  }
 
   /// Παρακολουθεί τα σύνολα ανά προμηθευτή σε περίοδο (§2.1 · Φάση 5).
   ///

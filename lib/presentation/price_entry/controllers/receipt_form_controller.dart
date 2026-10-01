@@ -299,7 +299,8 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
   /// DB σφάλμα → `DataLoadException` ανέγγιχτο (feedback στο widget).
   /// Τα snapshots (`itemName/unitAbbreviation/unitAllowsDecimal`) επιλύονται
   /// από τα ΤΡΕΧΟΝΤΑ repos (μετονομασία φαίνεται αυτόματα)·
-  /// `enteredTotalCents = null` (δεν ανακατασκευάζεται — stored ±1, §3)·
+  /// `enteredTotalCents` = stored `lineTotalCents` (01-10: ακριβέστερο του
+  /// typed στο ±1 — η λίστα δείχνει το ίδιο σύνολο με το entry) ·
   /// `discountCents` από τη γραμμή (§2.2).
   /// Επανείσοδος ενώ `isSaving` → no-op (double-tap guard, §2.4).
   Future<({bool ok, String? error})> loadReceiptForEdit(int id) async {
@@ -340,6 +341,10 @@ class ReceiptFormController extends Notifier<ReceiptFormState> {
             itemName: item.name,
             unitAbbreviation: unit.abbreviation,
             unitAllowsDecimal: unit.allowsDecimal,
+            // Stored αλήθεια (01-10): η λίστα δείχνει το ίδιο σύνολο που
+            // θα έδειχνε στο entry (ομοιόμορφος κανόνας — ο τρόπος δεν
+            // σώζεται, flag θέλει migration).
+            enteredTotalCents: l.lineTotalCents,
           ),
         );
       }

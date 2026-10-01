@@ -341,8 +341,10 @@ String topItemsMetricLabel(TopItemsMetric metric) => switch (metric) {
       TopItemsMetric.liters => AppStrings.topItemsMetricLiters,
     };
 
-/// Συντομογραφία μονάδας ανά μετρική (lookup στο `unitsStreamProvider` —
-/// stable seeds, §3 · miss → null = empty, όχι crash).
+/// Συντομογραφία μονάδας ανά μετρική (stable seeds §3 — οι μονάδες δεν
+/// αλλάζουν από το UI· ξένη βάση από restore με άλλες συντομογραφίες →
+/// miss → null = empty + log, όχι crash — βλ. `_QtyBody`).
+/// Αληθινό lookup αδύνατο χωρίς metric→unit key (θα ήθελε schema).
 String? topItemsMetricAbbreviation(TopItemsMetric metric) => switch (metric) {
       TopItemsMetric.euros => null,
       TopItemsMetric.pieces => 'τεμ',

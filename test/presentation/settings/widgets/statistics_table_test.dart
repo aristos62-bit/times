@@ -71,10 +71,14 @@ void main() {
       expect(find.text(AppStrings.statsColumnQuantity), findsOneWidget);
       expect(find.text(AppStrings.statsColumnPrice), findsOneWidget);
       expect(find.text(AppStrings.statsColumnDiscount), findsOneWidget);
+      expect(find.text(AppStrings.statsColumnTotal), findsOneWidget);
       expect(find.text(AppStrings.statsColumnNet), findsOneWidget);
       // Γραμμές: προμηθευτές + ποσότητα με μονάδα + καθαρές.
       expect(find.text('Μάρκος'), findsOneWidget);
       expect(find.text('0,456 κιλ'), findsOneWidget);
+      // Στήλες συνόλων (SPoT §3): Έκπτωση 35×0,456→16 · Σύνολο 1296×0,456→591.
+      expect(find.text('0,16 €'), findsOneWidget);
+      expect(find.text('5,91 €'), findsOneWidget);
       // (1296−35)×0,456 + (1296−35)×1 = 575 + 1261 = 1836 → «18,36 €».
       expect(
         find.text(

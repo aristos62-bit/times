@@ -91,6 +91,7 @@ class _LedgerAnalysisState extends ConsumerState<_LedgerAnalysis> {
           AppStrings.statsColumnQuantity,
           AppStrings.statsColumnPrice,
           AppStrings.statsColumnDiscount,
+          AppStrings.statsColumnTotal,
           AppStrings.statsColumnNet,
         ],
         body: [
@@ -102,9 +103,11 @@ class _LedgerAnalysisState extends ConsumerState<_LedgerAnalysis> {
               StatisticsExportService.quantityText(row),
               '${CurrencyTextField.formatCents(row.priceCents)} '
                   '${AppStrings.currencySymbol}',
-              '${CurrencyTextField.formatCents(row.discountCents)} '
+              '${CurrencyTextField.formatCents(StatisticsExportService.discountTotalCents(row))} '
                   '${AppStrings.currencySymbol}',
-              '${CurrencyTextField.formatCents(row.priceCents - row.discountCents)} '
+              '${CurrencyTextField.formatCents(StatisticsExportService.grossTotalCents(row))} '
+                  '${AppStrings.currencySymbol}',
+              '${CurrencyTextField.formatCents(StatisticsExportService.netTotalCents(row))} '
                   '${AppStrings.currencySymbol}',
             ],
         ],

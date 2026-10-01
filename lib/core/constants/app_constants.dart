@@ -210,6 +210,24 @@ abstract final class AppConstants {
   // `backupFileNamePattern`, άλλη αρχή· η επέκταση μπαίνει από τον καλούντα).
   static const String statsFileNamePattern = 'times_stats_yyyyMMdd_HHmmss';
 
+  // ─── PDF export (§2.3 · 01-10): raw doubles προβολής (όχι Material
+  // textTheme — το `pdf` πακέτο θέλει σκέτα νούμερα· εξαίρεση από τον κανόνα
+  // «typography → app_theme», pure-Dart χωρίς material import στο domain).
+  // Μεγέθη γραμματοσειράς ανά ρόλο (SPoT ανά χρήση, §1.1).
+  static const double pdfTitleFontSize = 14.0;
+  static const double pdfSectionFontSize = 11.0;
+  static const double pdfBodyFontSize = 10.0;
+  static const double pdfPageNoFontSize = 9.0;
+
+  // Paddings PDF ανά ρόλο (SPoT ανά χρήση, §1.1 — doubles μόνο, το
+  // `pw.EdgeInsets` χτίζεται στον καλούντα).
+  static const double pdfHeaderPaddingBottom = 8.0;
+  static const double pdfSectionPaddingTop = 10.0;
+  static const double pdfSectionPaddingBottom = 4.0;
+  static const double pdfSubtotalPaddingTop = 2.0;
+  static const double pdfSubtotalPaddingBottom = 6.0;
+  static const double pdfCellPadding = 4.0;
+
   // ─── Εξαγωγή καταλόγου (§2.3 · 30-09-2026) ───────────────────────────────
   // Pattern ονομασίας αρχείου καταλόγου (ίδιο template, άλλη αρχή —
   // σκόπιμα χωριστή const, §1.1: SPoT ανά χρήση).

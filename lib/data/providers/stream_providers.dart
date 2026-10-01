@@ -38,19 +38,29 @@ final categoryStreamProvider = StreamProvider<List<Category>>(
 /// είναι ήδη φορτωμένο). Κενό query → `[]` (Stream.value: εκπέμπει άμεσα
 /// το empty χωρίς DB access — όχι Stream.empty, θα έμενε loading για πάντα).
 /// Non-autoDispose.
+/// Κοινός κορμός in-memory αναζήτησης (01-10): normalize-once +
+/// empty-gate + map/filter — οι 4 search providers διαφέρουν μόνο σε
+/// πηγή/predicate. `matches`: true αν το είδος ταιριάζει στο ήδη
+/// κανονικοποιημένο query.
+Stream<List<T>> _searchInMemory<T>(
+  Stream<List<T>> source,
+  String query,
+  bool Function(T item, String normalized) matches,
+) {
+  final normalized = GreekTextNormalizer.normalize(query.trim());
+  if (normalized.isEmpty) return Stream.value(const []);
+  return source.map(
+    (list) => list.where((e) => matches(e, normalized)).toList(),
+  );
+}
+
 final categorySearchProvider = StreamProvider.family<List<Category>, String>(
-  (ref, query) {
-    final normalized = GreekTextNormalizer.normalize(query.trim());
-    if (normalized.isEmpty) return Stream.value(const []);
-    return ref.watch(categoryRepositoryProvider).watchAll().map(
-          (categories) => categories
-              .where(
-                (c) =>
-                    GreekTextNormalizer.normalize(c.name).contains(normalized),
-              )
-              .toList(),
-        );
-  },
+  (ref, query) => _searchInMemory(
+    ref.watch(categoryRepositoryProvider).watchAll(),
+    query,
+    (c, normalized) =>
+        GreekTextNormalizer.normalize(c.name).contains(normalized),
+  ),
 );
 
 /// Όλες οι υποκατηγορίες, αλφαβητικά.
@@ -72,21 +82,14 @@ final subCategoriesByCategoryProvider =
 /// Non-autoDispose.
 final subCategorySearchProvider =
     StreamProvider.family<List<SubCategory>, ({int categoryId, String query})>(
-  (ref, params) {
-    final normalized = GreekTextNormalizer.normalize(params.query.trim());
-    if (normalized.isEmpty) return Stream.value(const []);
-    return ref
+  (ref, params) => _searchInMemory(
+    ref
         .watch(subCategoryRepositoryProvider)
-        .watchByCategoryId(params.categoryId)
-        .map(
-          (subs) => subs
-              .where(
-                (s) =>
-                    GreekTextNormalizer.normalize(s.name).contains(normalized),
-              )
-              .toList(),
-        );
-  },
+        .watchByCategoryId(params.categoryId),
+    params.query,
+    (s, normalized) =>
+        GreekTextNormalizer.normalize(s.name).contains(normalized),
+  ),
 );
 
 /// Όλα τα τμήματα, αλφαβητικά (27-09-2026).
@@ -108,21 +111,14 @@ final itemGroupsBySubCategoryProvider =
 /// Κενό query → `[]` (Stream.value). Non-autoDispose.
 final itemGroupSearchProvider =
     StreamProvider.family<List<ItemGroup>, ({int subCategoryId, String query})>(
-  (ref, params) {
-    final normalized = GreekTextNormalizer.normalize(params.query.trim());
-    if (normalized.isEmpty) return Stream.value(const []);
-    return ref
+  (ref, params) => _searchInMemory(
+    ref
         .watch(itemGroupRepositoryProvider)
-        .watchBySubCategoryId(params.subCategoryId)
-        .map(
-          (groups) => groups
-              .where(
-                (g) =>
-                    GreekTextNormalizer.normalize(g.name).contains(normalized),
-              )
-              .toList(),
-        );
-  },
+        .watchBySubCategoryId(params.subCategoryId),
+    params.query,
+    (g, normalized) =>
+        GreekTextNormalizer.normalize(g.name).contains(normalized),
+  ),
 );
 
 /// Όλες οι μονάδες μέτρησης, αλφαβητικά.
@@ -139,26 +135,15 @@ final unitsStreamProvider = StreamProvider<List<Unit>>(
 /// Stream.empty — θα έμενε σε loading). Το show-all-στο-focus (Δ1, Β5β) ΔΕΝ
 /// περνάει από εδώ: η φόρμα χρησιμοποιεί το `unitsStreamProvider` ως πηγή
 /// «όλων» μέσα στο SearchableDropdownField (allOptionsProvider).
-final unitSearchProvider = StreamProvider.family<List<Unit>, String>((
-  ref,
-  query,
-) {
-  final normalized = GreekTextNormalizer.normalize(query.trim());
-  if (normalized.isEmpty) return Stream.value(const []);
-  return ref
-      .watch(unitRepositoryProvider)
-      .watchAll()
-      .map(
-        (units) => units
-            .where(
-              (u) =>
-                  GreekTextNormalizer.normalize(u.name).contains(normalized) ||
-                  GreekTextNormalizer.normalize(u.abbreviation)
-                      .contains(normalized),
-            )
-            .toList(),
-      );
-});
+final unitSearchProvider = StreamProvider.family<List<Unit>, String>(
+  (ref, query) => _searchInMemory(
+    ref.watch(unitRepositoryProvider).watchAll(),
+    query,
+    (u, normalized) =>
+        GreekTextNormalizer.normalize(u.name).contains(normalized) ||
+        GreekTextNormalizer.normalize(u.abbreviation).contains(normalized),
+  ),
+);
 
 /// Όλα τα είδη, με σειρά normalizedName.
 final itemsStreamProvider = StreamProvider<List<Item>>(

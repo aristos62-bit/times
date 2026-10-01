@@ -87,7 +87,8 @@ void main() {
       }
 
       expect(textOf(0, 0), 'Ημερομηνία');
-      expect(textOf(0, 6), 'Καθαρή');
+      expect(textOf(0, 6), 'Σύνολο');
+      expect(textOf(0, 7), 'Καθαρή');
       // Ημερομηνία native + αριθμός + κείμενα.
       final dateValue = rows[1][0]?.value;
       expect(dateValue, isA<DateCellValue>());
@@ -98,13 +99,15 @@ void main() {
       expect(numOf(1, 1), 12);
       expect(textOf(1, 2), 'Μάρκος');
       expect(textOf(1, 3), '0,456 κιλ');
-      // Ποσά native doubles (€).
+      // Ποσά native doubles (€): Τιμή μονάδας · Έκπτωση συνόλου ·
+      // Σύνολο μικτό · Καθαρή συνόλου (SPoT fns, §3).
       expect(numOf(1, 4), closeTo(12.96, 0.0001));
-      expect(numOf(1, 5), closeTo(0.35, 0.0001));
-      expect(numOf(1, 6), closeTo(12.61, 0.0001));
+      expect(numOf(1, 5), closeTo(0.16, 0.0001));
+      expect(numOf(1, 6), closeTo(5.91, 0.0001));
+      expect(numOf(1, 7), closeTo(5.75, 0.0001));
       // Footer: label + σύνολο.
       expect(textOf(2, 0), 'Σύνολο (1)');
-      expect(numOf(2, 6), closeTo(5.75, 0.0001));
+      expect(numOf(2, 7), closeTo(5.75, 0.0001));
     });
 
     test('buildExcelBytes — κενές γραμμές → header + footer μηδενικών', () {
@@ -266,23 +269,29 @@ void main() {
         return fail('όχι αριθμός ($r,$c): $value');
       }
 
-      // Headers: 5 fixed + 2 μονάδες + Τιμή/Έκπτωση/Καθαρή.
-      expect(rows[0].length, 10);
+      // Headers: 5 fixed + 2 μονάδες + Τιμή/Έκπτωση/Σύνολο/Καθαρή.
+      expect(rows[0].length, 11);
       expect(textOf(0, 2), 'Όνομα είδους');
       expect(textOf(0, 3), 'Κατηγορία');
       expect(textOf(0, 5), 'Κιλό');
       expect(textOf(0, 6), 'Τεμάχιο');
-      expect(textOf(0, 9), 'Καθαρή');
-      // Γραμμή κιλού: ποσότητα στη στήλη της, 0 στην άλλη · Καθαρή =
-      // μοναδιαία (2,0 — το footer αθροίζει σύνολα γραμμών).
+      expect(textOf(0, 7), 'Τιμή');
+      expect(textOf(0, 8), 'Έκπτωση');
+      expect(textOf(0, 9), 'Σύνολο');
+      expect(textOf(0, 10), 'Καθαρή');
+      // Γραμμή κιλού: ποσότητα στη στήλη της, 0 στην άλλη · Τιμή μονάδας,
+      // Έκπτωση/Σύνολο/Καθαρή συνόλων γραμμής (SPoT §3).
       expect(numOf(1, 5), 2);
       expect(numOf(1, 6), 0);
-      expect(numOf(1, 9), closeTo(2.0, 0.0001));
+      expect(numOf(1, 7), closeTo(2.5, 0.0001));
+      expect(numOf(1, 8), closeTo(1.0, 0.0001));
+      expect(numOf(1, 9), closeTo(5.0, 0.0001));
+      expect(numOf(1, 10), closeTo(4.0, 0.0001));
       // Footer: label σπασίματος + sums + σύνολο.
       expect(textOf(3, 0), 'Σύνολο: (Κιλ: 2 / Τεμ: 3)');
       expect(numOf(3, 5), 2);
       expect(numOf(3, 6), 3);
-      expect(numOf(3, 9), closeTo(7.6, 0.0001));
+      expect(numOf(3, 10), closeTo(7.6, 0.0001));
     });
 
     test('buildPurchasesExcelBytes — κενές → header + footer', () {

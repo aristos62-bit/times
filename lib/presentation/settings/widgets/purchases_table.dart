@@ -3,13 +3,14 @@
 /// Έτοιμες γραμμές + μονάδες + σύνολα (§2.0): καμία provider-ανάγνωση.
 /// Στήλες ποσότητας δυναμικές — μία ανά μονάδα [units] (σειρά λίστας, Q3) —
 /// ώστε τεμάχια/κιλά/λίτρα να μη συγχέονται στα σύνολα. Οριζόντιο scroll
-/// (§1.4 — 8+Ν στήλες)· numerics δεξιά· footer (sums/μονάδα + σύνολο, Q4).
+/// (§1.4 — 9+Ν στήλες)· numerics δεξιά· footer (sums/μονάδα + σύνολο, Q4).
 /// Χρώματα από το theme (DataTable default — dark/light δωρεάν, §1.5).
 library;
 
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_strings.dart';
+import '../../../core/utils/line_total.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/models/chart_totals.dart';
 import '../../../domain/services/statistics_export.dart';
@@ -84,6 +85,10 @@ class PurchasesTable extends StatelessWidget {
               numeric: true,
             ),
             const DataColumn(
+              label: Text(AppStrings.statsColumnTotal),
+              numeric: true,
+            ),
+            const DataColumn(
               label: Text(AppStrings.statsColumnNet),
               numeric: true,
             ),
@@ -105,8 +110,25 @@ class PurchasesTable extends StatelessWidget {
                     else
                       DataCell.empty,
                   _money(row.priceCents),
-                  _money(row.discountCents),
-                  _money(row.priceCents - row.discountCents),
+                  _money(
+                    discountTotalCents(
+                      discountCents: row.discountCents,
+                      quantity: row.quantity,
+                    ),
+                  ),
+                  _money(
+                    grossTotalCents(
+                      priceCents: row.priceCents,
+                      quantity: row.quantity,
+                    ),
+                  ),
+                  _money(
+                    lineTotalCents(
+                      priceCents: row.priceCents,
+                      discountCents: row.discountCents,
+                      quantity: row.quantity,
+                    ),
+                  ),
                 ],
               ),
             DataRow(
@@ -122,6 +144,7 @@ class PurchasesTable extends StatelessWidget {
                       totals.qtyByUnit[unit.id] ?? 0,
                     ),
                   ),
+                DataCell.empty,
                 DataCell.empty,
                 DataCell.empty,
                 _money(totals.netTotalCents),

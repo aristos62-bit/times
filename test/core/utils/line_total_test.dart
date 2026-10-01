@@ -53,4 +53,14 @@ void main() {
       );
     });
   });
+
+  group('grossTotalCents + discountTotalCents (§2.3 · 01-10)', () {
+    test('μικτό: 12,96 € × 0,456 → 591 (στήλη Σύνολο)', () {
+      expect(grossTotalCents(priceCents: 1296, quantity: 0.456), 591);
+    });
+
+    test('έκπτωση συνόλου: 0,35 € × 0,456 → 16 (στήλη Έκπτωση)', () {
+      expect(discountTotalCents(discountCents: 35, quantity: 0.456), 16);
+    });
+  });
 }

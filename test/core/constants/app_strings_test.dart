@@ -214,6 +214,7 @@ void main() {
       expect(AppStrings.statsColumnQuantity, 'Ποσότητα');
       expect(AppStrings.statsColumnPrice, 'Τιμή');
       expect(AppStrings.statsColumnDiscount, 'Έκπτωση');
+      expect(AppStrings.statsColumnTotal, 'Σύνολο');
       expect(AppStrings.statsColumnNet, 'Καθαρή');
       expect(AppStrings.statsColumnCategory, 'Κατηγορία');
       expect(AppStrings.statsGrandTotal, 'ΓΕΝΙΚΟ');
@@ -423,6 +424,7 @@ const List<String> _allStrings = [
   AppStrings.statsColumnQuantity,
   AppStrings.statsColumnPrice,
   AppStrings.statsColumnDiscount,
+  AppStrings.statsColumnTotal,
   AppStrings.statsColumnNet,
   AppStrings.statsExportExcelAction,
   AppStrings.statsExportPdfAction,

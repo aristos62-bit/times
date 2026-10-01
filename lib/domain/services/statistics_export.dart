@@ -23,7 +23,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/errors/app_exceptions.dart';
 import '../../core/logging/app_logger.dart';
-import '../../core/utils/line_total.dart';
+import '../../core/utils/line_total.dart' as line_total;
 import '../../data/local/app_database.dart';
 import '../../data/models/chart_totals.dart';
 
@@ -124,11 +124,25 @@ abstract final class StatisticsExportService {
 
   /// Καθαρό σύνολο γραμμής (λεπτά) — display mirror μέσω SPoT
   /// `lineTotalCents()` (§3, `core/utils/line_total.dart`).
-  static int netTotalCents(ItemLedgerRow row) => lineTotalCents(
+  static int netTotalCents(ItemLedgerRow row) => line_total.lineTotalCents(
     priceCents: row.priceCents,
     discountCents: row.discountCents,
     quantity: row.quantity,
   );
+
+  /// Μικτό σύνολο γραμμής — στήλη «Σύνολο» (01-10, SPoT fn).
+  static int grossTotalCents(ItemLedgerRow row) =>
+      line_total.grossTotalCents(
+        priceCents: row.priceCents,
+        quantity: row.quantity,
+      );
+
+  /// Συνολική έκπτωση γραμμής — στήλη «Έκπτωση» (01-10, SPoT fn).
+  static int discountTotalCents(ItemLedgerRow row) =>
+      line_total.discountTotalCents(
+        discountCents: row.discountCents,
+        quantity: row.quantity,
+      );
 
   /// Σύνολα καρτέλας (Q4) — μοναδική πηγή για table/excel/pdf (§1.1).
   static StatsTotals totalsOf(List<ItemLedgerRow> rows) {
@@ -195,6 +209,7 @@ abstract final class StatisticsExportService {
         AppStrings.statsColumnQuantity,
         AppStrings.statsColumnPrice,
         AppStrings.statsColumnDiscount,
+        AppStrings.statsColumnTotal,
         AppStrings.statsColumnNet,
       ];
       for (var c = 0; c < headers.length; c++) {
@@ -225,10 +240,13 @@ abstract final class StatisticsExportService {
           row.priceCents / 100.0,
         );
         sheet.cell(CellIndex.indexByString('F$n')).value = DoubleCellValue(
-          row.discountCents / 100.0,
+          discountTotalCents(row) / 100.0,
         );
         sheet.cell(CellIndex.indexByString('G$n')).value = DoubleCellValue(
-          (row.priceCents - row.discountCents) / 100.0,
+          grossTotalCents(row) / 100.0,
+        );
+        sheet.cell(CellIndex.indexByString('H$n')).value = DoubleCellValue(
+          netTotalCents(row) / 100.0,
         );
       }
       final totals = totalsOf(rows);
@@ -236,7 +254,7 @@ abstract final class StatisticsExportService {
       sheet.cell(CellIndex.indexByString('A$t')).value = TextCellValue(
         totals.label,
       );
-      sheet.cell(CellIndex.indexByString('G$t')).value = DoubleCellValue(
+      sheet.cell(CellIndex.indexByString('H$t')).value = DoubleCellValue(
         totals.totalCents / 100.0,
       );
       return _saveWorkbook(workbook.excel, rows.length);
@@ -280,7 +298,7 @@ abstract final class StatisticsExportService {
     var net = 0;
     for (final row in rows) {
       qty[row.unitId] = (qty[row.unitId] ?? 0) + row.quantity;
-      net += lineTotalCents(
+      net += line_total.lineTotalCents(
         priceCents: row.priceCents,
         discountCents: row.discountCents,
         quantity: row.quantity,
@@ -305,7 +323,7 @@ abstract final class StatisticsExportService {
 
   /// Χτίζει XLSX συγκεντρωτικών αγορών (sync CPU): fixed στήλες +
   /// μία στήλη ποσότητας ανά μονάδα [units] (δυναμικές, Q3) + Τιμή/Έκπτωση/
-  /// Καθαρή native doubles + footer (sums/μονάδα + σύνολο). Με [groups]
+  /// Σύνολο/Καθαρή native doubles + footer (sums/μονάδα + σύνολο). Με [groups]
   /// (3η ανάλυση): blocks τίτλου + υποσύνολο + grand footer — χωρίς groups
   /// η flat συμπεριφορά (backward compatible). Αποτυχία →
   /// `StatsExportException`.
@@ -326,6 +344,7 @@ abstract final class StatisticsExportService {
         for (final unit in units) unit.name,
         AppStrings.statsColumnPrice,
         AppStrings.statsColumnDiscount,
+        AppStrings.statsColumnTotal,
         AppStrings.statsColumnNet,
       ];
       for (var c = 0; c < headers.length; c++) {
@@ -368,10 +387,36 @@ abstract final class StatisticsExportService {
           }
           final priceCol = 5 + units.length;
           set(priceCol, DoubleCellValue(row.priceCents / 100.0));
-          set(priceCol + 1, DoubleCellValue(row.discountCents / 100.0));
+          set(
+            priceCol + 1,
+            DoubleCellValue(
+              line_total.discountTotalCents(
+                    discountCents: row.discountCents,
+                    quantity: row.quantity,
+                  ) /
+                  100.0,
+            ),
+          );
           set(
             priceCol + 2,
-            DoubleCellValue((row.priceCents - row.discountCents) / 100.0),
+            DoubleCellValue(
+              line_total.grossTotalCents(
+                    priceCents: row.priceCents,
+                    quantity: row.quantity,
+                  ) /
+                  100.0,
+            ),
+          );
+          set(
+            priceCol + 3,
+            DoubleCellValue(
+              line_total.lineTotalCents(
+                    priceCents: row.priceCents,
+                    discountCents: row.discountCents,
+                    quantity: row.quantity,
+                  ) /
+                  100.0,
+            ),
           );
           r++;
         }
@@ -423,7 +468,7 @@ abstract final class StatisticsExportService {
       set(5 + u, DoubleCellValue(totals.qtyByUnit[units[u].id] ?? 0));
     }
     final priceCol = 5 + units.length;
-    set(priceCol + 2, DoubleCellValue(totals.netTotalCents / 100.0));
+    set(priceCol + 3, DoubleCellValue(totals.netTotalCents / 100.0));
   }
 
   /// Χτίζει PDF bytes (async CPU). `headers`/`body`/`totalsLine` έτοιμα
@@ -448,10 +493,12 @@ abstract final class StatisticsExportService {
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4.landscape,
           header: (_) => pw.Padding(
-            padding: const pw.EdgeInsets.only(bottom: 8),
+            padding: const pw.EdgeInsets.only(
+              bottom: AppConstants.pdfHeaderPaddingBottom,
+            ),
             child: pw.Text(
               title,
-              style: pw.TextStyle(font: bold, fontSize: 14),
+              style: pw.TextStyle(font: bold, fontSize: AppConstants.pdfTitleFontSize),
             ),
           ),
           footer: (context) => pw.Row(
@@ -459,11 +506,11 @@ abstract final class StatisticsExportService {
             children: [
               pw.Text(
                 totalsLine ?? '',
-                style: pw.TextStyle(font: bold, fontSize: 10),
+                style: pw.TextStyle(font: bold, fontSize: AppConstants.pdfBodyFontSize),
               ),
               pw.Text(
                 'Σελίδα ${context.pageNumber} / ${context.pagesCount}',
-                style: pw.TextStyle(font: regular, fontSize: 9),
+                style: pw.TextStyle(font: regular, fontSize: AppConstants.pdfPageNoFontSize),
               ),
             ],
           ),
@@ -478,10 +525,16 @@ abstract final class StatisticsExportService {
             else
               for (final section in sections) ...[
                 pw.Padding(
-                  padding: const pw.EdgeInsets.only(top: 10, bottom: 4),
+                  padding: const pw.EdgeInsets.only(
+                    top: AppConstants.pdfSectionPaddingTop,
+                    bottom: AppConstants.pdfSectionPaddingBottom,
+                  ),
                   child: pw.Text(
                     section.title,
-                    style: pw.TextStyle(font: bold, fontSize: 11),
+                    style: pw.TextStyle(
+                      font: bold,
+                      fontSize: AppConstants.pdfSectionFontSize,
+                    ),
                   ),
                 ),
                 _pdfTable(
@@ -491,10 +544,13 @@ abstract final class StatisticsExportService {
                   bold: bold,
                 ),
                 pw.Padding(
-                  padding: const pw.EdgeInsets.only(top: 2, bottom: 6),
+                  padding: const pw.EdgeInsets.only(
+                    top: AppConstants.pdfSubtotalPaddingTop,
+                    bottom: AppConstants.pdfSubtotalPaddingBottom,
+                  ),
                   child: pw.Text(
                     section.subtotal,
-                    style: pw.TextStyle(font: bold, fontSize: 10),
+                    style: pw.TextStyle(font: bold, fontSize: AppConstants.pdfBodyFontSize),
                   ),
                 ),
               ],
@@ -523,7 +579,7 @@ abstract final class StatisticsExportService {
   }) {
     pw.TextStyle cellStyle(bool header) => pw.TextStyle(
       font: header ? bold : regular,
-      fontSize: 10,
+      fontSize: AppConstants.pdfBodyFontSize,
       fontWeight: header ? pw.FontWeight.bold : pw.FontWeight.normal,
     );
     return pw.TableHelper.fromTextArray(
@@ -531,12 +587,12 @@ abstract final class StatisticsExportService {
       data: rows,
       headerStyle: cellStyle(true),
       cellStyle: cellStyle(false),
-      cellPadding: const pw.EdgeInsets.all(4),
+      cellPadding: const pw.EdgeInsets.all(AppConstants.pdfCellPadding),
       border: pw.TableBorder.all(),
     );
   }
 
-  /// Γράμμα στήλης (0 → A) — 7 στήλες καρτέλας.
+  /// Γράμμα στήλης (0 → A) — 8 στήλες καρτέλας.
   static String _columnLetter(int index) =>
       String.fromCharCode('A'.codeUnitAt(0) + index);
 }

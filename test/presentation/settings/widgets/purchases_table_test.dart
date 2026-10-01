@@ -98,8 +98,15 @@ void main() {
       expect(find.text('Κιλό'), findsOneWidget);
       expect(find.text('Τεμάχιο'), findsOneWidget);
       expect(find.text(AppStrings.fieldItemName), findsOneWidget);
+      expect(find.text(AppStrings.statsColumnPrice), findsOneWidget);
+      expect(find.text(AppStrings.statsColumnDiscount), findsOneWidget);
+      expect(find.text(AppStrings.statsColumnTotal), findsOneWidget);
+      expect(find.text(AppStrings.statsColumnNet), findsOneWidget);
       // Γραμμές: προμηθευτές + ποσότητα στη στήλη της μονάδας.
       expect(find.text('Μάρκος'), findsOneWidget);
+      // Στήλες συνόλων γραμμής 1 (SPoT §3): 35×0,456→16 · 1296×0,456→591.
+      expect(find.text('0,16 €'), findsOneWidget);
+      expect(find.text('5,91 €'), findsOneWidget);
       // Footer: sums/μονάδα + σύνολο ((1296−35)×0,456 + 120×3 = 575+360).
       // '0,456'/'3': σώμα + footer · label με σπάσιμο ανά μονάδα (29-09).
       expect(find.text('Σύνολο: (Κιλ: 0,456 / Τεμ: 3)'), findsOneWidget);

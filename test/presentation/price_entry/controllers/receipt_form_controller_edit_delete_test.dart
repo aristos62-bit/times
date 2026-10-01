@@ -104,11 +104,40 @@ void main() {
       expect(state.draftLines.single.unitAllowsDecimal, isTrue);
       expect(
         state.draftLines.single.enteredTotalCents,
-        isNull,
-        reason: 'δεν ανακατασκευάζεται (stored ±1, §3)',
+        398,
+        reason: 'stored αλήθεια σε edit (01-10), όχι null',
       );
       expect(state.isSaving, isFalse);
       expect(logged.toString(), contains('Φόρτωση απόδειξης'));
+    });
+
+    test('total-mode γραμμή: edit δείχνει stored σύνολο (01-10)', () async {
+      final container = containerWithDb();
+      final s = await seed(container);
+      final receiptId = await container
+          .read(receiptRepositoryProvider)
+          .insertReceiptWithLines(
+        date: DateTime(2026, 2, 5),
+        supplierId: s.supplierId,
+        lines: [
+          (
+            itemId: s.itemId,
+            unitId: s.unitId,
+            quantity: 0.945,
+            priceCents: 735,
+            discountCents: 0,
+          ),
+        ],
+      );
+
+      final notifier = container.read(receiptFormControllerProvider.notifier);
+      final result = await notifier.loadReceiptForEdit(receiptId);
+
+      expect(result, (ok: true, error: null));
+      final line =
+          container.read(receiptFormControllerProvider).draftLines.single;
+      // (735 × 0,945).round() = 695 — το stored, όχι επαν-υπολογισμός.
+      expect(line.enteredTotalCents, 695);
     });
 
     test('ανύπαρκτο id → (ok:false, loadDataFailed), state άθικτο', () async {

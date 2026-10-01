@@ -103,9 +103,18 @@
 | 83 | [Σκλήρυνση κλειδώματος (F1–F3)](oldsessions/2026-10-01_app_lock.md) | 01-10-2026 | Κλειστό | Timeout 60'' + hide/show + semantics/focus trap · 18+9+13 ✓ · analyze καθαρό · DESIGN §2.3 |
 | 84 | [Rewrite stale §5 DESIGN](oldsessions/2026-10-01_design_s5.md) | 01-10-2026 | Κλειστό | Τρέχουσα εικόνα αντί ιστορικού · χωρίς σάπια νούμερα · byte-exact splice |
 | 85 | [CI integrity: format hunks + generated gate](oldsessions/2026-10-01_ci_integrity.md) | 01-10-2026 | Κλειστό | 2 canonical hunks (28/28) · `git diff --exit-code` gate (πράσινο) · format/coverage gates αργότερα |
+| 86 | [PDF SPoT: abbreviations-doc + fonts/paddings](oldsessions/2026-10-01_pdf_spot.md) | 01-10-2026 | Κλειστό | Doc-ομολογία (lookup αδύνατο) + 10 consts (4 fonts + 6 paddings) · πανομοιότυπα bytes · 22/22 · analyze καθαρό |
+| 87 | [Dedup ×3 (receipt SQL · search · CRUD)](oldsessions/2026-10-01_dedup.md) | 01-10-2026 | Κλειστό | Shared `_watchSummaries`/`_searchInMemory`/`_create/_rename/_delete` · records+closures · 29+20+28 ✓ · analyze καθαρό · DESIGN αμετάβλητο |
+| 88 | [Parity + στήλες συνόλων](oldsessions/2026-10-01_line_columns.md) | 01-10-2026 | Κλειστό | Edit-parity stored + Τιμή/Έκπτωση/Σύνολο/Καθαρή (οθόνη+Excel+PDF) · part-fix · 18+8+44+3+3 ✓ · analyze καθαρό · DESIGN §2.3 |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
+
+- **Parity + στήλες συνόλων (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #88): edit-parity `enteredTotalCents=l.lineTotalCents` · 8 / 9+N στήλες (οθόνη+Excel+PDF) · part-fix import→library · DESIGN §2.3 · export 18/18 + line_total 8/8 + strings 44/44 + tables 3/3+3/3 ✓ · analyze καθαρό · backups `backups/2026-10-01_line_columns/` + `backups/2026-10-01_edit_parity/`.
+
+- **Dedup ×3 (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #87): DAO `_watchSummaries`+`_summaryOf` · providers `_searchInMemory` · controller `_create/_rename/_delete` (records+closures, 9 wrappers) · ~200 γρ. λιγότερα · 29+20+28 ✓ (από χρήστη) · analyze καθαρό · DESIGN αμετάβλητο (privates) · backup `backups/2026-10-01_dedup/`.
+
+- **PDF SPoT (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #86): abbreviations → doc-ομολογία (lookup θέλει schema — απορρίφθηκε) · 4 fonts + 6 paddings SPoT · 22/22 ✓ · analyze καθαρό · backup `backups/2026-10-01_pdf_spot/`.
 
 - **CI integrity (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #85): 2 canonical hunks (28/28 ✓) · generated-gate (`git diff --exit-code`, επαληθευμένα πράσινο) · format/coverage gates + migration: μελλοντικό κοινό pass · backup `backups/2026-10-01_ci_integrity/`.
 

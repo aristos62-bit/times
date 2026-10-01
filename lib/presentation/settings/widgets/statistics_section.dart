@@ -15,6 +15,7 @@ import '../../../core/constants/app_errors.dart';
 import '../../../core/constants/app_messages.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/logging/app_logger.dart';
+import '../../../core/utils/line_total.dart';
 import '../../../data/local/app_database.dart';
 import '../../../data/models/chart_totals.dart';
 import '../../../data/providers/stream_providers.dart';

@@ -21,11 +21,11 @@ part 'receipt_form_state.freezed.dart';
 /// (`itemName`/`unitAbbreviation`/`unitAllowsDecimal`/`enteredTotalCents` —
 /// όχι ορίσματα insert, μόνο προβολή).
 /// Ίδιο είδος σε πολλές γραμμές ΕΠΙΤΡΕΠΕΤΑΙ — δεν γίνεται merge (§2.2:237).
-/// `enteredTotalCents` (24-09-2026): snapshot του πληκτρολογημένου συνόλου
-/// ΜΟΝΟ σε γραμμές «Συνολικής τιμής» (αλλιώς null) — το draft list το δείχνει
-/// χωρίς επαν-υπολογισμό (SPoT μαθηματικών το DAO)· το stored σύνολο
-/// `((priceCents−discountCents)×quantity).round()` μπορεί να διαφέρει ±1 λεπτό
-/// (στρογγυλοποίηση παραγόμενης μοναδιαίας — τεκμηριωμένο, με test).
+/// `enteredTotalCents` (24-09-2026): snapshot συνόλου για προβολή — στο
+/// entry το πληκτρολογημένο, στο edit το stored (`lineTotalCents`, 01-10)
+/// — το draft list το δείχνει χωρίς επαν-υπολογισμό (SPoT μαθηματικών το
+/// DAO)· typed vs stored μπορεί να διαφέρουν ±1 λεπτό (στρογγυλοποίηση
+/// παραγόμενης μοναδιαίας — τεκμηριωμένο, με test).
 class DraftReceiptLine {
   const DraftReceiptLine({
     required this.itemId,
@@ -71,8 +71,9 @@ class DraftReceiptLine {
   /// καλούντες άθικτοι)· το section περνά την πραγματική τιμή στο Βήμα 6δ.
   final bool unitAllowsDecimal;
 
-  /// Snapshot πληκτρολογημένου συνόλου (λεπτά) — ΜΟΝΟ γραμμές «Συνολικής
-  /// τιμής» (24-09-2026) το έχουν non-null· αλλιώς null (μοναδιαία τιμή).
+  /// Snapshot συνόλου (λεπτά) για προβολή — entry: πληκτρολογημένο
+  /// (ΜΟΝΟ γραμμές «Συνολικής τιμής», 24-09-2026)· edit: stored αλήθεια
+  /// (01-10). Αλλιώς null (μοναδιαία τιμή, χωρίς «σύνολο» στη λίστα).
   /// Nullable με default null = υπάρχοντες καλούντες/tests άθικτοι.
   final int? enteredTotalCents;
 

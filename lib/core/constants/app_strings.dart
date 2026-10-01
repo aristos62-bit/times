@@ -242,6 +242,9 @@ abstract final class AppStrings {
   static const String statsColumnPrice = 'Τιμή';
   static const String statsColumnDiscount = 'Έκπτωση';
   static const String statsColumnNet = 'Καθαρή';
+  /// Header στήλης μικτού συνόλου γραμμής (§2.3 · 01-10 — Τιμή×ποσότητα,
+  /// χωρίς έκπτωση· η Καθαρή είναι το τελικό).
+  static const String statsColumnTotal = 'Σύνολο';
   /// Label κουμπιού εξαγωγής Excel (§2.3 · 1η ανάλυση).
   static const String statsExportExcelAction = 'Εξαγωγή Excel';
   /// Label κουμπιού εξαγωγής PDF (§2.3 · 1η ανάλυση).

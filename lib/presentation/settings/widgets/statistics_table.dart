@@ -2,7 +2,7 @@
 ///
 /// Έτοιμες γραμμές (§2.0): καμία provider-ανάγνωση — τα σύνολα υπολογίζονται
 /// από το SPoT `StatisticsExportService.totalsOf` (μοναδική πηγή, §1.1).
-/// 7 στήλες (SPoT headers) σε οριζόντιο scroll (§1.4 — όχι overflow σε
+/// 8 στήλες (SPoT headers) σε οριζόντιο scroll (§1.4 — όχι overflow σε
 /// κινητά)· numerics δεξιά· footer συνόλων (Q4). Χρώματα από το theme
 /// (DataTable default — dark/light δωρεάν, §1.5).
 library;
@@ -72,6 +72,10 @@ class StatisticsTable extends StatelessWidget {
               numeric: true,
             ),
             DataColumn(
+              label: Text(AppStrings.statsColumnTotal),
+              numeric: true,
+            ),
+            DataColumn(
               label: Text(AppStrings.statsColumnNet),
               numeric: true,
             ),
@@ -85,13 +89,15 @@ class StatisticsTable extends StatelessWidget {
                   _text(row.supplierName),
                   _text(StatisticsExportService.quantityText(row)),
                   _money(row.priceCents),
-                  _money(row.discountCents),
-                  _money(row.priceCents - row.discountCents),
+                  _money(StatisticsExportService.discountTotalCents(row)),
+                  _money(StatisticsExportService.grossTotalCents(row)),
+                  _money(StatisticsExportService.netTotalCents(row)),
                 ],
               ),
             DataRow(
               cells: [
                 _text(totals.label),
+                DataCell.empty,
                 DataCell.empty,
                 DataCell.empty,
                 DataCell.empty,

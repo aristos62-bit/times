@@ -21,7 +21,8 @@ String _groupLabel(PurchasesGroup group) => switch (group) {
   PurchasesGroup.month => AppStrings.statsGroupMonth,
 };
 
-/// Headers πίνακα αγορών (8+N στήλες — 5 fixed + N μονάδων + Τιμή/Έκπτωση/Καθαρή, §2.3).
+/// Headers πίνακα αγορών (9+N στήλες — 5 fixed + N μονάδων +
+/// Τιμή/Έκπτωση/Σύνολο/Καθαρή, §2.3).
 List<String> _purchasesHeaders(List<Unit> units) => [
   AppStrings.statsColumnDate,
   AppStrings.statsColumnReceipt,
@@ -31,6 +32,7 @@ List<String> _purchasesHeaders(List<Unit> units) => [
   for (final unit in units) unit.name,
   AppStrings.statsColumnPrice,
   AppStrings.statsColumnDiscount,
+  AppStrings.statsColumnTotal,
   AppStrings.statsColumnNet,
 ];
 
@@ -55,8 +57,25 @@ List<String> _purchasesBodyRow(
       else
         '',
     money(row.priceCents),
-    money(row.discountCents),
-    money(row.priceCents - row.discountCents),
+    money(
+      discountTotalCents(
+        discountCents: row.discountCents,
+        quantity: row.quantity,
+      ),
+    ),
+    money(
+      grossTotalCents(
+        priceCents: row.priceCents,
+        quantity: row.quantity,
+      ),
+    ),
+    money(
+      lineTotalCents(
+        priceCents: row.priceCents,
+        discountCents: row.discountCents,
+        quantity: row.quantity,
+      ),
+    ),
   ];
 }
 
