@@ -108,12 +108,9 @@
 | 88 | [Parity + στήλες συνόλων](oldsessions/2026-10-01_line_columns.md) | 01-10-2026 | Κλειστό | Edit-parity stored + Τιμή/Έκπτωση/Σύνολο/Καθαρή (οθόνη+Excel+PDF) · part-fix · 18+8+44+3+3 ✓ · analyze καθαρό · DESIGN §2.3 |
 | 89 | [Confirm διαγραφής γραμμής καλαθιού](oldsessions/2026-10-01_draft_confirm.md) | 01-10-2026 | Κλειστό | Destructive confirm (νέα+επεξεργασία) · 1 SPoT message · 12+35 ✓ · full 1575/1575 · analyze καθαρό · DESIGN §2.2 |
 | 90 | [Φίλτρο Η/Ε/Μ λίστας πρόσφατων](oldsessions/2026-10-01_recent_filter.md) | 01-10-2026 | Κλειστό | SegmentedButton (default ημέρα, όριο 20) · update in-place · 9+9+14 ✓ · analyze καθαρό · DESIGN §2.2 |
-| 91 | [Διαφοροποίηση ανοιχτών sections Ρυθμίσεων](oldsessions/2026-10-01_settings_tint.md) | 01-10-2026 | Κλειστό | Expanded `surfaceContainerHigh` ×6 · 0 νέα χρώματα · 14/14 ✓ · analyze καθαρό |
 ---
 
 ## ΤΡΕΧΟΥΣΑ ΚΑΤΑΣΤΑΣΗ (ΣΥΝΟΨΗ)
-
-- **Διαφοροποίηση ανοιχτών sections (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #91): expanded `surfaceContainerHigh` ×6 · 14/14 ✓ · analyze καθαρό · backup `backups/2026-10-01_settings_tint/`.
 
 - **Φίλτρο Η/Ε/Μ λίστας πρόσφατων (01-10-2026) ΟΛΟΚΛΗΡΩΘΗΚΕ** (row #90): SegmentedButton default ημέρα + όριο 20 · DAO between + update in-place · DAO 9/9 + stream 9/9 + λίστα 14/14 ✓ · analyze καθαρό · DESIGN §2.2 · backup `backups/2026-10-01_recent_filter/`.
 

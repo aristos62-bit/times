@@ -39,7 +39,6 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.titleSettings)),
       body: ListView(
@@ -93,7 +92,6 @@ class SettingsPage extends ConsumerWidget {
             // Collapsible section (§2.3 · 28-09-2026): κλειστό εξ αρχής —
             // ανάμεσα σε «Ασφάλεια» και «Είδη».
             child: ExpansionTile(
-              backgroundColor: scheme.surfaceContainerHigh,
               title: Text(
                 AppStrings.titleStatisticsSection,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -114,7 +112,6 @@ class SettingsPage extends ConsumerWidget {
             // Collapsible section (ενότητα Ειδών): κλειστό εξ αρχής
             // (pattern Κατηγοριών 24-09-2026) — ΠΡΙΝ τις Κατηγορίες.
             child: ExpansionTile(
-              backgroundColor: scheme.surfaceContainerHigh,
               title: Text(
                 AppStrings.titleItemsSection,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -135,7 +132,6 @@ class SettingsPage extends ConsumerWidget {
             // Collapsible section (24-09-2026): κλειστό εξ αρχής
             // (`initiallyExpanded` default false) — tap δείχνει τον editor.
             child: ExpansionTile(
-              backgroundColor: scheme.surfaceContainerHigh,
               title: Text(
                 AppStrings.titleCategoriesSection,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -155,7 +151,6 @@ class SettingsPage extends ConsumerWidget {
           Card(
             // Collapsible section (24-09-2026) — όπως οι Κατηγορίες.
             child: ExpansionTile(
-              backgroundColor: scheme.surfaceContainerHigh,
               title: Text(
                 AppStrings.titleSuppliersSection,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -176,7 +171,6 @@ class SettingsPage extends ConsumerWidget {
             // Collapsible section (§2.3 · Φάση Β): φίλτρο ημέρας + λίστα
             // με edit/delete (reuse controller Φάσης Α, §2.4).
             child: ExpansionTile(
-              backgroundColor: scheme.surfaceContainerHigh,
               title: Text(
                 AppStrings.titleReceiptsSection,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -196,7 +190,6 @@ class SettingsPage extends ConsumerWidget {
             // data-less state (μόνο isWorking flag, όπως το Theme)· η εξαγωγή
             // καταλόγου διαβάζει τη βάση (one-shot reads, 30-09-2026).
             child: ExpansionTile(
-              backgroundColor: scheme.surfaceContainerHigh,
               title: Text(
                 AppStrings.titleBackupSection,
                 style: Theme.of(context).textTheme.titleMedium,
